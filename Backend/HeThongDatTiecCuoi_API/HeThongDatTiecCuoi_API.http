@@ -1,0 +1,34 @@
+@api = https://localhost:7101
+@token = PASTE_JWT_HERE
+
+### Đăng ký khách hàng
+POST {{api}}/api/auth/register
+Content-Type: application/json
+
+{
+  "hoTen": "Nguyễn Văn B",
+  "soDienThoai": "0909876543",
+  "email": "nguyenvanb@example.com",
+  "matKhau": "Riverside@2026",
+  "xacNhanMatKhau": "Riverside@2026",
+  "dongYDieuKhoan": true
+}
+
+### Đăng nhập khách hàng
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "dinhDanh": "khachhang@gmail.com",
+  "matKhau": "Customer@2026",
+  "loaiTaiKhoan": "Customer",
+  "ghiNhoDangNhap": false
+}
+
+### Lấy người dùng hiện tại
+GET {{api}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### Kiểm tra phân quyền nhân viên
+GET {{api}}/api/auth/staff-only
+Authorization: Bearer {{token}}

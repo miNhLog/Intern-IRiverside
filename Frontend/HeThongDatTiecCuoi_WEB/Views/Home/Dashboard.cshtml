@@ -1,0 +1,34 @@
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "Trang điều khiển";
+    var role = User.FindFirstValue(ClaimTypes.Role) ?? "Người dùng";
+}
+
+<main class="dashboard">
+    <div class="dashboard-card">
+        @if (TempData["Success"] is string message)
+        {
+            <div class="success-banner">@message</div>
+        }
+        <span class="eyebrow">RIVERSIDE PALACE</span>
+        <h1>Xin chào, @User.Identity?.Name</h1>
+        <p>Đăng nhập thành công với vai trò <strong>@role</strong>.</p>
+
+        @if (role == "Khách hàng")
+        {
+            <p>Không gian này sẽ dẫn tới khuyến nghị Top 3, đặt tiệc, hợp đồng và tiến độ thanh toán của khách hàng.</p>
+        }
+        else if (role == "Quản trị viên")
+        {
+            <p>Không gian quản trị hệ thống, tài khoản và phân quyền.</p>
+        }
+        else
+        {
+            <p>Không gian nghiệp vụ tư vấn, xác nhận booking và quản lý hợp đồng.</p>
+        }
+
+        <form asp-action="Logout" asp-controller="Auth" method="post">
+            <button class="logout-button" type="submit">Đăng xuất</button>
+        </form>
+    </div>
+</main>

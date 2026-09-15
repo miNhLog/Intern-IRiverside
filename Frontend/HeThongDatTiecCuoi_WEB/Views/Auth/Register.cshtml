@@ -1,0 +1,79 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký tài khoản";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+}
+
+<main class="auth-shell register-page">
+    <section class="auth-story" aria-label="Đặc quyền khách hàng Riverside Palace">
+        <div class="brand-pill"><span></span> RIVERSIDE PALACE CONVENTION &amp; WEDDING CENTER</div>
+        <div class="story-content">
+            <div class="monogram">★</div>
+            <h1>Khởi Đầu Hành Trình<br /><em>Hạnh Phúc Trọn Vẹn</em></h1>
+            <p>Đăng ký thành viên để nhận ngay Top 3 phương án tiệc cưới<br />cá nhân hóa và theo dõi hợp đồng trực tuyến.</p>
+            <ul>
+                <li><b>♢</b><span><strong>Nhận báo giá dự toán và tư vấn AI 24/7</strong><small>Phân bổ ngân sách thông minh và nhận gợi ý bàn tiệc tối ưu</small></span></li>
+                <li><b>▱</b><span><strong>Quản lý thực đơn, sảnh và tiến độ thanh toán</strong><small>Mọi tiến trình nghi lễ và dịch vụ cập nhật minh bạch theo thời gian thực</small></span></li>
+                <li><b>☆</b><span><strong>Nhận các ưu đãi tiệc cưới độc quyền mùa cưới 2026</strong><small>Tặng gói trang trí hoa tươi cao cấp và voucher bàn tiệc trải nghiệm</small></span></li>
+            </ul>
+        </div>
+        <small>© 2026 Riverside Palace. All rights reserved. Tiêu chuẩn dịch vụ hội nghị &amp; yến tiệc 5 sao.</small>
+    </section>
+
+    <section class="auth-form-side">
+        <div class="auth-card register-card">
+            <div class="crest">★</div>
+            <h2>Đăng Ký Tài Khoản</h2>
+            <p class="subtitle">Dành cho khách hàng tổ chức tiệc cưới &amp; sự kiện</p>
+
+            <form asp-action="Register" asp-controller="Auth" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert-error"></div>
+                <div class="form-row">
+                    <div class="field">
+                        <label asp-for="HoTen">HỌ VÀ TÊN <i>*</i></label>
+                        <div class="input-wrap"><input asp-for="HoTen" placeholder="Nguyễn Văn A" autocomplete="name" /></div>
+                        <span asp-validation-for="HoTen" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="SoDienThoai">SỐ ĐIỆN THOẠI <i>*</i></label>
+                        <div class="input-wrap"><span>♧</span><input asp-for="SoDienThoai" placeholder="0901 234 567" autocomplete="tel" /></div>
+                        <span asp-validation-for="SoDienThoai" class="field-error"></span>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label asp-for="Email">ĐỊA CHỈ EMAIL <i>*</i></label>
+                    <div class="input-wrap"><span>✉</span><input asp-for="Email" placeholder="name@example.com" autocomplete="email" /></div>
+                    <span asp-validation-for="Email" class="field-error"></span>
+                </div>
+
+                <div class="form-row">
+                    <div class="field">
+                        <label asp-for="MatKhau">MẬT KHẨU <i>*</i></label>
+                        <div class="input-wrap"><span>♙</span><input asp-for="MatKhau" autocomplete="new-password" /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu">◉</button></div>
+                        <div class="password-meter"><span></span><span></span><span></span><span></span></div>
+                        <small id="passwordStrength">Tối thiểu 8 ký tự, đủ hoa/thường/số/ký tự đặc biệt</small>
+                        <span asp-validation-for="MatKhau" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="XacNhanMatKhau">XÁC NHẬN MẬT KHẨU <i>*</i></label>
+                        <div class="input-wrap"><span>♢</span><input asp-for="XacNhanMatKhau" autocomplete="new-password" /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu">◉</button></div>
+                        <span asp-validation-for="XacNhanMatKhau" class="field-error"></span>
+                    </div>
+                </div>
+
+                <label class="check terms"><input asp-for="DongYDieuKhoan" /> <span>Tôi đã đọc và đồng ý với <a href="#">Điều khoản dịch vụ</a> và <a href="#">Chính sách bảo mật</a> của Riverside Palace.</span></label>
+                <span asp-validation-for="DongYDieuKhoan" class="field-error"></span>
+
+                <button class="primary-button" type="submit">Tạo Tài Khoản Khách Hàng <span>→</span></button>
+                <div class="divider"><span>HOẶC ĐĂNG KÝ NHANH</span></div>
+                <button class="google-button" type="button" disabled title="Google Login thuộc giai đoạn 2"><b>G</b> Đăng ký nhanh bằng tài khoản Google</button>
+                <p class="switch-page">Đã có tài khoản Riverside Palace? <a asp-action="Login">Đăng nhập tại đây</a></p>
+            </form>
+            <footer>Hotline hỗ trợ: <strong>0933 777 888</strong> <span>│</span> 360D Bến Vân Đồn, P.1, Q.4, TP.HCM</footer>
+        </div>
+    </section>
+</main>

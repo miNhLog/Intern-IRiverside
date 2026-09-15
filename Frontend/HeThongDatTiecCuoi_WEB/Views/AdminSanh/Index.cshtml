@@ -1,0 +1,1798 @@
+﻿@model HeThongDatTiecCuoi_WEB.Models.AdminSanh.QuanLySanhViewModel
+
+@{
+    Layout = "_AdminLayout";
+
+    ViewData["Title"] = "Quản lý Sảnh & Lịch";
+    ViewData["ActiveMenu"] = "Sanh";
+
+    var ngayKetThuc = Model.NgayBatDau.AddDays(6);
+}
+
+<!-- HEADER -->
+<header class="top-header">
+
+    <div>
+
+        <div class="breadcrumb">
+            Quản trị Master Data
+            <span>›</span>
+            <strong>Quản lý Sảnh & Lịch Sảnh</strong>
+        </div>
+
+        <h2>
+            Quản Trị Sảnh Tiệc & Lịch Phân Bổ Theo Ca
+        </h2>
+
+    </div>
+
+    <div class="system-status">
+        <span></span>
+        Dữ liệu đang kết nối
+    </div>
+
+</header>
+
+
+<section class="content">
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="error-box">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            @Model.ErrorMessage
+        </div>
+    }
+
+
+    <!-- FILTER -->
+    <div class="filter-bar">
+
+        <form method="get"
+              action="/admin/quan-ly-sanh"
+              class="filter-form">
+
+            <div class="filter-item">
+
+                <i class="fa-regular fa-calendar"></i>
+
+                <label>Tuần:</label>
+
+                <input type="date"
+                       name="ngay"
+                       value="@Model.NgayBatDau.ToString("yyyy-MM-dd")" />
+
+            </div>
+
+
+            <div class="filter-item">
+
+                <i class="fa-solid fa-building"></i>
+
+                <label>Sảnh:</label>
+
+                <select name="sanhTiecId">
+
+                    <option value="">
+                        Tất cả sảnh
+                    </option>
+
+                    @foreach (var sanh in Model.DanhSachSanh)
+                    {
+                        if (Model.SanhTiecId == sanh.SanhTiecID)
+                        {
+                            <option value="@sanh.SanhTiecID"
+                                    selected>
+                                @sanh.TenSanh
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@sanh.SanhTiecID">
+                                @sanh.TenSanh
+                            </option>
+                        }
+                    }
+
+                </select>
+
+            </div>
+
+
+            <button type="submit"
+                    class="btn-filter">
+
+                <i class="fa-solid fa-filter"></i>
+
+                Lọc dữ liệu
+
+            </button>
+
+        </form>
+
+
+        <button type="button"
+                class="btn-add"
+                id="openAddHallModal">
+
+            <i class="fa-solid fa-plus"></i>
+
+            Thêm sảnh tiệc mới
+
+        </button>
+
+    </div>
+
+
+    <!-- HALL HEADER -->
+    <div class="section-header">
+
+        <div>
+            <h3>
+                Thông Tin & Bảng Giá Danh Mục Sảnh Tiệc
+            </h3>
+
+            <p>
+                Hiển thị dữ liệu trực tiếp từ hệ thống
+            </p>
+        </div>
+
+        <span>
+            @Model.DanhSachSanh.Count sảnh
+        </span>
+
+    </div>
+
+
+    <!-- HALL CARDS -->
+    <div class="hall-grid"
+         id="hallGrid">
+
+        @{
+            var index = 0;
+        }
+
+        @foreach (var sanh in Model.DanhSachSanh)
+        {
+            var extraClass = index >= 3 ? "extra-hall hidden" : "";
+
+            <div class="hall-card @extraClass">
+
+                <div class="hall-card-header">
+
+                    <div>
+
+                        <div class="hall-title">
+
+                            <h4>
+                                @sanh.TenSanh
+                            </h4>
+
+                            <span class="status-badge
+                                    @(sanh.TrangThai == "Hoạt động"
+                                                                                                                ? "status-active"
+                                                                                                                : sanh.TrangThai == "Bảo trì"
+                                                                                                                    ? "status-maintenance"
+                                                                                                                    : "status-inactive")">
+
+                            @if (sanh.TrangThai == "Hoạt động")
+                                {
+                                    <i class="fa-solid fa-circle-check"></i>
+                                }
+                                else if (sanh.TrangThai == "Bảo trì")
+                                {
+                                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                                }
+                                else
+                                {
+                                    <i class="fa-solid fa-circle-xmark"></i>
+                                }
+
+                                @sanh.TrangThai
+
+                            </span>
+
+                        </div>
+
+                        <div class="hall-code">
+                            Mã sảnh: @sanh.MaSanh
+                        </div>
+
+                    </div>
+
+                    <div class="hall-icon">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+
+                </div>
+
+
+                <div class="hall-info">
+
+                    <div class="info-row">
+
+                        <span>
+                            Sức chứa tối thiểu:
+                        </span>
+
+                        <strong>
+                            @(sanh.SucChuaToiThieu?.ToString() ?? "Chưa xác định") khách
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info-row">
+
+                        <span>
+                            Sức chứa tối đa:
+                        </span>
+
+                        <strong>
+                            @sanh.SucChuaToiDa khách
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info-row">
+
+                        <span>
+                            Giá thuê:
+                        </span>
+
+                        <strong class="price">
+                            @sanh.GiaThue.ToString("N0") VNĐ
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                @if (!string.IsNullOrWhiteSpace(sanh.MoTa))
+                {
+                    <div class="hall-description">
+                        @sanh.MoTa
+                    </div>
+                }
+
+
+            <div class="hall-actions">
+
+                <button type="button"
+                        class="btn-edit"
+                        data-id="@sanh.SanhTiecID"
+                        data-ma="@sanh.MaSanh"
+                        data-ten="@sanh.TenSanh"
+                        data-min="@sanh.SucChuaToiThieu"
+                        data-max="@sanh.SucChuaToiDa"
+                        data-gia="@sanh.GiaThue"
+                        data-hinh="@sanh.HinhAnh"
+                        data-mota="@sanh.MoTa"
+                        data-trangthai="@sanh.TrangThai">
+
+                    <i class="fa-regular fa-pen-to-square"></i>
+
+                    Chỉnh sửa
+                </button>
+
+
+                <button type="button"
+                        class="btn-status
+                                @(sanh.TrangThai == "Hoạt động"
+                                                            ? "btn-status-active"
+                                                            : sanh.TrangThai == "Bảo trì"
+                                                                ? "btn-status-maintenance"
+                                                                : "btn-status-inactive")"
+                        data-id="@sanh.SanhTiecID"
+                        data-ten="@sanh.TenSanh"
+                        data-trangthai="@sanh.TrangThai">
+
+                    @if (sanh.TrangThai == "Hoạt động")
+                        {
+                            <i class="fa-solid fa-circle-check"></i>
+                        }
+                        else if (sanh.TrangThai == "Bảo trì")
+                        {
+                            <i class="fa-solid fa-screwdriver-wrench"></i>
+                        }
+                        else
+                        {
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        }
+
+                        @sanh.TrangThai
+                    </button>
+
+                    <button type="button"
+                            class="btn-delete"
+                            data-id="@sanh.SanhTiecID"
+                            data-ten="@sanh.TenSanh"
+                            data-trangthai="@sanh.TrangThai">
+
+                        <i class="fa-regular fa-trash-can"></i>
+
+                        Xóa
+                    </button>
+
+                </div>
+
+            </div>
+
+            index++;
+        }
+
+    </div>
+
+
+    @if (Model.DanhSachSanh.Count > 3)
+    {
+        <div class="show-more-wrapper">
+
+            <button type="button"
+                    id="toggleHallButton"
+                    class="btn-show-more">
+
+                <span id="toggleHallText">
+                    Xem tất cả sảnh
+                </span>
+
+                <i id="toggleHallIcon"
+                   class="fa-solid fa-chevron-down"></i>
+
+            </button>
+
+        </div>
+    }
+
+
+    <!-- LỊCH SẢNH THEO TUẦN -->
+    <div class="schedule-section">
+
+        <div class="schedule-header">
+
+            <div>
+                <h3>
+                    <i class="fa-regular fa-calendar-days"></i>
+                    Ma Trận Lịch Sảnh Theo Ngày & Ca Tổ Chức
+                </h3>
+
+                <p>
+                    @Model.NgayBatDau.ToString("dd/MM/yyyy")
+                    -
+                    @ngayKetThuc.ToString("dd/MM/yyyy")
+                </p>
+            </div>
+
+            <div class="week-navigation">
+
+                <a class="week-button current-button"
+                   href="@Url.Action(
+                                              "Index",
+                                              "AdminSanh",
+                                              new
+                                              {
+                                                  ngay = DateTime.Today.ToString("yyyy-MM-dd"),
+                                                  sanhTiecId = Model.SanhTiecId
+                                              })">
+
+                    <i class="fa-solid fa-calendar-day"></i>
+                    Tuần hiện tại
+                </a>
+
+                <a class="week-button"
+                   href="@Url.Action(
+                                                          "Index",
+                                                          "AdminSanh",
+                                                          new
+                                                          {
+                                                              ngay = Model.NgayBatDau.AddDays(-7).ToString("yyyy-MM-dd"),
+                                                              sanhTiecId = Model.SanhTiecId
+                                                          })">
+
+                    <i class="fa-solid fa-chevron-left"></i>
+                    Tuần trước
+                </a>
+
+
+                <span class="current-week">
+                    @Model.NgayBatDau.ToString("dd/MM")
+                    -
+                    @ngayKetThuc.ToString("dd/MM/yyyy")
+                </span>
+
+
+                <a class="week-button"
+                   href="@Url.Action(
+                                                          "Index",
+                                                          "AdminSanh",
+                                                          new
+                                                          {
+                                                              ngay = Model.NgayBatDau.AddDays(7).ToString("yyyy-MM-dd"),
+                                                              sanhTiecId = Model.SanhTiecId
+                                                          })">
+
+                    Tuần sau
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+
+            </div>
+
+        </div>
+
+
+
+        @if (Model.LichTuan == null ||
+                Model.LichTuan.DanhSachSanh.Count == 0)
+        {
+            <div class="schedule-empty">
+                Không có dữ liệu lịch sảnh.
+            </div>
+        }
+        else
+        {
+            <div class="schedule-table-wrapper">
+
+                <table class="schedule-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th class="hall-column">
+                                Sảnh Tiệc
+                            </th>
+
+                            @for (var i = 0; i < 7; i++)
+                            {
+                                var ngay = Model.NgayBatDau.AddDays(i);
+
+                                var tenThu = ngay.DayOfWeek switch
+                                {
+                                    DayOfWeek.Monday => "Thứ Hai",
+                                    DayOfWeek.Tuesday => "Thứ Ba",
+                                    DayOfWeek.Wednesday => "Thứ Tư",
+                                    DayOfWeek.Thursday => "Thứ Năm",
+                                    DayOfWeek.Friday => "Thứ Sáu",
+                                    DayOfWeek.Saturday => "Thứ Bảy",
+                                    DayOfWeek.Sunday => "Chủ Nhật",
+                                    _ => ""
+                                };
+
+                                <th>
+                                    <strong>@tenThu</strong>
+                                    <span>@ngay.ToString("dd/MM/yyyy")</span>
+                                </th>
+                            }
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        @foreach (var sanh in Model.LichTuan.DanhSachSanh)
+                        {
+                            <tr>
+
+                                <!-- TÊN SẢNH -->
+                                <td class="hall-column">
+
+                                    <strong>
+                                        @sanh.TenSanh
+                                    </strong>
+
+                                    <span>
+                                        @sanh.MaSanh
+                                    </span>
+
+                                    @if (sanh.TrangThaiSanh != "Hoạt động")
+                                    {
+                                        <small>
+                                            @sanh.TrangThaiSanh
+                                        </small>
+                                    }
+
+                                </td>
+
+
+                                <!-- 7 NGÀY -->
+                                @for (var i = 0; i < 7; i++)
+                                {
+                                    var ngay = Model.NgayBatDau.AddDays(i);
+
+                                    var caTrua = sanh.Lich.FirstOrDefault(x =>
+                                    x.Ngay.Date == ngay.Date &&
+                                    x.CaToChuc == "Ca trưa");
+
+                                    var caToi = sanh.Lich.FirstOrDefault(x =>
+                                    x.Ngay.Date == ngay.Date &&
+                                    x.CaToChuc == "Ca tối");
+
+                                    <td class="schedule-cell">
+
+                                        @if (caTrua != null)
+                                        {
+                                            var classTrangThai =
+                                            caTrua.TrangThai == "Đã đặt"
+                                            ? "slot-booked"
+                                            : caTrua.TrangThai == "Tạm khóa"
+                                            ? "slot-locked"
+                                            : "slot-empty";
+
+                                            <div class="schedule-slot @classTrangThai
+                                                                        @(caTrua.TrangThai != "Đã đặt" ? "editable-slot" : "")"
+                                                 data-id="@caTrua.LichSanhID"
+                                                 data-status="@caTrua.TrangThai">
+
+                                                <span class="slot-time">
+                                                    Trưa
+                                                </span>
+
+                                                @if (caTrua.TrangThai == "Đã đặt" &&
+                                                                                caTrua.Booking != null)
+                                                {
+                                                    <strong>
+                                                        <i class="fa-solid fa-calendar-check"></i>
+                                                        @caTrua.Booking.MaDatTiec
+                                                    </strong>
+
+                                                    <span class="booking-customer">
+                                                        @caTrua.Booking.HoTenKhachHang
+                                                    </span>
+
+                                                    @if (caTrua.Booking.SoBan.HasValue)
+                                                    {
+                                                        <span class="booking-tables">
+                                                            @caTrua.Booking.SoBan bàn
+                                                        </span>
+                                                    }
+
+                                                    <div class="booking-tooltip">
+
+                                                        <strong>
+                                                            @caTrua.Booking.MaDatTiec
+                                                        </strong>
+
+                                                        <p>
+                                                            Khách hàng:
+                                                            @caTrua.Booking.HoTenKhachHang
+                                                        </p>
+
+                                                        <p>
+                                                            Số bàn:
+                                                            @(caTrua.Booking.SoBan?.ToString() ?? "Chưa xác định")
+                                                        </p>
+
+                                                        <p>
+                                                            Số khách:
+                                                            @(caTrua.Booking.SoLuongKhach?.ToString() ?? "Chưa xác định")
+                                                        </p>
+
+                                                        <p>
+                                                            Trạng thái:
+                                                            @caTrua.Booking.TrangThaiDatTiec
+                                                        </p>
+
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <strong>
+                                                        @if (caTrua.TrangThai == "Trống")
+                                                        {
+                                                            <i class="fa-solid fa-circle-check"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="fa-solid fa-lock"></i>
+                                                        }
+
+                                                        @caTrua.TrangThai
+                                                    </strong>
+                                                }
+
+                                            </div>
+                                        }
+
+
+                                        @if (caToi != null)
+                                        {
+                                            var classTrangThai =
+                                            caToi.TrangThai == "Đã đặt"
+                                            ? "slot-booked"
+                                            : caToi.TrangThai == "Tạm khóa"
+                                            ? "slot-locked"
+                                            : "slot-empty";
+
+                                            <div class="schedule-slot @classTrangThai
+                                                                        @(caToi.TrangThai != "Đã đặt" ? "editable-slot" : "")"
+                                                 data-id="@caToi.LichSanhID"
+                                                 data-status="@caToi.TrangThai">
+
+                                                <span class="slot-time">
+                                                    Tối
+                                                </span>
+
+                                                @if (caToi.TrangThai == "Đã đặt" &&
+                                                                                caToi.Booking != null)
+                                                {
+                                                    <strong>
+                                                        <i class="fa-solid fa-calendar-check"></i>
+                                                        @caToi.Booking.MaDatTiec
+                                                    </strong>
+
+                                                    <span class="booking-customer">
+                                                        @caToi.Booking.HoTenKhachHang
+                                                    </span>
+
+                                                    @if (caToi.Booking.SoBan.HasValue)
+                                                    {
+                                                        <span class="booking-tables">
+                                                            @caToi.Booking.SoBan bàn
+                                                        </span>
+                                                    }
+
+                                                    <div class="booking-tooltip">
+
+                                                        <strong>
+                                                            @caToi.Booking.MaDatTiec
+                                                        </strong>
+
+                                                        <p>
+                                                            Khách hàng:
+                                                            @caToi.Booking.HoTenKhachHang
+                                                        </p>
+
+                                                        <p>
+                                                            Số bàn:
+                                                            @(caToi.Booking.SoBan?.ToString() ?? "Chưa xác định")
+                                                        </p>
+
+                                                        <p>
+                                                            Số khách:
+                                                            @(caToi.Booking.SoLuongKhach?.ToString() ?? "Chưa xác định")
+                                                        </p>
+
+                                                        <p>
+                                                            Trạng thái:
+                                                            @caToi.Booking.TrangThaiDatTiec
+                                                        </p>
+
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <strong>
+                                                        @if (caToi.TrangThai == "Trống")
+                                                        {
+                                                            <i class="fa-solid fa-circle-check"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="fa-solid fa-lock"></i>
+                                                        }
+
+                                                        @caToi.TrangThai
+                                                    </strong>
+                                                }
+
+                                            </div>
+                                        }
+
+                                    </td>
+                                }
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+    @{
+        var tongCa = 0;
+        var daDat = 0;
+        var caTrong = 0;
+        var tamKhoa = 0;
+
+        if (Model.LichTuan != null)
+        {
+            tongCa = Model.LichTuan.DanhSachSanh
+            .Sum(s => s.Lich.Count);
+
+            daDat = Model.LichTuan.DanhSachSanh
+            .Sum(s => s.Lich.Count(x => x.TrangThai == "Đã đặt"));
+
+            caTrong = Model.LichTuan.DanhSachSanh
+            .Sum(s => s.Lich.Count(x => x.TrangThai == "Trống"));
+
+            tamKhoa = Model.LichTuan.DanhSachSanh
+            .Sum(s => s.Lich.Count(x => x.TrangThai == "Tạm khóa"));
+        }
+
+        var phanTramDaDat = tongCa > 0
+        ? (double)daDat / tongCa * 100
+        : 0;
+
+        var phanTramTrong = tongCa > 0
+        ? (double)caTrong / tongCa * 100
+        : 0;
+
+        var phanTramTamKhoa = tongCa > 0
+        ? (double)tamKhoa / tongCa * 100
+        : 0;
+    }
+    <div class="schedule-summary">
+
+        <div class="summary-numbers">
+
+            <span>
+                <strong>Tổng số slot ca trong tuần:</strong>
+                @tongCa ca
+                (@(Model.LichTuan?.DanhSachSanh.Count ?? 0) sảnh × 7 ngày × 2 ca)
+            </span>
+
+            <span class="summary-booked">
+                <i class="fa-solid fa-calendar-check"></i>
+                Đã đặt:
+                <strong>@daDat ca (@phanTramDaDat.ToString("0.0")%)</strong>
+            </span>
+
+            <span class="summary-empty">
+                <i class="fa-solid fa-circle-check"></i>
+                Còn trống:
+                <strong>@caTrong ca (@phanTramTrong.ToString("0.0")%)</strong>
+            </span>
+
+            @if (tamKhoa > 0)
+            {
+                <span class="summary-locked">
+                    <i class="fa-solid fa-lock"></i>
+                    Tạm khóa:
+                    <strong>@tamKhoa ca (@phanTramTamKhoa.ToString("0.0")%)</strong>
+                </span>
+            }
+
+        </div>
+
+
+        <div class="summary-actions">
+
+            <button type="button"
+                    class="summary-button"
+                    onclick="window.location.reload()">
+
+                <i class="fa-solid fa-rotate"></i>
+                Tải lại lịch sảnh
+
+            </button>
+
+
+            <button type="button"
+                    class="summary-button print-button"
+                    onclick="window.print()">
+
+                <i class="fa-solid fa-print"></i>
+                In lịch điều phối tuần
+
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+<footer class="admin-footer">
+
+    <div>
+        © @DateTime.Now.Year IRevirsidePlace.
+        Quản Trị Hệ Thống Master Data
+    </div>
+
+    <div class="footer-right">
+
+        <span>
+            <i class="fa-solid fa-lock"></i>
+            Phân quyền: Quản trị viên
+        </span>
+
+        <span class="footer-dot">•</span>
+
+        <span>
+            Hệ thống quản lý đặt tiệc cưới IRevirsidePlace
+        </span>
+
+    </div>
+
+</footer>
+
+<!-- MODAL THÊM SẢNH -->
+<div id="addHallModal" class="modal-overlay">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+            <div>
+                <h3>Thêm Sảnh Tiệc Mới</h3>
+                <p>Nhập thông tin sảnh tiệc vào hệ thống</p>
+            </div>
+
+            <button type="button"
+                    class="modal-close"
+                    id="closeAddHallModal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+
+        <form id="addHallForm">
+
+            @Html.AntiForgeryToken()
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label>Mã sảnh <span>*</span></label>
+
+                    <input type="text"
+                           name="MaSanh"
+                           placeholder="Ví dụ: S010"
+                           required />
+                </div>
+
+
+                <div class="form-group">
+                    <label>Tên sảnh <span>*</span></label>
+
+                    <input type="text"
+                           name="TenSanh"
+                           placeholder="Tên sảnh"
+                           required />
+                </div>
+
+
+                <div class="form-group">
+                    <label>Sức chứa tối thiểu</label>
+
+                    <input type="number"
+                           name="SucChuaToiThieu"
+                           min="0"
+                           placeholder="Ví dụ: 200" />
+                </div>
+
+
+                <div class="form-group">
+                    <label>Sức chứa tối đa <span>*</span></label>
+
+                    <input type="number"
+                           name="SucChuaToiDa"
+                           min="1"
+                           placeholder="Ví dụ: 500"
+                           required />
+                </div>
+
+
+                <div class="form-group form-full">
+                    <label>Giá thuê sảnh <span>*</span></label>
+
+                    <input type="number"
+                           name="GiaThue"
+                           min="0"
+                           step="1000"
+                           placeholder="Ví dụ: 30000000"
+                           required />
+                </div>
+
+
+                <div class="form-group form-full">
+                    <label>Hình ảnh</label>
+
+                    <input type="text"
+                           name="HinhAnh"
+                           placeholder="Đường dẫn hoặc URL hình ảnh" />
+                </div>
+
+
+                <div class="form-group form-full">
+                    <label>Mô tả</label>
+
+                    <textarea name="MoTa"
+                              rows="4"
+                              placeholder="Mô tả ngắn về sảnh"></textarea>
+                </div>
+
+            </div>
+
+
+            <div id="addHallError" class="form-error"></div>
+
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn-cancel"
+                        id="cancelAddHall">
+                    Hủy
+                </button>
+
+                <button type="submit"
+                        class="btn-save"
+                        id="saveHallButton">
+
+                    <i class="fa-solid fa-floppy-disk"></i>
+
+                    Lưu sảnh tiệc
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- MODAL SỬA SẢNH -->
+<div id="editHallModal" class="modal-overlay">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <div>
+                <h3>Chỉnh Sửa Sảnh Tiệc</h3>
+                <p>Cập nhật thông tin sảnh tiệc</p>
+            </div>
+
+            <button type="button"
+                    class="modal-close"
+                    id="closeEditHallModal">
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+
+        <form id="editHallForm">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   id="editSanhTiecID" />
+
+            <input type="hidden"
+                   name="TrangThai"
+                   id="editTrangThai" />
+
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label>
+                        Mã sảnh <span>*</span>
+                    </label>
+
+                    <input type="text"
+                           name="MaSanh"
+                           id="editMaSanh"
+                           required />
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>
+                        Tên sảnh <span>*</span>
+                    </label>
+
+                    <input type="text"
+                           name="TenSanh"
+                           id="editTenSanh"
+                           required />
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>Sức chứa tối thiểu</label>
+
+                    <input type="number"
+                           name="SucChuaToiThieu"
+                           id="editSucChuaMin"
+                           min="0" />
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>
+                        Sức chứa tối đa <span>*</span>
+                    </label>
+
+                    <input type="number"
+                           name="SucChuaToiDa"
+                           id="editSucChuaMax"
+                           min="1"
+                           required />
+
+                </div>
+
+
+                <div class="form-group form-full">
+
+                    <label>
+                        Giá thuê sảnh <span>*</span>
+                    </label>
+
+                    <input type="number"
+                           name="GiaThue"
+                           id="editGiaThue"
+                           min="0"
+                           step="1000"
+                           required />
+
+                </div>
+
+
+                <div class="form-group form-full">
+
+                    <label>Hình ảnh</label>
+
+                    <input type="text"
+                           name="HinhAnh"
+                           id="editHinhAnh" />
+
+                </div>
+
+
+                <div class="form-group form-full">
+
+                    <label>Mô tả</label>
+
+                    <textarea name="MoTa"
+                              id="editMoTa"
+                              rows="4"></textarea>
+
+                </div>
+
+            </div>
+
+
+            <div id="editHallError"
+                 class="form-error"></div>
+
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn-cancel"
+                        id="cancelEditHall">
+
+                    Hủy
+
+                </button>
+
+                <button type="submit"
+                        class="btn-save"
+                        id="saveEditHallButton">
+
+                    <i class="fa-solid fa-floppy-disk"></i>
+
+                    Lưu thay đổi
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- MODAL TRẠNG THÁI SẢNH -->
+<div id="statusHallModal" class="modal-overlay">
+
+    <div class="modal-box small-modal">
+
+        <div class="modal-header">
+
+            <div>
+                <h3>Trạng Thái Sảnh</h3>
+
+                <p id="statusHallName">
+                    Cập nhật trạng thái sảnh
+                </p>
+            </div>
+
+            <button type="button"
+                    class="modal-close"
+                    id="closeStatusHallModal">
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+
+        <form id="statusHallForm">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   id="statusSanhTiecID" />
+
+
+            <div class="form-group">
+
+                <label>Trạng thái sảnh</label>
+
+                <select id="statusHallSelect"
+                        name="trangThai">
+
+                    <option value="Hoạt động">
+                        Hoạt động
+                    </option>
+
+                    <option value="Bảo trì">
+                        Bảo trì
+                    </option>
+
+                    <option value="Ngừng hoạt động">
+                        Ngừng hoạt động
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="status-note">
+
+                <i class="fa-solid fa-circle-info"></i>
+
+                <span>
+                    Đây là trạng thái chung của sảnh, không phải trạng thái của từng ca tổ chức.
+                </span>
+
+            </div>
+
+
+            <div id="statusHallError"
+                 class="form-error"></div>
+
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn-cancel"
+                        id="cancelStatusHall">
+
+                    Hủy
+
+                </button>
+
+                <button type="submit"
+                        class="btn-save"
+                        id="saveStatusHallButton">
+
+                    <i class="fa-solid fa-floppy-disk"></i>
+
+                    Lưu trạng thái
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<form id="antiForgeryForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts
+{
+    <script>
+
+            const toggleButton =
+                document.getElementById("toggleHallButton");
+
+            if (toggleButton) {
+
+                let expanded = false;
+
+                toggleButton.addEventListener("click", function () {
+
+                    expanded = !expanded;
+
+                    const extraHalls =
+                        document.querySelectorAll(".extra-hall");
+
+                    extraHalls.forEach(function (item) {
+
+                        if (expanded) {
+                            item.classList.remove("hidden");
+                        }
+                        else {
+                            item.classList.add("hidden");
+                        }
+
+                    });
+
+                    const text =
+                        document.getElementById("toggleHallText");
+
+                    const icon =
+                        document.getElementById("toggleHallIcon");
+
+                    if (expanded) {
+
+                        text.textContent = "Thu gọn";
+
+                        icon.classList.remove("fa-chevron-down");
+                        icon.classList.add("fa-chevron-up");
+
+                    }
+                    else {
+
+                        text.textContent = "Xem tất cả sảnh";
+
+                        icon.classList.remove("fa-chevron-up");
+                        icon.classList.add("fa-chevron-down");
+
+                    }
+
+                });
+
+            }
+
+                    const editableSlots =
+                document.querySelectorAll(".editable-slot");
+
+            editableSlots.forEach(function (slot) {
+
+                slot.addEventListener("click", async function () {
+
+                    const id = slot.dataset.id;
+                    const currentStatus = slot.dataset.status;
+
+                    const newStatus =
+                        currentStatus === "Trống"
+                            ? "Tạm khóa"
+                            : "Trống";
+
+                    const message =
+                        newStatus === "Tạm khóa"
+                            ? "Bạn có muốn tạm khóa ca này không?"
+                            : "Bạn có muốn mở lại ca này không?";
+
+                    if (!confirm(message)) {
+                        return;
+                    }
+
+                    const token =
+                        document.querySelector(
+                            '#antiForgeryForm input[name="__RequestVerificationToken"]'
+                        ).value;
+
+                    const formData = new FormData();
+
+                    formData.append("trangThai", newStatus);
+                    formData.append("__RequestVerificationToken", token);
+
+                    try {
+
+                        const response = await fetch(
+                            `/admin/quan-ly-sanh/lich/${id}/trang-thai`,
+                            {
+                                method: "POST",
+                                body: formData
+                            }
+                        );
+
+                        const result = await response.json();
+
+                        if (!result.success) {
+                            alert(result.message);
+                            return;
+                        }
+
+                        // Reload để lấy dữ liệu mới nhất từ Backend
+                        window.location.reload();
+
+                    }
+                    catch (error) {
+
+                        alert("Không thể kết nối đến hệ thống.");
+
+                    }
+
+                });
+
+            });
+            const addHallModal =
+        document.getElementById("addHallModal");
+
+        const openAddHallModal =
+        document.getElementById("openAddHallModal");
+
+        const closeAddHallModal =
+        document.getElementById("closeAddHallModal");
+
+        const cancelAddHall =
+        document.getElementById("cancelAddHall");
+
+        const addHallForm =
+        document.getElementById("addHallForm");
+
+        const addHallError =
+        document.getElementById("addHallError");
+
+
+        function openHallModal() {
+        addHallModal.classList.add("show");
+        }
+
+
+        function closeHallModal() {
+        addHallModal.classList.remove("show");
+
+        addHallForm.reset();
+
+        addHallError.textContent = "";
+        }
+
+
+        openAddHallModal.addEventListener("click", function () {
+        openHallModal();
+        });
+
+
+        closeAddHallModal.addEventListener("click", function () {
+        closeHallModal();
+        });
+
+
+        cancelAddHall.addEventListener("click", function () {
+        closeHallModal();
+        });
+
+
+        addHallModal.addEventListener("click", function (event) {
+
+        if (event.target === addHallModal) {
+            closeHallModal();
+        }
+
+        });
+
+
+        addHallForm.addEventListener("submit", async function (event) {
+
+        event.preventDefault();
+
+        addHallError.textContent = "";
+
+        const formData =
+            new FormData(addHallForm);
+
+        const saveButton =
+            document.getElementById("saveHallButton");
+
+        saveButton.disabled = true;
+
+        saveButton.innerHTML =
+            '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+        try {
+
+            const response = await fetch(
+                "/admin/quan-ly-sanh/them",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+            const result = await response.json();
+
+            if (!result.success) {
+
+                addHallError.textContent =
+                    result.message;
+
+                return;
+            }
+
+            window.location.reload();
+
+        }
+        catch (error) {
+
+            addHallError.textContent =
+                "Không thể kết nối đến hệ thống.";
+
+        }
+        finally {
+
+            saveButton.disabled = false;
+
+            saveButton.innerHTML =
+                '<i class="fa-solid fa-floppy-disk"></i> Lưu sảnh tiệc';
+
+        }
+
+        });
+
+                const editHallModal =
+                document.getElementById("editHallModal");
+
+            const editHallForm =
+                document.getElementById("editHallForm");
+
+            const editHallButtons =
+                document.querySelectorAll(".btn-edit");
+
+            const closeEditHallModal =
+                document.getElementById("closeEditHallModal");
+
+            const cancelEditHall =
+                document.getElementById("cancelEditHall");
+
+            const editHallError =
+                document.getElementById("editHallError");
+
+
+            function closeEditModal() {
+
+                editHallModal.classList.remove("show");
+
+                editHallError.textContent = "";
+
+            }
+
+
+            editHallButtons.forEach(function (button) {
+
+                button.addEventListener("click", function () {
+
+                    document.getElementById("editSanhTiecID").value =
+                        button.dataset.id;
+
+                    document.getElementById("editMaSanh").value =
+                        button.dataset.ma ?? "";
+
+                    document.getElementById("editTenSanh").value =
+                        button.dataset.ten ?? "";
+
+                    document.getElementById("editSucChuaMin").value =
+                        button.dataset.min ?? "";
+
+                    document.getElementById("editSucChuaMax").value =
+                        button.dataset.max ?? "";
+
+                    document.getElementById("editGiaThue").value =
+                        button.dataset.gia ?? "";
+
+                    document.getElementById("editHinhAnh").value =
+                        button.dataset.hinh ?? "";
+
+                    document.getElementById("editMoTa").value =
+                        button.dataset.mota ?? "";
+
+                    document.getElementById("editTrangThai").value =
+                        button.dataset.trangthai ?? "";
+
+                    editHallError.textContent = "";
+
+                    editHallModal.classList.add("show");
+
+                });
+
+            });
+
+
+            closeEditHallModal.addEventListener("click", function () {
+                closeEditModal();
+            });
+
+
+            cancelEditHall.addEventListener("click", function () {
+                closeEditModal();
+            });
+
+
+            editHallModal.addEventListener("click", function (event) {
+
+                if (event.target === editHallModal) {
+                    closeEditModal();
+                }
+
+            });
+
+                    editHallForm.addEventListener("submit", async function (event) {
+
+                event.preventDefault();
+
+                editHallError.textContent = "";
+
+                const id =
+                    document.getElementById("editSanhTiecID").value;
+
+                const formData =
+                    new FormData(editHallForm);
+
+                const saveButton =
+                    document.getElementById("saveEditHallButton");
+
+                saveButton.disabled = true;
+
+                saveButton.innerHTML =
+                    '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+                try {
+
+                    const response = await fetch(
+                        `/admin/quan-ly-sanh/sua/${id}`,
+                        {
+                            method: "POST",
+                            body: formData
+                        }
+                    );
+
+                    const result = await response.json();
+
+                    if (!result.success) {
+
+                        editHallError.textContent =
+                            result.message;
+
+                        return;
+                    }
+
+                    window.location.reload();
+
+                }
+                catch (error) {
+
+                    editHallError.textContent =
+                        "Không thể kết nối đến hệ thống.";
+
+                }
+                finally {
+
+                    saveButton.disabled = false;
+
+                    saveButton.innerHTML =
+                        '<i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi';
+
+                }
+
+            });
+
+                    const statusHallModal =
+                document.getElementById("statusHallModal");
+
+            const statusHallForm =
+                document.getElementById("statusHallForm");
+
+            const statusHallButtons =
+                document.querySelectorAll(".btn-status");
+
+            const closeStatusHallModal =
+                document.getElementById("closeStatusHallModal");
+
+            const cancelStatusHall =
+                document.getElementById("cancelStatusHall");
+
+            const statusHallError =
+                document.getElementById("statusHallError");
+
+
+            function closeStatusModal() {
+
+                statusHallModal.classList.remove("show");
+
+                statusHallError.textContent = "";
+
+            }
+
+
+            statusHallButtons.forEach(function (button) {
+
+                button.addEventListener("click", function () {
+
+                    document.getElementById("statusSanhTiecID").value =
+                        button.dataset.id;
+
+                    document.getElementById("statusHallSelect").value =
+                        button.dataset.trangthai;
+
+                    document.getElementById("statusHallName").textContent =
+                        button.dataset.ten;
+
+                    statusHallError.textContent = "";
+
+                    statusHallModal.classList.add("show");
+
+                });
+
+            });
+
+
+            closeStatusHallModal.addEventListener("click", function () {
+                closeStatusModal();
+            });
+
+
+            cancelStatusHall.addEventListener("click", function () {
+                closeStatusModal();
+            });
+
+
+            statusHallModal.addEventListener("click", function (event) {
+
+                if (event.target === statusHallModal) {
+                    closeStatusModal();
+                }
+
+            });
+
+                    statusHallForm.addEventListener("submit", async function (event) {
+
+                event.preventDefault();
+
+                statusHallError.textContent = "";
+
+                const id =
+                    document.getElementById("statusSanhTiecID").value;
+
+                const formData =
+                    new FormData(statusHallForm);
+
+                const saveButton =
+                    document.getElementById("saveStatusHallButton");
+
+                saveButton.disabled = true;
+
+                saveButton.innerHTML =
+                    '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+                try {
+
+                    const response = await fetch(
+                        `/admin/quan-ly-sanh/trang-thai/${id}`,
+                        {
+                            method: "POST",
+                            body: formData
+                        }
+                    );
+
+                    const result = await response.json();
+
+                    if (!result.success) {
+
+                        statusHallError.textContent =
+                            result.message;
+
+                        return;
+                    }
+
+                    window.location.reload();
+
+                }
+                catch (error) {
+
+                    statusHallError.textContent =
+                        "Không thể kết nối đến hệ thống.";
+
+                }
+                finally {
+
+                    saveButton.disabled = false;
+
+                    saveButton.innerHTML =
+                        '<i class="fa-solid fa-floppy-disk"></i> Lưu trạng thái';
+
+                }
+
+            });
+
+                    const deleteHallButtons =
+                document.querySelectorAll(".btn-delete");
+
+            deleteHallButtons.forEach(function (button) {
+
+                button.addEventListener("click", async function () {
+
+                    const id = button.dataset.id;
+                    const tenSanh = button.dataset.ten;
+                    const trangThai = button.dataset.trangthai;
+
+                    // Chặn ngay trên giao diện
+                    if (trangThai === "Hoạt động") {
+
+                        alert(
+                            `Không thể xóa "${tenSanh}" vì sảnh đang ở trạng thái Hoạt động.\n\n` +
+                            `Hãy chuyển sảnh sang Bảo trì hoặc Ngừng hoạt động trước.`
+                        );
+
+                        return;
+                    }
+
+                    const xacNhan = confirm(
+                        `Bạn có chắc muốn xóa sảnh "${tenSanh}" không?\n\n` +
+                        `Nếu sảnh đã từng có booking, hệ thống sẽ không cho phép xóa.`
+                    );
+
+                    if (!xacNhan) {
+                        return;
+                    }
+
+                    const token =
+                        document.querySelector(
+                            '#antiForgeryForm input[name="__RequestVerificationToken"]'
+                        ).value;
+
+                    const formData = new FormData();
+
+                    formData.append(
+                        "__RequestVerificationToken",
+                        token
+                    );
+
+                    try {
+
+                        const response = await fetch(
+                            `/admin/quan-ly-sanh/xoa/${id}`,
+                            {
+                                method: "POST",
+                                body: formData
+                            }
+                        );
+
+                        const result = await response.json();
+
+                        if (!result.success) {
+
+                            alert(result.message);
+
+                            return;
+                        }
+
+                        alert(result.message);
+
+                        window.location.reload();
+
+                    }
+                    catch (error) {
+
+                        alert("Không thể kết nối đến hệ thống.");
+
+                    }
+
+                });
+
+            });
+
+    </script>
+}

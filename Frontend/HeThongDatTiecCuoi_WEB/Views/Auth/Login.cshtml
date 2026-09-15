@@ -1,0 +1,68 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+}
+
+<main class="auth-shell login-page">
+    <section class="auth-story" aria-label="Giới thiệu Riverside Palace">
+        <div class="brand-pill"><span></span> RIVERSIDE PALACE CONVENTION &amp; WEDDING CENTER</div>
+        <div class="story-content">
+            <div class="monogram">R</div>
+            <h1>Chào Mừng Trở Lại<br /><em>Riverside Palace</em></h1>
+            <p>Nền tảng quản lý tiệc cưới và tư vấn thông minh hàng đầu —<br />Nơi khoảnh khắc thăng hoa biến thành ký ức vĩnh cửu.</p>
+            <ul>
+                <li><b>♢</b><span>Bảo mật thông tin hợp đồng &amp; thanh toán chuẩn quốc tế</span></li>
+                <li><b>✣</b><span>Trợ lý AI tư vấn và theo dõi tiến độ sự kiện 24/7</span></li>
+                <li><b>☆</b><span>Đặc quyền chăm sóc khách hàng và ưu đãi sảnh tiệc hoàng gia</span></li>
+            </ul>
+        </div>
+        <small>© 2026 Riverside Palace. All rights reserved. Tiêu chuẩn dịch vụ hội nghị &amp; yến tiệc 5 sao.</small>
+    </section>
+
+    <section class="auth-form-side">
+        <div class="auth-card">
+            <div class="crest">★</div>
+            <h2>Đăng Nhập</h2>
+            <p class="subtitle">Vui lòng nhập thông tin để truy cập tài khoản và dịch vụ</p>
+
+            <form asp-action="Login" asp-controller="Auth" method="post" novalidate>
+                <input asp-for="ReturnUrl" type="hidden" />
+                <div asp-validation-summary="ModelOnly" class="alert-error"></div>
+
+                <div class="account-tabs" role="group" aria-label="Loại tài khoản">
+                    <button type="button" class="tab-button @(Model.LoaiTaiKhoan == "Customer" ? "active" : "")" data-account-type="Customer">Khách hàng / Chủ tiệc</button>
+                    <button type="button" class="tab-button @(Model.LoaiTaiKhoan == "Staff" ? "active" : "")" data-account-type="Staff">Cán bộ nhân viên</button>
+                </div>
+                <input asp-for="LoaiTaiKhoan" type="hidden" id="accountType" />
+
+                <div class="field">
+                    <label asp-for="DinhDanh">EMAIL HOẶC SỐ ĐIỆN THOẠI <i>*</i></label>
+                    <div class="input-wrap"><span>✉</span><input asp-for="DinhDanh" placeholder="example@email.com hoặc 0903xxxxxx" autocomplete="username" /></div>
+                    <span asp-validation-for="DinhDanh" class="field-error"></span>
+                </div>
+
+                <div class="field">
+                    <label asp-for="MatKhau">MẬT KHẨU <i>*</i></label>
+                    <div class="input-wrap"><span>♙</span><input asp-for="MatKhau" placeholder="••••••••••••" autocomplete="current-password" /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu">◉</button></div>
+                    <span asp-validation-for="MatKhau" class="field-error"></span>
+                </div>
+
+                <div class="form-row between compact">
+                    <label class="check"><input asp-for="GhiNhoDangNhap" /> <span>Ghi nhớ phiên đăng nhập</span></label>
+                    <span class="muted-link" title="Tính năng sẽ được triển khai ở giai đoạn 2">Quên mật khẩu?</span>
+                </div>
+
+                <button class="primary-button" type="submit">Đăng Nhập <span>→</span></button>
+
+                <div class="divider"><span>HOẶC TIẾP TỤC VỚI</span></div>
+                <button class="google-button" type="button" disabled title="Google Login thuộc giai đoạn 2"><b>G</b> Đăng nhập nhanh với Google</button>
+                <p class="switch-page">Chưa có tài khoản? <a asp-action="Register">Đăng ký tài khoản mới ngay</a></p>
+            </form>
+            <footer>Hotline hỗ trợ: <strong>0933 777 888</strong> <span>│</span> 360D Bến Vân Đồn, P.1, Q.4, TP.HCM</footer>
+        </div>
+    </section>
+</main>

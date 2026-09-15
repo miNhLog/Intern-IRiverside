@@ -1,0 +1,364 @@
+﻿@{
+    var activeMenu = ViewData["ActiveMenu"]?.ToString() ?? "";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        @ViewData["Title"] - IRevirsidePlace
+    </title>
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <link rel="stylesheet"
+          href="~/css/admin-sanh.css"
+          asp-append-version="true" />
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+
+
+<body>
+
+    <div class="admin-layout">
+
+        <!-- =========================
+             SIDEBAR DÙNG CHUNG
+             ========================= -->
+        <aside class="sidebar"
+               id="adminSidebar">
+
+            <!-- BRAND -->
+            <div class="brand">
+
+                <div class="brand-icon">
+                    <i class="fa-solid fa-crown"></i>
+                </div>
+
+                <div class="brand-text">
+                    <h1>IRevirsidePlace</h1>
+                    <span>Hệ thống quản trị</span>
+                </div>
+
+                <button type="button"
+                        class="sidebar-toggle"
+                        id="sidebarToggle"
+                        title="Đóng / mở thanh điều hướng">
+
+                    <i class="fa-solid fa-bars"
+                       id="sidebarToggleIcon"></i>
+
+                </button>
+
+            </div>
+
+
+            <!-- MASTER DATA -->
+            <div class="menu-title">
+                Hệ thống Master Data
+            </div>
+
+            <nav class="menu">
+
+                <a asp-controller="AdminSanh"
+                   asp-action="Index"
+                   data-tooltip="Quản lý Sảnh & Lịch"
+                   class="menu-item @(activeMenu == "Sanh" ? "active" : "")">
+
+                    <i class="fa-solid fa-hotel"></i>
+
+                    <span>
+                        Quản lý Sảnh & Lịch
+                    </span>
+
+                </a>
+
+
+                <button type="button"
+                        data-tooltip="Thực đơn & Ẩm thực"
+                        class="menu-item developing">
+
+                    <i class="fa-solid fa-utensils"></i>
+
+                    <span>
+                        Thực đơn & Ẩm thực
+                    </span>
+
+                </button>
+
+
+                <button type="button"
+                        data-tooltip="Gói Decor & Dịch vụ"
+                        class="menu-item developing">
+
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+
+                    <span>
+                        Gói Decor & Dịch vụ
+                    </span>
+
+                </button>
+
+
+                <button type="button"
+                        data-tooltip="Bảng giá & Chính sách"
+                        class="menu-item developing">
+
+                    <i class="fa-solid fa-tags"></i>
+
+                    <span>
+                        Bảng giá & Chính sách
+                    </span>
+
+                </button>
+
+            </nav>
+
+
+            <!-- NGHIỆP VỤ -->
+            <div class="menu-title second">
+                Nghiệp vụ & Giám sát
+            </div>
+
+
+            <nav class="menu">
+
+                <button type="button"
+                        data-tooltip="Báo cáo doanh thu & BI"
+                        class="menu-item developing">
+
+                    <i class="fa-solid fa-chart-line"></i>
+
+                    <span>
+                        Báo cáo doanh thu & BI
+                    </span>
+
+                </button>
+
+
+                <!-- Sau khi tạo AdminTaiKhoanController,
+                     đổi href="#" thành asp-controller="AdminTaiKhoan"
+                     asp-action="Index" -->
+                <a asp-controller="AdminTaiKhoan"
+                   asp-action="Index"
+                   class="menu-item @(ViewData["ActiveMenu"]?.ToString() == "TaiKhoan" ? "active" : "")"
+                   data-tooltip="Phân quyền tài khoản">
+
+                    <i class="fa-solid fa-user-shield"></i>
+
+                    <span>Phân quyền tài khoản</span>
+                </a>
+
+
+                <button type="button"
+                        data-tooltip="Lịch sử kiểm toán"
+                        class="menu-item developing">
+
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+
+                    <span>
+                        Lịch sử kiểm toán
+                    </span>
+
+                </button>
+
+            </nav>
+
+
+            <!-- USER -->
+            <div class="sidebar-user">
+
+                <div class="avatar">
+                    AD
+                </div>
+
+                <div class="user-info">
+
+                    <strong>
+                        @User.Identity?.Name
+                    </strong>
+
+                    <span>
+                        Quản trị viên
+                    </span>
+
+                </div>
+
+
+                <form method="post"
+                      action="/dang-xuat">
+
+                    @Html.AntiForgeryToken()
+
+                    <button type="submit"
+                            class="logout-button"
+                            title="Đăng xuất">
+
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </aside>
+
+
+        <!-- =========================
+             NỘI DUNG TỪNG TRANG ADMIN
+             ========================= -->
+        <main class="main-content">
+
+            @RenderBody()
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================
+         TOAST DÙNG CHUNG
+         ========================= -->
+    <div id="globalToast"
+         class="toast">
+
+        Chức năng đang phát triển
+
+    </div>
+
+
+    <!-- =========================
+         SCRIPT DÙNG CHUNG
+         ========================= -->
+    <script>
+
+        /*
+         * ==========================================================
+         * 1. THÔNG BÁO "ĐANG PHÁT TRIỂN"
+         * ==========================================================
+         */
+
+        const developingButtons =
+            document.querySelectorAll(".developing");
+
+        const globalToast =
+            document.getElementById("globalToast");
+
+
+        developingButtons.forEach(function (button) {
+
+            button.addEventListener("click", function () {
+
+                globalToast.classList.add("show");
+
+                setTimeout(function () {
+
+                    globalToast.classList.remove("show");
+
+                }, 2000);
+
+            });
+
+        });
+
+
+        /*
+         * ==========================================================
+         * 2. THU GỌN / MỞ RỘNG SIDEBAR
+         * ==========================================================
+         */
+
+        const adminSidebar =
+            document.getElementById("adminSidebar");
+
+        const mainContent =
+            document.querySelector(".main-content");
+
+        const sidebarToggle =
+            document.getElementById("sidebarToggle");
+
+        const sidebarToggleIcon =
+            document.getElementById("sidebarToggleIcon");
+
+
+        function applySidebarState(collapsed) {
+
+            if (collapsed) {
+
+                adminSidebar.classList.add("collapsed");
+                mainContent.classList.add("expanded");
+
+                sidebarToggle.title =
+                    "Mở rộng thanh điều hướng";
+
+            }
+            else {
+
+                adminSidebar.classList.remove("collapsed");
+                mainContent.classList.remove("expanded");
+
+                sidebarToggle.title =
+                    "Thu gọn thanh điều hướng";
+
+            }
+        }
+
+
+        /*
+         * Đọc trạng thái sidebar đã lưu.
+         * Nếu trước đó Admin đã thu gọn sidebar thì khi reload/chuyển trang
+         * sidebar vẫn tiếp tục ở trạng thái thu gọn.
+         */
+        const savedSidebarState =
+            localStorage.getItem(
+                "iRevirsidePlaceSidebarCollapsed"
+            );
+
+
+        applySidebarState(
+            savedSidebarState === "true"
+        );
+
+
+        /*
+         * Click nút đóng/mở sidebar.
+         */
+        sidebarToggle.addEventListener(
+            "click",
+            function () {
+
+                const collapsed =
+                    !adminSidebar.classList.contains(
+                        "collapsed"
+                    );
+
+                applySidebarState(collapsed);
+
+                localStorage.setItem(
+                    "iRevirsidePlaceSidebarCollapsed",
+                    collapsed
+                );
+
+            }
+        );
+
+    </script>
+
+
+    <!-- =========================
+         SCRIPT RIÊNG CỦA TỪNG VIEW
+         ========================= -->
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+
+</html>
