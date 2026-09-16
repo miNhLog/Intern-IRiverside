@@ -62,7 +62,7 @@ select {
     font-size: 15px;
 }
 
-.brand span {
+.brand > .brand-text span {
     display: block;
     margin-top: 3px;
     color: #d4af37;
@@ -115,12 +115,13 @@ select {
         border-left: 4px solid #d4af37;
     }
 
-    .menu-item i {
+    .menu-item .heroicon {
         width: 18px;
+        height: 18px;
         text-align: center;
     }
 
-    .menu-item.active i {
+    .menu-item.active .heroicon {
         color: #d4af37;
     }
 
@@ -1208,8 +1209,9 @@ select {
         transform: scale(1.05);
     }
 
-    .sidebar-toggle i {
-        font-size: 16px;
+    .sidebar-toggle .heroicon {
+        width: 18px;
+        height: 18px;
     }
 
 
@@ -1272,10 +1274,10 @@ select {
     position: relative;
 }
 
-    .sidebar.collapsed .menu-item i {
+    .sidebar.collapsed .menu-item .heroicon {
         width: auto;
+        height: 18px;
         margin: 0;
-        font-size: 17px;
     }
 
 

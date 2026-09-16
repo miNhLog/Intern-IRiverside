@@ -1,6 +1,7 @@
 ﻿using HeThongDatTiecCuoi_WEB.Models.AdminSanh;
 using HeThongDatTiecCuoi_WEB.Models.Auth;
 using HeThongDatTiecCuoi_WEB.Models.AdminTaiKhoan;
+using HeThongDatTiecCuoi_WEB.Models.AdminGoiTrangTriDichVu;
 namespace HeThongDatTiecCuoi_WEB.Services;
 
 public interface IRiversideApiClient
@@ -102,4 +103,64 @@ public interface IRiversideApiClient
     string trangThai,
     string accessToken,
     CancellationToken cancellationToken);
+
+    // Gói trang trí
+    Task<ApiCallResult<List<GoiTrangTriDto>>> GetDanhSachGoiTrangTriAsync(
+        string accessToken,
+        string? tuKhoa,
+        string? phongCach,
+        string? trangThai,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<GoiTrangTriDto>> GetGoiTrangTriByIdAsync(
+        int id,
+        string accessToken,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<GoiTrangTriDto>> CreateGoiTrangTriAsync(
+        GoiTrangTriFormModel model,
+        string accessToken,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<GoiTrangTriDto>> UpdateGoiTrangTriAsync(
+        int id,
+        GoiTrangTriFormModel model,
+        string accessToken,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<GoiTrangTriDto>> UpdateTrangThaiGoiTrangTriAsync(
+        int id,
+        string trangThai,
+        string accessToken,
+        CancellationToken cancellationToken);
+
+    // Dịch vụ
+    Task<ApiCallResult<List<DichVuDto>>> GetDanhSachDichVuAsync(
+        string accessToken,
+        string? tuKhoa,
+        string? loaiDichVu,
+        string? trangThai,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<DichVuDto>> GetDichVuByIdAsync(
+        int id,
+        string accessToken,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<DichVuDto>> CreateDichVuAsync(
+        DichVuFormModel model,
+        string accessToken,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<DichVuDto>> UpdateDichVuAsync(
+        int id,
+        DichVuFormModel model,
+        string accessToken,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<DichVuDto>> UpdateTrangThaiDichVuAsync(
+        int id,
+        string trangThai,
+        string accessToken,
+        CancellationToken cancellationToken);
 }

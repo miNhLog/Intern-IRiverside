@@ -1,9 +1,14 @@
 using HeThongDatTiecCuoi_WEB.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 6 * 1024 * 1024;
+});
 builder.Services.AddHttpContextAccessor();
 builder.Services
     .AddHttpClient<IRiversideApiClient, RiversideApiClient>(client =>

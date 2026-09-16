@@ -15,8 +15,15 @@ public sealed record AuthResponseDto(
 
 public sealed record ApiErrorDto(string Message, Dictionary<string, string[]>? Errors = null);
 
-public sealed record ApiCallResult<T>(bool Succeeded, T? Value, string? Error)
+public sealed record ApiCallResult<T>(
+    bool Succeeded,
+    T? Value,
+    string? Error,
+    Dictionary<string, string[]>? Errors = null)
 {
-    public static ApiCallResult<T> Success(T value) => new(true, value, null);
-    public static ApiCallResult<T> Failure(string error) => new(false, default, error);
+    public static ApiCallResult<T> Success(T value) => new(true, value, null, null);
+    public static ApiCallResult<T> Failure(
+        string error,
+        Dictionary<string, string[]>? errors = null) =>
+        new(false, default, error, errors);
 }

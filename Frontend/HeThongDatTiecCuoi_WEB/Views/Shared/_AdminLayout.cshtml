@@ -12,11 +12,8 @@
           content="width=device-width, initial-scale=1.0" />
 
     <title>
-        @ViewData["Title"] - IRevirsidePlace
+        @ViewData["Title"] - Riverside Palace
     </title>
-
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <link rel="stylesheet"
           href="~/css/admin-sanh.css"
@@ -40,12 +37,12 @@
             <div class="brand">
 
                 <div class="brand-icon">
-                    <i class="fa-solid fa-crown"></i>
+                    @await Html.PartialAsync("_HeroIcon", new { Name = "sparkles", Class = "heroicon" })
                 </div>
 
                 <div class="brand-text">
-                    <h1>IRevirsidePlace</h1>
-                    <span>Hệ thống quản trị</span>
+                        <h1>RIVERSIDE PALACE</h1>
+                        <span>Quản Trị Hệ Thống</span>
                 </div>
 
                 <button type="button"
@@ -53,8 +50,7 @@
                         id="sidebarToggle"
                         title="Đóng / mở thanh điều hướng">
 
-                    <i class="fa-solid fa-bars"
-                       id="sidebarToggleIcon"></i>
+                    <span id="sidebarToggleIcon">@await Html.PartialAsync("_HeroIcon", new { Name = "bars-3", Class = "heroicon" })</span>
 
                 </button>
 
@@ -73,7 +69,7 @@
                    data-tooltip="Quản lý Sảnh & Lịch"
                    class="menu-item @(activeMenu == "Sanh" ? "active" : "")">
 
-                    <i class="fa-solid fa-hotel"></i>
+                    @await Html.PartialAsync("_HeroIcon", new { Name = "hotel", Class = "heroicon" })
 
                     <span>
                         Quản lý Sảnh & Lịch
@@ -86,7 +82,7 @@
                         data-tooltip="Thực đơn & Ẩm thực"
                         class="menu-item developing">
 
-                    <i class="fa-solid fa-utensils"></i>
+                    @await Html.PartialAsync("_HeroIcon", new { Name = "utensils", Class = "heroicon" })
 
                     <span>
                         Thực đơn & Ẩm thực
@@ -95,24 +91,26 @@
                 </button>
 
 
-                <button type="button"
-                        data-tooltip="Gói Decor & Dịch vụ"
-                        class="menu-item developing">
+                <a asp-controller="AdminGoiTrangTriDichVu"
+                   asp-action="Index"
+                   data-tooltip="Gói Decor & Dịch vụ"
+                   aria-current="@(activeMenu == "GoiTrangTriDichVu" ? "page" : null)"
+                   class="menu-item @(activeMenu == "GoiTrangTriDichVu" ? "active" : "")">
 
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    @await Html.PartialAsync("_HeroIcon", new { Name = "sparkles", Class = "heroicon" })
 
                     <span>
                         Gói Decor & Dịch vụ
                     </span>
 
-                </button>
+                </a>
 
 
                 <button type="button"
                         data-tooltip="Bảng giá & Chính sách"
                         class="menu-item developing">
 
-                    <i class="fa-solid fa-tags"></i>
+                    @await Html.PartialAsync("_HeroIcon", new { Name = "tag", Class = "heroicon" })
 
                     <span>
                         Bảng giá & Chính sách
@@ -135,7 +133,7 @@
                         data-tooltip="Báo cáo doanh thu & BI"
                         class="menu-item developing">
 
-                    <i class="fa-solid fa-chart-line"></i>
+                    @await Html.PartialAsync("_HeroIcon", new { Name = "chart", Class = "heroicon" })
 
                     <span>
                         Báo cáo doanh thu & BI
@@ -152,7 +150,7 @@
                    class="menu-item @(ViewData["ActiveMenu"]?.ToString() == "TaiKhoan" ? "active" : "")"
                    data-tooltip="Phân quyền tài khoản">
 
-                    <i class="fa-solid fa-user-shield"></i>
+                    @await Html.PartialAsync("_HeroIcon", new { Name = "user-shield", Class = "heroicon" })
 
                     <span>Phân quyền tài khoản</span>
                 </a>
@@ -162,7 +160,7 @@
                         data-tooltip="Lịch sử kiểm toán"
                         class="menu-item developing">
 
-                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    @await Html.PartialAsync("_HeroIcon", new { Name = "clock", Class = "heroicon" })
 
                     <span>
                         Lịch sử kiểm toán
@@ -202,7 +200,7 @@
                             class="logout-button"
                             title="Đăng xuất">
 
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        @await Html.PartialAsync("_HeroIcon", new { Name = "arrow-right-start", Class = "heroicon" })
 
                     </button>
 

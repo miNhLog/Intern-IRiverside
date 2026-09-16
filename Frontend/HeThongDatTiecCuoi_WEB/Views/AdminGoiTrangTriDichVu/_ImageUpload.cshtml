@@ -1,0 +1,41 @@
+@model dynamic
+
+@{
+    var prefix = (string)Model.Prefix;
+    var label = prefix == "goi" ? "gói Decor" : "dịch vụ";
+    var dropzoneId = prefix == "goi" ? "dropzoneGoiDecor" : "dropzoneDichVu";
+    var fileId = prefix == "goi" ? "hinhAnhFileGoi" : "hinhAnhFileDich";
+    var uploadContentId = prefix == "goi" ? "uploadContentGoi" : "uploadContentDich";
+    var previewBoxId = prefix == "goi" ? "previewBoxGoi" : "previewBoxDich";
+    var previewImageId = prefix == "goi" ? "previewImgGoi" : "previewImgDich";
+    var removeImageId = prefix == "goi" ? "btnRemoveImgGoi" : "btnRemoveImgDich";
+    var currentPreviewId = prefix == "goi" ? "currentPreviewGoi" : "currentPreviewDich";
+    var currentImageId = prefix == "goi" ? "currentImgGoi" : "currentImgDich";
+    var uploadErrorId = prefix == "goi" ? "uploadErrorGoi" : "uploadErrorDich";
+    var removeNoticeId = prefix == "goi" ? "removeNoticeGoi" : "removeNoticeDich";
+    var selectedNameId = prefix == "goi" ? "selectedNameGoi" : "selectedNameDich";
+    var selectedDimensionsId = prefix == "goi" ? "selectedDimensionsGoi" : "selectedDimensionsDich";
+    var selectedSizeId = prefix == "goi" ? "selectedSizeGoi" : "selectedSizeDich";
+}
+
+<div class="image-upload" data-image-upload="@prefix">
+    <div id="@dropzoneId" class="upload-dropzone image-dropzone" role="button" tabindex="0" aria-describedby="@(prefix)UploadHelp">
+        <div class="upload-content" id="@uploadContentId">
+            @await Html.PartialAsync("_HeroIcon", new { Name = "cloud-arrow-up", Class = "heroicon heroicon-upload" })
+            <p class="upload-title">Kéo thả ảnh vào đây hoặc <span class="btn-choose-file">Chọn từ máy tính</span></p>
+            <span class="upload-hint" id="@(prefix)UploadHelp">Hỗ trợ JPG, PNG, WebP (Tối đa 5MB)</span>
+        </div>
+        <div id="@previewBoxId" class="preview-box image-preview" hidden>
+            <img id="@previewImageId" alt="Ảnh xem trước" />
+            <div class="preview-meta"><strong id="@selectedNameId"></strong><span><span id="@selectedDimensionsId">Đang đọc kích thước</span> · <span id="@selectedSizeId"></span></span><em>Tệp hợp lệ · Sẵn sàng tải lên</em></div>
+            <button type="button" id="@removeImageId" class="btn-remove-preview preview-remove" aria-label="Gỡ ảnh @label">Gỡ ảnh</button>
+        </div>
+        <input id="@fileId" name="HinhAnhFile" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Chọn ảnh đại diện cho @label" />
+    </div>
+    <div id="@uploadErrorId" class="upload-error" role="alert" hidden></div>
+    <div id="@currentPreviewId" class="image-preview current-preview" hidden>
+        <img id="@currentImageId" alt="" />
+        <div class="preview-meta"><strong>Ảnh hiện tại</strong><span>Không chọn ảnh mới sẽ giữ nguyên ảnh này.</span></div>
+    </div>
+    <div id="@removeNoticeId" class="remove-notice" role="status" hidden>Ảnh hiện tại sẽ được gỡ khi lưu.</div>
+</div>

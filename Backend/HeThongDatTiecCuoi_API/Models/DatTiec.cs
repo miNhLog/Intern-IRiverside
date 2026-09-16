@@ -45,4 +45,8 @@ public sealed class DatTiec
     public KhachHang KhachHang { get; set; } = null!;
 
     public LichSanh LichSanh { get; set; } = null!;
+
+    public GoiTrangTri? GoiTrangTri { get; set; }
+
+    public ICollection<DatTiecDichVu> DatTiecDichVus { get; set; } = new List<DatTiecDichVu>();
 }

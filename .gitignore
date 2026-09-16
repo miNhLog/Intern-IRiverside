@@ -366,3 +366,7 @@ FodyWeavers.xsd
 /.opencode/
 /.stitch/
 /AGENTS.md
+
+# UC04 runtime image uploads (sample images and provenance remain trackable)
+/Frontend/HeThongDatTiecCuoi_WEB/wwwroot/assets/images/goi-decor/uploads/
+/Frontend/HeThongDatTiecCuoi_WEB/wwwroot/assets/images/dich-vu/uploads/

@@ -17,6 +17,9 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<NhanVien> NhanVien => Set<NhanVien>();
     public DbSet<LichSanh> LichSanh => Set<LichSanh>();
     public DbSet<DatTiec> DatTiec => Set<DatTiec>();
+    public DbSet<GoiTrangTri> GoiTrangTri => Set<GoiTrangTri>();
+    public DbSet<DichVu> DichVu => Set<DichVu>();
+    public DbSet<DatTiecDichVu> DatTiecDichVu => Set<DatTiecDichVu>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -172,6 +175,100 @@ public sealed class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.LichSanhID)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.GoiTrangTri)
+                .WithMany(x => x.DatTiecs)
+                .HasForeignKey(x => x.GoiTrangTriID)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<GoiTrangTri>(entity =>
+        {
+            entity.ToTable("GoiTrangTri", table =>
+            {
+                table.HasCheckConstraint("CK_GoiTrangTri_Gia", "[Gia] >= 0");
+                table.HasCheckConstraint(
+                    "CK_GoiTrangTri_TrangThai",
+                    "[TrangThai] IN (N'Áp dụng', N'Ngừng áp dụng')");
+            });
+
+            entity.HasKey(x => x.GoiTrangTriID);
+            entity.Property(x => x.MaGoi).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.TenGoi).HasMaxLength(150).IsRequired();
+            entity.Property(x => x.PhongCach).HasMaxLength(100);
+            entity.Property(x => x.MoTa).HasColumnType("nvarchar(max)");
+            entity.Property(x => x.HinhAnh).HasMaxLength(500);
+            entity.Property(x => x.Gia)
+                .HasColumnType("decimal(18,2)");
+            entity.Property(x => x.TrangThai)
+                .HasMaxLength(50)
+                .IsRequired()
+                .HasDefaultValue("Áp dụng");
+
+            entity.HasIndex(x => x.MaGoi)
+                .IsUnique()
+                .HasDatabaseName("UQ_GoiTrangTri_MaGoi");
+        });
+
+        modelBuilder.Entity<DichVu>(entity =>
+        {
+            entity.ToTable("DichVu", table =>
+            {
+                table.HasCheckConstraint("CK_DichVu_Gia", "[Gia] >= 0");
+                table.HasCheckConstraint(
+                    "CK_DichVu_TrangThai",
+                    "[TrangThai] IN (N'Áp dụng', N'Ngừng áp dụng')");
+            });
+
+            entity.HasKey(x => x.DichVuID);
+            entity.Property(x => x.MaDichVu).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.TenDichVu).HasMaxLength(150).IsRequired();
+            entity.Property(x => x.LoaiDichVu).HasMaxLength(100);
+            entity.Property(x => x.MoTa).HasColumnType("nvarchar(max)");
+            entity.Property(x => x.Gia)
+                .HasColumnType("decimal(18,2)");
+            entity.Property(x => x.HinhAnh).HasMaxLength(500);
+            entity.Property(x => x.TrangThai)
+                .HasMaxLength(50)
+                .IsRequired()
+                .HasDefaultValue("Áp dụng");
+
+            entity.HasIndex(x => x.MaDichVu)
+                .IsUnique()
+                .HasDatabaseName("UQ_DichVu_MaDichVu");
+        });
+
+        modelBuilder.Entity<DatTiecDichVu>(entity =>
+        {
+            entity.ToTable("DatTiec_DichVu", table =>
+            {
+                table.HasCheckConstraint("CK_DatTiecDichVu_SoLuong", "[SoLuong] > 0");
+                table.HasCheckConstraint("CK_DatTiecDichVu_DonGia", "[DonGiaChot] >= 0");
+            });
+
+            entity.HasKey(x => x.DatTiecDichVuID);
+
+            entity.Property(x => x.SoLuong)
+                .IsRequired()
+                .HasDefaultValue(1);
+            entity.Property(x => x.DonGiaChot)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired();
+            entity.Property(x => x.GhiChu).HasMaxLength(500);
+
+            entity.HasIndex(x => new { x.DatTiecID, x.DichVuID })
+                .IsUnique()
+                .HasDatabaseName("UQ_DatTiecDichVu_DatTiec_DichVu");
+
+            entity.HasOne(x => x.DatTiec)
+                .WithMany(x => x.DatTiecDichVus)
+                .HasForeignKey(x => x.DatTiecID)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(x => x.DichVu)
+                .WithMany(x => x.DatTiecDichVus)
+                .HasForeignKey(x => x.DichVuID)
+                .OnDelete(DeleteBehavior.NoAction);
         });
     }
 }

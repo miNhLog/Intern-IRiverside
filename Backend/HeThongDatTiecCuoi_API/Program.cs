@@ -6,6 +6,7 @@ using HeThongDatTiecCuoi_API.Models;
 using HeThongDatTiecCuoi_API.Options;
 using HeThongDatTiecCuoi_API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 6 * 1024 * 1024;
+});
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
@@ -41,6 +46,13 @@ builder.Services
     .AddOptions<JwtOptions>()
     .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
     .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services
+    .AddOptions<ImageStorageOptions>()
+    .Bind(builder.Configuration.GetSection(ImageStorageOptions.SectionName))
+    .ValidateDataAnnotations()
+    .Validate(options => Path.IsPathFullyQualified(options.RootPath),
+        "ImageStorage:RootPath phải là đường dẫn tuyệt đối.")
     .ValidateOnStart();
 builder.Services.Configure<DevelopmentAccountsOptions>(
     builder.Configuration.GetSection(DevelopmentAccountsOptions.SectionName));
@@ -71,6 +83,7 @@ builder.Services.AddScoped<IPasswordHasher<NguoiDung>, PasswordHasher<NguoiDung>
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<DevelopmentAuthSeeder>();
+builder.Services.AddSingleton<IImageStorage, LocalImageStorage>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
@@ -124,6 +137,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+_ = app.Services.GetRequiredService<IImageStorage>();
 
 if (app.Environment.IsDevelopment())
 {

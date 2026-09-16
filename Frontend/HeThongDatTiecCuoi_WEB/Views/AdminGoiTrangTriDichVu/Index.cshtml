@@ -1,0 +1,353 @@
+@model HeThongDatTiecCuoi_WEB.Models.AdminGoiTrangTriDichVu.QuanLyGoiTrangTriDichVuViewModel
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Gói Decor & Dịch vụ";
+    ViewData["ActiveMenu"] = "GoiTrangTriDichVu";
+
+    string StatusClass(string status) => status == "Áp dụng" ? "is-active" : "is-inactive";
+    string? ManagedImage(string? path) => path?.StartsWith("/assets/images/", StringComparison.Ordinal) == true ? path : null;
+    var decorFallbackImages = new[]
+    {
+        "/assets/images/goi-decor/hoang-kim-mong-diep.jpg",
+        "/assets/images/goi-decor/ngoc-luc-thanh-khiet.jpg",
+        "/assets/images/goi-decor/vuon-hong-paris.jpg",
+        "/assets/images/goi-decor/hoang-kim-da-yen-cover.jpg"
+    };
+    var serviceFallbackImages = new[]
+    {
+        "/assets/images/dich-vu/am-thanh-line-array.jpg",
+        "/assets/images/dich-vu/anh-sang-beam.jpg",
+        "/assets/images/dich-vu/dan-nhac-thinh-phong.jpg",
+        "/assets/images/dich-vu/man-hinh-led.jpg",
+        "/assets/images/dich-vu/mc-song-ngu.jpg"
+    };
+    var decorActiveCount = Model.DanhSachGoiTrangTri.Count(item => item.TrangThai == "Áp dụng");
+    var serviceActiveCount = Model.DanhSachDichVu.Count(item => item.TrangThai == "Áp dụng");
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/css/admin-goi-trang-tri-dich-vu.css" asp-append-version="true" />
+}
+
+<div class="catalog-admin">
+    <header class="catalog-header">
+        <div class="catalog-heading">
+            <div class="breadcrumb"><span>Quản trị Master Data</span>@await Html.PartialAsync("_HeroIcon", new { Name = "chevron-right", Class = "heroicon heroicon-xs" })<strong>Gói Decor &amp; Dịch vụ</strong></div>
+            <h2>Quản Trị Danh Mục Gói Decor &amp; Dịch Vụ Đi Kèm</h2>
+            <p class="catalog-lead">Hình ảnh, định mức giá và dịch vụ được quản lý tập trung cho từng phương án tiệc.</p>
+        </div>
+        <div class="header-actions">
+            <div class="header-status"><span class="status-dot" aria-hidden="true"></span><span>Hệ thống sẵn sàng</span><b>•</b><span>@(Model.ActiveTab == "dich-vu" ? Model.DanhSachDichVu.Count : Model.DanhSachGoiTrangTri.Count) cấu hình</span></div>
+            <button type="button" class="header-icon-button" aria-label="Thông báo">@await Html.PartialAsync("_HeroIcon", new { Name = "bell", Class = "heroicon" })<span aria-hidden="true"></span></button>
+            <button type="button" class="header-export">@await Html.PartialAsync("_HeroIcon", new { Name = "arrow-down-tray", Class = "heroicon" }) Xuất biểu mẫu Excel</button>
+        </div>
+    </header>
+
+    <section class="catalog-content" aria-label="Quản lý gói decor và dịch vụ">
+        <nav class="catalog-tabs" role="tablist" aria-label="Nhóm danh mục">
+            <button type="button" role="tab" id="tab-goi-trang-tri" aria-controls="panel-goi-trang-tri" aria-selected="@(Model.ActiveTab == "goi-trang-tri" ? "true" : "false")" data-tab="goi-trang-tri">
+                @await Html.PartialAsync("_HeroIcon", new { Name = "sparkles", Class = "heroicon" })<span>Gói Decor Tiệc</span><span class="tab-count">@Model.DanhSachGoiTrangTri.Count</span>
+            </button>
+            <button type="button" role="tab" id="tab-dich-vu" aria-controls="panel-dich-vu" aria-selected="@(Model.ActiveTab == "dich-vu" ? "true" : "false")" data-tab="dich-vu">
+                @await Html.PartialAsync("_HeroIcon", new { Name = "sparkles", Class = "heroicon" })<span>Dịch Vụ Đi Kèm</span><span class="tab-count">@Model.DanhSachDichVu.Count</span>
+            </button>
+        </nav>
+
+        <div class="catalog-workspace">
+            <section id="panel-goi-trang-tri" class="catalog-panel" role="tabpanel" aria-labelledby="tab-goi-trang-tri" @(Model.ActiveTab != "goi-trang-tri" ? "hidden" : null)>
+                <div class="catalog-toolbar">
+                    <form method="get" class="catalog-filter" action="/admin/quan-ly-goi-trang-tri-dich-vu">
+                        <input type="hidden" name="tab" value="goi-trang-tri" />
+                        <label class="filter-search"><span>Từ khóa</span><div>@await Html.PartialAsync("_HeroIcon", new { Name = "magnifying-glass", Class = "heroicon heroicon-search" })<input type="search" name="goiTuKhoa" value="@Model.GoiTuKhoa" placeholder="Tìm mã gói, tên chủ đề decor..." /></div></label>
+                        <label><span>Phong cách</span><select name="goiPhongCach"><option value="">Tất cả phong cách (5)</option><option value="Hoàng gia (Royal Luxury)" selected="@(Model.GoiPhongCach == "Hoàng gia (Royal Luxury)" ? "selected" : null)">Hoàng gia (Royal Luxury)</option><option value="Tối giản &amp; Hiện đại (Minimalist)" selected="@(Model.GoiPhongCach == "Tối giản &amp; Hiện đại (Minimalist)" ? "selected" : null)">Tối giản &amp; Hiện đại (Minimalist)</option><option value="Cổ điển (Vintage Romance)" selected="@(Model.GoiPhongCach == "Cổ điển (Vintage Romance)" ? "selected" : null)">Cổ điển (Vintage Romance)</option><option value="Dạ khúc Ánh sao (Celestial)" selected="@(Model.GoiPhongCach == "Dạ khúc Ánh sao (Celestial)" ? "selected" : null)">Dạ khúc Ánh sao (Celestial)</option><option value="Sang trọng bờ sông (Riverside Luxe)" selected="@(Model.GoiPhongCach == "Sang trọng bờ sông (Riverside Luxe)" ? "selected" : null)">Sang trọng bờ sông (Riverside Luxe)</option></select></label>
+                        <label><span>Trạng thái</span><select name="goiTrangThai"><option value="">Tất cả</option><option value="Áp dụng" selected="@(Model.GoiTrangThai == "Áp dụng" ? "selected" : null)">Áp dụng</option><option value="Ngừng áp dụng" selected="@(Model.GoiTrangThai == "Ngừng áp dụng" ? "selected" : null)">Ngừng áp dụng</option></select></label>
+                        <button class="catalog-button secondary" type="submit">@await Html.PartialAsync("_HeroIcon", new { Name = "funnel", Class = "heroicon" }) Lọc</button>
+                        <a class="catalog-button subtle" href="?tab=goi-trang-tri">@await Html.PartialAsync("_HeroIcon", new { Name = "arrow-path", Class = "heroicon" }) Đặt lại</a>
+                    </form>
+                    <button class="catalog-button primary" type="button" data-open-form="goi" data-mode="create">@await Html.PartialAsync("_HeroIcon", new { Name = "plus", Class = "heroicon" }) Thêm gói Decor</button>
+                </div>
+                <div class="catalog-metrics"><span>Danh mục Gói Decor đang quản lý: <strong>Hiển thị @Model.DanhSachGoiTrangTri.Count gói</strong></span><span class="metric-active"><i aria-hidden="true"></i>@decorActiveCount gói Đang áp dụng</span><span class="metric-inactive"><i aria-hidden="true"></i>@(Model.DanhSachGoiTrangTri.Count - decorActiveCount) gói Ngừng áp dụng</span></div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.LoiGoiTrangTri))
+                {
+                    <div class="catalog-alert" role="alert">@await Html.PartialAsync("_HeroIcon", new { Name = "circle-alert", Class = "heroicon" }) @Model.LoiGoiTrangTri</div>
+                }
+                else if (Model.DanhSachGoiTrangTri.Count == 0)
+                {
+                    <div class="catalog-empty">@await Html.PartialAsync("_HeroIcon", new { Name = "photo", Class = "heroicon heroicon-empty" })<h3>Chưa có gói Decor phù hợp</h3><p>Thử điều chỉnh bộ lọc hoặc thêm một gói mới vào danh mục.</p></div>
+                }
+                else
+                {
+                    <div class="decor-grid">
+                        @for (var index = 0; index < Model.DanhSachGoiTrangTri.Count; index++)
+                        {
+                            var item = Model.DanhSachGoiTrangTri[index];
+                            var image = ManagedImage(item.HinhAnh) ?? decorFallbackImages[index % decorFallbackImages.Length];
+                             <article class="decor-card @(item.TrangThai == "Áp dụng" ? null : "is-inactive")" data-item-id="@item.GoiTrangTriID" aria-label="Gói @item.TenGoi">
+                                <div class="decor-image @(image is null ? "image-fallback" : null)">
+                                    @if (image is not null)
+                                    {
+                                        <img src="@image" alt="Hình ảnh @item.TenGoi" loading="lazy" onerror="this.hidden=true; this.parentElement.classList.add('image-fallback');" />
+                                    }
+                                    <div class="image-fallback-content" aria-hidden="true">@await Html.PartialAsync("_HeroIcon", new { Name = "photo", Class = "heroicon" })<span>Chưa có ảnh đại diện</span></div>
+                                    <div class="media-shade" aria-hidden="true"></div>
+                                    <div class="media-topline"><span class="media-status @StatusClass(item.TrangThai)">@await Html.PartialAsync("_HeroIcon", new { Name = "circle-alert", Class = "heroicon heroicon-dot" })@item.TrangThai</span><span class="media-code">@item.MaGoi</span></div>
+                                    <span class="media-style">@await Html.PartialAsync("_HeroIcon", new { Name = "sparkles", Class = "heroicon heroicon-xs" })@(item.PhongCach ?? "Chưa phân loại")</span>
+                                </div>
+                                <div class="decor-card-body">
+                                    <div class="item-kicker">GÓI DECOR</div>
+                                     <h3>@item.TenGoi</h3>
+                                     <p>@(string.IsNullOrWhiteSpace(item.MoTa) ? "Chưa có mô tả cho gói này." : item.MoTa)</p>
+                                     <div class="decor-specs"><div><span>Hạng mục chính:</span><strong>@(string.IsNullOrWhiteSpace(item.PhongCach) ? "Chưa phân loại" : item.PhongCach)</strong></div><div><span>Trạng thái:</span><strong>@item.TrangThai</strong></div></div>
+                                     <div class="item-footer"><div><span class="price-label">Đơn giá niêm yết</span><strong>@item.Gia.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) <small>VNĐ</small></strong></div><div class="item-actions">
+                                        <button type="button" class="catalog-action" data-open-detail="goi" data-id="@item.GoiTrangTriID" aria-label="Xem gói @item.TenGoi" title="Xem chi tiết">@await Html.PartialAsync("_HeroIcon", new { Name = "eye", Class = "heroicon" })<span>Xem</span></button>
+                                        <button type="button" class="catalog-action edit-action btn-edit" data-open-form="goi" data-mode="edit" data-id="@item.GoiTrangTriID" aria-label="Chỉnh sửa gói @item.TenGoi" title="Chỉnh sửa">@await Html.PartialAsync("_HeroIcon", new { Name = "pencil-square", Class = "heroicon" })<span>Sửa</span></button>
+                                        <button type="button" class="catalog-action status-action" data-open-status="goi" data-id="@item.GoiTrangTriID" data-name="@item.TenGoi" data-status="@item.TrangThai" aria-label="Đổi trạng thái gói @item.TenGoi" title="Đổi trạng thái">@await Html.PartialAsync("_HeroIcon", new { Name = item.TrangThai == "Áp dụng" ? "lock-closed" : "lock-open", Class = "heroicon" })<span>@(item.TrangThai == "Áp dụng" ? "Khóa" : "Mở lại")</span></button>
+                                    </div></div>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+            </section>
+
+            <section id="panel-dich-vu" class="catalog-panel" role="tabpanel" aria-labelledby="tab-dich-vu" @(Model.ActiveTab != "dich-vu" ? "hidden" : null)>
+                <div class="catalog-toolbar">
+                    <form method="get" class="catalog-filter" action="/admin/quan-ly-goi-trang-tri-dich-vu">
+                        <input type="hidden" name="tab" value="dich-vu" />
+                        <label class="filter-search"><span>Từ khóa</span><div>@await Html.PartialAsync("_HeroIcon", new { Name = "magnifying-glass", Class = "heroicon heroicon-search" })<input type="search" name="dichVuTuKhoa" value="@Model.DichVuTuKhoa" placeholder="Tìm mã dịch vụ, tên dịch vụ..." /></div></label>
+                        <label><span>Loại dịch vụ</span><select name="dichVuLoai"><option value="">Tất cả phân loại</option><option value="Âm thanh sân khấu" selected="@(Model.DichVuLoai == "Âm thanh sân khấu" ? "selected" : null)">Âm thanh sân khấu</option><option value="Ánh sáng sân khấu" selected="@(Model.DichVuLoai == "Ánh sáng sân khấu" ? "selected" : null)">Ánh sáng sân khấu</option><option value="MC Dẫn chương trình" selected="@(Model.DichVuLoai == "MC Dẫn chương trình" ? "selected" : null)">MC Dẫn chương trình</option><option value="Ban nhạc &amp; Hòa tấu" selected="@(Model.DichVuLoai == "Ban nhạc & Hòa tấu" ? "selected" : null)">Ban nhạc &amp; Hòa tấu</option><option value="Màn hình LED &amp; Trình chiếu" selected="@(Model.DichVuLoai == "Màn hình LED & Trình chiếu" ? "selected" : null)">Màn hình LED &amp; Trình chiếu</option></select></label>
+                        <label><span>Trạng thái</span><select name="dichVuTrangThai"><option value="">Tất cả</option><option value="Áp dụng" selected="@(Model.DichVuTrangThai == "Áp dụng" ? "selected" : null)">Áp dụng</option><option value="Ngừng áp dụng" selected="@(Model.DichVuTrangThai == "Ngừng áp dụng" ? "selected" : null)">Ngừng áp dụng</option></select></label>
+                        <button class="catalog-button secondary" type="submit">@await Html.PartialAsync("_HeroIcon", new { Name = "funnel", Class = "heroicon" }) Lọc</button>
+                        <a class="catalog-button subtle" href="?tab=dich-vu">@await Html.PartialAsync("_HeroIcon", new { Name = "arrow-path", Class = "heroicon" }) Đặt lại</a>
+                    </form>
+                    <button class="catalog-button primary" type="button" data-open-form="dich-vu" data-mode="create">@await Html.PartialAsync("_HeroIcon", new { Name = "plus", Class = "heroicon" }) Thêm dịch vụ</button>
+                </div>
+                <div class="catalog-metrics"><span>Danh mục dịch vụ đang quản lý: <strong>Hiển thị @Model.DanhSachDichVu.Count / @Model.DanhSachDichVu.Count dịch vụ</strong></span><span class="metric-active"><i aria-hidden="true"></i>@serviceActiveCount Dịch vụ Đang áp dụng</span><span class="metric-inactive"><i aria-hidden="true"></i>@(Model.DanhSachDichVu.Count - serviceActiveCount) Tạm ngưng</span></div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.LoiDichVu))
+                {
+                    <div class="catalog-alert" role="alert">@await Html.PartialAsync("_HeroIcon", new { Name = "circle-alert", Class = "heroicon" }) @Model.LoiDichVu</div>
+                }
+                else if (Model.DanhSachDichVu.Count == 0)
+                {
+                    <div class="catalog-empty">@await Html.PartialAsync("_HeroIcon", new { Name = "archive-box", Class = "heroicon heroicon-empty" })<h3>Chưa có dịch vụ phù hợp</h3><p>Thử điều chỉnh bộ lọc hoặc thêm một dịch vụ mới vào danh mục.</p></div>
+                }
+                else
+                {
+                    <div class="service-table-wrap">
+                        <table class="service-table">
+                            <caption>Danh sách dịch vụ đi kèm</caption>
+                            <thead><tr><th scope="col">Mã DV</th><th scope="col">Hình ảnh</th><th scope="col">Tên dịch vụ &amp; mô tả</th><th scope="col">Phân loại</th><th scope="col">Đơn giá niêm yết</th><th scope="col">Trạng thái</th><th scope="col"><span class="sr-only">Thao tác</span></th></tr></thead>
+                            <tbody>
+                                @for (var index = 0; index < Model.DanhSachDichVu.Count; index++)
+                                {
+                                    var item = Model.DanhSachDichVu[index];
+                                    var image = ManagedImage(item.HinhAnh) ?? serviceFallbackImages[index % serviceFallbackImages.Length];
+                                     <tr class="service-row @(item.TrangThai == "Áp dụng" ? null : "is-inactive")" data-item-id="@item.DichVuID">
+                                        <td data-label="Mã DV"><span class="code-chip">@item.MaDichVu</span></td>
+                                        <td data-label="Hình ảnh"><div class="service-thumbnail @(image is null ? "image-fallback" : null)">@if (image is not null) { <img src="@image" alt="Hình ảnh @item.TenDichVu" loading="lazy" onerror="this.hidden=true; this.parentElement.classList.add('image-fallback');" /> }<span aria-hidden="true">@await Html.PartialAsync("_HeroIcon", new { Name = "photo", Class = "heroicon" })</span></div></td>
+                                        <td data-label="Tên dịch vụ &amp; mô tả"><div class="service-copy"><strong>@item.TenDichVu</strong><small>@(string.IsNullOrWhiteSpace(item.MoTa) ? "Chưa có mô tả" : item.MoTa)</small></div></td>
+                                        <td data-label="Phân loại"><span class="service-category">@await Html.PartialAsync("_HeroIcon", new { Name = "layer", Class = "heroicon heroicon-xs" })@(item.LoaiDichVu ?? "Chưa phân loại")</span></td>
+                                        <td data-label="Đơn giá niêm yết" class="price-cell"><strong>@item.Gia.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) <small>VNĐ</small></strong><em>/ suất tiệc</em></td>
+                                        <td data-label="Trạng thái"><span class="catalog-badge @StatusClass(item.TrangThai)">@await Html.PartialAsync("_HeroIcon", new { Name = "circle-alert", Class = "heroicon heroicon-dot" })@item.TrangThai</span></td>
+                                        <td data-label="Thao tác"><div class="item-actions"><button type="button" class="catalog-action" data-open-detail="dich-vu" data-id="@item.DichVuID" aria-label="Xem dịch vụ @item.TenDichVu" title="Xem chi tiết">@await Html.PartialAsync("_HeroIcon", new { Name = "eye", Class = "heroicon" })<span>Xem</span></button><button type="button" class="catalog-action edit-action btn-edit" data-open-form="dich-vu" data-mode="edit" data-id="@item.DichVuID" aria-label="Chỉnh sửa dịch vụ @item.TenDichVu" title="Chỉnh sửa">@await Html.PartialAsync("_HeroIcon", new { Name = "pencil-square", Class = "heroicon" })<span>Sửa</span></button><button type="button" class="catalog-action status-action" data-open-status="dich-vu" data-id="@item.DichVuID" data-name="@item.TenDichVu" data-status="@item.TrangThai" aria-label="Đổi trạng thái dịch vụ @item.TenDichVu" title="Đổi trạng thái">@await Html.PartialAsync("_HeroIcon", new { Name = item.TrangThai == "Áp dụng" ? "lock-closed" : "lock-open", Class = "heroicon" })<span>@(item.TrangThai == "Áp dụng" ? "Khóa" : "Mở lại")</span></button></div></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </section>
+        </div>
+    </section>
+
+    <aside class="integrity-notice">@await Html.PartialAsync("_HeroIcon", new { Name = "shield-check", Class = "heroicon" })<div><strong>Quy chuẩn bảo toàn Master Data</strong><p>Dữ liệu đã phát sinh không bị xóa vĩnh viễn. Hãy dùng thao tác Khóa hoặc Mở lại để bảo toàn lịch sử đối soát và kiểm toán.</p></div></aside>
+</div>
+
+<div id="catalogToast" class="catalog-toast" role="status" aria-live="polite"></div>
+
+<div id="detailDialog" class="catalog-dialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle" hidden>
+    <div class="dialog-card detail-card"><div class="dialog-header"><div><span class="eyebrow">Chi tiết danh mục</span><h3 id="detailTitle">Chi tiết</h3></div><button type="button" class="dialog-close" data-close-dialog aria-label="Đóng"><span class="close-icon" aria-hidden="true">&times;</span></button></div><div id="detailBody" class="detail-body"></div><div class="dialog-footer"><button type="button" class="catalog-button subtle" data-close-dialog>Đóng</button></div></div>
+</div>
+
+<div id="formDialog" class="catalog-dialog" role="dialog" aria-modal="true" aria-labelledby="formTitle" hidden>
+    <div class="dialog-card form-dialog-card">
+        <div class="dialog-header stitch-dialog-header"><div class="dialog-heading-group"><span class="dialog-leading-icon">@await Html.PartialAsync("_HeroIcon", new { Name = "sparkles", Class = "heroicon" })</span><div><div class="dialog-title-line"><span class="eyebrow">Danh mục master data</span><span class="dialog-spec">Master Data Spec</span></div><h3 id="formTitle">Thêm mới</h3><p class="dialog-subtitle">Cấu hình thông tin danh mục, định mức giá và hình ảnh nhận diện.</p></div></div><button type="button" class="dialog-close" data-close-dialog aria-label="Đóng">@await Html.PartialAsync("_HeroIcon", new { Name = "x-mark", Class = "heroicon" })</button></div>
+        <div id="formError" class="form-error" role="alert" hidden></div>
+
+        <form id="goiTrangTriForm" class="catalog-edit-form" method="post" enctype="multipart/form-data" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="XoaHinhAnh" value="false" id="goiRemoveImage" />
+            <div class="dialog-section"><div class="dialog-section-heading">@await Html.PartialAsync("_HeroIcon", new { Name = "tune", Class = "heroicon" })<div><h4>1. Thông tin cơ bản &amp; Định mức kinh doanh</h4><span>Phần thiết yếu</span></div></div><div class="dialog-fields">
+                <label><span>Mã gói decor <b>*</b></span><input id="goiMaGoi" name="MaGoi" maxlength="50" required /></label>
+                <label><span>Tên gói Decor <b>*</b></span><input id="goiTenGoi" name="TenGoi" maxlength="150" required /></label>
+                <label><span>Phong cách decor</span><input id="goiPhongCach" name="PhongCach" maxlength="100" /></label>
+                <label><span>Đơn giá niêm yết (VNĐ) <b>*</b></span><input id="goiGia" name="Gia" type="number" min="0" step="0.01" required /></label>
+                <label class="field-wide"><span>Mô tả chi tiết concept</span><textarea id="goiMoTa" name="MoTa" rows="3"></textarea></label>
+            </div></div>
+            <div class="dialog-section"><div class="dialog-section-heading">@await Html.PartialAsync("_HeroIcon", new { Name = "photo", Class = "heroicon" })<div><h4>2. Hình ảnh đại diện (Cover Photo)</h4><span>Ảnh thực tế phục vụ hợp đồng và tư vấn khách hàng.</span></div><b>Quy chuẩn 16:10</b></div><div class="dialog-fields single-field">
+                <div class="field-wide"><span class="field-label">Hình ảnh đại diện</span>@await Html.PartialAsync("_ImageUpload", new { Prefix = "goi", Existing = "" })</div>
+            </div></div>
+            <div class="dialog-footer"><button type="button" class="catalog-button subtle" data-close-dialog>Hủy</button><button type="submit" class="catalog-button primary save-button">@await Html.PartialAsync("_HeroIcon", new { Name = "archive-box", Class = "heroicon" }) Lưu gói Decor</button></div>
+        </form>
+
+        <form id="dichVuForm" class="catalog-edit-form" method="post" enctype="multipart/form-data" novalidate hidden>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="XoaHinhAnh" value="false" id="dichRemoveImage" />
+            <div class="dialog-section"><div class="dialog-section-heading">@await Html.PartialAsync("_HeroIcon", new { Name = "tune", Class = "heroicon" })<div><h4>1. Thông tin cơ bản &amp; Định mức kinh doanh</h4><span>Phần thiết yếu</span></div></div><div class="dialog-fields">
+                <label><span>Mã dịch vụ <b>*</b></span><input id="dichMaDichVu" name="MaDichVu" maxlength="50" required /></label>
+                <label><span>Tên dịch vụ <b>*</b></span><input id="dichTenDichVu" name="TenDichVu" maxlength="150" required /></label>
+                <label><span>Loại dịch vụ</span><input id="dichLoaiDichVu" name="LoaiDichVu" maxlength="100" /></label>
+                <label><span>Giá niêm yết (VNĐ) <b>*</b></span><input id="dichGia" name="Gia" type="number" min="0" step="0.01" required /></label>
+                <label class="field-wide"><span>Mô tả</span><textarea id="dichMoTa" name="MoTa" rows="3"></textarea></label>
+            </div></div><div class="dialog-section"><div class="dialog-section-heading">@await Html.PartialAsync("_HeroIcon", new { Name = "photo", Class = "heroicon" })<div><h4>2. Hình ảnh đại diện (Cover Photo)</h4><span>Ảnh thực tế phục vụ hợp đồng và tư vấn khách hàng.</span></div><b>Quy chuẩn 16:10</b></div><div class="dialog-fields single-field"><div class="field-wide"><span class="field-label">Hình ảnh đại diện</span>@await Html.PartialAsync("_ImageUpload", new { Prefix = "dich", Existing = "" })</div></div></div>
+            <div class="dialog-footer"><button type="button" class="catalog-button subtle" data-close-dialog>Hủy</button><button type="submit" class="catalog-button primary save-button">@await Html.PartialAsync("_HeroIcon", new { Name = "archive-box", Class = "heroicon" }) Lưu dịch vụ</button></div>
+        </form>
+    </div>
+</div>
+
+<div id="statusDialog" class="catalog-dialog" role="dialog" aria-modal="true" aria-labelledby="statusTitle" hidden>
+    <div class="dialog-card compact-dialog"><div class="dialog-header"><div><span class="eyebrow">Cập nhật danh mục</span><h3 id="statusTitle">Đổi trạng thái</h3></div><button type="button" class="dialog-close" data-close-dialog aria-label="Đóng"><span class="close-icon" aria-hidden="true">&times;</span></button></div><form id="statusForm" method="post"><input type="hidden" name="trangThai" id="statusValue" /><p id="statusText"></p><div id="statusError" class="form-error" role="alert" hidden></div><div class="dialog-footer"><button type="button" class="catalog-button subtle" data-close-dialog>Hủy</button><button type="submit" class="catalog-button primary">Xác nhận</button></div></form></div>
+</div>
+
+@section Scripts
+{
+    <script>
+        (() => {
+            const dialogs = [...document.querySelectorAll('.catalog-dialog')];
+            const toast = document.getElementById('catalogToast');
+            const forms = { goi: document.getElementById('goiTrangTriForm'), 'dich-vu': document.getElementById('dichVuForm') };
+            const routes = {
+                goi: { detail: id => `/admin/quan-ly-goi-trang-tri-dich-vu/goi-trang-tri/${id}`, create: '/admin/quan-ly-goi-trang-tri-dich-vu/goi-trang-tri/them', edit: id => `/admin/quan-ly-goi-trang-tri-dich-vu/goi-trang-tri/sua/${id}`, status: id => `/admin/quan-ly-goi-trang-tri-dich-vu/goi-trang-tri/trang-thai/${id}` },
+                'dich-vu': { detail: id => `/admin/quan-ly-goi-trang-tri-dich-vu/dich-vu/${id}`, create: '/admin/quan-ly-goi-trang-tri-dich-vu/dich-vu/them', edit: id => `/admin/quan-ly-goi-trang-tri-dich-vu/dich-vu/sua/${id}`, status: id => `/admin/quan-ly-goi-trang-tri-dich-vu/dich-vu/trang-thai/${id}` }
+            };
+            const fieldMap = {
+                 goi: { MaGoi: 'goiMaGoi', TenGoi: 'goiTenGoi', PhongCach: 'goiPhongCach', Gia: 'goiGia', MoTa: 'goiMoTa', HinhAnhFile: 'hinhAnhFileGoi' },
+                 'dich-vu': { MaDichVu: 'dichMaDichVu', TenDichVu: 'dichTenDichVu', LoaiDichVu: 'dichLoaiDichVu', Gia: 'dichGia', MoTa: 'dichMoTa', HinhAnhFile: 'hinhAnhFileDich' }
+            };
+            let formType = 'goi';
+             let formMode = 'create';
+             let lastTrigger = null;
+             let objectUrls = { goi: null, 'dich-vu': null };
+             const uploadIds = {
+                 goi: { dropzone: 'dropzoneGoiDecor', input: 'hinhAnhFileGoi', content: 'uploadContentGoi', preview: 'previewBoxGoi', image: 'previewImgGoi', remove: 'btnRemoveImgGoi', current: 'currentPreviewGoi', currentImage: 'currentImgGoi', error: 'uploadErrorGoi', notice: 'removeNoticeGoi', name: 'selectedNameGoi', dimensions: 'selectedDimensionsGoi', size: 'selectedSizeGoi' },
+                 'dich-vu': { dropzone: 'dropzoneDichVu', input: 'hinhAnhFileDich', content: 'uploadContentDich', preview: 'previewBoxDich', image: 'previewImgDich', remove: 'btnRemoveImgDich', current: 'currentPreviewDich', currentImage: 'currentImgDich', error: 'uploadErrorDich', notice: 'removeNoticeDich', name: 'selectedNameDich', dimensions: 'selectedDimensionsDich', size: 'selectedSizeDich' }
+             };
+
+            function showToast(message) { toast.textContent = message; toast.classList.add('show'); window.setTimeout(() => toast.classList.remove('show'), 2600); }
+            function openDialog(dialog, trigger) { lastTrigger = trigger; dialog.hidden = false; dialog.classList.add('is-open'); dialog.querySelector('input:not([type="hidden"]), button, textarea')?.focus(); }
+            function closeDialog(dialog) { dialog.classList.remove('is-open'); dialog.hidden = true; if (dialog.id === 'formDialog') { clearUpload('goi'); clearUpload('dich-vu'); } lastTrigger?.focus(); lastTrigger = null; }
+            function closeAll() { dialogs.filter(dialog => !dialog.hidden).forEach(closeDialog); }
+            function antiForgery(form) { return form.querySelector('input[name="__RequestVerificationToken"]')?.value ?? ''; }
+            function activeForm() { return forms[formType]; }
+            function setFormEnabled(form, enabled) { form.hidden = !enabled; form.querySelectorAll('input, textarea, select, button').forEach(control => control.disabled = !enabled); }
+            function setError(message, errors) {
+                const target = document.getElementById('formError');
+                target.textContent = message || 'Dữ liệu chưa hợp lệ.'; target.hidden = false;
+                Object.entries(errors || {}).forEach(([key, values]) => { const field = document.getElementById(fieldMap[formType][key] || key); if (field) { field.setAttribute('aria-invalid', 'true'); field.setAttribute('aria-describedby', 'formError'); } });
+                activeForm().querySelector('[aria-invalid="true"]')?.focus();
+             }
+             function resetErrors() { const target = document.getElementById('formError'); target.hidden = true; document.querySelectorAll('[aria-invalid="true"]').forEach(field => { field.removeAttribute('aria-invalid'); field.removeAttribute('aria-describedby'); }); }
+             function setRemove(type, value) { document.getElementById(`${type === 'goi' ? 'goi' : 'dich'}RemoveImage`).value = value ? 'true' : 'false'; }
+             function uploadUi(type) { return uploadIds[type]; }
+             function clearUpload(type) {
+                 const ui = uploadUi(type);
+                 if (objectUrls[type]) { URL.revokeObjectURL(objectUrls[type]); objectUrls[type] = null; }
+                 document.getElementById(ui.input).value = '';
+                 document.getElementById(ui.preview).hidden = true;
+                 document.getElementById(ui.content).hidden = false;
+                 document.getElementById(ui.current).hidden = true;
+                 document.getElementById(ui.notice).hidden = true;
+                 setRemove(type, false);
+             }
+             function setExistingImage(type, path) {
+                 const ui = uploadUi(type);
+                 const preview = document.getElementById(ui.current); const image = document.getElementById(ui.currentImage);
+                 if (!path || !path.startsWith('/assets/images/')) { preview.hidden = true; return; }
+                 image.src = path; image.alt = 'Ảnh hiện tại'; preview.hidden = false; document.getElementById(ui.notice).hidden = true; setRemove(type, false);
+             }
+             function renderFile(type, file) {
+                 const ui = uploadUi(type);
+                 const validExtensions = ['.jpg', '.jpeg', '.png', '.webp']; const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+                 const validMime = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type);
+                 if (!validExtensions.includes(extension) || !validMime || file.size <= 0 || file.size >= 5 * 1024 * 1024) { document.getElementById(ui.error).textContent = 'Chỉ nhận JPG, JPEG, PNG hoặc WEBP và dung lượng phải nhỏ hơn 5 MB.'; document.getElementById(ui.error).hidden = false; return; }
+                 document.getElementById(ui.error).hidden = true;
+                 if (objectUrls[type]) { URL.revokeObjectURL(objectUrls[type]); }
+                 document.getElementById(ui.notice).hidden = true;
+                 setRemove(type, false); objectUrls[type] = URL.createObjectURL(file);
+                 const preview = document.getElementById(ui.preview); const image = document.getElementById(ui.image); image.src = objectUrls[type]; image.alt = `Ảnh mới ${file.name}`;
+                 document.getElementById(ui.name).textContent = file.name; document.getElementById(ui.size).textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`; document.getElementById(ui.content).hidden = true; preview.hidden = false;
+                 const probe = new Image(); probe.onload = () => document.getElementById(ui.dimensions).textContent = `${probe.naturalWidth} × ${probe.naturalHeight} px`; probe.src = objectUrls[type];
+             }
+             function setupUpload(type) {
+                 const ui = uploadUi(type); const input = document.getElementById(ui.input); const zone = document.getElementById(ui.dropzone);
+                 input.addEventListener('change', () => { if (input.files[0]) renderFile(type, input.files[0]); });
+                 zone.addEventListener('click', event => { if (event.target.closest(`#${ui.remove}`)) return; if (event.target.closest(`#${ui.content}`) || event.target.closest('.btn-choose-file')) input.click(); });
+                 zone.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); input.click(); } });
+                 ['dragenter', 'dragover'].forEach(name => zone.addEventListener(name, event => { event.preventDefault(); zone.classList.add('is-dragging'); }));
+                 ['dragleave', 'drop'].forEach(name => zone.addEventListener(name, event => { event.preventDefault(); zone.classList.remove('is-dragging'); }));
+                 zone.addEventListener('drop', event => { if (event.dataTransfer.files[0]) { input.files = event.dataTransfer.files; renderFile(type, event.dataTransfer.files[0]); } });
+                 document.getElementById(ui.remove).addEventListener('click', event => { event.stopPropagation(); clearUpload(type); document.getElementById(ui.notice).hidden = false; setRemove(type, true); });
+             }
+            function resetForm(type) { const form = forms[type]; clearUpload(type); form.reset(); resetErrors(); setFormEnabled(forms.goi, type === 'goi'); setFormEnabled(forms['dich-vu'], type === 'dich-vu'); document.getElementById('formTitle').textContent = formMode === 'create' ? (type === 'goi' ? 'Thêm gói Decor' : 'Thêm dịch vụ') : (type === 'goi' ? 'Chỉnh sửa gói Decor' : 'Chỉnh sửa dịch vụ'); }
+            function fillForm(data) {
+                if (formType === 'goi') { document.getElementById('goiMaGoi').value = data.maGoi ?? ''; document.getElementById('goiTenGoi').value = data.tenGoi ?? ''; document.getElementById('goiPhongCach').value = data.phongCach ?? ''; document.getElementById('goiGia').value = data.gia ?? 0; document.getElementById('goiMoTa').value = data.moTa ?? ''; setExistingImage('goi', data.hinhAnh); }
+                else { document.getElementById('dichMaDichVu').value = data.maDichVu ?? ''; document.getElementById('dichTenDichVu').value = data.tenDichVu ?? ''; document.getElementById('dichLoaiDichVu').value = data.loaiDichVu ?? ''; document.getElementById('dichGia').value = data.gia ?? 0; document.getElementById('dichMoTa').value = data.moTa ?? ''; setExistingImage('dich-vu', data.hinhAnh); }
+            }
+             async function loadDetail(type, id) { const response = await fetch(routes[type].detail(id), { headers: { Accept: 'application/json' } }); const result = await response.json(); if (!response.ok || !result.success) throw new Error(result.message || 'Không thể tải dữ liệu.'); return result.value; }
+             function updateStatusOnPage(type, id, status) {
+                 const item = document.querySelector(`[data-item-id="${id}"]`);
+                 if (!item) return;
+                 const active = status === 'Áp dụng';
+                 item.classList.toggle('is-inactive', !active);
+                 const badge = item.querySelector('.media-status, .catalog-badge');
+                 if (badge) {
+                     badge.classList.toggle('is-active', active);
+                     badge.classList.toggle('is-inactive', !active);
+                     badge.innerHTML = `<svg class="heroicon heroicon-dot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"></circle></svg>${status}`;
+                 }
+                 const button = item.querySelector('[data-open-status]');
+                 if (button) {
+                     button.dataset.status = status;
+                     const icon = button.querySelector('svg');
+                     if (icon) icon.innerHTML = active ? '<rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14.5v2"></path>' : '<rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 7.2-2.4M12 14.5v2"></path>';
+                     const label = button.querySelector('span');
+                     if (label) label.textContent = active ? 'Khóa' : 'Mở lại';
+                 }
+             }
+
+            document.querySelectorAll('[role="tab"]').forEach((tab, index, all) => { tab.addEventListener('click', () => { all.forEach(item => { const active = item === tab; item.setAttribute('aria-selected', active); document.getElementById(item.getAttribute('aria-controls')).hidden = !active; }); const url = new URL(window.location.href); url.searchParams.set('tab', tab.dataset.tab); window.history.replaceState({}, '', url); }); tab.addEventListener('keydown', event => { if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return; event.preventDefault(); const next = event.key === 'Home' ? 0 : event.key === 'End' ? all.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + all.length) % all.length; all[next].focus(); all[next].click(); }); });
+            async function openForm(button) {
+                formType = button.dataset.openForm;
+                formMode = button.dataset.mode;
+                lastTrigger = button;
+                resetForm(formType);
+                const form = activeForm();
+                form.action = formMode === 'create' ? routes[formType].create : routes[formType].edit(button.dataset.id);
+                openDialog(document.getElementById('formDialog'), button);
+                if (formMode === 'edit') {
+                    try { fillForm(await loadDetail(formType, button.dataset.id)); }
+                    catch (error) { setError(error.message); }
+                }
+            }
+            document.addEventListener('click', event => {
+                const button = event.target.closest('.btn-edit, [data-open-form][data-mode="create"]');
+                if (!button) return;
+                event.preventDefault();
+                void openForm(button);
+            });
+            document.querySelectorAll('[data-open-detail]').forEach(button => button.addEventListener('click', async () => { try { const type = button.dataset.openDetail; const data = await loadDetail(type, button.dataset.id); const title = type === 'goi' ? data.tenGoi : data.tenDichVu; document.getElementById('detailTitle').textContent = title; const body = document.getElementById('detailBody'); body.replaceChildren(); const imagePath = data.hinhAnh?.startsWith('/assets/images/') ? data.hinhAnh : null; if (imagePath) { const image = document.createElement('img'); image.src = imagePath; image.alt = `Hình ảnh ${title}`; image.className = 'detail-image'; body.append(image); } const dl = document.createElement('dl'); const rows = [['Mã', data.maGoi ?? data.maDichVu], ['Phân loại', data.phongCach ?? data.loaiDichVu ?? 'Chưa phân loại'], ['Giá', `${new Intl.NumberFormat('vi-VN').format(data.gia)} VNĐ`], ['Trạng thái', data.trangThai], ['Mô tả', data.moTa || 'Chưa có mô tả.']]; rows.forEach(([label, value]) => { const dt = document.createElement('dt'); dt.textContent = label; const dd = document.createElement('dd'); dd.textContent = value; dl.append(dt, dd); }); body.append(dl); openDialog(document.getElementById('detailDialog'), button); } catch (error) { showToast(error.message); } }));
+            document.querySelectorAll('[data-open-status]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.status === 'Áp dụng' ? 'Ngừng áp dụng' : 'Áp dụng'; document.getElementById('statusValue').value = next; document.getElementById('statusForm').action = routes[button.dataset.openStatus].status(button.dataset.id); document.getElementById('statusText').textContent = `Chuyển “${button.dataset.name}” sang trạng thái “${next}”?`; document.getElementById('statusError').hidden = true; openDialog(document.getElementById('statusDialog'), button); }));
+             Object.entries(forms).forEach(([type, form]) => form.addEventListener('submit', async event => { event.preventDefault(); if (!form.checkValidity()) { form.reportValidity(); return; } const button = form.querySelector('.save-button'); resetErrors(); button.disabled = true; button.dataset.label = button.textContent; button.textContent = 'Đang lưu...'; try { const response = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } }); const result = await response.json(); if (!response.ok || !result.success) { setError(result.message, result.errors); return; } closeDialog(document.getElementById('formDialog')); showToast(result.message || 'Đã lưu thành công.'); window.setTimeout(() => window.location.reload(), 650); } catch { setError('Không thể kết nối đến hệ thống.'); } finally { button.disabled = false; button.innerHTML = '<svg class="heroicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M5 7l1 13h12l1-13M9 11h6M3 4h18v3H3V4Z"></path></svg> ' + (type === 'goi' ? 'Lưu gói Decor' : 'Lưu dịch vụ'); } }));
+             document.getElementById('statusForm').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const button = form.querySelector('button[type="submit"]'); const error = document.getElementById('statusError'); const statusTrigger = lastTrigger; button.disabled = true; error.hidden = true; try { const response = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } }); const result = await response.json(); if (!response.ok || !result.success) { error.textContent = result.message || 'Không thể cập nhật trạng thái.'; error.hidden = false; return; } const type = statusTrigger?.dataset.openStatus; const id = statusTrigger?.dataset.id; if (type && id) updateStatusOnPage(type, id, document.getElementById('statusValue').value); closeDialog(document.getElementById('statusDialog')); showToast(result.message || 'Đã cập nhật trạng thái.'); window.setTimeout(() => window.location.reload(), 650); } catch { error.textContent = 'Không thể kết nối đến hệ thống.'; error.hidden = false; } finally { button.disabled = false; } });
+            document.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => closeDialog(button.closest('.catalog-dialog'))));
+            dialogs.forEach(dialog => dialog.addEventListener('click', event => { if (event.target === dialog) closeDialog(dialog); }));
+            document.addEventListener('keydown', event => { const open = dialogs.find(dialog => !dialog.hidden); if (!open) return; if (event.key === 'Escape') { closeDialog(open); return; } if (event.key !== 'Tab') return; const focusable = [...open.querySelectorAll('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled])')]; if (!focusable.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } });
+            setupUpload('goi'); setupUpload('dich-vu');
+            setFormEnabled(forms.goi, true); setFormEnabled(forms['dich-vu'], false);
+        })();
+    </script>
+}

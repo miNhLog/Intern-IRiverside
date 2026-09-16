@@ -1,10 +1,13 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Globalization;
 using System.Text.Json;
 using HeThongDatTiecCuoi_WEB.Models.Auth;
 using HeThongDatTiecCuoi_WEB.Models.AdminSanh;
 namespace HeThongDatTiecCuoi_WEB.Services;
 using HeThongDatTiecCuoi_WEB.Models.AdminTaiKhoan;
+using HeThongDatTiecCuoi_WEB.Models.AdminGoiTrangTriDichVu;
+using Microsoft.AspNetCore.Http;
 
 public sealed class RiversideApiClient : IRiversideApiClient
 {
@@ -276,6 +279,205 @@ public sealed class RiversideApiClient : IRiversideApiClient
             cancellationToken);
     }
 
+    public Task<ApiCallResult<List<GoiTrangTriDto>>> GetDanhSachGoiTrangTriAsync(
+        string accessToken,
+        string? tuKhoa,
+        string? phongCach,
+        string? trangThai,
+        CancellationToken cancellationToken)
+    {
+        var query = new List<string>();
+        AddQuery(query, "tuKhoa", tuKhoa);
+        AddQuery(query, "phongCach", phongCach);
+        AddQuery(query, "trangThai", trangThai);
+
+        return SendAsync<List<GoiTrangTriDto>>(
+            HttpMethod.Get,
+            BuildUri("api/GoiTrangTri", query),
+            null,
+            accessToken,
+            cancellationToken);
+    }
+
+    public Task<ApiCallResult<GoiTrangTriDto>> GetGoiTrangTriByIdAsync(
+        int id,
+        string accessToken,
+        CancellationToken cancellationToken) =>
+        SendAsync<GoiTrangTriDto>(HttpMethod.Get, $"api/GoiTrangTri/{id}", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GoiTrangTriDto>> CreateGoiTrangTriAsync(
+        GoiTrangTriFormModel model,
+        string accessToken,
+        CancellationToken cancellationToken) =>
+        SendMultipartAsync<GoiTrangTriDto>(
+            HttpMethod.Post,
+            "api/GoiTrangTri",
+            accessToken,
+            new Dictionary<string, string?>
+            {
+                ["MaGoi"] = model.MaGoi,
+                ["TenGoi"] = model.TenGoi,
+                ["PhongCach"] = model.PhongCach,
+                ["MoTa"] = model.MoTa,
+                ["Gia"] = model.Gia.ToString(CultureInfo.InvariantCulture)
+            },
+            model.HinhAnhFile,
+            false,
+            cancellationToken);
+
+    public Task<ApiCallResult<GoiTrangTriDto>> UpdateGoiTrangTriAsync(
+        int id,
+        GoiTrangTriFormModel model,
+        string accessToken,
+        CancellationToken cancellationToken) =>
+        SendMultipartAsync<GoiTrangTriDto>(
+            HttpMethod.Put,
+            $"api/GoiTrangTri/{id}",
+            accessToken,
+            new Dictionary<string, string?>
+            {
+                ["MaGoi"] = model.MaGoi,
+                ["TenGoi"] = model.TenGoi,
+                ["PhongCach"] = model.PhongCach,
+                ["MoTa"] = model.MoTa,
+                ["Gia"] = model.Gia.ToString(CultureInfo.InvariantCulture)
+            },
+            model.HinhAnhFile,
+            model.XoaHinhAnh,
+            cancellationToken);
+
+    public Task<ApiCallResult<GoiTrangTriDto>> UpdateTrangThaiGoiTrangTriAsync(
+        int id,
+        string trangThai,
+        string accessToken,
+        CancellationToken cancellationToken) =>
+        SendAsync<GoiTrangTriDto>(
+            HttpMethod.Patch,
+            $"api/GoiTrangTri/{id}/trang-thai",
+            new { trangThai },
+            accessToken,
+            cancellationToken);
+
+    public Task<ApiCallResult<List<DichVuDto>>> GetDanhSachDichVuAsync(
+        string accessToken,
+        string? tuKhoa,
+        string? loaiDichVu,
+        string? trangThai,
+        CancellationToken cancellationToken)
+    {
+        var query = new List<string>();
+        AddQuery(query, "tuKhoa", tuKhoa);
+        AddQuery(query, "loaiDichVu", loaiDichVu);
+        AddQuery(query, "trangThai", trangThai);
+
+        return SendAsync<List<DichVuDto>>(
+            HttpMethod.Get,
+            BuildUri("api/DichVu", query),
+            null,
+            accessToken,
+            cancellationToken);
+    }
+
+    public Task<ApiCallResult<DichVuDto>> GetDichVuByIdAsync(
+        int id,
+        string accessToken,
+        CancellationToken cancellationToken) =>
+        SendAsync<DichVuDto>(HttpMethod.Get, $"api/DichVu/{id}", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<DichVuDto>> CreateDichVuAsync(
+        DichVuFormModel model,
+        string accessToken,
+        CancellationToken cancellationToken) =>
+        SendMultipartAsync<DichVuDto>(
+            HttpMethod.Post,
+            "api/DichVu",
+            accessToken,
+            new Dictionary<string, string?>
+            {
+                ["MaDichVu"] = model.MaDichVu,
+                ["TenDichVu"] = model.TenDichVu,
+                ["LoaiDichVu"] = model.LoaiDichVu,
+                ["MoTa"] = model.MoTa,
+                ["Gia"] = model.Gia.ToString(CultureInfo.InvariantCulture)
+            },
+            model.HinhAnhFile,
+            false,
+            cancellationToken);
+
+    public Task<ApiCallResult<DichVuDto>> UpdateDichVuAsync(
+        int id,
+        DichVuFormModel model,
+        string accessToken,
+        CancellationToken cancellationToken) =>
+        SendMultipartAsync<DichVuDto>(
+            HttpMethod.Put,
+            $"api/DichVu/{id}",
+            accessToken,
+            new Dictionary<string, string?>
+            {
+                ["MaDichVu"] = model.MaDichVu,
+                ["TenDichVu"] = model.TenDichVu,
+                ["LoaiDichVu"] = model.LoaiDichVu,
+                ["MoTa"] = model.MoTa,
+                ["Gia"] = model.Gia.ToString(CultureInfo.InvariantCulture)
+            },
+            model.HinhAnhFile,
+            model.XoaHinhAnh,
+            cancellationToken);
+
+    public Task<ApiCallResult<DichVuDto>> UpdateTrangThaiDichVuAsync(
+        int id,
+        string trangThai,
+        string accessToken,
+        CancellationToken cancellationToken) =>
+        SendAsync<DichVuDto>(
+            HttpMethod.Patch,
+            $"api/DichVu/{id}/trang-thai",
+            new { trangThai },
+            accessToken,
+            cancellationToken);
+
+    private static void AddQuery(List<string> query, string name, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            query.Add($"{name}={Uri.EscapeDataString(value)}");
+        }
+    }
+
+    private static string BuildUri(string path, List<string> query) =>
+        query.Count == 0 ? path : $"{path}?{string.Join("&", query)}";
+
+    private async Task<ApiCallResult<T>> SendMultipartAsync<T>(
+        HttpMethod method,
+        string uri,
+        string accessToken,
+        IReadOnlyDictionary<string, string?> fields,
+        IFormFile? file,
+        bool removeImage,
+        CancellationToken cancellationToken)
+    {
+        using var content = new MultipartFormDataContent();
+        foreach (var field in fields)
+        {
+            content.Add(new StringContent(field.Value ?? string.Empty), field.Key);
+        }
+
+        content.Add(new StringContent(removeImage.ToString().ToLowerInvariant()), "XoaHinhAnh");
+
+        if (file is not null)
+        {
+            var fileContent = new StreamContent(file.OpenReadStream());
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(
+                string.IsNullOrWhiteSpace(file.ContentType)
+                    ? "application/octet-stream"
+                    : file.ContentType);
+            content.Add(fileContent, "HinhAnhFile", Path.GetFileName(file.FileName));
+        }
+
+        return await SendAsync<T>(method, uri, content, accessToken, cancellationToken);
+    }
+
     private async Task<ApiCallResult<T>> SendAsync<T>(
         HttpMethod method,
         string uri,
@@ -286,7 +488,11 @@ public sealed class RiversideApiClient : IRiversideApiClient
         try
         {
             using var request = new HttpRequestMessage(method, uri);
-            if (body is not null)
+            if (body is HttpContent httpContent)
+            {
+                request.Content = httpContent;
+            }
+            else if (body is not null)
             {
                 request.Content = JsonContent.Create(body);
             }
@@ -305,8 +511,17 @@ public sealed class RiversideApiClient : IRiversideApiClient
                     : ApiCallResult<T>.Success(value);
             }
 
-            var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(JsonOptions, cancellationToken);
-            return ApiCallResult<T>.Failure(error?.Message ?? "Yêu cầu không thành công.");
+            try
+            {
+                var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(JsonOptions, cancellationToken);
+                return ApiCallResult<T>.Failure(
+                    error?.Message ?? "Yêu cầu không thành công.",
+                    error?.Errors);
+            }
+            catch (JsonException)
+            {
+                return ApiCallResult<T>.Failure("Yêu cầu không thành công.");
+            }
         }
         catch (HttpRequestException)
         {
