@@ -1,29 +1,46 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 
 namespace HeThongDatTiecCuoi_WEB.Models.AdminGoiTrangTriDichVu;
 
 public sealed class GoiTrangTriDto
 {
+    [JsonPropertyName("packageId")]
     public int GoiTrangTriID { get; set; }
+    [JsonPropertyName("packageCode")]
     public string MaGoi { get; set; } = string.Empty;
+    [JsonPropertyName("packageName")]
     public string TenGoi { get; set; } = string.Empty;
+    [JsonPropertyName("style")]
     public string? PhongCach { get; set; }
+    [JsonPropertyName("description")]
     public string? MoTa { get; set; }
+    [JsonPropertyName("price")]
     public decimal Gia { get; set; }
+    [JsonPropertyName("imageUrl")]
     public string? HinhAnh { get; set; }
+    [JsonPropertyName("status")]
     public string TrangThai { get; set; } = string.Empty;
 }
 
 public sealed class DichVuDto
 {
+    [JsonPropertyName("serviceId")]
     public int DichVuID { get; set; }
+    [JsonPropertyName("serviceCode")]
     public string MaDichVu { get; set; } = string.Empty;
+    [JsonPropertyName("serviceName")]
     public string TenDichVu { get; set; } = string.Empty;
+    [JsonPropertyName("serviceType")]
     public string? LoaiDichVu { get; set; }
+    [JsonPropertyName("description")]
     public string? MoTa { get; set; }
+    [JsonPropertyName("price")]
     public decimal Gia { get; set; }
+    [JsonPropertyName("imageUrl")]
     public string? HinhAnh { get; set; }
+    [JsonPropertyName("status")]
     public string TrangThai { get; set; } = string.Empty;
 }
 
@@ -76,12 +93,14 @@ public sealed class DichVuFormModel
 public sealed class CapNhatTrangThaiGoiTrangTriRequest
 {
     [Required]
+    [JsonPropertyName("status")]
     public string TrangThai { get; set; } = string.Empty;
 }
 
 public sealed class CapNhatTrangThaiDichVuRequest
 {
     [Required]
+    [JsonPropertyName("status")]
     public string TrangThai { get; set; } = string.Empty;
 }
 

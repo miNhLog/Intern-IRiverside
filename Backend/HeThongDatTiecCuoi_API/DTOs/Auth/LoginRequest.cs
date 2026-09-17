@@ -6,15 +6,15 @@ public sealed class LoginRequest
 {
     [Required(ErrorMessage = "Vui lòng nhập email hoặc số điện thoại.")]
     [StringLength(150)]
-    public string DinhDanh { get; init; } = string.Empty;
+    public string Identifier { get; init; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
     [StringLength(100)]
-    public string MatKhau { get; init; } = string.Empty;
+    public string Password { get; init; } = string.Empty;
 
     [Required]
     [RegularExpression("^(Customer|Staff)$", ErrorMessage = "Loại tài khoản không hợp lệ.")]
-    public string LoaiTaiKhoan { get; init; } = "Customer";
+    public string AccountType { get; init; } = "Customer";
 
-    public bool GhiNhoDangNhap { get; init; }
+    public bool RememberMe { get; init; }
 }

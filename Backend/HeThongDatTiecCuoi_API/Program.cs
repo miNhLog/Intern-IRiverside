@@ -116,7 +116,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Riverside Palace API",
         Version = "v1",
-        Description = "API quản lý và khuyến nghị đặt tiệc cưới Riverside Palace"
+        Description = "Riverside Palace wedding banquet management and booking recommendation API"
     });
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -125,7 +125,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Nhập JWT access token."
+        Description = "Enter the JWT access token."
     });
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {

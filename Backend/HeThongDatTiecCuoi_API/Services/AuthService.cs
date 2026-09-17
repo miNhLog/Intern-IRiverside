@@ -28,9 +28,9 @@ public sealed partial class AuthService : IAuthService
         CancellationToken cancellationToken)
     {
         var email = request.Email.Trim().ToLowerInvariant();
-        var phone = NormalizePhone(request.SoDienThoai);
+        var phone = NormalizePhone(request.PhoneNumber);
 
-        if (!StrongPasswordRegex().IsMatch(request.MatKhau))
+        if (!StrongPasswordRegex().IsMatch(request.Password))
         {
             return ServiceResult<AuthResponse>.Failure(
                 "Mật khẩu phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.",
@@ -74,12 +74,12 @@ public sealed partial class AuthService : IAuthService
                 TrangThai = "Hoạt động",
                 NgayTao = DateTime.Now
             };
-            user.MatKhauHash = _passwordHasher.HashPassword(user, request.MatKhau);
+            user.MatKhauHash = _passwordHasher.HashPassword(user, request.Password);
 
             var customer = new KhachHang
             {
                 NguoiDung = user,
-                HoTen = request.HoTen.Trim(),
+                HoTen = request.FullName.Trim(),
                 SoDienThoai = phone
             };
 
@@ -107,8 +107,8 @@ public sealed partial class AuthService : IAuthService
         LoginRequest request,
         CancellationToken cancellationToken)
     {
-        var identifier = request.DinhDanh.Trim();
-        var isStaffLogin = request.LoaiTaiKhoan == "Staff";
+        var identifier = request.Identifier.Trim();
+        var isStaffLogin = request.AccountType == "Staff";
 
         IQueryable<NguoiDung> query = _db.NguoiDung
             .Include(x => x.VaiTro)
@@ -152,7 +152,7 @@ public sealed partial class AuthService : IAuthService
         PasswordVerificationResult verification;
         try
         {
-            verification = _passwordHasher.VerifyHashedPassword(user, user.MatKhauHash, request.MatKhau);
+            verification = _passwordHasher.VerifyHashedPassword(user, user.MatKhauHash, request.Password);
         }
         catch (FormatException)
         {
@@ -165,11 +165,11 @@ public sealed partial class AuthService : IAuthService
 
         if (verification == PasswordVerificationResult.SuccessRehashNeeded)
         {
-            user.MatKhauHash = _passwordHasher.HashPassword(user, request.MatKhau);
+            user.MatKhauHash = _passwordHasher.HashPassword(user, request.Password);
             await _db.SaveChangesAsync(cancellationToken);
         }
 
-        var token = _jwtTokenService.CreateAccessToken(user, request.GhiNhoDangNhap);
+        var token = _jwtTokenService.CreateAccessToken(user, request.RememberMe);
         return ServiceResult<AuthResponse>.Success(
             new AuthResponse(token.Token, token.ExpiresAtUtc, ToCurrentUser(user)));
     }

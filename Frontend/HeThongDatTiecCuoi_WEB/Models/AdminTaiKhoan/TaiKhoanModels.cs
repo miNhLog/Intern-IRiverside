@@ -1,4 +1,6 @@
-﻿namespace HeThongDatTiecCuoi_WEB.Models.AdminTaiKhoan;
+﻿using System.Text.Json.Serialization;
+
+namespace HeThongDatTiecCuoi_WEB.Models.AdminTaiKhoan;
 
 
 // ========================================
@@ -6,28 +8,37 @@
 // ========================================
 public sealed class TaiKhoanDto
 {
+    [JsonPropertyName("userId")]
     public int NguoiDungID { get; set; }
 
     public string Email { get; set; } = string.Empty;
 
+    [JsonPropertyName("roleId")]
     public int VaiTroID { get; set; }
 
+    [JsonPropertyName("roleName")]
     public string TenVaiTro { get; set; } = string.Empty;
 
+    [JsonPropertyName("fullName")]
     public string? HoTen { get; set; }
 
+    [JsonPropertyName("employeeCode")]
     public string? MaNhanVien { get; set; }
 
+    [JsonPropertyName("phoneNumber")]
     public string? SoDienThoai { get; set; }
 
     // Trạng thái tài khoản NguoiDung:
     // Hoạt động / Tạm khóa / Ngừng hoạt động
+    [JsonPropertyName("status")]
     public string TrangThai { get; set; } = string.Empty;
 
     // Chỉ có với nhân viên:
     // Đang làm việc / Tạm nghỉ / Đã nghỉ việc
+    [JsonPropertyName("employeeStatus")]
     public string? TrangThaiNhanVien { get; set; }
 
+    [JsonPropertyName("createdAt")]
     public DateTime NgayTao { get; set; }
 }
 
@@ -37,8 +48,10 @@ public sealed class TaiKhoanDto
 // ========================================
 public sealed class VaiTroDto
 {
+    [JsonPropertyName("roleId")]
     public int VaiTroID { get; set; }
 
+    [JsonPropertyName("roleName")]
     public string TenVaiTro { get; set; } = string.Empty;
 }
 
@@ -67,14 +80,18 @@ public sealed class QuanLyTaiKhoanViewModel
 // ========================================
 public sealed class TaoTaiKhoanNhanVienRequest
 {
+    [JsonPropertyName("roleId")]
     public int VaiTroID { get; set; }
 
+    [JsonPropertyName("fullName")]
     public string HoTen { get; set; } = string.Empty;
 
+    [JsonPropertyName("phoneNumber")]
     public string? SoDienThoai { get; set; }
 
     public string Email { get; set; } = string.Empty;
 
+    [JsonPropertyName("password")]
     public string MatKhau { get; set; } = string.Empty;
 }
 
@@ -84,14 +101,18 @@ public sealed class TaoTaiKhoanNhanVienRequest
 // ========================================
 public sealed class CapNhatTaiKhoanNhanVienRequest
 {
+    [JsonPropertyName("roleId")]
     public int VaiTroID { get; set; }
 
+    [JsonPropertyName("fullName")]
     public string HoTen { get; set; } = string.Empty;
 
+    [JsonPropertyName("phoneNumber")]
     public string? SoDienThoai { get; set; }
 
     public string Email { get; set; } = string.Empty;
 
+    [JsonPropertyName("employeeStatus")]
     public string? TrangThaiNhanVien { get; set; }
 }
 
@@ -101,6 +122,7 @@ public sealed class CapNhatTaiKhoanNhanVienRequest
 // ========================================
 public sealed class DatLaiMatKhauRequest
 {
+    [JsonPropertyName("newPassword")]
     public string MatKhauMoi { get; set; } = string.Empty;
 }
 
@@ -110,6 +132,7 @@ public sealed class DatLaiMatKhauRequest
 // ========================================
 public sealed class CapNhatTrangThaiTaiKhoanRequest
 {
+    [JsonPropertyName("status")]
     public string TrangThai { get; set; } = string.Empty;
 }
 
@@ -117,17 +140,29 @@ public sealed class ThaoTacTaiKhoanResponse
 {
     public string Message { get; set; } = string.Empty;
 
+    [JsonPropertyName("userId")]
     public int? NguoiDungID { get; set; }
 
     public string? Email { get; set; }
 
+    [JsonPropertyName("employeeCode")]
     public string? MaNhanVien { get; set; }
 
+    [JsonPropertyName("fullName")]
     public string? HoTen { get; set; }
 
+    [JsonPropertyName("phoneNumber")]
     public string? SoDienThoai { get; set; }
 
+    [JsonPropertyName("role")]
     public string? VaiTro { get; set; }
 
+    [JsonPropertyName("status")]
     public string? TrangThai { get; set; }
+
+    [JsonPropertyName("accountStatus")]
+    public string? TrangThaiTaiKhoan { get; set; }
+
+    [JsonPropertyName("employeeStatus")]
+    public string? TrangThaiNhanVien { get; set; }
 }

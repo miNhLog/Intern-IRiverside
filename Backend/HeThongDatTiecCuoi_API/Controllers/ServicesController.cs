@@ -12,14 +12,14 @@ using System.Text;
 namespace HeThongDatTiecCuoi_API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/services")]
 [Authorize(Roles = RoleNames.Admin)]
-public sealed class DichVuController : ControllerBase
+public sealed class ServicesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly IImageStorage _imageStorage;
 
-    public DichVuController(
+    public ServicesController(
         ApplicationDbContext context,
         IImageStorage imageStorage)
     {
@@ -29,16 +29,16 @@ public sealed class DichVuController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetAll(
-        string? tuKhoa,
-        string? loaiDichVu,
-        string? trangThai,
+        string? keyword,
+        string? serviceType,
+        string? status,
         CancellationToken cancellationToken)
     {
-        tuKhoa = NormalizeOptional(tuKhoa);
-        loaiDichVu = NormalizeOptional(loaiDichVu);
-        trangThai = NormalizeOptional(trangThai);
+        keyword = NormalizeOptional(keyword);
+        serviceType = NormalizeOptional(serviceType);
+        status = NormalizeOptional(status);
 
-        if (trangThai is not null && !IsValidStatus(trangThai))
+        if (status is not null && !IsValidStatus(status))
         {
             return BadRequest(new ApiErrorResponse(
                 "Trạng thái dịch vụ không hợp lệ."));
@@ -46,36 +46,36 @@ public sealed class DichVuController : ControllerBase
 
         var query = _context.DichVu.AsNoTracking();
 
-        if (tuKhoa is not null)
+        if (keyword is not null)
         {
             query = query.Where(x =>
-                x.MaDichVu.Contains(tuKhoa) ||
-                x.TenDichVu.Contains(tuKhoa) ||
-                (x.MoTa != null && x.MoTa.Contains(tuKhoa)));
+                x.MaDichVu.Contains(keyword) ||
+                x.TenDichVu.Contains(keyword) ||
+                (x.MoTa != null && x.MoTa.Contains(keyword)));
         }
 
-        if (loaiDichVu is not null)
+        if (serviceType is not null)
         {
-            query = query.Where(x => x.LoaiDichVu == loaiDichVu);
+            query = query.Where(x => x.LoaiDichVu == serviceType);
         }
 
-        if (trangThai is not null)
+        if (status is not null)
         {
-            query = query.Where(x => x.TrangThai == trangThai);
+            query = query.Where(x => x.TrangThai == status);
         }
 
         var danhSach = await query
             .OrderBy(x => x.DichVuID)
-            .Select(x => new DichVuDto
+            .Select(x => new ServiceDto
             {
-                DichVuID = x.DichVuID,
-                MaDichVu = x.MaDichVu,
-                TenDichVu = x.TenDichVu,
-                LoaiDichVu = x.LoaiDichVu,
-                MoTa = x.MoTa,
-                Gia = x.Gia,
-                HinhAnh = x.HinhAnh,
-                TrangThai = x.TrangThai
+                ServiceId = x.DichVuID,
+                ServiceCode = x.MaDichVu,
+                ServiceName = x.TenDichVu,
+                ServiceType = x.LoaiDichVu,
+                Description = x.MoTa,
+                Price = x.Gia,
+                ImageUrl = x.HinhAnh,
+                Status = x.TrangThai
             })
             .ToListAsync(cancellationToken);
 
@@ -90,16 +90,16 @@ public sealed class DichVuController : ControllerBase
         var dichVu = await _context.DichVu
             .AsNoTracking()
             .Where(x => x.DichVuID == id)
-            .Select(x => new DichVuDto
+            .Select(x => new ServiceDto
             {
-                DichVuID = x.DichVuID,
-                MaDichVu = x.MaDichVu,
-                TenDichVu = x.TenDichVu,
-                LoaiDichVu = x.LoaiDichVu,
-                MoTa = x.MoTa,
-                Gia = x.Gia,
-                HinhAnh = x.HinhAnh,
-                TrangThai = x.TrangThai
+                ServiceId = x.DichVuID,
+                ServiceCode = x.MaDichVu,
+                ServiceName = x.TenDichVu,
+                ServiceType = x.LoaiDichVu,
+                Description = x.MoTa,
+                Price = x.Gia,
+                ImageUrl = x.HinhAnh,
+                Status = x.TrangThai
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -114,10 +114,10 @@ public sealed class DichVuController : ControllerBase
     [HttpPost]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Create(
-        [FromForm] TaoDichVuRequest request,
+        [FromForm] CreateServiceRequest request,
         CancellationToken cancellationToken)
     {
-        var maDichVu = NormalizeText(request.MaDichVu);
+        var maDichVu = NormalizeText(request.ServiceCode);
 
         if (await _context.DichVu.AnyAsync(
                 x => x.MaDichVu == maDichVu,
@@ -129,10 +129,10 @@ public sealed class DichVuController : ControllerBase
         string? imagePath = null;
         try
         {
-            imagePath = request.HinhAnhFile is null
+            imagePath = request.ImageFile is null
                 ? null
                 : await _imageStorage.SaveAsync(
-                    request.HinhAnhFile,
+                    request.ImageFile,
                     ImageDomain.DichVu,
                     cancellationToken);
         }
@@ -144,10 +144,10 @@ public sealed class DichVuController : ControllerBase
         var dichVu = new DichVu
         {
             MaDichVu = maDichVu,
-            TenDichVu = NormalizeText(request.TenDichVu),
-            LoaiDichVu = NormalizeOptional(request.LoaiDichVu),
-            MoTa = NormalizeOptional(request.MoTa),
-            Gia = request.Gia,
+            TenDichVu = NormalizeText(request.ServiceName),
+            LoaiDichVu = NormalizeOptional(request.ServiceType),
+            MoTa = NormalizeOptional(request.Description),
+            Gia = request.Price,
             HinhAnh = imagePath,
             TrangThai = "Áp dụng"
         };
@@ -179,7 +179,7 @@ public sealed class DichVuController : ControllerBase
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Update(
         int id,
-        [FromForm] CapNhatDichVuRequest request,
+        [FromForm] UpdateServiceRequest request,
         CancellationToken cancellationToken)
     {
         var dichVu = await _context.DichVu
@@ -190,7 +190,7 @@ public sealed class DichVuController : ControllerBase
             return NotFound(new ApiErrorResponse("Không tìm thấy dịch vụ."));
         }
 
-        var maDichVu = NormalizeText(request.MaDichVu);
+        var maDichVu = NormalizeText(request.ServiceCode);
 
         if (await _context.DichVu.AnyAsync(
                 x => x.MaDichVu == maDichVu && x.DichVuID != id,
@@ -199,13 +199,13 @@ public sealed class DichVuController : ControllerBase
             return Conflict(new ApiErrorResponse("Mã dịch vụ đã tồn tại."));
         }
 
-        if (request.HinhAnhFile is not null && request.XoaHinhAnh)
+        if (request.ImageFile is not null && request.RemoveImage)
         {
             return BadRequest(new ApiErrorResponse(
                 "Không thể vừa tải ảnh mới vừa gỡ ảnh hiện tại.",
                 new Dictionary<string, string[]>
                 {
-                    ["HinhAnhFile"] = ["Chỉ chọn một trong hai thao tác tải mới hoặc gỡ ảnh."]
+                    ["imageFile"] = ["Chỉ chọn một trong hai thao tác tải mới hoặc gỡ ảnh."]
                 }));
         }
 
@@ -213,10 +213,10 @@ public sealed class DichVuController : ControllerBase
         string? newImagePath = null;
         try
         {
-            newImagePath = request.HinhAnhFile is null
+            newImagePath = request.ImageFile is null
                 ? null
                 : await _imageStorage.SaveAsync(
-                    request.HinhAnhFile,
+                    request.ImageFile,
                     ImageDomain.DichVu,
                     cancellationToken);
         }
@@ -226,11 +226,11 @@ public sealed class DichVuController : ControllerBase
         }
 
         dichVu.MaDichVu = maDichVu;
-        dichVu.TenDichVu = NormalizeText(request.TenDichVu);
-        dichVu.LoaiDichVu = NormalizeOptional(request.LoaiDichVu);
-        dichVu.MoTa = NormalizeOptional(request.MoTa);
-        dichVu.Gia = request.Gia;
-        dichVu.HinhAnh = newImagePath ?? (request.XoaHinhAnh ? null : oldImagePath);
+        dichVu.TenDichVu = NormalizeText(request.ServiceName);
+        dichVu.LoaiDichVu = NormalizeOptional(request.ServiceType);
+        dichVu.MoTa = NormalizeOptional(request.Description);
+        dichVu.Gia = request.Price;
+        dichVu.HinhAnh = newImagePath ?? (request.RemoveImage ? null : oldImagePath);
 
         try
         {
@@ -255,10 +255,10 @@ public sealed class DichVuController : ControllerBase
         return Ok(ToDto(dichVu));
     }
 
-    [HttpPatch("{id:int}/trang-thai")]
-    public async Task<IActionResult> UpdateTrangThai(
+    [HttpPatch("{id:int}/status")]
+    public async Task<IActionResult> UpdateStatus(
         int id,
-        [FromBody] CapNhatTrangThaiDichVuRequest request,
+        [FromBody] UpdateServiceStatusRequest request,
         CancellationToken cancellationToken)
     {
         var dichVu = await _context.DichVu
@@ -269,40 +269,40 @@ public sealed class DichVuController : ControllerBase
             return NotFound(new ApiErrorResponse("Không tìm thấy dịch vụ."));
         }
 
-        if (!IsValidStatus(request.TrangThai))
+        if (!IsValidStatus(request.Status))
         {
             return BadRequest(new ApiErrorResponse(
                 "Trạng thái dịch vụ chỉ được là Áp dụng hoặc Ngừng áp dụng."));
         }
 
-        dichVu.TrangThai = request.TrangThai;
+        dichVu.TrangThai = request.Status;
         await _context.SaveChangesAsync(cancellationToken);
 
         return Ok(ToDto(dichVu));
     }
 
-    private static DichVuDto ToDto(DichVu dichVu) => new()
+    private static ServiceDto ToDto(DichVu dichVu) => new()
     {
-        DichVuID = dichVu.DichVuID,
-        MaDichVu = NormalizeText(dichVu.MaDichVu),
-        TenDichVu = NormalizeText(dichVu.TenDichVu),
-        LoaiDichVu = NormalizeOptional(dichVu.LoaiDichVu),
-        MoTa = NormalizeOptional(dichVu.MoTa),
-        Gia = dichVu.Gia,
-        HinhAnh = NormalizeOptional(dichVu.HinhAnh),
-        TrangThai = NormalizeText(dichVu.TrangThai)
+        ServiceId = dichVu.DichVuID,
+        ServiceCode = NormalizeText(dichVu.MaDichVu),
+        ServiceName = NormalizeText(dichVu.TenDichVu),
+        ServiceType = NormalizeOptional(dichVu.LoaiDichVu),
+        Description = NormalizeOptional(dichVu.MoTa),
+        Price = dichVu.Gia,
+        ImageUrl = NormalizeOptional(dichVu.HinhAnh),
+        Status = NormalizeText(dichVu.TrangThai)
     };
 
-    private static DichVuDto NormalizeDto(DichVuDto dichVu) => new()
+    private static ServiceDto NormalizeDto(ServiceDto dichVu) => new()
     {
-        DichVuID = dichVu.DichVuID,
-        MaDichVu = NormalizeText(dichVu.MaDichVu),
-        TenDichVu = NormalizeText(dichVu.TenDichVu),
-        LoaiDichVu = NormalizeOptional(dichVu.LoaiDichVu),
-        MoTa = NormalizeOptional(dichVu.MoTa),
-        Gia = dichVu.Gia,
-        HinhAnh = NormalizeOptional(dichVu.HinhAnh),
-        TrangThai = NormalizeText(dichVu.TrangThai)
+        ServiceId = dichVu.ServiceId,
+        ServiceCode = NormalizeText(dichVu.ServiceCode),
+        ServiceName = NormalizeText(dichVu.ServiceName),
+        ServiceType = NormalizeOptional(dichVu.ServiceType),
+        Description = NormalizeOptional(dichVu.Description),
+        Price = dichVu.Price,
+        ImageUrl = NormalizeOptional(dichVu.ImageUrl),
+        Status = NormalizeText(dichVu.Status)
     };
 
     private static string NormalizeText(string value) =>
@@ -324,7 +324,7 @@ public sealed class DichVuController : ControllerBase
             exception.Message,
             new Dictionary<string, string[]>
             {
-                ["HinhAnhFile"] = [exception.Message]
+                ["imageFile"] = [exception.Message]
             });
 
     private async Task DeleteQuietlyAsync(

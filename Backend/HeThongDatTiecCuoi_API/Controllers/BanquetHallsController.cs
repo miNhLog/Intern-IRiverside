@@ -1,4 +1,5 @@
 ﻿using HeThongDatTiecCuoi_API.Data;
+using HeThongDatTiecCuoi_API.DTOs.BanquetHalls;
 using HeThongDatTiecCuoi_API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,18 +8,18 @@ using Microsoft.EntityFrameworkCore;
 namespace HeThongDatTiecCuoi_API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/banquet-halls")]
 [Authorize(Roles = RoleNames.Admin)]
-public class SanhTiecController : ControllerBase
+public class BanquetHallsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
 
-    public SanhTiecController(ApplicationDbContext context)
+    public BanquetHallsController(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    // GET: api/SanhTiec
+    // GET: api/banquet-halls
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -26,10 +27,10 @@ public class SanhTiecController : ControllerBase
             .OrderBy(x => x.SanhTiecID)
             .ToListAsync();
 
-        return Ok(danhSachSanh);
+        return Ok(danhSachSanh.Select(ToDto));
     }
 
-    // GET: api/SanhTiec/1
+    // GET: api/banquet-halls/1
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -43,13 +44,26 @@ public class SanhTiecController : ControllerBase
             });
         }
 
-        return Ok(sanh);
+        return Ok(ToDto(sanh));
     }
 
-    // POST: api/SanhTiec
+    // POST: api/banquet-halls
     [HttpPost]
-    public async Task<IActionResult> Create(SanhTiec sanhTiec)
+    public async Task<IActionResult> Create(BanquetHallDto model)
     {
+        var sanhTiec = new SanhTiec
+        {
+            SanhTiecID = model.HallId,
+            MaSanh = model.HallCode,
+            TenSanh = model.HallName,
+            SucChuaToiThieu = model.MinCapacity,
+            SucChuaToiDa = model.MaxCapacity,
+            GiaThue = model.RentalPrice,
+            MoTa = model.Description,
+            HinhAnh = model.ImageUrl,
+            TrangThai = model.Status
+        };
+
         if (string.IsNullOrWhiteSpace(sanhTiec.MaSanh))
         {
             return BadRequest(new
@@ -118,13 +132,13 @@ public class SanhTiecController : ControllerBase
         return CreatedAtAction(
             nameof(GetById),
             new { id = sanhTiec.SanhTiecID },
-            sanhTiec
+            ToDto(sanhTiec)
         );
     }
 
-    // PUT: api/SanhTiec/1
+    // PUT: api/banquet-halls/1
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, SanhTiec sanhTiec)
+    public async Task<IActionResult> Update(int id, BanquetHallDto model)
     {
         var sanhHienTai = await _context.SanhTiec.FindAsync(id);
 
@@ -138,7 +152,7 @@ public class SanhTiecController : ControllerBase
 
         var maSanhDaTonTai = await _context.SanhTiec
             .AnyAsync(x =>
-                x.MaSanh == sanhTiec.MaSanh &&
+                x.MaSanh == model.HallCode &&
                 x.SanhTiecID != id);
 
         if (maSanhDaTonTai)
@@ -149,7 +163,7 @@ public class SanhTiecController : ControllerBase
             });
         }
 
-        if (sanhTiec.SucChuaToiDa <= 0)
+        if (model.MaxCapacity <= 0)
         {
             return BadRequest(new
             {
@@ -157,8 +171,8 @@ public class SanhTiecController : ControllerBase
             });
         }
 
-        if (sanhTiec.SucChuaToiThieu.HasValue &&
-            sanhTiec.SucChuaToiThieu.Value > sanhTiec.SucChuaToiDa)
+        if (model.MinCapacity.HasValue &&
+            model.MinCapacity.Value > model.MaxCapacity)
         {
             return BadRequest(new
             {
@@ -166,7 +180,7 @@ public class SanhTiecController : ControllerBase
             });
         }
 
-        if (sanhTiec.GiaThue < 0)
+        if (model.RentalPrice < 0)
         {
             return BadRequest(new
             {
@@ -174,9 +188,9 @@ public class SanhTiecController : ControllerBase
             });
         }
 
-        if (sanhTiec.TrangThai != "Hoạt động" &&
-            sanhTiec.TrangThai != "Bảo trì" &&
-            sanhTiec.TrangThai != "Ngừng hoạt động")
+        if (model.Status != "Hoạt động" &&
+            model.Status != "Bảo trì" &&
+            model.Status != "Ngừng hoạt động")
         {
             return BadRequest(new
             {
@@ -184,25 +198,25 @@ public class SanhTiecController : ControllerBase
             });
         }
 
-        sanhHienTai.MaSanh = sanhTiec.MaSanh;
-        sanhHienTai.TenSanh = sanhTiec.TenSanh;
-        sanhHienTai.SucChuaToiThieu = sanhTiec.SucChuaToiThieu;
-        sanhHienTai.SucChuaToiDa = sanhTiec.SucChuaToiDa;
-        sanhHienTai.GiaThue = sanhTiec.GiaThue;
-        sanhHienTai.MoTa = sanhTiec.MoTa;
-        sanhHienTai.HinhAnh = sanhTiec.HinhAnh;
-        sanhHienTai.TrangThai = sanhTiec.TrangThai;
+        sanhHienTai.MaSanh = model.HallCode;
+        sanhHienTai.TenSanh = model.HallName;
+        sanhHienTai.SucChuaToiThieu = model.MinCapacity;
+        sanhHienTai.SucChuaToiDa = model.MaxCapacity;
+        sanhHienTai.GiaThue = model.RentalPrice;
+        sanhHienTai.MoTa = model.Description;
+        sanhHienTai.HinhAnh = model.ImageUrl;
+        sanhHienTai.TrangThai = model.Status;
 
         await _context.SaveChangesAsync();
 
-        return Ok(sanhHienTai);
+        return Ok(ToDto(sanhHienTai));
     }
 
-    // PATCH: api/SanhTiec/1/trang-thai
-    [HttpPatch("{id}/trang-thai")]
-    public async Task<IActionResult> UpdateTrangThai(
+    // PATCH: api/banquet-halls/1/status
+    [HttpPatch("{id}/status")]
+    public async Task<IActionResult> UpdateStatus(
         int id,
-        [FromBody] string trangThai)
+        [FromBody] string status)
     {
         var sanh = await _context.SanhTiec.FindAsync(id);
 
@@ -214,9 +228,9 @@ public class SanhTiecController : ControllerBase
             });
         }
 
-        if (trangThai != "Hoạt động" &&
-            trangThai != "Bảo trì" &&
-            trangThai != "Ngừng hoạt động")
+        if (status != "Hoạt động" &&
+            status != "Bảo trì" &&
+            status != "Ngừng hoạt động")
         {
             return BadRequest(new
             {
@@ -224,18 +238,18 @@ public class SanhTiecController : ControllerBase
             });
         }
 
-        sanh.TrangThai = trangThai;
+        sanh.TrangThai = status;
 
         await _context.SaveChangesAsync();
 
         return Ok(new
         {
             message = "Cập nhật trạng thái thành công.",
-            sanh
+            hall = ToDto(sanh)
         });
     }
 
-    // DELETE: api/SanhTiec/1
+    // DELETE: api/banquet-halls/1
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -283,4 +297,17 @@ public class SanhTiecController : ControllerBase
             message = "Xóa sảnh thành công."
         });
     }
+
+    private static BanquetHallDto ToDto(SanhTiec sanh) => new()
+    {
+        HallId = sanh.SanhTiecID,
+        HallCode = sanh.MaSanh,
+        HallName = sanh.TenSanh,
+        MinCapacity = sanh.SucChuaToiThieu,
+        MaxCapacity = sanh.SucChuaToiDa,
+        RentalPrice = sanh.GiaThue,
+        Description = sanh.MoTa,
+        ImageUrl = sanh.HinhAnh,
+        Status = sanh.TrangThai
+    };
 }

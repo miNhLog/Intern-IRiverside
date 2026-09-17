@@ -1,12 +1,14 @@
+using System.Text.Json.Serialization;
+
 namespace HeThongDatTiecCuoi_WEB.Models.Auth;
 
 public sealed record CurrentUserDto(
-    int NguoiDungId,
+    [property: JsonPropertyName("userId")] int NguoiDungId,
     string Email,
-    string HoTen,
-    string? SoDienThoai,
-    string VaiTro,
-    string TrangThai);
+    [property: JsonPropertyName("fullName")] string HoTen,
+    [property: JsonPropertyName("phoneNumber")] string? SoDienThoai,
+    [property: JsonPropertyName("role")] string VaiTro,
+    [property: JsonPropertyName("status")] string TrangThai);
 
 public sealed record AuthResponseDto(
     string AccessToken,

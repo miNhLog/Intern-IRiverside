@@ -9,14 +9,14 @@ using Microsoft.AspNetCore.Identity;
 namespace HeThongDatTiecCuoi_API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/admin/accounts")]
 [Authorize(Roles = "Quản trị viên")]
-public sealed class AdminTaiKhoanController : ControllerBase
+public sealed class AdminAccountsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly IPasswordHasher<NguoiDung> _passwordHasher;
 
-    public AdminTaiKhoanController(
+    public AdminAccountsController(
         ApplicationDbContext context,
         IPasswordHasher<NguoiDung> passwordHasher)
     {
@@ -25,12 +25,12 @@ public sealed class AdminTaiKhoanController : ControllerBase
     }
 
 
-    // GET: api/AdminTaiKhoan
+    // GET: api/admin/accounts
     [HttpGet]
-    public async Task<ActionResult<List<TaiKhoanDto>>> GetDanhSachTaiKhoan(
-        string? tuKhoa,
-        int? vaiTroId,
-        string? trangThai,
+    public async Task<ActionResult<List<AccountDto>>> GetAccounts(
+        string? keyword,
+        int? roleId,
+        string? status,
         CancellationToken cancellationToken)
     {
         var query =
@@ -60,76 +60,76 @@ public sealed class AdminTaiKhoanController : ControllerBase
             };
 
 
-        if (!string.IsNullOrWhiteSpace(tuKhoa))
+        if (!string.IsNullOrWhiteSpace(keyword))
         {
-            tuKhoa = tuKhoa.Trim();
+            keyword = keyword.Trim();
 
             query = query.Where(x =>
-                x.nguoiDung.Email.Contains(tuKhoa) ||
+                x.nguoiDung.Email.Contains(keyword) ||
 
                 (x.nhanVien != null &&
                  (
-                     (x.nhanVien.HoTen ?? "").Contains(tuKhoa) ||
-                     (x.nhanVien.MaNhanVien ?? "").Contains(tuKhoa) ||
-                     (x.nhanVien.SoDienThoai ?? "").Contains(tuKhoa)
+                      (x.nhanVien.HoTen ?? "").Contains(keyword) ||
+                      (x.nhanVien.MaNhanVien ?? "").Contains(keyword) ||
+                      (x.nhanVien.SoDienThoai ?? "").Contains(keyword)
                  )) ||
 
                 (x.khachHang != null &&
                  (
-                     (x.khachHang.HoTen ?? "").Contains(tuKhoa) ||
-                     (x.khachHang.SoDienThoai ?? "").Contains(tuKhoa)
+                      (x.khachHang.HoTen ?? "").Contains(keyword) ||
+                      (x.khachHang.SoDienThoai ?? "").Contains(keyword)
                  )));
         }
 
 
         // LỌC VAI TRÒ
-        if (vaiTroId.HasValue)
+        if (roleId.HasValue)
         {
             query = query.Where(x =>
-                x.nguoiDung.VaiTroID == vaiTroId.Value);
+                x.nguoiDung.VaiTroID == roleId.Value);
         }
 
 
         // LỌC TRẠNG THÁI
-        if (!string.IsNullOrWhiteSpace(trangThai))
+        if (!string.IsNullOrWhiteSpace(status))
         {
             query = query.Where(x =>
-                x.nguoiDung.TrangThai == trangThai);
+                x.nguoiDung.TrangThai == status);
         }
 
 
         var danhSach = await query
             .OrderByDescending(x => x.nguoiDung.NgayTao)
-            .Select(x => new TaiKhoanDto
+            .Select(x => new AccountDto
             {
-                NguoiDungID = x.nguoiDung.NguoiDungID,
+                UserId = x.nguoiDung.NguoiDungID,
 
                 Email = x.nguoiDung.Email,
 
-                VaiTroID = x.nguoiDung.VaiTroID,
+                RoleId = x.nguoiDung.VaiTroID,
 
-                TenVaiTro = x.vaiTro.TenVaiTro,
+                RoleName = x.vaiTro.TenVaiTro,
 
-                HoTen = x.nhanVien != null
+                FullName = x.nhanVien != null
                     ? x.nhanVien.HoTen
                     : x.khachHang != null
                         ? x.khachHang.HoTen
                         : null,
 
-                MaNhanVien = x.nhanVien != null
+                EmployeeCode = x.nhanVien != null
                     ? x.nhanVien.MaNhanVien
                     : null,
 
-                SoDienThoai = x.nhanVien != null
+                PhoneNumber = x.nhanVien != null
                     ? x.nhanVien.SoDienThoai
                     : x.khachHang != null
                         ? x.khachHang.SoDienThoai
                         : null,
 
-                TrangThai = x.nguoiDung.TrangThai,
+                Status = x.nguoiDung.TrangThai,
 
-                NgayTao = x.nguoiDung.NgayTao,
-                TrangThaiNhanVien = x.nhanVien != null
+                CreatedAt = x.nguoiDung.NgayTao,
+                EmployeeStatus = x.nhanVien != null
                     ? x.nhanVien.TrangThai
                     : null
             })
@@ -138,29 +138,29 @@ public sealed class AdminTaiKhoanController : ControllerBase
 
         return Ok(danhSach);
     }
-    // GET: api/AdminTaiKhoan/vai-tro
-    [HttpGet("vai-tro")]
-    public async Task<ActionResult<List<VaiTroDto>>> GetDanhSachVaiTro(
+    // GET: api/admin/accounts/roles
+    [HttpGet("roles")]
+    public async Task<ActionResult<List<RoleDto>>> GetRoles(
         CancellationToken cancellationToken)
     {
         var danhSach = await _context.VaiTro
             .AsNoTracking()
             .OrderBy(x => x.VaiTroID)
-            .Select(x => new VaiTroDto
+            .Select(x => new RoleDto
             {
-                VaiTroID = x.VaiTroID,
-                TenVaiTro = x.TenVaiTro
+                RoleId = x.VaiTroID,
+                RoleName = x.TenVaiTro
             })
             .ToListAsync(cancellationToken);
 
         return Ok(danhSach);
     }
 
-    // PATCH: api/AdminTaiKhoan/8/trang-thai
-    [HttpPatch("{id}/trang-thai")]
-    public async Task<IActionResult> UpdateTrangThaiTaiKhoan(
+    // PATCH: api/admin/accounts/8/status
+    [HttpPatch("{id}/status")]
+    public async Task<IActionResult> UpdateAccountStatus(
         int id,
-        [FromBody] string trangThai,
+        [FromBody] string status,
         CancellationToken cancellationToken)
     {
         var taiKhoan = await _context.NguoiDung
@@ -183,7 +183,7 @@ public sealed class AdminTaiKhoanController : ControllerBase
             "Ngừng hoạt động"
         };
 
-        if (!trangThaiHopLe.Contains(trangThai))
+        if (!trangThaiHopLe.Contains(status))
         {
             return BadRequest(new
             {
@@ -195,7 +195,7 @@ public sealed class AdminTaiKhoanController : ControllerBase
         var emailDangDangNhap =
             User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
 
-        if (taiKhoan.Email == emailDangDangNhap && trangThai != "Hoạt động")
+        if (taiKhoan.Email == emailDangDangNhap && status != "Hoạt động")
         {
             return BadRequest(new
             {
@@ -203,11 +203,11 @@ public sealed class AdminTaiKhoanController : ControllerBase
             });
         }
 
-        taiKhoan.TrangThai = trangThai;
+        taiKhoan.TrangThai = status;
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        var message = trangThai switch
+        var message = status switch
         {
             "Hoạt động" => "Mở khóa tài khoản thành công.",
             "Tạm khóa" => "Tạm khóa tài khoản thành công.",
@@ -218,23 +218,23 @@ public sealed class AdminTaiKhoanController : ControllerBase
         return Ok(new
         {
             message,
-            nguoiDungID = taiKhoan.NguoiDungID,
-            trangThai = taiKhoan.TrangThai
+            userId = taiKhoan.NguoiDungID,
+            status = taiKhoan.TrangThai
         });
     }
-    // POST: api/AdminTaiKhoan/nhan-vien
-    [HttpPost("nhan-vien")]
-    public async Task<IActionResult> TaoTaiKhoanNhanVien(
-        [FromBody] TaoTaiKhoanNhanVienRequest request,
+    // POST: api/admin/accounts/staff
+    [HttpPost("staff")]
+    public async Task<IActionResult> CreateStaffAccount(
+        [FromBody] CreateStaffAccountRequest request,
         CancellationToken cancellationToken)
     {
         var email = request.Email.Trim().ToLowerInvariant();
 
-        var hoTen = request.HoTen.Trim();
+        var hoTen = request.FullName.Trim();
 
-        var soDienThoai = string.IsNullOrWhiteSpace(request.SoDienThoai)
+        var soDienThoai = string.IsNullOrWhiteSpace(request.PhoneNumber)
             ? null
-            : request.SoDienThoai.Trim();
+            : request.PhoneNumber.Trim();
 
         if (!string.IsNullOrWhiteSpace(soDienThoai))
         {
@@ -257,7 +257,7 @@ public sealed class AdminTaiKhoanController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(email) ||
              string.IsNullOrWhiteSpace(hoTen) ||
-             string.IsNullOrWhiteSpace(request.MatKhau))
+             string.IsNullOrWhiteSpace(request.Password))
         {
             return BadRequest(new
             {
@@ -283,7 +283,7 @@ public sealed class AdminTaiKhoanController : ControllerBase
         var vaiTro = await _context.VaiTro
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                x => x.VaiTroID == request.VaiTroID,
+                x => x.VaiTroID == request.RoleId,
                 cancellationToken);
 
         if (vaiTro == null)
@@ -312,11 +312,11 @@ public sealed class AdminTaiKhoanController : ControllerBase
         }
 
         // Kiểm tra mật khẩu giống yêu cầu đăng nhập hiện tại
-        if (request.MatKhau.Length < 8 ||
-            !request.MatKhau.Any(char.IsUpper) ||
-            !request.MatKhau.Any(char.IsLower) ||
-            !request.MatKhau.Any(char.IsDigit) ||
-            !request.MatKhau.Any(c => !char.IsLetterOrDigit(c)))
+        if (request.Password.Length < 8 ||
+            !request.Password.Any(char.IsUpper) ||
+            !request.Password.Any(char.IsLower) ||
+            !request.Password.Any(char.IsDigit) ||
+            !request.Password.Any(c => !char.IsLetterOrDigit(c)))
         {
             return BadRequest(new
             {
@@ -331,7 +331,7 @@ public sealed class AdminTaiKhoanController : ControllerBase
         {
             var nguoiDung = new NguoiDung
             {
-                VaiTroID = request.VaiTroID,
+            VaiTroID = request.RoleId,
                 Email = email,
                 TrangThai = "Hoạt động",
                 NgayTao = DateTime.Now
@@ -340,7 +340,7 @@ public sealed class AdminTaiKhoanController : ControllerBase
             nguoiDung.MatKhauHash =
                 _passwordHasher.HashPassword(
                     nguoiDung,
-                    request.MatKhau);
+                    request.Password);
 
             _context.NguoiDung.Add(nguoiDung);
 
@@ -365,11 +365,11 @@ public sealed class AdminTaiKhoanController : ControllerBase
             return Ok(new
             {
                 message = "Tạo tài khoản nhân viên thành công.",
-                nguoiDungID = nguoiDung.NguoiDungID,
+                userId = nguoiDung.NguoiDungID,
                 email = nguoiDung.Email,
-                maNhanVien = nhanVien.MaNhanVien,
-                hoTen = nhanVien.HoTen,
-                vaiTro = vaiTro.TenVaiTro
+                employeeCode = nhanVien.MaNhanVien,
+                fullName = nhanVien.HoTen,
+                role = vaiTro.TenVaiTro
             });
         }
         catch
@@ -378,19 +378,19 @@ public sealed class AdminTaiKhoanController : ControllerBase
             throw;
         }
     }
-    // PUT: api/AdminTaiKhoan/nhan-vien/11
-    [HttpPut("nhan-vien/{id}")]
-    public async Task<IActionResult> CapNhatTaiKhoanNhanVien(
+    // PUT: api/admin/accounts/staff/11
+    [HttpPut("staff/{id}")]
+    public async Task<IActionResult> UpdateStaffAccount(
         int id,
-        [FromBody] CapNhatTaiKhoanNhanVienRequest request,
+        [FromBody] UpdateStaffAccountRequest request,
         CancellationToken cancellationToken)
     {
         var email = request.Email.Trim().ToLowerInvariant();
-        var hoTen = request.HoTen.Trim();
+        var hoTen = request.FullName.Trim();
 
-        var soDienThoai = string.IsNullOrWhiteSpace(request.SoDienThoai)
+        var soDienThoai = string.IsNullOrWhiteSpace(request.PhoneNumber)
             ? null
-            : request.SoDienThoai.Trim();
+            : request.PhoneNumber.Trim();
         if (!string.IsNullOrWhiteSpace(soDienThoai))
         {
             var soDienThoaiDaTonTai =
@@ -410,9 +410,9 @@ public sealed class AdminTaiKhoanController : ControllerBase
             }
         }
 
-        var trangThaiNhanVien = string.IsNullOrWhiteSpace(request.TrangThaiNhanVien)
+        var trangThaiNhanVien = string.IsNullOrWhiteSpace(request.EmployeeStatus)
             ? null
-            : request.TrangThaiNhanVien.Trim();
+            : request.EmployeeStatus.Trim();
 
         if (trangThaiNhanVien != null)
         {
@@ -507,7 +507,7 @@ public sealed class AdminTaiKhoanController : ControllerBase
         var vaiTro = await _context.VaiTro
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                x => x.VaiTroID == request.VaiTroID,
+                x => x.VaiTroID == request.RoleId,
                 cancellationToken);
 
         if (vaiTro == null)
@@ -555,7 +555,7 @@ public sealed class AdminTaiKhoanController : ControllerBase
 
         // 8. Cập nhật
         nguoiDung.Email = email;
-        nguoiDung.VaiTroID = request.VaiTroID;
+        nguoiDung.VaiTroID = request.RoleId;
 
         nhanVien.HoTen = hoTen;
         nhanVien.SoDienThoai = soDienThoai;
@@ -573,31 +573,31 @@ public sealed class AdminTaiKhoanController : ControllerBase
         {
             message = "Cập nhật tài khoản nhân viên thành công.",
 
-            nguoiDungID = nguoiDung.NguoiDungID,
+            userId = nguoiDung.NguoiDungID,
 
             email = nguoiDung.Email,
 
-            maNhanVien = nhanVien.MaNhanVien,
+            employeeCode = nhanVien.MaNhanVien,
 
-            hoTen = nhanVien.HoTen,
+            fullName = nhanVien.HoTen,
 
-            soDienThoai = nhanVien.SoDienThoai,
+            phoneNumber = nhanVien.SoDienThoai,
 
-            vaiTro = vaiTro.TenVaiTro,
+            role = vaiTro.TenVaiTro,
 
-            trangThaiTaiKhoan = nguoiDung.TrangThai,
+            accountStatus = nguoiDung.TrangThai,
 
-            trangThaiNhanVien = nhanVien.TrangThai
+            employeeStatus = nhanVien.TrangThai
         });
     }
-    // PATCH: api/AdminTaiKhoan/11/dat-lai-mat-khau
-    [HttpPatch("{id}/dat-lai-mat-khau")]
-    public async Task<IActionResult> DatLaiMatKhau(
+    // PATCH: api/admin/accounts/11/reset-password
+    [HttpPatch("{id}/reset-password")]
+    public async Task<IActionResult> ResetPassword(
         int id,
-        [FromBody] DatLaiMatKhauRequest request,
+        [FromBody] ResetPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.MatKhauMoi))
+        if (string.IsNullOrWhiteSpace(request.NewPassword))
         {
             return BadRequest(new
             {
@@ -605,11 +605,11 @@ public sealed class AdminTaiKhoanController : ControllerBase
             });
         }
 
-        if (request.MatKhauMoi.Length < 8 ||
-            !request.MatKhauMoi.Any(char.IsUpper) ||
-            !request.MatKhauMoi.Any(char.IsLower) ||
-            !request.MatKhauMoi.Any(char.IsDigit) ||
-            !request.MatKhauMoi.Any(c => !char.IsLetterOrDigit(c)))
+        if (request.NewPassword.Length < 8 ||
+            !request.NewPassword.Any(char.IsUpper) ||
+            !request.NewPassword.Any(char.IsLower) ||
+            !request.NewPassword.Any(char.IsDigit) ||
+            !request.NewPassword.Any(c => !char.IsLetterOrDigit(c)))
         {
             return BadRequest(new
             {
@@ -633,14 +633,14 @@ public sealed class AdminTaiKhoanController : ControllerBase
         nguoiDung.MatKhauHash =
             _passwordHasher.HashPassword(
                 nguoiDung,
-                request.MatKhauMoi);
+                    request.NewPassword);
 
         await _context.SaveChangesAsync(cancellationToken);
 
         return Ok(new
         {
             message = "Đặt lại mật khẩu thành công.",
-            nguoiDungID = nguoiDung.NguoiDungID,
+            userId = nguoiDung.NguoiDungID,
             email = nguoiDung.Email
         });
     }
@@ -674,15 +674,14 @@ public sealed class AdminTaiKhoanController : ControllerBase
         return $"NV{soLonNhat + 1:D4}";
     }
 
-    // PATCH:
-    // api/AdminTaiKhoan/nhan-vien/{nguoiDungId}/trang-thai
-    [HttpPatch("nhan-vien/{nguoiDungId:int}/trang-thai")]
-    public async Task<IActionResult> CapNhatTrangThaiNhanVien(
-        int nguoiDungId,
-        [FromBody] string trangThai,
+    // PATCH: api/admin/accounts/staff/{userId}/status
+    [HttpPatch("staff/{userId:int}/status")]
+    public async Task<IActionResult> UpdateEmployeeStatus(
+        int userId,
+        [FromBody] string status,
         CancellationToken cancellationToken)
     {
-        var trangThaiMoi = trangThai?.Trim();
+        var trangThaiMoi = status?.Trim();
 
         var trangThaiHopLe = new[]
         {
@@ -702,7 +701,7 @@ public sealed class AdminTaiKhoanController : ControllerBase
 
         var nhanVien = await _context.NhanVien
             .FirstOrDefaultAsync(
-                x => x.NguoiDungID == nguoiDungId,
+                x => x.NguoiDungID == userId,
                 cancellationToken
             );
 
@@ -721,9 +720,9 @@ public sealed class AdminTaiKhoanController : ControllerBase
         return Ok(new
         {
             message = "Cập nhật trạng thái nhân viên thành công.",
-            nguoiDungID = nguoiDungId,
-            maNhanVien = nhanVien.MaNhanVien,
-            trangThaiNhanVien = nhanVien.TrangThai
+            userId,
+            employeeCode = nhanVien.MaNhanVien,
+            employeeStatus = nhanVien.TrangThai
         });
     }
 }

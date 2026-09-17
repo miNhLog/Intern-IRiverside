@@ -12,14 +12,14 @@ using System.Text;
 namespace HeThongDatTiecCuoi_API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/decor-packages")]
 [Authorize(Roles = RoleNames.Admin)]
-public sealed class GoiTrangTriController : ControllerBase
+public sealed class DecorPackagesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly IImageStorage _imageStorage;
 
-    public GoiTrangTriController(
+    public DecorPackagesController(
         ApplicationDbContext context,
         IImageStorage imageStorage)
     {
@@ -29,16 +29,16 @@ public sealed class GoiTrangTriController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetAll(
-        string? tuKhoa,
-        string? phongCach,
-        string? trangThai,
+        string? keyword,
+        string? style,
+        string? status,
         CancellationToken cancellationToken)
     {
-        tuKhoa = NormalizeOptional(tuKhoa);
-        phongCach = NormalizeOptional(phongCach);
-        trangThai = NormalizeOptional(trangThai);
+        keyword = NormalizeOptional(keyword);
+        style = NormalizeOptional(style);
+        status = NormalizeOptional(status);
 
-        if (trangThai is not null && !IsValidStatus(trangThai))
+        if (status is not null && !IsValidStatus(status))
         {
             return BadRequest(new ApiErrorResponse(
                 "Trạng thái gói không hợp lệ."));
@@ -46,36 +46,36 @@ public sealed class GoiTrangTriController : ControllerBase
 
         var query = _context.GoiTrangTri.AsNoTracking();
 
-        if (tuKhoa is not null)
+        if (keyword is not null)
         {
             query = query.Where(x =>
-                x.MaGoi.Contains(tuKhoa) ||
-                x.TenGoi.Contains(tuKhoa) ||
-                (x.MoTa != null && x.MoTa.Contains(tuKhoa)));
+                x.MaGoi.Contains(keyword) ||
+                x.TenGoi.Contains(keyword) ||
+                (x.MoTa != null && x.MoTa.Contains(keyword)));
         }
 
-        if (phongCach is not null)
+        if (style is not null)
         {
-            query = query.Where(x => x.PhongCach == phongCach);
+            query = query.Where(x => x.PhongCach == style);
         }
 
-        if (trangThai is not null)
+        if (status is not null)
         {
-            query = query.Where(x => x.TrangThai == trangThai);
+            query = query.Where(x => x.TrangThai == status);
         }
 
         var danhSach = await query
             .OrderBy(x => x.GoiTrangTriID)
-            .Select(x => new GoiTrangTriDto
+            .Select(x => new DecorPackageDto
             {
-                GoiTrangTriID = x.GoiTrangTriID,
-                MaGoi = x.MaGoi,
-                TenGoi = x.TenGoi,
-                PhongCach = x.PhongCach,
-                MoTa = x.MoTa,
-                Gia = x.Gia,
-                HinhAnh = x.HinhAnh,
-                TrangThai = x.TrangThai
+                PackageId = x.GoiTrangTriID,
+                PackageCode = x.MaGoi,
+                PackageName = x.TenGoi,
+                Style = x.PhongCach,
+                Description = x.MoTa,
+                Price = x.Gia,
+                ImageUrl = x.HinhAnh,
+                Status = x.TrangThai
             })
             .ToListAsync(cancellationToken);
 
@@ -90,16 +90,16 @@ public sealed class GoiTrangTriController : ControllerBase
         var goi = await _context.GoiTrangTri
             .AsNoTracking()
             .Where(x => x.GoiTrangTriID == id)
-            .Select(x => new GoiTrangTriDto
+            .Select(x => new DecorPackageDto
             {
-                GoiTrangTriID = x.GoiTrangTriID,
-                MaGoi = x.MaGoi,
-                TenGoi = x.TenGoi,
-                PhongCach = x.PhongCach,
-                MoTa = x.MoTa,
-                Gia = x.Gia,
-                HinhAnh = x.HinhAnh,
-                TrangThai = x.TrangThai
+                PackageId = x.GoiTrangTriID,
+                PackageCode = x.MaGoi,
+                PackageName = x.TenGoi,
+                Style = x.PhongCach,
+                Description = x.MoTa,
+                Price = x.Gia,
+                ImageUrl = x.HinhAnh,
+                Status = x.TrangThai
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -114,10 +114,10 @@ public sealed class GoiTrangTriController : ControllerBase
     [HttpPost]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Create(
-        [FromForm] TaoGoiTrangTriRequest request,
+        [FromForm] CreateDecorPackageRequest request,
         CancellationToken cancellationToken)
     {
-        var maGoi = NormalizeText(request.MaGoi);
+        var maGoi = NormalizeText(request.PackageCode);
 
         if (await _context.GoiTrangTri.AnyAsync(
                 x => x.MaGoi == maGoi,
@@ -129,10 +129,10 @@ public sealed class GoiTrangTriController : ControllerBase
         string? imagePath = null;
         try
         {
-            imagePath = request.HinhAnhFile is null
+            imagePath = request.ImageFile is null
                 ? null
                 : await _imageStorage.SaveAsync(
-                    request.HinhAnhFile,
+                    request.ImageFile,
                     ImageDomain.GoiDecor,
                     cancellationToken);
         }
@@ -144,10 +144,10 @@ public sealed class GoiTrangTriController : ControllerBase
         var goi = new GoiTrangTri
         {
             MaGoi = maGoi,
-            TenGoi = NormalizeText(request.TenGoi),
-            PhongCach = NormalizeOptional(request.PhongCach),
-            MoTa = NormalizeOptional(request.MoTa),
-            Gia = request.Gia,
+            TenGoi = NormalizeText(request.PackageName),
+            PhongCach = NormalizeOptional(request.Style),
+            MoTa = NormalizeOptional(request.Description),
+            Gia = request.Price,
             HinhAnh = imagePath,
             TrangThai = "Áp dụng"
         };
@@ -179,7 +179,7 @@ public sealed class GoiTrangTriController : ControllerBase
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Update(
         int id,
-        [FromForm] CapNhatGoiTrangTriRequest request,
+        [FromForm] UpdateDecorPackageRequest request,
         CancellationToken cancellationToken)
     {
         var goi = await _context.GoiTrangTri
@@ -190,7 +190,7 @@ public sealed class GoiTrangTriController : ControllerBase
             return NotFound(new ApiErrorResponse("Không tìm thấy gói trang trí."));
         }
 
-        var maGoi = NormalizeText(request.MaGoi);
+        var maGoi = NormalizeText(request.PackageCode);
 
         if (await _context.GoiTrangTri.AnyAsync(
                 x => x.MaGoi == maGoi && x.GoiTrangTriID != id,
@@ -199,13 +199,13 @@ public sealed class GoiTrangTriController : ControllerBase
             return Conflict(new ApiErrorResponse("Mã gói đã tồn tại."));
         }
 
-        if (request.HinhAnhFile is not null && request.XoaHinhAnh)
+        if (request.ImageFile is not null && request.RemoveImage)
         {
             return BadRequest(new ApiErrorResponse(
                 "Không thể vừa tải ảnh mới vừa gỡ ảnh hiện tại.",
                 new Dictionary<string, string[]>
                 {
-                    ["HinhAnhFile"] = ["Chỉ chọn một trong hai thao tác tải mới hoặc gỡ ảnh."]
+                    ["imageFile"] = ["Chỉ chọn một trong hai thao tác tải mới hoặc gỡ ảnh."]
                 }));
         }
 
@@ -213,10 +213,10 @@ public sealed class GoiTrangTriController : ControllerBase
         string? newImagePath = null;
         try
         {
-            newImagePath = request.HinhAnhFile is null
+            newImagePath = request.ImageFile is null
                 ? null
                 : await _imageStorage.SaveAsync(
-                    request.HinhAnhFile,
+                    request.ImageFile,
                     ImageDomain.GoiDecor,
                     cancellationToken);
         }
@@ -226,11 +226,11 @@ public sealed class GoiTrangTriController : ControllerBase
         }
 
         goi.MaGoi = maGoi;
-        goi.TenGoi = NormalizeText(request.TenGoi);
-        goi.PhongCach = NormalizeOptional(request.PhongCach);
-        goi.MoTa = NormalizeOptional(request.MoTa);
-        goi.Gia = request.Gia;
-        goi.HinhAnh = newImagePath ?? (request.XoaHinhAnh ? null : oldImagePath);
+        goi.TenGoi = NormalizeText(request.PackageName);
+        goi.PhongCach = NormalizeOptional(request.Style);
+        goi.MoTa = NormalizeOptional(request.Description);
+        goi.Gia = request.Price;
+        goi.HinhAnh = newImagePath ?? (request.RemoveImage ? null : oldImagePath);
 
         try
         {
@@ -255,10 +255,10 @@ public sealed class GoiTrangTriController : ControllerBase
         return Ok(ToDto(goi));
     }
 
-    [HttpPatch("{id:int}/trang-thai")]
-    public async Task<IActionResult> UpdateTrangThai(
+    [HttpPatch("{id:int}/status")]
+    public async Task<IActionResult> UpdateStatus(
         int id,
-        [FromBody] CapNhatTrangThaiGoiTrangTriRequest request,
+        [FromBody] UpdateDecorPackageStatusRequest request,
         CancellationToken cancellationToken)
     {
         var goi = await _context.GoiTrangTri
@@ -269,40 +269,40 @@ public sealed class GoiTrangTriController : ControllerBase
             return NotFound(new ApiErrorResponse("Không tìm thấy gói trang trí."));
         }
 
-        if (!IsValidStatus(request.TrangThai))
+        if (!IsValidStatus(request.Status))
         {
             return BadRequest(new ApiErrorResponse(
                 "Trạng thái gói chỉ được là Áp dụng hoặc Ngừng áp dụng."));
         }
 
-        goi.TrangThai = request.TrangThai;
+        goi.TrangThai = request.Status;
         await _context.SaveChangesAsync(cancellationToken);
 
         return Ok(ToDto(goi));
     }
 
-    private static GoiTrangTriDto ToDto(GoiTrangTri goi) => new()
+    private static DecorPackageDto ToDto(GoiTrangTri goi) => new()
     {
-        GoiTrangTriID = goi.GoiTrangTriID,
-        MaGoi = NormalizeText(goi.MaGoi),
-        TenGoi = NormalizeText(goi.TenGoi),
-        PhongCach = NormalizeOptional(goi.PhongCach),
-        MoTa = NormalizeOptional(goi.MoTa),
-        Gia = goi.Gia,
-        HinhAnh = NormalizeOptional(goi.HinhAnh),
-        TrangThai = NormalizeText(goi.TrangThai)
+        PackageId = goi.GoiTrangTriID,
+        PackageCode = NormalizeText(goi.MaGoi),
+        PackageName = NormalizeText(goi.TenGoi),
+        Style = NormalizeOptional(goi.PhongCach),
+        Description = NormalizeOptional(goi.MoTa),
+        Price = goi.Gia,
+        ImageUrl = NormalizeOptional(goi.HinhAnh),
+        Status = NormalizeText(goi.TrangThai)
     };
 
-    private static GoiTrangTriDto NormalizeDto(GoiTrangTriDto goi) => new()
+    private static DecorPackageDto NormalizeDto(DecorPackageDto goi) => new()
     {
-        GoiTrangTriID = goi.GoiTrangTriID,
-        MaGoi = NormalizeText(goi.MaGoi),
-        TenGoi = NormalizeText(goi.TenGoi),
-        PhongCach = NormalizeOptional(goi.PhongCach),
-        MoTa = NormalizeOptional(goi.MoTa),
-        Gia = goi.Gia,
-        HinhAnh = NormalizeOptional(goi.HinhAnh),
-        TrangThai = NormalizeText(goi.TrangThai)
+        PackageId = goi.PackageId,
+        PackageCode = NormalizeText(goi.PackageCode),
+        PackageName = NormalizeText(goi.PackageName),
+        Style = NormalizeOptional(goi.Style),
+        Description = NormalizeOptional(goi.Description),
+        Price = goi.Price,
+        ImageUrl = NormalizeOptional(goi.ImageUrl),
+        Status = NormalizeText(goi.Status)
     };
 
     private static string NormalizeText(string value) =>
@@ -324,7 +324,7 @@ public sealed class GoiTrangTriController : ControllerBase
             exception.Message,
             new Dictionary<string, string[]>
             {
-                ["HinhAnhFile"] = [exception.Message]
+                ["imageFile"] = [exception.Message]
             });
 
     private async Task DeleteQuietlyAsync(

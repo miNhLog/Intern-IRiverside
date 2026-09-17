@@ -24,10 +24,10 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendAsync<AuthResponseDto>(HttpMethod.Post, "api/auth/login", new
         {
-            model.DinhDanh,
-            model.MatKhau,
-            model.LoaiTaiKhoan,
-            model.GhiNhoDangNhap
+            identifier = model.DinhDanh,
+            password = model.MatKhau,
+            accountType = model.LoaiTaiKhoan,
+            rememberMe = model.GhiNhoDangNhap
         }, null, cancellationToken);
 
     public Task<ApiCallResult<AuthResponseDto>> RegisterAsync(
@@ -35,12 +35,12 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendAsync<AuthResponseDto>(HttpMethod.Post, "api/auth/register", new
         {
-            model.HoTen,
-            model.SoDienThoai,
+            fullName = model.HoTen,
+            phoneNumber = model.SoDienThoai,
             model.Email,
-            model.MatKhau,
-            model.XacNhanMatKhau,
-            model.DongYDieuKhoan
+            password = model.MatKhau,
+            confirmPassword = model.XacNhanMatKhau,
+            agreeToTerms = model.DongYDieuKhoan
         }, null, cancellationToken);
 
     public Task<ApiCallResult<CurrentUserDto>> GetCurrentUserAsync(
@@ -53,7 +53,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
     CancellationToken cancellationToken) =>
     SendAsync<List<SanhTiecDto>>(
         HttpMethod.Get,
-        "api/SanhTiec",
+        "api/banquet-halls",
         null,
         accessToken,
         cancellationToken);
@@ -65,7 +65,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendAsync<SanhTiecDto>(
             HttpMethod.Get,
-            $"api/SanhTiec/{id}",
+            $"api/banquet-halls/{id}",
             null,
             accessToken,
             cancellationToken);
@@ -77,7 +77,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendAsync<SanhTiecDto>(
             HttpMethod.Post,
-            "api/SanhTiec",
+            "api/banquet-halls",
             model,
             accessToken,
             cancellationToken);
@@ -90,7 +90,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendAsync<SanhTiecDto>(
             HttpMethod.Put,
-            $"api/SanhTiec/{id}",
+            $"api/banquet-halls/{id}",
             model,
             accessToken,
             cancellationToken);
@@ -103,7 +103,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendAsync<ActionResponseDto>(
             HttpMethod.Patch,
-            $"api/SanhTiec/{id}/trang-thai",
+            $"api/banquet-halls/{id}/status",
             trangThai,
             accessToken,
             cancellationToken);
@@ -115,7 +115,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendAsync<ActionResponseDto>(
             HttpMethod.Delete,
-            $"api/SanhTiec/{id}",
+            $"api/banquet-halls/{id}",
             null,
             accessToken,
             cancellationToken);
@@ -126,11 +126,11 @@ public sealed class RiversideApiClient : IRiversideApiClient
     CancellationToken cancellationToken)
     {
         var url =
-            $"api/LichSanh/tuan?ngayBatDau={ngayBatDau:yyyy-MM-dd}";
+            $"api/hall-schedules/week?startDate={ngayBatDau:yyyy-MM-dd}";
 
         if (sanhTiecId.HasValue)
         {
-            url += $"&sanhTiecId={sanhTiecId.Value}";
+            url += $"&hallId={sanhTiecId.Value}";
         }
 
         return SendAsync<LichSanhTuanDto>(
@@ -149,7 +149,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendAsync<ActionResponseDto>(
             HttpMethod.Patch,
-            $"api/LichSanh/{id}/trang-thai",
+            $"api/hall-schedules/{id}/status",
             trangThai,
             accessToken,
             cancellationToken);
@@ -170,25 +170,25 @@ public sealed class RiversideApiClient : IRiversideApiClient
         if (!string.IsNullOrWhiteSpace(tuKhoa))
         {
             query.Add(
-                $"tuKhoa={Uri.EscapeDataString(tuKhoa)}"
+                $"keyword={Uri.EscapeDataString(tuKhoa)}"
             );
         }
 
         if (vaiTroId.HasValue)
         {
             query.Add(
-                $"vaiTroId={vaiTroId.Value}"
+                $"roleId={vaiTroId.Value}"
             );
         }
 
         if (!string.IsNullOrWhiteSpace(trangThai))
         {
             query.Add(
-                $"trangThai={Uri.EscapeDataString(trangThai)}"
+                $"status={Uri.EscapeDataString(trangThai)}"
             );
         }
 
-        var uri = "api/AdminTaiKhoan";
+        var uri = "api/admin/accounts";
 
         if (query.Count > 0)
         {
@@ -210,7 +210,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
     {
         return SendAsync<List<VaiTroDto>>(
             HttpMethod.Get,
-            "api/AdminTaiKhoan/vai-tro",
+            "api/admin/accounts/roles",
             null,
             accessToken,
             cancellationToken);
@@ -225,7 +225,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
     {
         return SendAsync<ThaoTacTaiKhoanResponse>(
             HttpMethod.Post,
-            "api/AdminTaiKhoan/nhan-vien",
+            "api/admin/accounts/staff",
             model,
             accessToken,
             cancellationToken);
@@ -241,7 +241,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
     {
         return SendAsync<ThaoTacTaiKhoanResponse>(
             HttpMethod.Put,
-            $"api/AdminTaiKhoan/nhan-vien/{id}",
+            $"api/admin/accounts/staff/{id}",
             model,
             accessToken,
             cancellationToken);
@@ -257,7 +257,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
     {
         return SendAsync<ThaoTacTaiKhoanResponse>(
             HttpMethod.Patch,
-            $"api/AdminTaiKhoan/{id}/trang-thai",
+            $"api/admin/accounts/{id}/status",
             trangThai,
             accessToken,
             cancellationToken);
@@ -273,7 +273,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
     {
         return SendAsync<ThaoTacTaiKhoanResponse>(
             HttpMethod.Patch,
-            $"api/AdminTaiKhoan/{id}/dat-lai-mat-khau",
+            $"api/admin/accounts/{id}/reset-password",
             model,
             accessToken,
             cancellationToken);
@@ -287,13 +287,13 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken)
     {
         var query = new List<string>();
-        AddQuery(query, "tuKhoa", tuKhoa);
-        AddQuery(query, "phongCach", phongCach);
-        AddQuery(query, "trangThai", trangThai);
+        AddQuery(query, "keyword", tuKhoa);
+        AddQuery(query, "style", phongCach);
+        AddQuery(query, "status", trangThai);
 
         return SendAsync<List<GoiTrangTriDto>>(
             HttpMethod.Get,
-            BuildUri("api/GoiTrangTri", query),
+            BuildUri("api/decor-packages", query),
             null,
             accessToken,
             cancellationToken);
@@ -303,7 +303,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         int id,
         string accessToken,
         CancellationToken cancellationToken) =>
-        SendAsync<GoiTrangTriDto>(HttpMethod.Get, $"api/GoiTrangTri/{id}", null, accessToken, cancellationToken);
+        SendAsync<GoiTrangTriDto>(HttpMethod.Get, $"api/decor-packages/{id}", null, accessToken, cancellationToken);
 
     public Task<ApiCallResult<GoiTrangTriDto>> CreateGoiTrangTriAsync(
         GoiTrangTriFormModel model,
@@ -311,15 +311,15 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendMultipartAsync<GoiTrangTriDto>(
             HttpMethod.Post,
-            "api/GoiTrangTri",
+            "api/decor-packages",
             accessToken,
             new Dictionary<string, string?>
             {
-                ["MaGoi"] = model.MaGoi,
-                ["TenGoi"] = model.TenGoi,
-                ["PhongCach"] = model.PhongCach,
-                ["MoTa"] = model.MoTa,
-                ["Gia"] = model.Gia.ToString(CultureInfo.InvariantCulture)
+                ["packageCode"] = model.MaGoi,
+                ["packageName"] = model.TenGoi,
+                ["style"] = model.PhongCach,
+                ["description"] = model.MoTa,
+                ["price"] = model.Gia.ToString(CultureInfo.InvariantCulture)
             },
             model.HinhAnhFile,
             false,
@@ -332,15 +332,15 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendMultipartAsync<GoiTrangTriDto>(
             HttpMethod.Put,
-            $"api/GoiTrangTri/{id}",
+            $"api/decor-packages/{id}",
             accessToken,
             new Dictionary<string, string?>
             {
-                ["MaGoi"] = model.MaGoi,
-                ["TenGoi"] = model.TenGoi,
-                ["PhongCach"] = model.PhongCach,
-                ["MoTa"] = model.MoTa,
-                ["Gia"] = model.Gia.ToString(CultureInfo.InvariantCulture)
+                ["packageCode"] = model.MaGoi,
+                ["packageName"] = model.TenGoi,
+                ["style"] = model.PhongCach,
+                ["description"] = model.MoTa,
+                ["price"] = model.Gia.ToString(CultureInfo.InvariantCulture)
             },
             model.HinhAnhFile,
             model.XoaHinhAnh,
@@ -353,8 +353,8 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendAsync<GoiTrangTriDto>(
             HttpMethod.Patch,
-            $"api/GoiTrangTri/{id}/trang-thai",
-            new { trangThai },
+            $"api/decor-packages/{id}/status",
+            new { status = trangThai },
             accessToken,
             cancellationToken);
 
@@ -366,13 +366,13 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken)
     {
         var query = new List<string>();
-        AddQuery(query, "tuKhoa", tuKhoa);
-        AddQuery(query, "loaiDichVu", loaiDichVu);
-        AddQuery(query, "trangThai", trangThai);
+        AddQuery(query, "keyword", tuKhoa);
+        AddQuery(query, "serviceType", loaiDichVu);
+        AddQuery(query, "status", trangThai);
 
         return SendAsync<List<DichVuDto>>(
             HttpMethod.Get,
-            BuildUri("api/DichVu", query),
+            BuildUri("api/services", query),
             null,
             accessToken,
             cancellationToken);
@@ -382,7 +382,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         int id,
         string accessToken,
         CancellationToken cancellationToken) =>
-        SendAsync<DichVuDto>(HttpMethod.Get, $"api/DichVu/{id}", null, accessToken, cancellationToken);
+        SendAsync<DichVuDto>(HttpMethod.Get, $"api/services/{id}", null, accessToken, cancellationToken);
 
     public Task<ApiCallResult<DichVuDto>> CreateDichVuAsync(
         DichVuFormModel model,
@@ -390,15 +390,15 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendMultipartAsync<DichVuDto>(
             HttpMethod.Post,
-            "api/DichVu",
+            "api/services",
             accessToken,
             new Dictionary<string, string?>
             {
-                ["MaDichVu"] = model.MaDichVu,
-                ["TenDichVu"] = model.TenDichVu,
-                ["LoaiDichVu"] = model.LoaiDichVu,
-                ["MoTa"] = model.MoTa,
-                ["Gia"] = model.Gia.ToString(CultureInfo.InvariantCulture)
+                ["serviceCode"] = model.MaDichVu,
+                ["serviceName"] = model.TenDichVu,
+                ["serviceType"] = model.LoaiDichVu,
+                ["description"] = model.MoTa,
+                ["price"] = model.Gia.ToString(CultureInfo.InvariantCulture)
             },
             model.HinhAnhFile,
             false,
@@ -411,15 +411,15 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendMultipartAsync<DichVuDto>(
             HttpMethod.Put,
-            $"api/DichVu/{id}",
+            $"api/services/{id}",
             accessToken,
             new Dictionary<string, string?>
             {
-                ["MaDichVu"] = model.MaDichVu,
-                ["TenDichVu"] = model.TenDichVu,
-                ["LoaiDichVu"] = model.LoaiDichVu,
-                ["MoTa"] = model.MoTa,
-                ["Gia"] = model.Gia.ToString(CultureInfo.InvariantCulture)
+                ["serviceCode"] = model.MaDichVu,
+                ["serviceName"] = model.TenDichVu,
+                ["serviceType"] = model.LoaiDichVu,
+                ["description"] = model.MoTa,
+                ["price"] = model.Gia.ToString(CultureInfo.InvariantCulture)
             },
             model.HinhAnhFile,
             model.XoaHinhAnh,
@@ -432,8 +432,8 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendAsync<DichVuDto>(
             HttpMethod.Patch,
-            $"api/DichVu/{id}/trang-thai",
-            new { trangThai },
+            $"api/services/{id}/status",
+            new { status = trangThai },
             accessToken,
             cancellationToken);
 
@@ -463,7 +463,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
             content.Add(new StringContent(field.Value ?? string.Empty), field.Key);
         }
 
-        content.Add(new StringContent(removeImage.ToString().ToLowerInvariant()), "XoaHinhAnh");
+        content.Add(new StringContent(removeImage.ToString().ToLowerInvariant()), "removeImage");
 
         if (file is not null)
         {
@@ -472,7 +472,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
                 string.IsNullOrWhiteSpace(file.ContentType)
                     ? "application/octet-stream"
                     : file.ContentType);
-            content.Add(fileContent, "HinhAnhFile", Path.GetFileName(file.FileName));
+            content.Add(fileContent, "imageFile", Path.GetFileName(file.FileName));
         }
 
         return await SendAsync<T>(method, uri, content, accessToken, cancellationToken);
@@ -541,7 +541,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
     {
         return await SendAsync<ThaoTacTaiKhoanResponse>(
             HttpMethod.Patch,
-            $"api/AdminTaiKhoan/nhan-vien/{nguoiDungId}/trang-thai",
+            $"api/admin/accounts/staff/{nguoiDungId}/status",
             trangThai,
             accessToken,
             cancellationToken

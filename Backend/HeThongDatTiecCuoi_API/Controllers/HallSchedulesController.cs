@@ -1,4 +1,6 @@
 ﻿using HeThongDatTiecCuoi_API.Data;
+using HeThongDatTiecCuoi_API.DTOs.BanquetHalls;
+using HeThongDatTiecCuoi_API.DTOs.HallSchedules;
 using HeThongDatTiecCuoi_API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,34 +9,34 @@ using Microsoft.EntityFrameworkCore;
 namespace HeThongDatTiecCuoi_API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/hall-schedules")]
 [Authorize(Roles = RoleNames.Admin)]
-public class LichSanhController : ControllerBase
+public class HallSchedulesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
 
-    public LichSanhController(ApplicationDbContext context)
+    public HallSchedulesController(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    // GET: api/LichSanh/tuan?ngayBatDau=2026-11-16
-    // GET: api/LichSanh/tuan?ngayBatDau=2026-11-16&sanhTiecId=1
-    [HttpGet("tuan")]
-    public async Task<IActionResult> GetTheoTuan(
-        DateTime ngayBatDau,
-        int? sanhTiecId = null)
+    // GET: api/hall-schedules/week?startDate=2026-11-16
+    // GET: api/hall-schedules/week?startDate=2026-11-16&hallId=1
+    [HttpGet("week")]
+    public async Task<IActionResult> GetWeeklySchedule(
+        DateTime startDate,
+        int? hallId = null)
     {
-        var ngayDauTuan = ngayBatDau.Date;
+        var ngayDauTuan = startDate.Date;
         var ngayCuoiTuan = ngayDauTuan.AddDays(6);
 
         var danhSachSanh = _context.SanhTiec
             .AsQueryable();
 
-        if (sanhTiecId.HasValue)
+        if (hallId.HasValue)
         {
             danhSachSanh = danhSachSanh
-                .Where(x => x.SanhTiecID == sanhTiecId.Value);
+                .Where(x => x.SanhTiecID == hallId.Value);
         }
 
         var sanhs = await danhSachSanh
@@ -56,7 +58,7 @@ public class LichSanhController : ControllerBase
             .Where(x =>
                 x.Ngay >= ngayDauTuan &&
                 x.Ngay <= ngayCuoiTuan &&
-                (!sanhTiecId.HasValue || x.SanhTiecID == sanhTiecId.Value))
+                (!hallId.HasValue || x.SanhTiecID == hallId.Value))
             .OrderBy(x => x.SanhTiecID)
             .ThenBy(x => x.Ngay)
             .ThenBy(x => x.CaToChuc)
@@ -70,57 +72,57 @@ public class LichSanhController : ControllerBase
                 x.TrangThai != "Đã hủy")
             .ToListAsync();
 
-        var ketQua = sanhs.Select(sanh => new
+        var ketQua = sanhs.Select(sanh => new HallScheduleSummaryDto
         {
-            sanhTiecID = sanh.SanhTiecID,
-            maSanh = sanh.MaSanh,
-            tenSanh = sanh.TenSanh,
-            trangThaiSanh = sanh.TrangThai,
+            HallId = sanh.SanhTiecID,
+            HallCode = sanh.MaSanh,
+            HallName = sanh.TenSanh,
+            HallStatus = sanh.TrangThai,
 
-            lich = danhSachLich
+            Slots = danhSachLich
         .Where(x => x.SanhTiecID == sanh.SanhTiecID)
         .Select(x =>
         {
             var datTiec = danhSachDatTiec
                 .FirstOrDefault(d => d.LichSanhID == x.LichSanhID);
 
-            return new
+            return new ScheduleSlotDto
             {
-                lichSanhID = x.LichSanhID,
-                ngay = x.Ngay,
-                caToChuc = x.CaToChuc,
-                trangThai = datTiec != null ? "Đã đặt" : x.TrangThai,
-                ghiChu = x.GhiChu,
+                ScheduleId = x.LichSanhID,
+                Date = x.Ngay,
+                EventSession = x.CaToChuc,
+                Status = datTiec != null ? "Đã đặt" : x.TrangThai,
+                Note = x.GhiChu,
 
-                booking = datTiec == null
+                Booking = datTiec == null
                     ? null
-                    : new
+                    : new BookingSummaryDto
                     {
-                        datTiecID = datTiec.DatTiecID,
-                        maDatTiec = datTiec.MaDatTiec,
-                        hoTenKhachHang = datTiec.KhachHang.HoTen,
-                        soBan = datTiec.SoBan,
-                        soLuongKhach = datTiec.SoLuongKhach,
-                        trangThaiDatTiec = datTiec.TrangThai
+                        BookingId = datTiec.DatTiecID,
+                        BookingCode = datTiec.MaDatTiec,
+                        CustomerName = datTiec.KhachHang.HoTen,
+                        TableCount = datTiec.SoBan,
+                        GuestCount = datTiec.SoLuongKhach,
+                        BookingStatus = datTiec.TrangThai
                     }
             };
         })
         .ToList()
         });
 
-        return Ok(new
+        return Ok(new WeeklyHallScheduleResponse
         {
-            tuNgay = ngayDauTuan,
-            denNgay = ngayCuoiTuan,
-            danhSachSanh = ketQua
+            StartDate = ngayDauTuan,
+            EndDate = ngayCuoiTuan,
+            Halls = ketQua.ToList()
         });
     }
 
-    // PATCH: api/LichSanh/10/trang-thai
-    [HttpPatch("{id}/trang-thai")]
-    public async Task<IActionResult> UpdateTrangThai(
+    // PATCH: api/hall-schedules/10/status
+    [HttpPatch("{id}/status")]
+    public async Task<IActionResult> UpdateStatus(
         int id,
-        [FromBody] string trangThai)
+        [FromBody] string status)
     {
         var lich = await _context.LichSanh.FindAsync(id);
 
@@ -145,8 +147,8 @@ public class LichSanhController : ControllerBase
             });
         }
 
-        if (trangThai != "Trống" &&
-            trangThai != "Tạm khóa")
+        if (status != "Trống" &&
+            status != "Tạm khóa")
         {
             return BadRequest(new
             {
@@ -154,14 +156,14 @@ public class LichSanhController : ControllerBase
             });
         }
 
-        lich.TrangThai = trangThai;
+        lich.TrangThai = status;
 
         await _context.SaveChangesAsync();
 
         return Ok(new
         {
             message = "Cập nhật trạng thái lịch sảnh thành công.",
-            lich
+            schedule = ToDto(lich)
         });
     }
 
@@ -214,4 +216,28 @@ public class LichSanhController : ControllerBase
 
         await _context.SaveChangesAsync();
     }
+
+    private static ScheduleDetailDto ToDto(LichSanh lich) => new()
+    {
+        ScheduleId = lich.LichSanhID,
+        HallId = lich.SanhTiecID,
+        Date = lich.Ngay,
+        EventSession = lich.CaToChuc,
+        Status = lich.TrangThai,
+        Note = lich.GhiChu,
+        Hall = lich.SanhTiec is null
+            ? null
+            : new BanquetHallDto
+            {
+                HallId = lich.SanhTiec.SanhTiecID,
+                HallCode = lich.SanhTiec.MaSanh,
+                HallName = lich.SanhTiec.TenSanh,
+                MinCapacity = lich.SanhTiec.SucChuaToiThieu,
+                MaxCapacity = lich.SanhTiec.SucChuaToiDa,
+                RentalPrice = lich.SanhTiec.GiaThue,
+                Description = lich.SanhTiec.MoTa,
+                ImageUrl = lich.SanhTiec.HinhAnh,
+                Status = lich.SanhTiec.TrangThai
+            }
+    };
 }
