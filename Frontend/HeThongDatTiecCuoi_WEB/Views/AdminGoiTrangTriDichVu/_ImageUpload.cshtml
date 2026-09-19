@@ -9,6 +9,8 @@
     var previewBoxId = prefix == "goi" ? "previewBoxGoi" : "previewBoxDich";
     var previewImageId = prefix == "goi" ? "previewImgGoi" : "previewImgDich";
     var removeImageId = prefix == "goi" ? "btnRemoveImgGoi" : "btnRemoveImgDich";
+    var replaceImageId = prefix == "goi" ? "btnReplaceImgGoi" : "btnReplaceImgDich";
+    var removeCurrentImageId = prefix == "goi" ? "btnRemoveCurrentImgGoi" : "btnRemoveCurrentImgDich";
     var currentPreviewId = prefix == "goi" ? "currentPreviewGoi" : "currentPreviewDich";
     var currentImageId = prefix == "goi" ? "currentImgGoi" : "currentImgDich";
     var uploadErrorId = prefix == "goi" ? "uploadErrorGoi" : "uploadErrorDich";
@@ -36,6 +38,8 @@
     <div id="@currentPreviewId" class="image-preview current-preview" hidden>
         <img id="@currentImageId" alt="" />
         <div class="preview-meta"><strong>Ảnh hiện tại</strong><span>Không chọn ảnh mới sẽ giữ nguyên ảnh này.</span></div>
+        <button type="button" id="@replaceImageId" class="preview-replace" aria-label="Thay ảnh @label">@await Html.PartialAsync("_HeroIcon", new { Name = "pencil-square", Class = "heroicon" }) Thay ảnh</button>
+        <button type="button" id="@removeCurrentImageId" class="btn-remove-preview preview-remove" aria-label="Gỡ ảnh @label">@await Html.PartialAsync("_HeroIcon", new { Name = "x-mark", Class = "heroicon" }) Gỡ ảnh</button>
     </div>
     <div id="@removeNoticeId" class="remove-notice" role="status" hidden>Ảnh hiện tại sẽ được gỡ khi lưu.</div>
 </div>

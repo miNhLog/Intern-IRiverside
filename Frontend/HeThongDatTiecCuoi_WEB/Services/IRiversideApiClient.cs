@@ -2,6 +2,7 @@
 using HeThongDatTiecCuoi_WEB.Models.Auth;
 using HeThongDatTiecCuoi_WEB.Models.AdminTaiKhoan;
 using HeThongDatTiecCuoi_WEB.Models.AdminGoiTrangTriDichVu;
+using HeThongDatTiecCuoi_WEB.Models.AdminPricingPolicy;
 namespace HeThongDatTiecCuoi_WEB.Services;
 
 public interface IRiversideApiClient
@@ -161,6 +162,29 @@ public interface IRiversideApiClient
     Task<ApiCallResult<DichVuDto>> UpdateTrangThaiDichVuAsync(
         int id,
         string trangThai,
+        string accessToken,
+        CancellationToken cancellationToken);
+
+    // Bảng giá & chính sách
+    Task<ApiCallResult<PricingResponseDto>> GetPricingAsync(
+        string? category,
+        string accessToken,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<PricingItemDto>> UpdatePriceAsync(
+        string category,
+        int id,
+        decimal price,
+        decimal expectedPrice,
+        string accessToken,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<PolicyResponseDto>> GetPoliciesAsync(
+        string accessToken,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<PolicyResponseDto>> UpdatePoliciesAsync(
+        UpdatePolicyRequestDto request,
         string accessToken,
         CancellationToken cancellationToken);
 }

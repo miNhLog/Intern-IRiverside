@@ -7,6 +7,7 @@ using HeThongDatTiecCuoi_WEB.Models.AdminSanh;
 namespace HeThongDatTiecCuoi_WEB.Services;
 using HeThongDatTiecCuoi_WEB.Models.AdminTaiKhoan;
 using HeThongDatTiecCuoi_WEB.Models.AdminGoiTrangTriDichVu;
+using HeThongDatTiecCuoi_WEB.Models.AdminPricingPolicy;
 using Microsoft.AspNetCore.Http;
 
 public sealed class RiversideApiClient : IRiversideApiClient
@@ -437,6 +438,73 @@ public sealed class RiversideApiClient : IRiversideApiClient
             accessToken,
             cancellationToken);
 
+    public async Task<ApiCallResult<PricingResponseDto>> GetPricingAsync(
+        string? category,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            return await SendAsync<PricingResponseDto>(
+                HttpMethod.Get,
+                "api/pricing",
+                null,
+                accessToken,
+                cancellationToken);
+        }
+
+        var categoryResult = await SendAsync<PricingCategoryResponseDto>(
+            HttpMethod.Get,
+            $"api/pricing/{Uri.EscapeDataString(category.Trim().ToLowerInvariant())}",
+            null,
+            accessToken,
+            cancellationToken);
+
+        return categoryResult.Succeeded && categoryResult.Value is not null
+            ? ApiCallResult<PricingResponseDto>.Success(
+                new PricingResponseDto { Categories = [categoryResult.Value] },
+                categoryResult.StatusCode)
+            : ApiCallResult<PricingResponseDto>.Failure(
+                categoryResult.Error ?? "Không thể tải bảng giá.",
+                categoryResult.Errors,
+                categoryResult.StatusCode);
+    }
+
+    public Task<ApiCallResult<PricingItemDto>> UpdatePriceAsync(
+        string category,
+        int id,
+        decimal price,
+        decimal expectedPrice,
+        string accessToken,
+        CancellationToken cancellationToken) =>
+        SendAsync<PricingItemDto>(
+            HttpMethod.Put,
+            $"api/pricing/{Uri.EscapeDataString(category.Trim().ToLowerInvariant())}/{id}",
+            new { price, expectedPrice },
+            accessToken,
+            cancellationToken);
+
+    public Task<ApiCallResult<PolicyResponseDto>> GetPoliciesAsync(
+        string accessToken,
+        CancellationToken cancellationToken) =>
+        SendAsync<PolicyResponseDto>(
+            HttpMethod.Get,
+            "api/policies",
+            null,
+            accessToken,
+            cancellationToken);
+
+    public Task<ApiCallResult<PolicyResponseDto>> UpdatePoliciesAsync(
+        UpdatePolicyRequestDto request,
+        string accessToken,
+        CancellationToken cancellationToken) =>
+        SendAsync<PolicyResponseDto>(
+            HttpMethod.Put,
+            "api/policies",
+            request,
+            accessToken,
+            cancellationToken);
+
     private static void AddQuery(List<string> query, string name, string? value)
     {
         if (!string.IsNullOrWhiteSpace(value))
@@ -507,8 +575,8 @@ public sealed class RiversideApiClient : IRiversideApiClient
             {
                 var value = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
                 return value is null
-                    ? ApiCallResult<T>.Failure("API trả về dữ liệu rỗng.")
-                    : ApiCallResult<T>.Success(value);
+                    ? ApiCallResult<T>.Failure("API trả về dữ liệu rỗng.", statusCode: (int)response.StatusCode)
+                    : ApiCallResult<T>.Success(value, (int)response.StatusCode);
             }
 
             try
@@ -516,11 +584,14 @@ public sealed class RiversideApiClient : IRiversideApiClient
                 var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(JsonOptions, cancellationToken);
                 return ApiCallResult<T>.Failure(
                     error?.Message ?? "Yêu cầu không thành công.",
-                    error?.Errors);
+                    error?.Errors,
+                    (int)response.StatusCode);
             }
             catch (JsonException)
             {
-                return ApiCallResult<T>.Failure("Yêu cầu không thành công.");
+                return ApiCallResult<T>.Failure(
+                    "Yêu cầu không thành công.",
+                    statusCode: (int)response.StatusCode);
             }
         }
         catch (HttpRequestException)

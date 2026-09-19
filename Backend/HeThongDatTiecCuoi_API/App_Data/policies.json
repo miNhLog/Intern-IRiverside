@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "version": 21,
-  "updatedAtUtc": "2026-09-19T06:26:15.8190844+00:00",
+  "version": 26,
+  "updatedAtUtc": "2026-09-19T15:31:50.7749842+00:00",
   "currency": "VND",
   "deposit": {
     "totalPercentageOfContractValue": 30,

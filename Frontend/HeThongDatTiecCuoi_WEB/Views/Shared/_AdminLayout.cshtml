@@ -106,9 +106,11 @@
                 </a>
 
 
-                <button type="button"
-                        data-tooltip="Bảng giá & Chính sách"
-                        class="menu-item developing">
+                <a asp-controller="AdminPricingPolicy"
+                   asp-action="Index"
+                   data-tooltip="Bảng giá & Chính sách"
+                   aria-current="@(activeMenu == "PricingPolicy" ? "page" : null)"
+                   class="menu-item @(activeMenu == "PricingPolicy" ? "active" : "")">
 
                     @await Html.PartialAsync("_HeroIcon", new { Name = "tag", Class = "heroicon" })
 
@@ -116,7 +118,7 @@
                         Bảng giá & Chính sách
                     </span>
 
-                </button>
+                </a>
 
             </nav>
 
@@ -323,7 +325,8 @@
 
 
         applySidebarState(
-            savedSidebarState === "true"
+            savedSidebarState === "true" ||
+            window.matchMedia("(max-width: 850px)").matches
         );
 
 

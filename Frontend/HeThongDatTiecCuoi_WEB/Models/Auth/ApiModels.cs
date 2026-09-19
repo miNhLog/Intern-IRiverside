@@ -21,11 +21,15 @@ public sealed record ApiCallResult<T>(
     bool Succeeded,
     T? Value,
     string? Error,
-    Dictionary<string, string[]>? Errors = null)
+    Dictionary<string, string[]>? Errors = null,
+    int? StatusCode = null)
 {
-    public static ApiCallResult<T> Success(T value) => new(true, value, null, null);
+    public static ApiCallResult<T> Success(T value, int? statusCode = null) =>
+        new(true, value, null, null, statusCode);
+
     public static ApiCallResult<T> Failure(
         string error,
-        Dictionary<string, string[]>? errors = null) =>
-        new(false, default, error, errors);
+        Dictionary<string, string[]>? errors = null,
+        int? statusCode = null) =>
+        new(false, default, error, errors, statusCode);
 }

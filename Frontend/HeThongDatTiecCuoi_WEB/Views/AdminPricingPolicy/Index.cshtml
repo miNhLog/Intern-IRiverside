@@ -1,0 +1,434 @@
+@using System.Globalization
+@model HeThongDatTiecCuoi_WEB.Models.AdminPricingPolicy.AdminPricingPolicyViewModel
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Bảng giá & Chính sách";
+    ViewData["ActiveMenu"] = "PricingPolicy";
+
+    string CategoryLabel(string category) => category switch
+    {
+        "halls" => "Sảnh tiệc",
+        "menus" => "Thực đơn",
+        "decor-packages" => "Gói decor",
+        "services" => "Dịch vụ",
+        _ => category
+    };
+
+    string StatusClass(string status) =>
+        status.Normalize(System.Text.NormalizationForm.FormC) switch
+        {
+            "Áp dụng" => "is-active",
+            "Hoạt động" => "is-active",
+            _ => "is-inactive"
+        };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-bang-gia-chinh-sach.css" asp-append-version="true" />
+}
+
+<div class="pricing-policy-admin">
+    <header class="pricing-policy-header">
+        <div>
+            <div class="pricing-policy-breadcrumb">Quản trị Master Data <span>/</span> Bảng giá &amp; Chính sách</div>
+            <h2>Bảng Giá &amp; Chính Sách Kinh Doanh</h2>
+            <p>Kiểm soát đơn giá niêm yết, kế hoạch đặt cọc và quy tắc hoàn cọc tập trung.</p>
+        </div>
+        <div class="pricing-policy-header-mark">
+            @await Html.PartialAsync("_HeroIcon", new { Name = "shield-check", Class = "heroicon" })
+            <span>Dữ liệu được kiểm soát phiên bản</span>
+        </div>
+    </header>
+
+    <section class="pricing-policy-workspace" aria-label="Bảng giá và chính sách">
+        <nav class="pricing-policy-tabs" role="tablist" aria-label="Bảng giá và chính sách">
+            <button type="button" role="tab" id="tab-pricing" aria-controls="panel-pricing" aria-selected="@(Model.ActiveTab == "pricing" ? "true" : "false")" tabindex="@(Model.ActiveTab == "pricing" ? "0" : "-1")" data-tab="pricing">
+                @await Html.PartialAsync("_HeroIcon", new { Name = "tag", Class = "heroicon" })
+                <span>Bảng giá</span>
+                <b>@(Model.Pricing?.Categories.Sum(category => category.Items.Count) ?? 0)</b>
+            </button>
+            <button type="button" role="tab" id="tab-policies" aria-controls="panel-policies" aria-selected="@(Model.ActiveTab == "policies" ? "true" : "false")" tabindex="@(Model.ActiveTab == "policies" ? "0" : "-1")" data-tab="policies">
+                @await Html.PartialAsync("_HeroIcon", new { Name = "tune", Class = "heroicon" })
+                <span>Chính sách</span>
+            </button>
+        </nav>
+
+        <section id="panel-pricing" class="pricing-policy-panel" role="tabpanel" aria-labelledby="tab-pricing" @(Model.ActiveTab != "pricing" ? "hidden" : null)>
+            <div class="pricing-toolbar">
+                <label class="pricing-search">
+                    <span>Tìm kiếm</span>
+                    <span class="search-input">
+                        @await Html.PartialAsync("_HeroIcon", new { Name = "magnifying-glass", Class = "heroicon" })
+                        <input id="pricingSearch" type="search" placeholder="Tìm theo mã hoặc tên..." autocomplete="off" />
+                    </span>
+                </label>
+                <label class="pricing-filter">
+                    <span>Danh mục</span>
+                    <select id="pricingCategory">
+                        <option value="">Tất cả danh mục</option>
+                        <option value="halls">Sảnh tiệc</option>
+                        <option value="menus">Thực đơn</option>
+                        <option value="decor-packages">Gói decor</option>
+                        <option value="services">Dịch vụ</option>
+                    </select>
+                </label>
+                <p id="pricingCount" class="pricing-result-count"></p>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.PricingError))
+            {
+                <div class="pricing-policy-alert" role="alert">
+                    @await Html.PartialAsync("_HeroIcon", new { Name = "circle-alert", Class = "heroicon" })
+                    @Model.PricingError
+                </div>
+            }
+            else if (Model.Pricing is not null)
+            {
+                <div class="pricing-table-wrap">
+                    <table class="pricing-table">
+                        <caption>Danh sách đơn giá niêm yết</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Mã</th>
+                                <th scope="col">Tên hạng mục</th>
+                                <th scope="col">Danh mục</th>
+                                <th scope="col">Đơn giá hiện tại</th>
+                                <th scope="col">Trạng thái</th>
+                                <th scope="col"><span class="sr-only">Thao tác</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="pricingRows">
+                            @foreach (var category in Model.Pricing.Categories)
+                            {
+                                foreach (var item in category.Items)
+                                {
+                                    <tr data-pricing-row data-category="@category.Category" data-code="@item.Code" data-name="@item.Name">
+                                        <td data-label="Mã"><span class="pricing-code">@item.Code</span></td>
+                                        <td data-label="Tên hạng mục"><strong>@item.Name</strong></td>
+                                        <td data-label="Danh mục"><span class="pricing-category-label">@CategoryLabel(category.Category)</span></td>
+                                        <td data-label="Đơn giá hiện tại" class="price-cell"><strong>@item.Price.ToString("N0", CultureInfo.GetCultureInfo("vi-VN")) <small>VNĐ</small></strong></td>
+                                        <td data-label="Trạng thái"><span class="pricing-status @StatusClass(item.Status)">@item.Status</span></td>
+                                        <td data-label="Thao tác" class="pricing-actions">
+                                            <button type="button" class="pricing-edit" data-open-price data-category="@category.Category" data-id="@item.Id" data-code="@item.Code" data-name="@item.Name" data-price="@item.Price.ToString(CultureInfo.InvariantCulture)" aria-label="Cập nhật giá @item.Name" aria-controls="priceModal">
+                                                @await Html.PartialAsync("_HeroIcon", new { Name = "pencil-square", Class = "heroicon" })
+                                                <span>Cập nhật giá</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div id="pricingEmpty" class="pricing-empty" hidden>Không tìm thấy hạng mục phù hợp.</div>
+            }
+        </section>
+
+        <section id="panel-policies" class="pricing-policy-panel" role="tabpanel" aria-labelledby="tab-policies" @(Model.ActiveTab != "policies" ? "hidden" : null)>
+            @if (!string.IsNullOrWhiteSpace(Model.PoliciesError))
+            {
+                <div class="pricing-policy-alert" role="alert">
+                    @await Html.PartialAsync("_HeroIcon", new { Name = "circle-alert", Class = "heroicon" })
+                    @Model.PoliciesError
+                </div>
+            }
+            else if (Model.Policies is not null)
+            {
+                <div class="policy-heading">
+                    <div>
+                        <span>Phiên bản chính sách</span>
+                    <strong data-policy-version="@Model.Policies.Version">v@Model.Policies.Version</strong>
+                        <small>Cập nhật @Model.Policies.UpdatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm", CultureInfo.GetCultureInfo("vi-VN"))</small>
+                    </div>
+                    <button type="button" class="policy-edit-button" data-open-policy aria-controls="policyModal">
+                        @await Html.PartialAsync("_HeroIcon", new { Name = "pencil-square", Class = "heroicon" })
+                        Chỉnh sửa chính sách
+                    </button>
+                </div>
+
+                <article class="policy-section">
+                    <div class="policy-section-heading">
+                        <div>
+                            <span class="policy-icon">@await Html.PartialAsync("_HeroIcon", new { Name = "tag", Class = "heroicon" })</span>
+                            <div><h3>Quy định đợt đặt cọc</h3><p>Tổng tiền đặt cọc: <strong>@Model.Policies.Deposit.TotalPercentageOfContractValue.ToString("0.##", CultureInfo.InvariantCulture)%</strong> giá trị hợp đồng</p></div>
+                        </div>
+                    </div>
+                    <div class="pricing-table-wrap">
+                        <table class="policy-table">
+                            <thead><tr><th scope="col">Đợt</th><th scope="col">% hợp đồng</th><th scope="col">Đến hạn trước sự kiện</th><th scope="col">Ghi chú</th></tr></thead>
+                            <tbody>
+                                @foreach (var installment in Model.Policies.Deposit.Installments)
+                                {
+                                    <tr><td data-label="Đợt"><strong>@installment.Sequence</strong></td><td data-label="% hợp đồng">@installment.PercentageOfContractValue.ToString("0.##", CultureInfo.InvariantCulture)%</td><td data-label="Đến hạn trước sự kiện">@installment.DueBeforeEventDays ngày</td><td data-label="Ghi chú">@(installment.Note ?? "-")</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="policy-section">
+                    <div class="policy-section-heading"><div><span class="policy-icon">@await Html.PartialAsync("_HeroIcon", new { Name = "shield-check", Class = "heroicon" })</span><div><h3>Quy định phạt/hoàn cọc khi hủy</h3><p>Áp dụng theo số ngày báo trước sự kiện.</p></div></div></div>
+                    <div class="pricing-table-wrap">
+                        <table class="policy-table">
+                            <thead><tr><th scope="col">Bậc</th><th scope="col">Khoảng ngày báo trước</th><th scope="col">Phạt cọc</th><th scope="col">Hoàn cọc</th><th scope="col">Ghi chú</th></tr></thead>
+                            <tbody>
+                                @foreach (var tier in Model.Policies.Cancellation.Tiers)
+                                {
+                                    <tr><td data-label="Bậc"><strong>@tier.Sequence</strong></td><td data-label="Khoảng ngày báo trước">@tier.NoticeDaysFrom - @(tier.NoticeDaysTo?.ToString() ?? "Không giới hạn") ngày</td><td data-label="Phạt cọc">@tier.DepositPenaltyPercentage.ToString("0.##", CultureInfo.InvariantCulture)%</td><td data-label="Hoàn cọc">@tier.DepositRefundPercentage.ToString("0.##", CultureInfo.InvariantCulture)%</td><td data-label="Ghi chú">@(tier.Note ?? "-")</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            }
+        </section>
+    </section>
+</div>
+
+<form id="antiForgeryForm" aria-hidden="true">@Html.AntiForgeryToken()</form>
+<div id="pricingPolicyToast" class="pricing-policy-toast" role="status" aria-live="polite"></div>
+
+<div id="priceModal" class="pricing-policy-dialog" hidden>
+    <div class="modal-backdrop" data-modal-backdrop aria-hidden="true"></div>
+    <div class="dialog-card compact-dialog-card modal-dialog" role="dialog" aria-modal="true" aria-labelledby="priceDialogTitle">
+        <div class="dialog-header"><div><span class="dialog-eyebrow">Cập nhật đơn giá</span><h3 id="priceDialogTitle">Cập nhật giá</h3></div><button type="button" class="dialog-close" data-close-dialog aria-label="Đóng">@await Html.PartialAsync("_HeroIcon", new { Name = "x-mark", Class = "heroicon" })</button></div>
+        <form id="priceForm" novalidate>
+            <input id="priceExpected" type="hidden" />
+            <div id="priceError" class="dialog-error" role="alert" hidden></div>
+            <dl class="price-summary"><div><dt>Hạng mục</dt><dd id="priceItemName"></dd></div><div><dt>Giá hiện tại</dt><dd id="priceCurrent"></dd></div></dl>
+            <label class="dialog-field"><span>Đơn giá mới (VNĐ) <b>*</b></span><input id="priceValue" type="number" min="0" step="0.01" inputmode="decimal" required /></label>
+            <div class="dialog-footer"><button type="button" class="dialog-button subtle" data-close-dialog>Hủy</button><button type="submit" class="dialog-button primary" id="priceSave">@await Html.PartialAsync("_HeroIcon", new { Name = "check", Class = "heroicon" }) Lưu giá</button></div>
+        </form>
+    </div>
+</div>
+
+@if (Model.Policies is not null)
+{
+    <div id="policyModal" class="pricing-policy-dialog" hidden>
+        <div class="modal-backdrop" data-modal-backdrop aria-hidden="true"></div>
+        <div class="dialog-card policy-dialog-card modal-dialog" role="dialog" aria-modal="true" aria-labelledby="policyDialogTitle">
+            <div class="dialog-header"><div><span class="dialog-eyebrow">Phiên bản @Model.Policies.Version</span><h3 id="policyDialogTitle">Chỉnh sửa chính sách</h3></div><button type="button" class="dialog-close" data-close-dialog aria-label="Đóng">@await Html.PartialAsync("_HeroIcon", new { Name = "x-mark", Class = "heroicon" })</button></div>
+            <form id="policyForm" novalidate>
+                <input id="policyExpectedVersion" type="hidden" value="@Model.Policies.Version" />
+                <div id="policyError" class="dialog-error" role="alert" hidden></div>
+                <section class="policy-form-section"><h4>Đặt cọc</h4><label class="dialog-field total-percentage"><span>Tổng % giá trị hợp đồng <b>*</b></span><input id="depositTotal" data-field="deposit.totalPercentageOfContractValue" type="number" min="0" max="100" step="0.01" value="@Model.Policies.Deposit.TotalPercentageOfContractValue.ToString(CultureInfo.InvariantCulture)" required /></label>
+                    <div class="policy-form-table-wrap"><table class="policy-form-table"><thead><tr><th>Đợt</th><th>Trước sự kiện (ngày)</th><th>% hợp đồng</th><th>Ghi chú</th></tr></thead><tbody>
+                        @for (var index = 0; index < Model.Policies.Deposit.Installments.Count; index++)
+                        {
+                            var item = Model.Policies.Deposit.Installments[index];
+                            <tr data-installment-row><td><input data-property="sequence" data-field="deposit.installments[@index].sequence" type="number" value="@item.Sequence" readonly /></td><td><input data-property="dueBeforeEventDays" data-field="deposit.installments[@index].dueBeforeEventDays" type="number" min="0" step="1" value="@item.DueBeforeEventDays" required /></td><td><input data-property="percentageOfContractValue" data-field="deposit.installments[@index].percentageOfContractValue" type="number" min="0" max="100" step="0.01" value="@item.PercentageOfContractValue.ToString(CultureInfo.InvariantCulture)" required /></td><td><input data-property="note" data-field="deposit.installments[@index].note" maxlength="500" value="@item.Note" /></td></tr>
+                        }
+                    </tbody></table></div>
+                </section>
+                <section class="policy-form-section"><h4>Hủy và hoàn cọc</h4><div class="policy-form-table-wrap"><table class="policy-form-table"><thead><tr><th>Bậc</th><th>Từ ngày</th><th>Đến ngày</th><th>Phạt %</th><th>Hoàn %</th><th>Ghi chú</th></tr></thead><tbody>
+                    @for (var index = 0; index < Model.Policies.Cancellation.Tiers.Count; index++)
+                    {
+                        var item = Model.Policies.Cancellation.Tiers[index];
+                        <tr data-tier-row><td><input data-property="sequence" data-field="cancellation.tiers[@index].sequence" type="number" value="@item.Sequence" readonly /></td><td><input data-property="noticeDaysFrom" data-field="cancellation.tiers[@index].noticeDaysFrom" type="number" min="0" step="1" value="@item.NoticeDaysFrom" required /></td><td><input data-property="noticeDaysTo" data-field="cancellation.tiers[@index].noticeDaysTo" type="number" min="0" step="1" value="@item.NoticeDaysTo" /></td><td><input data-property="depositPenaltyPercentage" data-field="cancellation.tiers[@index].depositPenaltyPercentage" type="number" min="0" max="100" step="0.01" value="@item.DepositPenaltyPercentage.ToString(CultureInfo.InvariantCulture)" required /></td><td><input data-property="depositRefundPercentage" data-field="cancellation.tiers[@index].depositRefundPercentage" type="number" min="0" max="100" step="0.01" value="@item.DepositRefundPercentage.ToString(CultureInfo.InvariantCulture)" required /></td><td><input data-property="note" data-field="cancellation.tiers[@index].note" maxlength="500" value="@item.Note" /></td></tr>
+                    }
+                </tbody></table></div></section>
+                <div class="dialog-footer"><small>Lưu thay đổi sẽ tạo phiên bản chính sách tiếp theo.</small><span class="dialog-footer-actions"><button type="button" class="dialog-button subtle" data-close-dialog>Hủy</button><button type="submit" class="dialog-button primary" id="policySave">@await Html.PartialAsync("_HeroIcon", new { Name = "check", Class = "heroicon" }) Lưu chính sách</button></span></div>
+            </form>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (() => {
+            const tabButtons = [...document.querySelectorAll('[role="tab"]')];
+            const dialogs = [...document.querySelectorAll('.pricing-policy-dialog')];
+            const backgroundRegions = [
+                document.querySelector('#adminSidebar'),
+                document.querySelector('.pricing-policy-admin')
+            ].filter(Boolean);
+            const toast = document.getElementById('pricingPolicyToast');
+            const antiForgeryToken = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]')?.value;
+            let lastTrigger = null;
+            let priceAction = null;
+
+            const formatter = new Intl.NumberFormat('vi-VN');
+            const normalize = value => (value || '').normalize('NFC').toLocaleLowerCase('vi-VN');
+            const showToast = message => { toast.textContent = message; toast.classList.add('show'); window.setTimeout(() => toast.classList.remove('show'), 2600); };
+            const setDialogError = (id, message, errors) => {
+                const target = document.getElementById(id);
+                target.textContent = message || 'Dữ liệu chưa hợp lệ.';
+                target.hidden = false;
+                Object.keys(errors || {}).forEach(key => document.querySelector(`[data-field="${CSS.escape(key)}"]`)?.setAttribute('aria-invalid', 'true'));
+            };
+            const clearDialogError = id => {
+                const target = document.getElementById(id);
+                target.hidden = true;
+                document.querySelectorAll('[aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
+            };
+            const openDialog = (dialog, trigger) => {
+                dialogs.filter(item => item !== dialog && !item.hidden).forEach(closeDialog);
+                lastTrigger = trigger;
+                dialog.hidden = false;
+                document.body.classList.add('modal-open');
+                backgroundRegions.forEach(region => region.inert = true);
+                window.requestAnimationFrame(() => dialog.querySelector('input:not([type="hidden"]):not([readonly]), button:not([disabled])')?.focus());
+            };
+            const closeDialog = dialog => {
+                dialog.hidden = true;
+                document.body.classList.remove('modal-open');
+                backgroundRegions.forEach(region => region.inert = false);
+                if (lastTrigger?.isConnected) lastTrigger.focus();
+                lastTrigger = null;
+            };
+            const reloadTab = tab => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', tab);
+                window.setTimeout(() => window.location.assign(url), 650);
+            };
+            const postJson = async (url, payload) => {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'RequestVerificationToken': antiForgeryToken },
+                    body: JSON.stringify(payload)
+                });
+                let result = null;
+                try { result = await response.json(); } catch { result = { message: 'Máy chủ phản hồi không hợp lệ.' }; }
+                return { response, result };
+            };
+
+            tabButtons.forEach((tab, index) => {
+                const activate = () => {
+                    tabButtons.forEach(item => {
+                        const active = item === tab;
+                        item.setAttribute('aria-selected', active ? 'true' : 'false');
+                        item.tabIndex = active ? 0 : -1;
+                        document.getElementById(item.getAttribute('aria-controls')).hidden = !active;
+                    });
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('tab', tab.dataset.tab);
+                    window.history.replaceState({}, '', url);
+                };
+                tab.addEventListener('click', activate);
+                tab.addEventListener('keydown', event => {
+                    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                    event.preventDefault();
+                    const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabButtons.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabButtons.length) % tabButtons.length;
+                    tabButtons[next].focus();
+                    tabButtons[next].click();
+                });
+            });
+
+            const pricingSearch = document.getElementById('pricingSearch');
+            const pricingCategory = document.getElementById('pricingCategory');
+            const pricingRows = [...document.querySelectorAll('[data-pricing-row]')];
+            const pricingEmpty = document.getElementById('pricingEmpty');
+            const pricingCount = document.getElementById('pricingCount');
+            const filterPricing = () => {
+                const search = normalize(pricingSearch?.value);
+                const category = pricingCategory?.value || '';
+                let visible = 0;
+                pricingRows.forEach(row => {
+                    const matches = (!category || row.dataset.category === category) && (!search || normalize(row.dataset.code).includes(search) || normalize(row.dataset.name).includes(search));
+                    row.hidden = !matches;
+                    if (matches) visible++;
+                });
+                if (pricingEmpty) pricingEmpty.hidden = visible !== 0;
+                if (pricingCount) pricingCount.textContent = `${visible} hạng mục`;
+            };
+            pricingSearch?.addEventListener('input', filterPricing);
+            pricingCategory?.addEventListener('change', filterPricing);
+            filterPricing();
+
+            document.querySelectorAll('[data-open-price]').forEach(button => button.addEventListener('click', () => {
+                priceAction = { category: button.dataset.category, id: button.dataset.id };
+                document.getElementById('priceItemName').textContent = `${button.dataset.code} - ${button.dataset.name}`;
+                document.getElementById('priceCurrent').textContent = `${formatter.format(Number(button.dataset.price))} VNĐ`;
+                document.getElementById('priceExpected').value = button.dataset.price;
+                document.getElementById('priceValue').value = button.dataset.price;
+                clearDialogError('priceError');
+                openDialog(document.getElementById('priceModal'), button);
+            }));
+
+            document.getElementById('priceForm')?.addEventListener('submit', async event => {
+                event.preventDefault();
+                const valueInput = document.getElementById('priceValue');
+                const price = Number(valueInput.value);
+                if (!Number.isFinite(price) || price < 0 || !/^\d+(\.\d{1,2})?$/.test(valueInput.value)) {
+                    setDialogError('priceError', 'Đơn giá phải không âm và có tối đa hai chữ số thập phân.');
+                    return;
+                }
+                const saveButton = document.getElementById('priceSave');
+                clearDialogError('priceError');
+                saveButton.disabled = true;
+                try {
+                    const { response, result } = await postJson(`/admin/bang-gia-chinh-sach/pricing/${priceAction.category}/${priceAction.id}`, { price, expectedPrice: Number(document.getElementById('priceExpected').value) });
+                    if (!response.ok || !result.success) { setDialogError('priceError', result.message, result.errors); return; }
+                    closeDialog(document.getElementById('priceModal'));
+                    showToast(result.message || 'Cập nhật giá thành công.');
+                    reloadTab('pricing');
+                } catch { setDialogError('priceError', 'Không thể kết nối đến hệ thống.'); }
+                finally { saveButton.disabled = false; }
+            });
+
+            const valueOf = (row, property) => row.querySelector(`[data-property="${property}"]`).value;
+            const optionalNumber = value => value === '' ? null : Number(value);
+            const normalizeNote = value => value.trim() === '' ? null : value.trim().normalize('NFC');
+            const validatePolicies = policy => {
+                const installments = policy.deposit.installments;
+                if (installments.some((item, index) => index > 0 && item.dueBeforeEventDays >= installments[index - 1].dueBeforeEventDays)) return 'Các đợt đặt cọc sau phải gần ngày sự kiện hơn đợt trước.';
+                if (Math.abs(installments.reduce((sum, item) => sum + item.percentageOfContractValue, 0) - policy.deposit.totalPercentageOfContractValue) > 0.000001) return 'Tổng tỷ lệ các đợt phải bằng tổng tiền đặt cọc.';
+                const tiers = policy.cancellation.tiers;
+                if (tiers[0]?.noticeDaysFrom !== 0) return 'Bậc hủy đầu tiên phải bắt đầu từ ngày 0.';
+                for (let index = 0; index < tiers.length; index++) {
+                    const tier = tiers[index];
+                    if (tier.depositPenaltyPercentage + tier.depositRefundPercentage !== 100) return 'Tỷ lệ phạt và hoàn của mỗi bậc phải bằng 100%.';
+                    if (index < tiers.length - 1 && (tier.noticeDaysTo === null || tiers[index + 1].noticeDaysFrom !== tier.noticeDaysTo + 1)) return 'Các khoảng ngày hủy phải liên tục và chỉ bậc cuối được để trống ngày đến.';
+                }
+                return null;
+            };
+            document.querySelector('[data-open-policy]')?.addEventListener('click', event => { clearDialogError('policyError'); openDialog(document.getElementById('policyModal'), event.currentTarget); });
+            document.getElementById('policyForm')?.addEventListener('submit', async event => {
+                event.preventDefault();
+                if (!event.currentTarget.checkValidity()) {
+                    event.currentTarget.reportValidity();
+                    return;
+                }
+                const policy = {
+                    expectedVersion: Number(document.getElementById('policyExpectedVersion').value),
+                    deposit: {
+                        totalPercentageOfContractValue: Number(document.getElementById('depositTotal').value),
+                        installments: [...document.querySelectorAll('[data-installment-row]')].map(row => ({ sequence: Number(valueOf(row, 'sequence')), dueBeforeEventDays: Number(valueOf(row, 'dueBeforeEventDays')), percentageOfContractValue: Number(valueOf(row, 'percentageOfContractValue')), note: normalizeNote(valueOf(row, 'note')) }))
+                    },
+                    cancellation: {
+                        tiers: [...document.querySelectorAll('[data-tier-row]')].map(row => ({ sequence: Number(valueOf(row, 'sequence')), noticeDaysFrom: Number(valueOf(row, 'noticeDaysFrom')), noticeDaysTo: optionalNumber(valueOf(row, 'noticeDaysTo')), depositPenaltyPercentage: Number(valueOf(row, 'depositPenaltyPercentage')), depositRefundPercentage: Number(valueOf(row, 'depositRefundPercentage')), note: normalizeNote(valueOf(row, 'note')) }))
+                    }
+                };
+                const validationMessage = validatePolicies(policy);
+                if (validationMessage) { setDialogError('policyError', validationMessage); return; }
+                const saveButton = document.getElementById('policySave');
+                clearDialogError('policyError');
+                saveButton.disabled = true;
+                try {
+                    const { response, result } = await postJson('/admin/bang-gia-chinh-sach/policies', policy);
+                    if (!response.ok || !result.success) { setDialogError('policyError', result.message, result.errors); return; }
+                    closeDialog(document.getElementById('policyModal'));
+                    showToast(result.message || 'Cập nhật chính sách thành công.');
+                    reloadTab('policies');
+                } catch { setDialogError('policyError', 'Không thể kết nối đến hệ thống.'); }
+                finally { saveButton.disabled = false; }
+            });
+
+            document.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => closeDialog(button.closest('.pricing-policy-dialog'))));
+            document.querySelectorAll('[data-modal-backdrop]').forEach(backdrop => backdrop.addEventListener('click', () => closeDialog(backdrop.closest('.pricing-policy-dialog'))));
+            document.addEventListener('keydown', event => {
+                const dialog = dialogs.find(item => !item.hidden);
+                if (!dialog) return;
+                if (event.key === 'Escape') { closeDialog(dialog); return; }
+                if (event.key !== 'Tab') return;
+                const focusable = [...dialog.querySelectorAll('button:not([disabled]), input:not([disabled]):not([readonly]), textarea:not([disabled]), select:not([disabled])')];
+                if (!focusable.length) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+                else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+            });
+        })();
+    </script>
+}

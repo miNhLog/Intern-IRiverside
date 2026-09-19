@@ -93,7 +93,7 @@
                                     }
                                     <div class="image-fallback-content" aria-hidden="true">@await Html.PartialAsync("_HeroIcon", new { Name = "photo", Class = "heroicon" })<span>Chưa có ảnh đại diện</span></div>
                                     <div class="media-shade" aria-hidden="true"></div>
-                                    <div class="media-topline"><span class="media-status @StatusClass(item.TrangThai)">@await Html.PartialAsync("_HeroIcon", new { Name = "circle-alert", Class = "heroicon heroicon-dot" })@item.TrangThai</span><span class="media-code">@item.MaGoi</span></div>
+                                     <div class="media-topline"><span class="media-status @StatusClass(item.TrangThai)"><span class="status-badge-icon" data-status-icon="dot">@await Html.PartialAsync("_HeroIcon", new { Name = "circle-alert", Class = "heroicon heroicon-dot" })</span><span class="status-badge-label">@item.TrangThai</span></span><span class="media-code">@item.MaGoi</span></div>
                                     <span class="media-style">@await Html.PartialAsync("_HeroIcon", new { Name = "sparkles", Class = "heroicon heroicon-xs" })@(item.PhongCach ?? "Chưa phân loại")</span>
                                 </div>
                                 <div class="decor-card-body">
@@ -104,7 +104,7 @@
                                      <div class="item-footer"><div><span class="price-label">Đơn giá niêm yết</span><strong>@item.Gia.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) <small>VNĐ</small></strong></div><div class="item-actions">
                                         <button type="button" class="catalog-action" data-open-detail="goi" data-id="@item.GoiTrangTriID" aria-label="Xem gói @item.TenGoi" title="Xem chi tiết">@await Html.PartialAsync("_HeroIcon", new { Name = "eye", Class = "heroicon" })<span>Xem</span></button>
                                         <button type="button" class="catalog-action edit-action btn-edit" data-open-form="goi" data-mode="edit" data-id="@item.GoiTrangTriID" aria-label="Chỉnh sửa gói @item.TenGoi" title="Chỉnh sửa">@await Html.PartialAsync("_HeroIcon", new { Name = "pencil-square", Class = "heroicon" })<span>Sửa</span></button>
-                                        <button type="button" class="catalog-action status-action" data-open-status="goi" data-id="@item.GoiTrangTriID" data-name="@item.TenGoi" data-status="@item.TrangThai" aria-label="Đổi trạng thái gói @item.TenGoi" title="Đổi trạng thái">@await Html.PartialAsync("_HeroIcon", new { Name = item.TrangThai == "Áp dụng" ? "lock-closed" : "lock-open", Class = "heroicon" })<span>@(item.TrangThai == "Áp dụng" ? "Khóa" : "Mở lại")</span></button>
+                                         <button type="button" class="catalog-action status-action" data-open-status="goi" data-id="@item.GoiTrangTriID" data-name="@item.TenGoi" data-status="@item.TrangThai" aria-label="Đổi trạng thái gói @item.TenGoi" title="Đổi trạng thái"><span class="status-icon status-icon-active" data-status-icon="active" @(item.TrangThai == "Áp dụng" ? null : "hidden")>@await Html.PartialAsync("_HeroIcon", new { Name = "lock-closed", Class = "heroicon" })</span><span class="status-icon status-icon-inactive" data-status-icon="inactive" @(item.TrangThai != "Áp dụng" ? null : "hidden")>@await Html.PartialAsync("_HeroIcon", new { Name = "lock-open", Class = "heroicon" })</span><span class="status-action-label">@(item.TrangThai == "Áp dụng" ? "Khóa" : "Mở lại")</span></button>
                                     </div></div>
                                 </div>
                             </article>
@@ -152,8 +152,8 @@
                                         <td data-label="Tên dịch vụ &amp; mô tả"><div class="service-copy"><strong>@item.TenDichVu</strong><small>@(string.IsNullOrWhiteSpace(item.MoTa) ? "Chưa có mô tả" : item.MoTa)</small></div></td>
                                         <td data-label="Phân loại"><span class="service-category">@await Html.PartialAsync("_HeroIcon", new { Name = "layer", Class = "heroicon heroicon-xs" })@(item.LoaiDichVu ?? "Chưa phân loại")</span></td>
                                         <td data-label="Đơn giá niêm yết" class="price-cell"><strong>@item.Gia.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) <small>VNĐ</small></strong><em>/ suất tiệc</em></td>
-                                        <td data-label="Trạng thái"><span class="catalog-badge @StatusClass(item.TrangThai)">@await Html.PartialAsync("_HeroIcon", new { Name = "circle-alert", Class = "heroicon heroicon-dot" })@item.TrangThai</span></td>
-                                        <td data-label="Thao tác"><div class="item-actions"><button type="button" class="catalog-action" data-open-detail="dich-vu" data-id="@item.DichVuID" aria-label="Xem dịch vụ @item.TenDichVu" title="Xem chi tiết">@await Html.PartialAsync("_HeroIcon", new { Name = "eye", Class = "heroicon" })<span>Xem</span></button><button type="button" class="catalog-action edit-action btn-edit" data-open-form="dich-vu" data-mode="edit" data-id="@item.DichVuID" aria-label="Chỉnh sửa dịch vụ @item.TenDichVu" title="Chỉnh sửa">@await Html.PartialAsync("_HeroIcon", new { Name = "pencil-square", Class = "heroicon" })<span>Sửa</span></button><button type="button" class="catalog-action status-action" data-open-status="dich-vu" data-id="@item.DichVuID" data-name="@item.TenDichVu" data-status="@item.TrangThai" aria-label="Đổi trạng thái dịch vụ @item.TenDichVu" title="Đổi trạng thái">@await Html.PartialAsync("_HeroIcon", new { Name = item.TrangThai == "Áp dụng" ? "lock-closed" : "lock-open", Class = "heroicon" })<span>@(item.TrangThai == "Áp dụng" ? "Khóa" : "Mở lại")</span></button></div></td>
+                                         <td data-label="Trạng thái"><span class="catalog-badge @StatusClass(item.TrangThai)"><span class="status-badge-icon" data-status-icon="dot">@await Html.PartialAsync("_HeroIcon", new { Name = "circle-alert", Class = "heroicon heroicon-dot" })</span><span class="status-badge-label">@item.TrangThai</span></span></td>
+                                         <td data-label="Thao tác"><div class="item-actions"><button type="button" class="catalog-action" data-open-detail="dich-vu" data-id="@item.DichVuID" aria-label="Xem dịch vụ @item.TenDichVu" title="Xem chi tiết">@await Html.PartialAsync("_HeroIcon", new { Name = "eye", Class = "heroicon" })<span>Xem</span></button><button type="button" class="catalog-action edit-action btn-edit" data-open-form="dich-vu" data-mode="edit" data-id="@item.DichVuID" aria-label="Chỉnh sửa dịch vụ @item.TenDichVu" title="Chỉnh sửa">@await Html.PartialAsync("_HeroIcon", new { Name = "pencil-square", Class = "heroicon" })<span>Sửa</span></button><button type="button" class="catalog-action status-action" data-open-status="dich-vu" data-id="@item.DichVuID" data-name="@item.TenDichVu" data-status="@item.TrangThai" aria-label="Đổi trạng thái dịch vụ @item.TenDichVu" title="Đổi trạng thái"><span class="status-icon status-icon-active" data-status-icon="active" @(item.TrangThai == "Áp dụng" ? null : "hidden")>@await Html.PartialAsync("_HeroIcon", new { Name = "lock-closed", Class = "heroicon" })</span><span class="status-icon status-icon-inactive" data-status-icon="inactive" @(item.TrangThai != "Áp dụng" ? null : "hidden")>@await Html.PartialAsync("_HeroIcon", new { Name = "lock-open", Class = "heroicon" })</span><span class="status-action-label">@(item.TrangThai == "Áp dụng" ? "Khóa" : "Mở lại")</span></button></div></td>
                                     </tr>
                                 }
                             </tbody>
@@ -169,12 +169,16 @@
 
 <div id="catalogToast" class="catalog-toast" role="status" aria-live="polite"></div>
 
-<div id="detailDialog" class="catalog-dialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle" hidden>
-    <div class="dialog-card detail-card"><div class="dialog-header"><div><span class="eyebrow">Chi tiết danh mục</span><h3 id="detailTitle">Chi tiết</h3></div><button type="button" class="dialog-close" data-close-dialog aria-label="Đóng"><span class="close-icon" aria-hidden="true">&times;</span></button></div><div id="detailBody" class="detail-body"></div><div class="dialog-footer"><button type="button" class="catalog-button subtle" data-close-dialog>Đóng</button></div></div>
+<div id="detailDialog" class="catalog-dialog" hidden>
+    <div class="modal-backdrop" data-modal-backdrop aria-hidden="true"></div>
+    <div class="dialog-card detail-card modal-dialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+        <div class="dialog-header"><div><span class="eyebrow">Chi tiết danh mục</span><h3 id="detailTitle">Chi tiết</h3></div><button type="button" class="dialog-close" data-close-dialog aria-label="Đóng">@await Html.PartialAsync("_HeroIcon", new { Name = "x-mark", Class = "heroicon" })</button></div><div id="detailBody" class="detail-body"></div><div class="dialog-footer"><button type="button" class="catalog-button subtle" data-close-dialog>Đóng</button></div>
+    </div>
 </div>
 
-<div id="formDialog" class="catalog-dialog" role="dialog" aria-modal="true" aria-labelledby="formTitle" hidden>
-    <div class="dialog-card form-dialog-card">
+<div id="formDialog" class="catalog-dialog" hidden>
+    <div class="modal-backdrop" data-modal-backdrop aria-hidden="true"></div>
+    <div class="dialog-card form-dialog-card modal-dialog" role="dialog" aria-modal="true" aria-labelledby="formTitle">
         <div class="dialog-header stitch-dialog-header"><div class="dialog-heading-group"><span class="dialog-leading-icon">@await Html.PartialAsync("_HeroIcon", new { Name = "sparkles", Class = "heroicon" })</span><div><div class="dialog-title-line"><span class="eyebrow">Danh mục master data</span><span class="dialog-spec">Master Data Spec</span></div><h3 id="formTitle">Thêm mới</h3><p class="dialog-subtitle">Cấu hình thông tin danh mục, định mức giá và hình ảnh nhận diện.</p></div></div><button type="button" class="dialog-close" data-close-dialog aria-label="Đóng">@await Html.PartialAsync("_HeroIcon", new { Name = "x-mark", Class = "heroicon" })</button></div>
         <div id="formError" class="form-error" role="alert" hidden></div>
 
@@ -209,17 +213,19 @@
     </div>
 </div>
 
-<div id="statusDialog" class="catalog-dialog" role="dialog" aria-modal="true" aria-labelledby="statusTitle" hidden>
-    <div class="dialog-card compact-dialog"><div class="dialog-header"><div><span class="eyebrow">Cập nhật danh mục</span><h3 id="statusTitle">Đổi trạng thái</h3></div><button type="button" class="dialog-close" data-close-dialog aria-label="Đóng"><span class="close-icon" aria-hidden="true">&times;</span></button></div><form id="statusForm" method="post"><input type="hidden" name="trangThai" id="statusValue" /><p id="statusText"></p><div id="statusError" class="form-error" role="alert" hidden></div><div class="dialog-footer"><button type="button" class="catalog-button subtle" data-close-dialog>Hủy</button><button type="submit" class="catalog-button primary">Xác nhận</button></div></form></div>
+<div id="statusDialog" class="catalog-dialog" hidden>
+    <div class="modal-backdrop" data-modal-backdrop aria-hidden="true"></div>
+    <div class="dialog-card compact-dialog modal-dialog" role="dialog" aria-modal="true" aria-labelledby="statusTitle"><div class="dialog-header"><div><span class="eyebrow">Cập nhật danh mục</span><h3 id="statusTitle">Đổi trạng thái</h3></div><button type="button" class="dialog-close" data-close-dialog aria-label="Đóng">@await Html.PartialAsync("_HeroIcon", new { Name = "x-mark", Class = "heroicon" })</button></div><form id="statusForm" method="post">@Html.AntiForgeryToken()<input type="hidden" name="trangThai" id="statusValue" /><p id="statusText"></p><div id="statusError" class="form-error" role="alert" hidden></div><div class="dialog-footer"><button type="button" class="catalog-button subtle" data-close-dialog>Hủy</button><button type="submit" class="catalog-button primary">Xác nhận</button></div></form></div>
 </div>
 
 @section Scripts
 {
     <script>
         (() => {
-            const dialogs = [...document.querySelectorAll('.catalog-dialog')];
-            const toast = document.getElementById('catalogToast');
-            const forms = { goi: document.getElementById('goiTrangTriForm'), 'dich-vu': document.getElementById('dichVuForm') };
+             const dialogs = [...document.querySelectorAll('.catalog-dialog')];
+             const toast = document.getElementById('catalogToast');
+             const forms = { goi: document.getElementById('goiTrangTriForm'), 'dich-vu': document.getElementById('dichVuForm') };
+             const backgroundRegions = [document.getElementById('adminSidebar'), document.querySelector('.catalog-admin')].filter(Boolean);
             const routes = {
                 goi: { detail: id => `/admin/quan-ly-goi-trang-tri-dich-vu/goi-trang-tri/${id}`, create: '/admin/quan-ly-goi-trang-tri-dich-vu/goi-trang-tri/them', edit: id => `/admin/quan-ly-goi-trang-tri-dich-vu/goi-trang-tri/sua/${id}`, status: id => `/admin/quan-ly-goi-trang-tri-dich-vu/goi-trang-tri/trang-thai/${id}` },
                 'dich-vu': { detail: id => `/admin/quan-ly-goi-trang-tri-dich-vu/dich-vu/${id}`, create: '/admin/quan-ly-goi-trang-tri-dich-vu/dich-vu/them', edit: id => `/admin/quan-ly-goi-trang-tri-dich-vu/dich-vu/sua/${id}`, status: id => `/admin/quan-ly-goi-trang-tri-dich-vu/dich-vu/trang-thai/${id}` }
@@ -233,15 +239,39 @@
              let lastTrigger = null;
              let objectUrls = { goi: null, 'dich-vu': null };
              const uploadIds = {
-                 goi: { dropzone: 'dropzoneGoiDecor', input: 'hinhAnhFileGoi', content: 'uploadContentGoi', preview: 'previewBoxGoi', image: 'previewImgGoi', remove: 'btnRemoveImgGoi', current: 'currentPreviewGoi', currentImage: 'currentImgGoi', error: 'uploadErrorGoi', notice: 'removeNoticeGoi', name: 'selectedNameGoi', dimensions: 'selectedDimensionsGoi', size: 'selectedSizeGoi' },
-                 'dich-vu': { dropzone: 'dropzoneDichVu', input: 'hinhAnhFileDich', content: 'uploadContentDich', preview: 'previewBoxDich', image: 'previewImgDich', remove: 'btnRemoveImgDich', current: 'currentPreviewDich', currentImage: 'currentImgDich', error: 'uploadErrorDich', notice: 'removeNoticeDich', name: 'selectedNameDich', dimensions: 'selectedDimensionsDich', size: 'selectedSizeDich' }
+                  goi: { dropzone: 'dropzoneGoiDecor', input: 'hinhAnhFileGoi', content: 'uploadContentGoi', preview: 'previewBoxGoi', image: 'previewImgGoi', remove: 'btnRemoveImgGoi', replace: 'btnReplaceImgGoi', current: 'currentPreviewGoi', currentImage: 'currentImgGoi', currentRemove: 'btnRemoveCurrentImgGoi', error: 'uploadErrorGoi', notice: 'removeNoticeGoi', name: 'selectedNameGoi', dimensions: 'selectedDimensionsGoi', size: 'selectedSizeGoi' },
+                  'dich-vu': { dropzone: 'dropzoneDichVu', input: 'hinhAnhFileDich', content: 'uploadContentDich', preview: 'previewBoxDich', image: 'previewImgDich', remove: 'btnRemoveImgDich', replace: 'btnReplaceImgDich', current: 'currentPreviewDich', currentImage: 'currentImgDich', currentRemove: 'btnRemoveCurrentImgDich', error: 'uploadErrorDich', notice: 'removeNoticeDich', name: 'selectedNameDich', dimensions: 'selectedDimensionsDich', size: 'selectedSizeDich' }
              };
 
-            function showToast(message) { toast.textContent = message; toast.classList.add('show'); window.setTimeout(() => toast.classList.remove('show'), 2600); }
-            function openDialog(dialog, trigger) { lastTrigger = trigger; dialog.hidden = false; dialog.classList.add('is-open'); dialog.querySelector('input:not([type="hidden"]), button, textarea')?.focus(); }
-            function closeDialog(dialog) { dialog.classList.remove('is-open'); dialog.hidden = true; if (dialog.id === 'formDialog') { clearUpload('goi'); clearUpload('dich-vu'); } lastTrigger?.focus(); lastTrigger = null; }
-            function closeAll() { dialogs.filter(dialog => !dialog.hidden).forEach(closeDialog); }
-            function antiForgery(form) { return form.querySelector('input[name="__RequestVerificationToken"]')?.value ?? ''; }
+             function showToast(message) { toast.textContent = message; toast.classList.add('show'); window.setTimeout(() => toast.classList.remove('show'), 2600); }
+             function setModalBackgroundLocked(locked) { document.body.classList.toggle('modal-open', locked); backgroundRegions.forEach(region => { region.inert = locked; }); }
+             function openDialog(dialog, trigger) {
+                 dialogs.filter(item => item !== dialog && !item.hidden).forEach(item => { item.classList.remove('is-open'); item.hidden = true; });
+                 lastTrigger = trigger;
+                 dialog.hidden = false;
+                 dialog.classList.add('is-open');
+                 setModalBackgroundLocked(true);
+                 window.requestAnimationFrame(() => {
+                     const field = dialog.querySelector('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
+                     (field ?? dialog.querySelector('button:not([disabled])'))?.focus();
+                 });
+             }
+             function closeDialog(dialog) {
+                 if (!dialog) return;
+                 dialog.classList.remove('is-open');
+                 dialog.hidden = true;
+                 if (dialog.id === 'formDialog') { clearUpload('goi'); clearUpload('dich-vu'); }
+                 const trigger = lastTrigger;
+                 lastTrigger = null;
+                 if (!dialogs.some(item => !item.hidden)) setModalBackgroundLocked(false);
+                 if (trigger?.isConnected) trigger.focus();
+             }
+             function closeAll() { dialogs.filter(dialog => !dialog.hidden).forEach(closeDialog); }
+             function antiForgery(form) { return form.querySelector('input[name="__RequestVerificationToken"]')?.value ?? ''; }
+             async function readResult(response) {
+                 try { return await response.json(); }
+                 catch { return { success: false, message: `Máy chủ phản hồi không hợp lệ (${response.status}).` }; }
+             }
             function activeForm() { return forms[formType]; }
             function setFormEnabled(form, enabled) { form.hidden = !enabled; form.querySelectorAll('input, textarea, select, button').forEach(control => control.disabled = !enabled); }
             function setError(message, errors) {
@@ -253,27 +283,28 @@
              function resetErrors() { const target = document.getElementById('formError'); target.hidden = true; document.querySelectorAll('[aria-invalid="true"]').forEach(field => { field.removeAttribute('aria-invalid'); field.removeAttribute('aria-describedby'); }); }
              function setRemove(type, value) { document.getElementById(`${type === 'goi' ? 'goi' : 'dich'}RemoveImage`).value = value ? 'true' : 'false'; }
              function uploadUi(type) { return uploadIds[type]; }
-             function clearUpload(type) {
-                 const ui = uploadUi(type);
-                 if (objectUrls[type]) { URL.revokeObjectURL(objectUrls[type]); objectUrls[type] = null; }
-                 document.getElementById(ui.input).value = '';
-                 document.getElementById(ui.preview).hidden = true;
-                 document.getElementById(ui.content).hidden = false;
-                 document.getElementById(ui.current).hidden = true;
-                 document.getElementById(ui.notice).hidden = true;
-                 setRemove(type, false);
-             }
+              function clearUpload(type) {
+                  const ui = uploadUi(type);
+                  if (objectUrls[type]) { URL.revokeObjectURL(objectUrls[type]); objectUrls[type] = null; }
+                  document.getElementById(ui.input).value = '';
+                  document.getElementById(ui.preview).hidden = true;
+                  document.getElementById(ui.content).hidden = false;
+                  document.getElementById(ui.current).hidden = true;
+                  document.getElementById(ui.error).hidden = true;
+                  document.getElementById(ui.notice).hidden = true;
+                  setRemove(type, false);
+              }
              function setExistingImage(type, path) {
                  const ui = uploadUi(type);
                  const preview = document.getElementById(ui.current); const image = document.getElementById(ui.currentImage);
-                 if (!path || !path.startsWith('/assets/images/')) { preview.hidden = true; return; }
-                 image.src = path; image.alt = 'Ảnh hiện tại'; preview.hidden = false; document.getElementById(ui.notice).hidden = true; setRemove(type, false);
-             }
+                  if (!path || !path.startsWith('/assets/images/')) { preview.hidden = true; return; }
+                  image.src = path; image.alt = 'Ảnh hiện tại'; preview.hidden = false; document.getElementById(ui.notice).hidden = true; setRemove(type, false);
+              }
              function renderFile(type, file) {
                  const ui = uploadUi(type);
                  const validExtensions = ['.jpg', '.jpeg', '.png', '.webp']; const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
                  const validMime = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type);
-                 if (!validExtensions.includes(extension) || !validMime || file.size <= 0 || file.size >= 5 * 1024 * 1024) { document.getElementById(ui.error).textContent = 'Chỉ nhận JPG, JPEG, PNG hoặc WEBP và dung lượng phải nhỏ hơn 5 MB.'; document.getElementById(ui.error).hidden = false; return; }
+                  if (!validExtensions.includes(extension) || !validMime || file.size <= 0 || file.size >= 5 * 1024 * 1024) { inputFor(type).value = ''; document.getElementById(ui.error).textContent = 'Chỉ nhận JPG, JPEG, PNG hoặc WEBP và dung lượng phải nhỏ hơn 5 MB.'; document.getElementById(ui.error).hidden = false; return; }
                  document.getElementById(ui.error).hidden = true;
                  if (objectUrls[type]) { URL.revokeObjectURL(objectUrls[type]); }
                  document.getElementById(ui.notice).hidden = true;
@@ -282,42 +313,47 @@
                  document.getElementById(ui.name).textContent = file.name; document.getElementById(ui.size).textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`; document.getElementById(ui.content).hidden = true; preview.hidden = false;
                  const probe = new Image(); probe.onload = () => document.getElementById(ui.dimensions).textContent = `${probe.naturalWidth} × ${probe.naturalHeight} px`; probe.src = objectUrls[type];
              }
-             function setupUpload(type) {
-                 const ui = uploadUi(type); const input = document.getElementById(ui.input); const zone = document.getElementById(ui.dropzone);
-                 input.addEventListener('change', () => { if (input.files[0]) renderFile(type, input.files[0]); });
-                 zone.addEventListener('click', event => { if (event.target.closest(`#${ui.remove}`)) return; if (event.target.closest(`#${ui.content}`) || event.target.closest('.btn-choose-file')) input.click(); });
-                 zone.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); input.click(); } });
-                 ['dragenter', 'dragover'].forEach(name => zone.addEventListener(name, event => { event.preventDefault(); zone.classList.add('is-dragging'); }));
-                 ['dragleave', 'drop'].forEach(name => zone.addEventListener(name, event => { event.preventDefault(); zone.classList.remove('is-dragging'); }));
-                 zone.addEventListener('drop', event => { if (event.dataTransfer.files[0]) { input.files = event.dataTransfer.files; renderFile(type, event.dataTransfer.files[0]); } });
-                 document.getElementById(ui.remove).addEventListener('click', event => { event.stopPropagation(); clearUpload(type); document.getElementById(ui.notice).hidden = false; setRemove(type, true); });
-             }
+              function inputFor(type) { return document.getElementById(uploadUi(type).input); }
+              function removeImage(type) { const ui = uploadUi(type); clearUpload(type); document.getElementById(ui.notice).hidden = false; setRemove(type, true); }
+              function setupUpload(type) {
+                  const ui = uploadUi(type); const input = inputFor(type); const zone = document.getElementById(ui.dropzone);
+                  input.addEventListener('change', () => { if (input.files[0]) renderFile(type, input.files[0]); });
+                  zone.addEventListener('click', event => { if (event.target.closest(`#${ui.remove}`)) return; if (event.target.closest(`#${ui.content}`) || event.target.closest('.btn-choose-file')) input.click(); });
+                  zone.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); input.click(); } });
+                  ['dragenter', 'dragover'].forEach(name => zone.addEventListener(name, event => { event.preventDefault(); zone.classList.add('is-dragging'); }));
+                  ['dragleave', 'drop'].forEach(name => zone.addEventListener(name, event => { event.preventDefault(); zone.classList.remove('is-dragging'); }));
+                  zone.addEventListener('drop', event => { if (event.dataTransfer.files[0]) { input.files = event.dataTransfer.files; renderFile(type, event.dataTransfer.files[0]); } });
+                  document.getElementById(ui.remove).addEventListener('click', event => { event.stopPropagation(); removeImage(type); });
+                  document.getElementById(ui.replace).addEventListener('click', event => { event.stopPropagation(); input.click(); });
+                  document.getElementById(ui.currentRemove).addEventListener('click', event => { event.stopPropagation(); removeImage(type); });
+              }
             function resetForm(type) { const form = forms[type]; clearUpload(type); form.reset(); resetErrors(); setFormEnabled(forms.goi, type === 'goi'); setFormEnabled(forms['dich-vu'], type === 'dich-vu'); document.getElementById('formTitle').textContent = formMode === 'create' ? (type === 'goi' ? 'Thêm gói Decor' : 'Thêm dịch vụ') : (type === 'goi' ? 'Chỉnh sửa gói Decor' : 'Chỉnh sửa dịch vụ'); }
             function fillForm(data) {
                 if (formType === 'goi') { document.getElementById('goiMaGoi').value = data.packageCode ?? ''; document.getElementById('goiTenGoi').value = data.packageName ?? ''; document.getElementById('goiPhongCach').value = data.style ?? ''; document.getElementById('goiGia').value = data.price ?? 0; document.getElementById('goiMoTa').value = data.description ?? ''; setExistingImage('goi', data.imageUrl); }
                 else { document.getElementById('dichMaDichVu').value = data.serviceCode ?? ''; document.getElementById('dichTenDichVu').value = data.serviceName ?? ''; document.getElementById('dichLoaiDichVu').value = data.serviceType ?? ''; document.getElementById('dichGia').value = data.price ?? 0; document.getElementById('dichMoTa').value = data.description ?? ''; setExistingImage('dich-vu', data.imageUrl); }
             }
-             async function loadDetail(type, id) { const response = await fetch(routes[type].detail(id), { headers: { Accept: 'application/json' } }); const result = await response.json(); if (!response.ok || !result.success) throw new Error(result.message || 'Không thể tải dữ liệu.'); return result.value; }
+              async function loadDetail(type, id) { const response = await fetch(routes[type].detail(id), { headers: { Accept: 'application/json' } }); const result = await readResult(response); if (!response.ok || !result.success) throw new Error(result.message || 'Không thể tải dữ liệu.'); return result.value; }
              function updateStatusOnPage(type, id, status) {
-                 const item = document.querySelector(`[data-item-id="${id}"]`);
-                 if (!item) return;
-                 const active = status === 'Áp dụng';
-                 item.classList.toggle('is-inactive', !active);
-                 const badge = item.querySelector('.media-status, .catalog-badge');
-                 if (badge) {
-                     badge.classList.toggle('is-active', active);
-                     badge.classList.toggle('is-inactive', !active);
-                     badge.innerHTML = `<svg class="heroicon heroicon-dot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"></circle></svg>${status}`;
-                 }
-                 const button = item.querySelector('[data-open-status]');
-                 if (button) {
-                     button.dataset.status = status;
-                     const icon = button.querySelector('svg');
-                     if (icon) icon.innerHTML = active ? '<rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14.5v2"></path>' : '<rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 7.2-2.4M12 14.5v2"></path>';
-                     const label = button.querySelector('span');
-                     if (label) label.textContent = active ? 'Khóa' : 'Mở lại';
-                 }
-             }
+                  const item = document.querySelector(`[data-item-id="${id}"]`);
+                  if (!item) return;
+                  const active = status === 'Áp dụng';
+                  item.classList.toggle('is-inactive', !active);
+                  const badge = item.querySelector('.media-status, .catalog-badge');
+                  if (badge) {
+                      badge.classList.toggle('is-active', active);
+                      badge.classList.toggle('is-inactive', !active);
+                      const badgeLabel = badge.querySelector('.status-badge-label');
+                      if (badgeLabel) badgeLabel.textContent = status;
+                  }
+                  const button = item.querySelector('[data-open-status]');
+                  if (button) {
+                      button.dataset.status = status;
+                      button.querySelector('[data-status-icon="active"]')?.toggleAttribute('hidden', !active);
+                      button.querySelector('[data-status-icon="inactive"]')?.toggleAttribute('hidden', active);
+                      const label = button.querySelector('.status-action-label');
+                      if (label) label.textContent = active ? 'Khóa' : 'Mở lại';
+                  }
+              }
 
             document.querySelectorAll('[role="tab"]').forEach((tab, index, all) => { tab.addEventListener('click', () => { all.forEach(item => { const active = item === tab; item.setAttribute('aria-selected', active); document.getElementById(item.getAttribute('aria-controls')).hidden = !active; }); const url = new URL(window.location.href); url.searchParams.set('tab', tab.dataset.tab); window.history.replaceState({}, '', url); }); tab.addEventListener('keydown', event => { if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return; event.preventDefault(); const next = event.key === 'Home' ? 0 : event.key === 'End' ? all.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + all.length) % all.length; all[next].focus(); all[next].click(); }); });
             async function openForm(button) {
@@ -341,10 +377,10 @@
             });
             document.querySelectorAll('[data-open-detail]').forEach(button => button.addEventListener('click', async () => { try { const type = button.dataset.openDetail; const data = await loadDetail(type, button.dataset.id); const title = type === 'goi' ? data.packageName : data.serviceName; document.getElementById('detailTitle').textContent = title; const body = document.getElementById('detailBody'); body.replaceChildren(); const imagePath = data.imageUrl?.startsWith('/assets/images/') ? data.imageUrl : null; if (imagePath) { const image = document.createElement('img'); image.src = imagePath; image.alt = `Hình ảnh ${title}`; image.className = 'detail-image'; body.append(image); } const dl = document.createElement('dl'); const rows = [['Mã', data.packageCode ?? data.serviceCode], ['Phân loại', data.style ?? data.serviceType ?? 'Chưa phân loại'], ['Giá', `${new Intl.NumberFormat('vi-VN').format(data.price)} VNĐ`], ['Trạng thái', data.status], ['Mô tả', data.description || 'Chưa có mô tả.']]; rows.forEach(([label, value]) => { const dt = document.createElement('dt'); dt.textContent = label; const dd = document.createElement('dd'); dd.textContent = value; dl.append(dt, dd); }); body.append(dl); openDialog(document.getElementById('detailDialog'), button); } catch (error) { showToast(error.message); } }));
             document.querySelectorAll('[data-open-status]').forEach(button => button.addEventListener('click', () => { const next = button.dataset.status === 'Áp dụng' ? 'Ngừng áp dụng' : 'Áp dụng'; document.getElementById('statusValue').value = next; document.getElementById('statusForm').action = routes[button.dataset.openStatus].status(button.dataset.id); document.getElementById('statusText').textContent = `Chuyển “${button.dataset.name}” sang trạng thái “${next}”?`; document.getElementById('statusError').hidden = true; openDialog(document.getElementById('statusDialog'), button); }));
-             Object.entries(forms).forEach(([type, form]) => form.addEventListener('submit', async event => { event.preventDefault(); if (!form.checkValidity()) { form.reportValidity(); return; } const button = form.querySelector('.save-button'); resetErrors(); button.disabled = true; button.dataset.label = button.textContent; button.textContent = 'Đang lưu...'; try { const response = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } }); const result = await response.json(); if (!response.ok || !result.success) { setError(result.message, result.errors); return; } closeDialog(document.getElementById('formDialog')); showToast(result.message || 'Đã lưu thành công.'); window.setTimeout(() => window.location.reload(), 650); } catch { setError('Không thể kết nối đến hệ thống.'); } finally { button.disabled = false; button.innerHTML = '<svg class="heroicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M5 7l1 13h12l1-13M9 11h6M3 4h18v3H3V4Z"></path></svg> ' + (type === 'goi' ? 'Lưu gói Decor' : 'Lưu dịch vụ'); } }));
-             document.getElementById('statusForm').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const button = form.querySelector('button[type="submit"]'); const error = document.getElementById('statusError'); const statusTrigger = lastTrigger; button.disabled = true; error.hidden = true; try { const response = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } }); const result = await response.json(); if (!response.ok || !result.success) { error.textContent = result.message || 'Không thể cập nhật trạng thái.'; error.hidden = false; return; } const type = statusTrigger?.dataset.openStatus; const id = statusTrigger?.dataset.id; if (type && id) updateStatusOnPage(type, id, document.getElementById('statusValue').value); closeDialog(document.getElementById('statusDialog')); showToast(result.message || 'Đã cập nhật trạng thái.'); window.setTimeout(() => window.location.reload(), 650); } catch { error.textContent = 'Không thể kết nối đến hệ thống.'; error.hidden = false; } finally { button.disabled = false; } });
-            document.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => closeDialog(button.closest('.catalog-dialog'))));
-            dialogs.forEach(dialog => dialog.addEventListener('click', event => { if (event.target === dialog) closeDialog(dialog); }));
+              Object.entries(forms).forEach(([type, form]) => form.addEventListener('submit', async event => { event.preventDefault(); if (!form.checkValidity()) { form.reportValidity(); return; } const button = form.querySelector('.save-button'); const buttonContent = button.innerHTML; resetErrors(); button.disabled = true; button.textContent = 'Đang lưu...'; try { const response = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } }); const result = await readResult(response); if (!response.ok || !result.success) { setError(result.message, result.errors); return; } closeDialog(document.getElementById('formDialog')); showToast(result.message || 'Đã lưu thành công.'); window.setTimeout(() => window.location.reload(), 650); } catch { setError('Không thể kết nối đến hệ thống.'); } finally { button.disabled = false; button.innerHTML = buttonContent; } }));
+              document.getElementById('statusForm').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const button = form.querySelector('button[type="submit"]'); const error = document.getElementById('statusError'); const statusTrigger = lastTrigger; button.disabled = true; error.hidden = true; try { const response = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } }); const result = await readResult(response); if (!response.ok || !result.success) { error.textContent = result.message || 'Không thể cập nhật trạng thái.'; error.hidden = false; error.focus(); return; } const type = statusTrigger?.dataset.openStatus; const id = statusTrigger?.dataset.id; if (type && id) updateStatusOnPage(type, id, document.getElementById('statusValue').value); closeDialog(document.getElementById('statusDialog')); showToast(result.message || 'Đã cập nhật trạng thái.'); window.setTimeout(() => window.location.reload(), 650); } catch { error.textContent = 'Không thể kết nối đến hệ thống.'; error.hidden = false; error.focus(); } finally { button.disabled = false; } });
+             document.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => closeDialog(button.closest('.catalog-dialog'))));
+             document.querySelectorAll('[data-modal-backdrop]').forEach(backdrop => backdrop.addEventListener('click', () => closeDialog(backdrop.closest('.catalog-dialog'))));
             document.addEventListener('keydown', event => { const open = dialogs.find(dialog => !dialog.hidden); if (!open) return; if (event.key === 'Escape') { closeDialog(open); return; } if (event.key !== 'Tab') return; const focusable = [...open.querySelectorAll('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled])')]; if (!focusable.length) return; const first = focusable[0]; const last = focusable[focusable.length - 1]; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } });
             setupUpload('goi'); setupUpload('dich-vu');
             setFormEnabled(forms.goi, true); setFormEnabled(forms['dich-vu'], false);
