@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "version": 21,
+  "updatedAtUtc": "2026-09-19T06:26:15.8190844+00:00",
+  "currency": "VND",
+  "deposit": {
+    "totalPercentageOfContractValue": 30,
+    "installments": [
+      {
+        "sequence": 1,
+        "dueBeforeEventDays": 90,
+        "percentageOfContractValue": 20,
+        "note": "Contract confirmation deposit"
+      },
+      {
+        "sequence": 2,
+        "dueBeforeEventDays": 30,
+        "percentageOfContractValue": 10,
+        "note": "Complete the deposit before the event date"
+      }
+    ]
+  },
+  "cancellation": {
+    "tiers": [
+      {
+        "sequence": 1,
+        "noticeDaysFrom": 0,
+        "noticeDaysTo": 29,
+        "depositPenaltyPercentage": 100,
+        "depositRefundPercentage": 0,
+        "note": "Cancellation close to the event date"
+      },
+      {
+        "sequence": 2,
+        "noticeDaysFrom": 30,
+        "noticeDaysTo": 89,
+        "depositPenaltyPercentage": 50,
+        "depositRefundPercentage": 50,
+        "note": "Cancellation within the intermediate notice period"
+      },
+      {
+        "sequence": 3,
+        "noticeDaysFrom": 90,
+        "noticeDaysTo": null,
+        "depositPenaltyPercentage": 0,
+        "depositRefundPercentage": 100,
+        "note": "Early cancellation"
+      }
+    ]
+  }
+}

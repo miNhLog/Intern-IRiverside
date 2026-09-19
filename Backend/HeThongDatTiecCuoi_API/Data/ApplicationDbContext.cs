@@ -17,6 +17,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<NhanVien> NhanVien => Set<NhanVien>();
     public DbSet<LichSanh> LichSanh => Set<LichSanh>();
     public DbSet<DatTiec> DatTiec => Set<DatTiec>();
+    public DbSet<ThucDon> ThucDon => Set<ThucDon>();
     public DbSet<GoiTrangTri> GoiTrangTri => Set<GoiTrangTri>();
     public DbSet<DichVu> DichVu => Set<DichVu>();
     public DbSet<DatTiecDichVu> DatTiecDichVu => Set<DatTiecDichVu>();
@@ -122,6 +123,39 @@ public sealed class ApplicationDbContext : DbContext
                 .HasForeignKey(x => x.SanhTiecID)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+
+        modelBuilder.Entity<ThucDon>(entity =>
+        {
+            entity.ToTable("ThucDon", table =>
+            {
+                table.HasCheckConstraint("CK_ThucDon_Gia", "[GiaMoiBan] >= 0");
+                table.HasCheckConstraint(
+                    "CK_ThucDon_TrangThai",
+                    "[TrangThai] IN (N'Áp dụng', N'Ngừng áp dụng')");
+            });
+
+            entity.HasKey(x => x.ThucDonID);
+            entity.Property(x => x.MaThucDon)
+                .HasMaxLength(50)
+                .IsRequired();
+            entity.Property(x => x.TenThucDon)
+                .HasMaxLength(150)
+                .IsRequired();
+            entity.Property(x => x.MoTa)
+                .HasColumnType("nvarchar(max)");
+            entity.Property(x => x.GiaMoiBan)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired();
+            entity.Property(x => x.TrangThai)
+                .HasMaxLength(50)
+                .IsRequired()
+                .HasDefaultValue("Áp dụng");
+
+            entity.HasIndex(x => x.MaThucDon)
+                .IsUnique()
+                .HasDatabaseName("UQ_ThucDon_MaThucDon");
+        });
+
         modelBuilder.Entity<DatTiec>(entity =>
         {
             entity.ToTable("DatTiec");
@@ -174,6 +208,11 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasOne(x => x.LichSanh)
                 .WithMany()
                 .HasForeignKey(x => x.LichSanhID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne<ThucDon>()
+                .WithMany()
+                .HasForeignKey(x => x.ThucDonID)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(x => x.GoiTrangTri)

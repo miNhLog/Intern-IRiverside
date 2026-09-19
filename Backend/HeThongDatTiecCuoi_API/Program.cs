@@ -54,6 +54,13 @@ builder.Services
     .Validate(options => Path.IsPathFullyQualified(options.RootPath),
         "ImageStorage:RootPath phải là đường dẫn tuyệt đối.")
     .ValidateOnStart();
+builder.Services
+    .AddOptions<PricingPolicyStoreOptions>()
+    .Bind(builder.Configuration.GetSection(PricingPolicyStoreOptions.SectionName))
+    .ValidateDataAnnotations()
+    .Validate(options => Path.IsPathFullyQualified(options.FilePath),
+        "PricingPolicyStore:FilePath phải là đường dẫn tuyệt đối.")
+    .ValidateOnStart();
 builder.Services.Configure<DevelopmentAccountsOptions>(
     builder.Configuration.GetSection(DevelopmentAccountsOptions.SectionName));
 
@@ -76,12 +83,30 @@ builder.Services
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30)
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsJsonAsync(
+                    new ApiErrorResponse("Yêu cầu xác thực hợp lệ."));
+            },
+            OnForbidden = async context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsJsonAsync(
+                    new ApiErrorResponse("Bạn không có quyền thực hiện thao tác này."));
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IPasswordHasher<NguoiDung>, PasswordHasher<NguoiDung>>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPricingService, PricingService>();
+builder.Services.AddSingleton<IPolicyStore, JsonPolicyStore>();
 builder.Services.AddScoped<DevelopmentAuthSeeder>();
 builder.Services.AddSingleton<IImageStorage, LocalImageStorage>();
 
