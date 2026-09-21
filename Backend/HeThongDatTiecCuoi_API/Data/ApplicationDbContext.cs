@@ -21,6 +21,10 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<GoiTrangTri> GoiTrangTri => Set<GoiTrangTri>();
     public DbSet<DichVu> DichVu => Set<DichVu>();
     public DbSet<DatTiecDichVu> DatTiecDichVu => Set<DatTiecDichVu>();
+    public DbSet<HopDong> HopDong => Set<HopDong>();
+    public DbSet<ThanhToan> ThanhToan => Set<ThanhToan>();
+    public DbSet<MaQRDanhGia> MaQRDanhGia => Set<MaQRDanhGia>();
+    public DbSet<DanhGia> DanhGia => Set<DanhGia>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -308,6 +312,62 @@ public sealed class ApplicationDbContext : DbContext
                 .WithMany(x => x.DatTiecDichVus)
                 .HasForeignKey(x => x.DichVuID)
                 .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<HopDong>(entity =>
+        {
+            entity.ToTable("HopDong");
+            entity.HasKey(x => x.HopDongID);
+            entity.Property(x => x.MaHopDong).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.NgayLap).HasColumnType("date");
+            entity.Property(x => x.TongGiaTri).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.TrangThai).HasMaxLength(50).IsRequired();
+
+            entity.HasOne(x => x.DatTiec)
+                .WithOne(x => x.HopDong)
+                .HasForeignKey<HopDong>(x => x.DatTiecID)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ThanhToan>(entity =>
+        {
+            entity.ToTable("ThanhToan");
+            entity.HasKey(x => x.ThanhToanID);
+            entity.Property(x => x.LoaiThanhToan).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.SoTien).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.NgayThanhToan).HasPrecision(0);
+            entity.Property(x => x.PhuongThuc).HasMaxLength(50);
+            entity.Property(x => x.MaGiaoDich).HasMaxLength(100);
+            entity.Property(x => x.TrangThai).HasMaxLength(50).IsRequired();
+
+            entity.HasOne(x => x.HopDong)
+                .WithMany(x => x.ThanhToans)
+                .HasForeignKey(x => x.HopDongID)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<MaQRDanhGia>(entity =>
+        {
+            entity.ToTable("MaQRDanhGia");
+            entity.HasKey(x => x.MaQRDanhGiaID);
+
+            entity.HasOne(x => x.DatTiec)
+                .WithOne(x => x.MaQRDanhGia)
+                .HasForeignKey<MaQRDanhGia>(x => x.DatTiecID)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DanhGia>(entity =>
+        {
+            entity.ToTable("DanhGia");
+            entity.HasKey(x => x.DanhGiaID);
+            entity.Property(x => x.LoaiNguoiDanhGia).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.NgayDanhGia).HasPrecision(0);
+
+            entity.HasOne(x => x.MaQRDanhGia)
+                .WithMany(x => x.DanhGias)
+                .HasForeignKey(x => x.MaQRDanhGiaID)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

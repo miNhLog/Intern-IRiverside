@@ -48,5 +48,9 @@ public sealed class DatTiec
 
     public GoiTrangTri? GoiTrangTri { get; set; }
 
+    public HopDong? HopDong { get; set; }
+
+    public MaQRDanhGia? MaQRDanhGia { get; set; }
+
     public ICollection<DatTiecDichVu> DatTiecDichVus { get; set; } = new List<DatTiecDichVu>();
 }

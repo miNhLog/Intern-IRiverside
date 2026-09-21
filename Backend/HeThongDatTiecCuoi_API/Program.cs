@@ -106,6 +106,7 @@ builder.Services.AddScoped<IPasswordHasher<NguoiDung>, PasswordHasher<NguoiDung>
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPricingService, PricingService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddSingleton<IPolicyStore, JsonPolicyStore>();
 builder.Services.AddScoped<DevelopmentAuthSeeder>();
 builder.Services.AddSingleton<IImageStorage, LocalImageStorage>();
