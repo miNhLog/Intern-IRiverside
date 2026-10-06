@@ -1,0 +1,367 @@
+@using HeThongDatTiecCuoi_WEB.Constants
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var displayName = User.Identity?.Name ?? "Tài khoản quản trị";
+    var roleName = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Người dùng";
+    var nameParts = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    var initials = nameParts.Length == 0
+        ? "RP"
+        : string.Concat(nameParts.Take(2).Select(part => char.ToUpperInvariant(part[0])));
+    var isAdmin = User.IsInRole(RoleNames.Admin);
+    var isManager = User.IsInRole(RoleNames.Manager);
+    var isHallManager = User.IsInRole(RoleNames.HallManager);
+    var isCoordinator = User.IsInRole(RoleNames.Coordinator);
+    var dashboardController = isAdmin ? "AdminAccount" : "Home";
+
+    bool IsActive(string controller, string action = "Index") =>
+        string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase);
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - IRevirsidePlace</title>
+
+    <script>
+        try {
+            if (localStorage.getItem("sidebarState") === "collapsed") {
+                document.documentElement.classList.add("sidebar-is-collapsed");
+            }
+        } catch (error) {
+            // Sidebar vẫn dùng trạng thái mặc định nếu trình duyệt chặn localStorage.
+        }
+    </script>
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet"
+          href="~/css/admin-hall.css"
+          asp-append-version="true" />
+    <link rel="stylesheet"
+          href="~/css/admin-sidebar.css"
+          asp-append-version="true" />
+    <link rel="stylesheet"
+          href="~/css/admin-common.css"
+          asp-append-version="true" />
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="admin-layout">
+        <button type="button"
+                class="mobile-sidebar-toggle"
+                id="mobileSidebarToggle"
+                aria-controls="adminSidebar"
+                aria-expanded="false"
+                aria-label="Mở thanh điều hướng">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+        </button>
+
+        <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+        <aside class="sidebar admin-sidebar" id="adminSidebar" aria-label="Điều hướng quản trị">
+            <header class="sidebar-header">
+                <a asp-controller="@dashboardController"
+                   asp-action="Dashboard"
+                   class="sidebar-brand"
+                   aria-label="Riverside Palace - Tổng quan hệ thống">
+                    <span class="brand-icon" aria-hidden="true">
+                        <i class="fa-solid fa-crown"></i>
+                    </span>
+                    <span class="brand-text">
+                        <strong>RIVERSIDE PALACE</strong>
+                        <small>HỆ THỐNG QUẢN LÝ NỘI BỘ</small>
+                    </span>
+                </a>
+
+                <button type="button"
+                        class="sidebar-toggle"
+                        id="sidebarToggle"
+                        aria-controls="adminSidebar"
+                        aria-expanded="true"
+                        aria-label="Thu gọn thanh điều hướng"
+                        title="Thu gọn thanh điều hướng">
+                    <i class="fa-solid fa-angles-left" aria-hidden="true"></i>
+                </button>
+            </header>
+
+            <div class="sidebar-content">
+                @if (isAdmin)
+                {
+                <section class="sidebar-section" aria-labelledby="adminOverviewMenuTitle">
+                    <h2 class="sidebar-section-title" id="adminOverviewMenuTitle">Tổng quan</h2>
+                    <nav class="sidebar-menu" aria-label="Tổng quan hệ thống">
+                        <a asp-controller="AdminAccount" asp-action="Dashboard"
+                           class="sidebar-item @(IsActive("AdminAccount", "Dashboard") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("AdminAccount", "Dashboard") ? "page" : null)"
+                           data-sidebar-tooltip="Tổng quan hệ thống">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-gauge-high"></i></span>
+                            <span class="sidebar-label">Tổng quan hệ thống</span>
+                        </a>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="adminSystemMenuTitle">
+                    <h2 class="sidebar-section-title" id="adminSystemMenuTitle">Quản trị hệ thống</h2>
+                    <nav class="sidebar-menu" aria-label="Quản trị hệ thống">
+                        <a asp-controller="AdminAccount" asp-action="Index"
+                           class="sidebar-item @(IsActive("AdminAccount") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("AdminAccount") ? "page" : null)"
+                           data-sidebar-tooltip="Quản lý tài khoản">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-users"></i></span>
+                            <span class="sidebar-label">Quản lý tài khoản</span>
+                        </a>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Nhật ký hệ thống">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                            <span class="sidebar-label">Nhật ký hệ thống</span>
+                        </button>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="adminProfileMenuTitle">
+                    <h2 class="sidebar-section-title" id="adminProfileMenuTitle">Tài khoản</h2>
+                    <nav class="sidebar-menu" aria-label="Tài khoản cá nhân">
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Hồ sơ cá nhân">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-user"></i></span>
+                            <span class="sidebar-label">Hồ sơ cá nhân</span>
+                        </button>
+                        <a asp-controller="Auth" asp-action="ChangePassword" class="sidebar-item" data-sidebar-tooltip="Đổi mật khẩu">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-key"></i></span>
+                            <span class="sidebar-label">Đổi mật khẩu</span>
+                        </a>
+                    </nav>
+                </section>
+                }
+                else if (isManager)
+                {
+                <section class="sidebar-section" aria-labelledby="managerOverviewMenuTitle">
+                    <h2 class="sidebar-section-title" id="managerOverviewMenuTitle">Tổng quan</h2>
+                    <nav class="sidebar-menu" aria-label="Tổng quan quản lý">
+                        <a asp-controller="Home" asp-action="Dashboard"
+                           class="sidebar-item @(IsActive("Home", "Dashboard") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("Home", "Dashboard") ? "page" : null)"
+                           data-sidebar-tooltip="Dashboard">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-gauge-high"></i></span>
+                            <span class="sidebar-label">Dashboard</span>
+                        </a>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="managerOperationsMenuTitle">
+                    <h2 class="sidebar-section-title" id="managerOperationsMenuTitle">Quản lý vận hành</h2>
+                    <nav class="sidebar-menu" aria-label="Quản lý vận hành">
+                        <a asp-controller="AdminHall" asp-action="Index"
+                           class="sidebar-item @(IsActive("AdminHall") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("AdminHall") ? "page" : null)"
+                           data-sidebar-tooltip="Sảnh &amp; Lịch">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-building"></i></span>
+                            <span class="sidebar-label">Sảnh &amp; Lịch</span>
+                        </a>
+                        <a asp-controller="Home" asp-action="HallManagerAssignments"
+                           class="sidebar-item @(IsActive("Home", "HallManagerAssignments") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("Home", "HallManagerAssignments") ? "page" : null)"
+                           data-sidebar-tooltip="Bổ nhiệm Quản lý sảnh">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-user-check"></i></span>
+                            <span class="sidebar-label">Bổ nhiệm Quản lý sảnh</span>
+                        </a>
+                        <a asp-controller="AdminMenu" asp-action="Index"
+                           class="sidebar-item @(IsActive("AdminMenu") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("AdminMenu") ? "page" : null)"
+                           data-sidebar-tooltip="Thực đơn &amp; Món ăn">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-utensils"></i></span>
+                            <span class="sidebar-label">Thực đơn &amp; Món ăn</span>
+                        </a>
+                        <a asp-controller="AdminDecorService" asp-action="Index"
+                           class="sidebar-item @(IsActive("AdminDecorService") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("AdminDecorService") ? "page" : null)"
+                           data-sidebar-tooltip="Decor &amp; Dịch vụ">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                            <span class="sidebar-label">Decor &amp; Dịch vụ</span>
+                        </a>
+                        <a asp-controller="AdminPricingPolicy" asp-action="Index"
+                           class="sidebar-item @(IsActive("AdminPricingPolicy") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("AdminPricingPolicy") ? "page" : null)"
+                           data-sidebar-tooltip="Bảng giá &amp; Chính sách">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-tags"></i></span>
+                            <span class="sidebar-label">Bảng giá &amp; Chính sách</span>
+                        </a>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="managerPartyMenuTitle">
+                    <h2 class="sidebar-section-title" id="managerPartyMenuTitle">Nghiệp vụ tiệc</h2>
+                    <nav class="sidebar-menu" aria-label="Nghiệp vụ tiệc">
+                        <a asp-controller="AdminBooking" asp-action="Index" class="sidebar-item @(IsActive("AdminBooking") ? "active" : string.Empty)" aria-current="@(IsActive("AdminBooking") ? "page" : null)" data-sidebar-tooltip="Đặt tiệc"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-calendar-plus"></i></span><span class="sidebar-label">Đặt tiệc</span></a>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Hợp đồng"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-file-contract"></i></span><span class="sidebar-label">Hợp đồng</span></button>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Thanh toán"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-credit-card"></i></span><span class="sidebar-label">Thanh toán</span></button>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Theo dõi điều phối"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-people-arrows"></i></span><span class="sidebar-label">Theo dõi điều phối</span></button>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Sự cố"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span><span class="sidebar-label">Sự cố</span></button>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Thay đổi lịch"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Thay đổi lịch</span></button>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Chăm sóc khách hàng"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-headset"></i></span><span class="sidebar-label">Chăm sóc khách hàng</span></button>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="managerReportMenuTitle">
+                    <h2 class="sidebar-section-title" id="managerReportMenuTitle">Báo cáo</h2>
+                    <nav class="sidebar-menu" aria-label="Báo cáo">
+                        <a asp-controller="AdminReport" asp-action="Index"
+                           class="sidebar-item @(IsActive("AdminReport") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("AdminReport") ? "page" : null)"
+                           data-sidebar-tooltip="Báo cáo thống kê / BI">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-chart-line"></i></span>
+                            <span class="sidebar-label">Báo cáo thống kê / BI</span>
+                        </a>
+                    </nav>
+                </section>
+                }
+                else if (isHallManager)
+                {
+                <section class="sidebar-section" aria-labelledby="hallManagerOverviewMenuTitle">
+                    <h2 class="sidebar-section-title" id="hallManagerOverviewMenuTitle">Tổng quan</h2>
+                    <nav class="sidebar-menu" aria-label="Tổng quan sảnh">
+                        <a asp-controller="Home" asp-action="Dashboard"
+                           class="sidebar-item @(IsActive("Home", "Dashboard") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("Home", "Dashboard") ? "page" : null)"
+                           data-sidebar-tooltip="Dashboard sảnh">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-gauge-high"></i></span>
+                            <span class="sidebar-label">Dashboard sảnh</span>
+                        </a>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="hallManagerHallsMenuTitle">
+                    <h2 class="sidebar-section-title" id="hallManagerHallsMenuTitle">Sảnh của tôi</h2>
+                    <nav class="sidebar-menu" aria-label="Sảnh được phân công">
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Sảnh được phân công"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-building"></i></span><span class="sidebar-label">Sảnh được phân công</span></button>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Lịch sảnh"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Lịch sảnh</span></button>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Tiệc sắp diễn ra"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-champagne-glasses"></i></span><span class="sidebar-label">Tiệc sắp diễn ra</span></button>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="hallManagerCoordinationMenuTitle">
+                    <h2 class="sidebar-section-title" id="hallManagerCoordinationMenuTitle">Điều phối</h2>
+                    <nav class="sidebar-menu" aria-label="Điều phối tiệc">
+                        <a asp-controller="Home" asp-action="CoordinationAssignments"
+                           class="sidebar-item @(IsActive("Home", "CoordinationAssignments") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("Home", "CoordinationAssignments") ? "page" : null)"
+                           data-sidebar-tooltip="Phân công nhân viên điều phối">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-user-check"></i></span>
+                            <span class="sidebar-label">Phân công nhân viên điều phối</span>
+                        </a>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Theo dõi điều phối"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-people-arrows"></i></span><span class="sidebar-label">Theo dõi điều phối</span></button>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="hallManagerOperationsMenuTitle">
+                    <h2 class="sidebar-section-title" id="hallManagerOperationsMenuTitle">Vận hành</h2>
+                    <nav class="sidebar-menu" aria-label="Vận hành sảnh">
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Sự cố"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span><span class="sidebar-label">Sự cố</span></button>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Thay đổi lịch"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Thay đổi lịch</span></button>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="hallManagerReferenceMenuTitle">
+                    <h2 class="sidebar-section-title" id="hallManagerReferenceMenuTitle">Thông tin tham khảo</h2>
+                    <nav class="sidebar-menu" aria-label="Thông tin tham khảo">
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Thực đơn"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-utensils"></i></span><span class="sidebar-label">Thực đơn</span></button>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Decor &amp; Dịch vụ"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></span><span class="sidebar-label">Decor &amp; Dịch vụ</span></button>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Bảng giá / Chính sách"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-tags"></i></span><span class="sidebar-label">Bảng giá / Chính sách</span></button>
+                    </nav>
+                </section>
+                }
+                else if (isCoordinator)
+                {
+                <section class="sidebar-section" aria-labelledby="coordinatorOverviewMenuTitle">
+                    <h2 class="sidebar-section-title" id="coordinatorOverviewMenuTitle">Tổng quan</h2>
+                    <nav class="sidebar-menu" aria-label="Tổng quan công việc">
+                        <a asp-controller="Home" asp-action="Dashboard"
+                           class="sidebar-item @(IsActive("Home", "Dashboard") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("Home", "Dashboard") ? "page" : null)"
+                           data-sidebar-tooltip="Công việc hôm nay">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-clipboard-list"></i></span>
+                            <span class="sidebar-label">Công việc hôm nay</span>
+                        </a>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="coordinatorMyWorkMenuTitle">
+                    <h2 class="sidebar-section-title" id="coordinatorMyWorkMenuTitle">Công việc của tôi</h2>
+                    <nav class="sidebar-menu" aria-label="Công việc được giao">
+                        <a asp-controller="Home" asp-action="AssignedParties"
+                           class="sidebar-item @(IsActive("Home", "AssignedParties") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("Home", "AssignedParties") ? "page" : null)"
+                           data-sidebar-tooltip="Tiệc được phân công">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-champagne-glasses"></i></span>
+                            <span class="sidebar-label">Tiệc được phân công</span>
+                        </a>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Lịch làm việc">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></span>
+                            <span class="sidebar-label">Lịch làm việc</span>
+                        </button>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="coordinatorOperationsMenuTitle">
+                    <h2 class="sidebar-section-title" id="coordinatorOperationsMenuTitle">Vận hành tiệc</h2>
+                    <nav class="sidebar-menu" aria-label="Vận hành tiệc">
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Theo dõi tiến độ"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-list-check"></i></span><span class="sidebar-label">Theo dõi tiến độ</span></button>
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Sự cố"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span><span class="sidebar-label">Sự cố</span></button>
+                    </nav>
+                </section>
+                }
+                else
+                {
+                    <section class="sidebar-section" aria-labelledby="staffMenuTitle">
+                        <h2 class="sidebar-section-title" id="staffMenuTitle">Khu vực nghiệp vụ</h2>
+                        <nav class="sidebar-menu" aria-label="Khu vực nghiệp vụ">
+                            <button type="button"
+                                    class="sidebar-item developing"
+                                    data-sidebar-tooltip="Chức năng đang được phát triển">
+                                <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-briefcase"></i></span>
+                                <span class="sidebar-label">Chức năng nghiệp vụ</span>
+                            </button>
+                        </nav>
+                    </section>
+                }
+
+            </div>
+
+            <footer class="sidebar-footer"
+                    data-sidebar-tooltip="@displayName · @roleName">
+                <div class="sidebar-account">
+                    <div class="avatar" aria-hidden="true">@initials</div>
+                    <div class="user-info">
+                        <strong>@displayName</strong>
+                        <span>@roleName</span>
+                    </div>
+                </div>
+
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   asp-route-publicSite="true"
+                   class="sidebar-footer-action"
+                   aria-label="Về trang chủ Riverside Palace"
+                   title="Về trang chủ Riverside Palace"
+                   data-sidebar-tooltip="Về trang chủ Riverside Palace">
+                    <i class="fa-solid fa-house" aria-hidden="true"></i>
+                </a>
+
+                <form method="post" action="/dang-xuat" class="sidebar-logout-form">
+                    @Html.AntiForgeryToken()
+                    <button type="submit"
+                            class="logout-button"
+                            aria-label="Đăng xuất"
+                            title="Đăng xuất">
+                        <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>
+                    </button>
+                </form>
+            </footer>
+        </aside>
+
+        <main class="main-content" id="adminMainContent">
+            @RenderBody()
+        </main>
+    </div>
+
+    <div class="sidebar-tooltip" id="sidebarTooltip" role="tooltip"></div>
+    <div class="sidebar-toast" id="globalToast" role="status" aria-live="polite">
+        Chức năng đang được phát triển. Vui lòng quay lại sau.
+    </div>
+
+    <script src="~/js/admin-sidebar.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

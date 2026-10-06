@@ -1,0 +1,78 @@
+@using HeThongDatTiecCuoi_WEB.Constants
+@{
+    var activePage = ViewData["PublicActivePage"] as string ?? string.Empty;
+    var isInternalUser = User.IsInRole(RoleNames.Admin)
+        || User.IsInRole(RoleNames.Manager)
+        || User.IsInRole(RoleNames.HallManager)
+        || User.IsInRole(RoleNames.Coordinator);
+    var dashboardController = User.IsInRole(RoleNames.Admin) ? "AdminAccount" : "Home";
+}
+<header class="home-header">
+    <div class="home-container header-inner">
+        <a class="brand" asp-controller="Home" asp-action="Index" aria-label="Riverside Palace - Trang chủ">
+            <span class="brand-mark" aria-hidden="true">✧</span>
+            <span class="brand-name">Riverside Palace</span>
+        </a>
+        <nav class="desktop-nav" aria-label="Điều hướng chính">
+            <a class="@(activePage == "home" ? "active" : null)" asp-controller="Home" asp-action="Index" aria-current="@(activePage == "home" ? "page" : null)">Trang chủ</a>
+            <a class="@(activePage == "halls" ? "active" : null)" asp-controller="Halls" asp-action="Index" aria-current="@(activePage == "halls" ? "page" : null)">Sảnh tiệc</a>
+            <a class="@(activePage == "menus" ? "active" : null)" asp-controller="Menus" asp-action="Index" aria-current="@(activePage == "menus" ? "page" : null)">Thực đơn</a>
+            <a href="#" data-coming-soon>Gói trang trí</a>
+            <a class="@(activePage == "recommendation" ? "active" : null)" asp-controller="Recommendation" asp-action="Index" aria-current="@(activePage == "recommendation" ? "page" : null)">Gợi ý gói tiệc</a>
+            <button type="button" data-open-ai>Tư vấn AI</button>
+            <a asp-controller="MyBookings" asp-action="Index" class="nav-link @(ViewData["PublicActivePage"]?.ToString() == "my-bookings" ? "active" : "")">
+                Tiệc của tôi
+            </a>
+        </nav>
+        <div class="header-actions">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                @if (isInternalUser)
+                {
+                    <a asp-controller="@dashboardController"
+                       asp-action="Dashboard"
+                       class="backoffice-link">
+                        <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+                        <span>Về trang quản trị</span>
+                    </a>
+                }
+                <details class="account-menu">
+                    <summary>
+                        <span class="material-symbols-outlined" aria-hidden="true">person</span>
+                        <span>Xin chào, @User.Identity.Name</span>
+                        <span class="material-symbols-outlined account-chevron" aria-hidden="true">expand_more</span>
+                    </summary>
+                    <div class="account-dropdown">
+                        @if (isInternalUser)
+                        {
+                            <a asp-controller="@dashboardController" asp-action="Dashboard">Về trang quản trị</a>
+                        }
+                        <a asp-controller="MyBookings" asp-action="Index" class="nav-link @(ViewData["PublicActivePage"]?.ToString() == "my-bookings" ? "active" : "")">
+                            Tiệc của tôi
+                        </a>
+                        <form asp-controller="Auth" asp-action="Logout" method="post">
+                            <button type="submit">Đăng xuất</button>
+                        </form>
+                    </div>
+                </details>
+            }
+            else
+            {
+                <span class="header-avatar material-symbols-outlined" aria-hidden="true">person</span>
+            }
+            <button class="mobile-menu-toggle" type="button" aria-label="Mở menu" aria-controls="mobileNavigation" aria-expanded="false">
+                <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+            </button>
+        </div>
+    </div>
+    <nav class="mobile-nav" id="mobileNavigation" aria-label="Điều hướng di động" hidden>
+        <a asp-controller="Home" asp-action="Index" aria-current="@(activePage == "home" ? "page" : null)">Trang chủ</a>
+        <a asp-controller="Halls" asp-action="Index" aria-current="@(activePage == "halls" ? "page" : null)">Sảnh tiệc</a>
+        <a class="@(activePage == "menus" ? "active" : null)" asp-controller="Menus" asp-action="Index" aria-current="@(activePage == "menus" ? "page" : null)">Thực đơn</a>
+        <a href="#" data-coming-soon>Gói trang trí</a>
+        <a class="@(activePage == "recommendation" ? "active" : null)" asp-controller="Recommendation" asp-action="Index" aria-current="@(activePage == "recommendation" ? "page" : null)">Gợi ý gói tiệc</a>
+        <button type="button" data-open-ai>Tư vấn AI</button>
+        <a href="#" data-coming-soon>Tiệc của tôi</a>
+    </nav>
+</header>
+<div class="mobile-nav-backdrop" hidden></div>

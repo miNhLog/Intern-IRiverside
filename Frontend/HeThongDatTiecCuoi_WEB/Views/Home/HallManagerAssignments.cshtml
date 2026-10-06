@@ -1,0 +1,41 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Bổ nhiệm Quản lý sảnh";
+}
+
+<header class="top-header">
+    <div>
+        <div class="breadcrumb">Quản lý vận hành <span>›</span> <strong>Bổ nhiệm Quản lý sảnh</strong></div>
+        <h2>Bổ nhiệm Quản lý sảnh</h2>
+    </div>
+</header>
+
+<section class="content assignment-page">
+    <div class="assignment-hero">
+        <div>
+            <span class="eyebrow">QUẢN LÝ VẬN HÀNH</span>
+            <h1>Phân công Quản lý sảnh</h1>
+            <p>Theo dõi người phụ trách mỗi sảnh theo từng thời điểm. Một sảnh chỉ có một Quản lý sảnh phụ trách tại cùng một thời điểm.</p>
+        </div>
+        <button type="button" class="btn-add developing"><i class="fa-solid fa-plus" aria-hidden="true"></i> Bổ nhiệm Quản lý sảnh</button>
+    </div>
+
+    <div class="section-header">
+        <div><h3>Danh sách phân công</h3><p>Lịch sử bổ nhiệm sẽ hiển thị tại đây khi dịch vụ dữ liệu được kết nối.</p></div>
+    </div>
+    <article class="assignment-empty-state">
+        <span class="assignment-empty-icon"><i class="fa-solid fa-people-roof" aria-hidden="true"></i></span>
+        <h3>Chức năng đang được phát triển</h3>
+        <p>Hệ thống chưa kết nối dữ liệu sảnh và nhân sự Quản lý sảnh, vì vậy chưa có phân công nào được hiển thị.</p>
+    </article>
+
+    <div class="section-header"><div><h3>Thông tin bổ nhiệm</h3><p>Biểu mẫu sẽ chỉ sử dụng danh sách nhân sự có vai trò Quản lý sảnh.</p></div></div>
+    <form class="assignment-form" aria-label="Biểu mẫu bổ nhiệm Quản lý sảnh">
+        <div class="assignment-field"><label for="assignmentHall">Sảnh</label><select id="assignmentHall" disabled><option>Đang chờ dữ liệu sảnh</option></select></div>
+        <div class="assignment-field"><label for="assignmentManager">Quản lý sảnh</label><select id="assignmentManager" disabled><option>Đang chờ dữ liệu nhân sự</option></select></div>
+        <div class="assignment-field"><label for="assignmentFrom">Từ ngày</label><input id="assignmentFrom" type="date" disabled /></div>
+        <div class="assignment-field"><label for="assignmentTo">Đến ngày</label><input id="assignmentTo" type="date" disabled /></div>
+        <div class="assignment-field assignment-note"><label for="assignmentNote">Ghi chú</label><input id="assignmentNote" type="text" placeholder="Ghi chú bổ nhiệm" disabled /></div>
+        <div class="assignment-actions"><button type="button" class="btn-add developing">Lưu bổ nhiệm</button></div>
+    </form>
+</section>

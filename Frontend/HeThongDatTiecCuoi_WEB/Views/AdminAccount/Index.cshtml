@@ -1,0 +1,1622 @@
+@model HeThongDatTiecCuoi_WEB.Models.AdminAccount.AccountManagementViewModel
+
+@{
+    Layout = "_AdminLayout";
+
+    ViewData["Title"] = "Quản lý tài khoản & phân quyền";
+    ViewData["ActiveMenu"] = "Account";
+
+    var adminAccounts = Model.Accounts
+        .Where(x => x.RoleName == RoleNames.Admin)
+        .ToList();
+
+    var employeeAccounts = Model.Accounts
+        .Where(x =>
+            x.RoleName == RoleNames.Manager ||
+            x.RoleName == RoleNames.HallManager ||
+            x.RoleName == RoleNames.Coordinator)
+        .ToList();
+
+    var managerAccounts = employeeAccounts.Where(x => x.RoleName == RoleNames.Manager).ToList();
+    var hallManagerAccounts = employeeAccounts.Where(x => x.RoleName == RoleNames.HallManager).ToList();
+    var coordinatorAccounts = employeeAccounts.Where(x => x.RoleName == RoleNames.Coordinator).ToList();
+}
+
+<link rel="stylesheet"
+      href="~/css/admin-account.css"
+      asp-append-version="true" />
+
+
+<header class="top-header">
+
+    <div>
+        <div class="breadcrumb">
+            Quản trị nghiệp vụ
+            <span>›</span>
+            <strong>Quản lý tài khoản</strong>
+        </div>
+        <h2>
+            Quản lý tài khoản
+        </h2>
+        <p class="account-page-subtitle">Quản lý nhân sự và trạng thái tài khoản trong hệ thống</p>
+    </div>
+
+</header>
+
+
+<section class="content account-content">
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="error-box">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            @Model.ErrorMessage
+        </div>
+    }
+
+
+    <!-- THỐNG KÊ -->
+    <div class="account-summary">
+
+        <div class="summary-card">
+            <div class="summary-icon">
+                <i class="fa-solid fa-users"></i>
+            </div>
+
+            <div>
+                <span>Tổng tài khoản</span>
+                <strong>@Model.Accounts.Count</strong>
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-icon active-icon">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+
+            <div>
+                <span>Đang hoạt động</span>
+
+                <strong>
+                    @Model.Accounts.Count(
+                    x => x.Status == AccountStatusCodes.Active
+                                        )
+                </strong>
+            </div>
+        </div>
+
+
+        <div class="summary-card">
+            <div class="summary-icon locked-icon">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+
+            <div>
+                <span>Bị khóa</span>
+
+                <strong>
+                    @Model.Accounts.Count(
+                    x => x.Status == AccountStatusCodes.Locked
+                                        )
+                </strong>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- FILTER -->
+    <div class="account-toolbar">
+
+        <form method="get"
+              action="/admin/quan-ly-tai-khoan"
+              class="account-filter-form">
+
+
+            <!-- SEARCH -->
+            <div class="account-search">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input type="text"
+                       name="keyword"
+                       value="@Model.Keyword"
+                       placeholder="Tên, email, mã nhân viên..." />
+
+            </div>
+
+
+            <!-- ROLE -->
+            <select name="roleId"
+                    class="account-select">
+
+                <option value="">
+                    Tất cả vai trò
+                </option>
+
+                @foreach (var role in Model.Roles)
+                {
+                    if (Model.RoleId == role.RoleId)
+                    {
+                        <option value="@role.RoleId"
+                                selected>
+                            @role.RoleName
+                        </option>
+                    }
+                    else
+                    {
+                        <option value="@role.RoleId">
+                            @role.RoleName
+                        </option>
+                    }
+                }
+
+            </select>
+
+
+            <!-- STATUS -->
+            <select name="status"
+                    class="account-select">
+
+                <option value="">
+                    Tất cả trạng thái
+                </option>
+
+                @if (Model.Status == AccountStatusCodes.Active)
+                {
+                    <option value="@AccountStatusCodes.Active" selected>
+                        Hoạt động
+                    </option>
+                }
+                else
+                {
+                    <option value="@AccountStatusCodes.Active">
+                        Hoạt động
+                    </option>
+                }
+
+
+                @if (Model.Status == AccountStatusCodes.Locked)
+                {
+                    <option value="@AccountStatusCodes.Locked" selected>
+                        Bị khóa
+                    </option>
+                }
+                else
+                {
+                    <option value="@AccountStatusCodes.Locked">
+                        Bị khóa
+                    </option>
+                }
+
+            </select>
+
+
+            <button type="submit"
+                    class="btn-account-filter">
+
+                <i class="fa-solid fa-filter"></i>
+                Lọc
+
+            </button>
+
+
+            <a href="/admin/quan-ly-tai-khoan"
+               class="btn-account-reset">
+
+                <i class="fa-solid fa-rotate-left"></i>
+                Đặt lại
+
+            </a>
+
+        </form>
+
+
+        <button type="button"
+                class="btn-add-account"
+                id="openAddAccountModal">
+
+            <i class="fa-solid fa-user-plus"></i>
+            Thêm tài khoản nội bộ
+
+        </button>
+
+    </div>
+
+
+    <!-- =====================================================
+     TÀI KHOẢN QUẢN TRỊ VIÊN
+     ===================================================== -->
+    @if (adminAccounts.Count > 0)
+    {
+        <div class="account-section account-panel admin-role-panel">
+
+            <div class="account-section-title">
+                <div>
+                    <h3>
+                        <i class="fa-solid fa-user-shield"></i>
+                        Quản trị viên hệ thống
+                    </h3>
+
+                    <p>
+                        Quản trị và vận hành hệ thống
+                    </p>
+                </div>
+
+                <span>
+                    @adminAccounts.Count tài khoản
+                </span>
+            </div>
+
+
+            <div class="admin-account-grid">
+
+                @foreach (var account in adminAccounts)
+                {
+                    var statusClass =
+                    account.Status == AccountStatusCodes.Active
+                    ? "account-status-active"
+                    : account.Status == AccountStatusCodes.Locked
+                    ? "account-status-locked"
+                    : "account-status-inactive";
+
+                    <div class="admin-account-card">
+
+                        <div class="admin-account-avatar">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+
+                        <div class="admin-account-info">
+
+                            <strong>
+                                Quản trị viên hệ thống
+                            </strong>
+
+                            <span>
+                                @account.Email
+                            </span>
+
+                            <small>
+                                ID tài khoản: @account.UserId
+                            </small>
+
+                        </div>
+
+
+                        <div class="admin-account-meta">
+
+                            <span class="role-badge">
+                                @account.RoleName
+                            </span>
+
+                            <span class="account-status @statusClass">
+                                <i class="fa-solid fa-circle"></i>
+                                @(string.IsNullOrWhiteSpace(account.StatusName) ? StatusDisplayNames.GetAccountStatusName(account.Status) : account.StatusName)
+                            </span>
+
+                            <span class="created-date">
+                                <i class="fa-regular fa-calendar"></i>
+                                @account.CreatedAt.ToString("dd/MM/yyyy")
+                            </span>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    }
+
+
+
+    <!-- =====================================================
+         TÀI KHOẢN NHÂN VIÊN
+         ===================================================== -->
+
+    @foreach (var roleSection in new[] {
+            new { Title = "Quản lý", Subtitle = "Điều hành hoạt động kinh doanh và giám sát nghiệp vụ", Icon = "fa-briefcase", Accounts = managerAccounts },
+            new { Title = "Quản lý sảnh", Subtitle = "Quản lý sảnh, lịch sảnh và tình trạng sử dụng", Icon = "fa-building", Accounts = hallManagerAccounts },
+            new { Title = "Nhân viên điều phối", Subtitle = "Theo dõi và điều phối quá trình tổ chức tiệc", Icon = "fa-calendar-check", Accounts = coordinatorAccounts }
+    })
+    {
+        <div class="account-panel account-role-panel">
+                <div class="account-panel-header"><div><h3><i class="fa-solid @roleSection.Icon"></i> @roleSection.Title</h3><p>@roleSection.Subtitle</p></div><span>@roleSection.Accounts.Count nhân viên</span></div>
+                @if (roleSection.Accounts.Count == 0)
+                {
+                    <div class="account-empty compact-empty"><span>Chưa có tài khoản</span></div>
+                }
+                else
+                {
+                    <div class="account-table-wrapper"><table class="account-table employee-table"><thead><tr><th>Nhân viên</th><th>Mã NV</th><th>Liên hệ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
+                    @foreach (var account in roleSection.Accounts)
+                    {
+                        var statusClass = account.Status == AccountStatusCodes.Active ? "account-status-active" : "account-status-locked";
+                        <tr><td><div class="account-user"><div class="account-avatar"><i class="fa-solid fa-user-tie"></i></div><div><strong>@account.FullName</strong><span>@account.Email</span></div></div></td><td><strong class="employee-code">@account.EmployeeCode</strong></td><td><span>@account.Email</span><small class="contact-phone"><i class="fa-solid fa-phone"></i> @(account.PhoneNumber ?? "—")</small></td><td><select class="account-status inline-status-select @statusClass" aria-label="Trạng thái tài khoản" data-user-id="@account.UserId" data-previous-status="@account.Status"><option value="@AccountStatusCodes.Active" selected="@(account.Status == AccountStatusCodes.Active)">Hoạt động</option><option value="@AccountStatusCodes.Locked" selected="@(account.Status == AccountStatusCodes.Locked)">Bị khóa</option></select></td><td><div class="account-actions"><button type="button" class="account-action-button edit-account" title="Chỉnh sửa" data-user-id="@account.UserId" data-employee-code="@account.EmployeeCode" data-full-name="@account.FullName" data-email="@account.Email" data-phone-number="@account.PhoneNumber" data-role-id="@account.RoleId"><i class="fa-regular fa-pen-to-square"></i></button><button type="button" class="account-action-button password-account" title="Đặt lại mật khẩu" data-user-id="@account.UserId" data-email="@account.Email"><i class="fa-solid fa-key"></i></button></div></td></tr>
+                    }
+                    </tbody></table></div>
+                }
+        </div>
+    }
+
+
+
+    @* CUSTOMER_ACCOUNTS_REMOVED
+    <!-- =====================================================
+         TÀI KHOẢN KHÁCH HÀNG
+         ===================================================== -->
+
+    <div class="account-panel account-section">
+
+        <div class="account-panel-header">
+
+            <div>
+                <h3>
+                    <i class="fa-solid fa-users"></i>
+                    Tài Khoản Khách Hàng
+                </h3>
+
+                <p>
+                    Danh sách khách hàng đã đăng ký tài khoản trên hệ thống
+                </p>
+            </div>
+
+            <span>
+                @customerAccounts.Count khách hàng
+            </span>
+
+        </div>
+
+
+        @if (customerAccounts.Count == 0)
+        {
+            <div class="account-empty">
+
+                <i class="fa-solid fa-users"></i>
+
+                <strong>Không tìm thấy khách hàng</strong>
+
+                <span>
+                    Không có tài khoản khách hàng phù hợp với bộ lọc.
+                </span>
+
+            </div>
+        }
+        else
+        {
+            <div class="account-table-wrapper">
+
+                <table class="account-table customer-table">
+
+                    <thead>
+                        <tr>
+                            <th>Khách hàng</th>
+                            <th>Số điện thoại</th>
+                            <th>Trạng thái tài khoản</th>
+                            <th>Ngày tạo</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+
+
+                    <tbody>
+
+                        @foreach (var account in customerAccounts)
+                        {
+                            var statusClass =
+                            account.Status == AccountStatusCodes.Active
+                            ? "account-status-active"
+                            : account.Status == AccountStatusCodes.Locked
+                            ? "account-status-locked"
+                            : "account-status-inactive";
+
+                            <tr>
+
+                                <td>
+
+                                    <div class="account-user">
+
+                                        <div class="account-avatar customer-avatar">
+                                            <i class="fa-solid fa-user"></i>
+                                        </div>
+
+                                        <div>
+
+                                            <strong>
+                                                @(string.IsNullOrWhiteSpace(account.FullName)
+                                                                                        ? "Khách hàng"
+                                                                                        : account.FullName)
+                                    </strong>
+
+                                            <span>
+                                                @account.Email
+                                            </span>
+
+                                            <small>
+                                                ID: @account.UserId
+                                            </small>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <td>
+                                    @(account.PhoneNumber ?? "—")
+                                </td>
+
+
+                                <td>
+
+                                    <span class="account-status @statusClass">
+
+                                        <i class="fa-solid fa-circle"></i>
+
+                                        @(string.IsNullOrWhiteSpace(account.StatusName) ? StatusDisplayNames.GetAccountStatusName(account.Status) : account.StatusName)
+
+                                    </span>
+
+                                </td>
+
+
+                                <td>
+                                    @account.CreatedAt.ToString("dd/MM/yyyy")
+                                </td>
+
+
+                                <td>
+
+                                    <div class="account-actions">
+
+                                        <button type="button"
+                                                class="account-action-button status-account"
+                                                title="Thay đổi trạng thái tài khoản"
+                                                data-user-id="@account.UserId"
+                                                data-full-name="@account.FullName"
+                                                data-email="@account.Email"
+                                                data-status="@account.Status">
+
+                                            <i class="fa-solid fa-shield-halved"></i>
+                                        </button>
+
+
+                                        <button type="button"
+                                                class="account-action-button password-account"
+                                                title="Gửi liên kết đặt lại mật khẩu"
+                                                data-user-id="@account.UserId"
+                                                data-email="@account.Email">
+
+                                            <i class="fa-solid fa-key"></i>
+
+                                        </button>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+    *@
+</section>
+<!-- MODAL THÊM NHÂN VIÊN -->
+<div id="addAccountModal" class="account-modal-overlay">
+
+    <div class="account-modal">
+
+        <div class="account-modal-header">
+
+            <div>
+                <h3>Thêm Tài Khoản Nội Bộ</h3>
+                <p>Thiết lập thông tin và mật khẩu ban đầu cho tài khoản nội bộ</p>
+            </div>
+
+            <button type="button"
+                    class="account-modal-close"
+                    id="closeAddAccountModal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <form id="addAccountForm"
+              autocomplete="off">
+
+            @Html.AntiForgeryToken()
+
+            <div class="account-form-grid">
+
+                <!-- HỌ TÊN -->
+                <div class="account-form-group">
+                    <label>
+                        Họ tên
+                        <span>*</span>
+                    </label>
+
+                    <input type="text"
+                           name="FullName"
+                           maxlength="150"
+                           required
+                           placeholder="Ví dụ: Nguyễn Văn An" />
+                </div>
+                <!-- EMAIL -->
+                <div class="account-form-group">
+                    <label>
+                        Email
+                        <span>*</span>
+                    </label>
+
+                    <input type="email"
+                           name="Email"
+                           maxlength="150"
+                           required
+                           placeholder="nhanvien@gmail.com" />
+                </div>
+
+
+                <!-- PHONE -->
+                <div class="account-form-group">
+                    <label>
+                        Số điện thoại
+                    </label>
+
+                    <input type="text"
+                           name="PhoneNumber"
+                           maxlength="20"
+                           placeholder="Có thể để trống" />
+                </div>
+
+                <div class="account-form-group">
+                    <label>Mật khẩu ban đầu <span>*</span></label>
+                    <input type="password" name="InitialPassword" minlength="8" required autocomplete="new-password" placeholder="Có chữ hoa, số và ký tự đặc biệt" />
+                </div>
+                <div class="account-form-group">
+                    <label>Nhập lại mật khẩu <span>*</span></label>
+                    <input type="password" name="ConfirmPassword" minlength="8" required autocomplete="new-password" placeholder="Nhập lại mật khẩu ban đầu" />
+                </div>
+
+
+                <!-- ROLE -->
+                <div class="account-form-group">
+                    <label>
+                        Vai trò
+                        <span>*</span>
+                    </label>
+
+                    <select name="RoleId"
+                            required>
+
+                        <option value="">
+                            -- Chọn vai trò --
+                        </option>
+
+                        @foreach (var role in Model.Roles)
+                        {
+                            if (role.RoleName == RoleNames.Manager ||
+                                role.RoleName == RoleNames.HallManager ||
+                                role.RoleName == RoleNames.Coordinator)
+                            {
+                                <option value="@role.RoleId">
+                                    @role.RoleName
+                                </option>
+                            }
+                        }
+
+                    </select>
+                </div>
+
+            </div>
+
+
+            <div id="addAccountError"
+                 class="account-form-error">
+            </div>
+
+
+            <div class="account-modal-actions">
+
+                <button type="button"
+                        class="btn-modal-cancel"
+                        id="cancelAddAccount">
+                    Hủy
+                </button>
+
+                <button type="submit"
+                        class="btn-modal-save"
+                        id="saveAccountButton">
+
+                    <i class="fa-solid fa-user-plus"></i>
+                    Tạo tài khoản
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+<!-- MODAL CHỈNH SỬA NHÂN VIÊN -->
+<div id="editAccountModal" class="account-modal-overlay">
+
+    <div class="account-modal">
+
+        <div class="account-modal-header">
+
+            <div>
+                <h3>Chỉnh Sửa Nhân Viên</h3>
+                <p>Cập nhật thông tin và vai trò của nhân viên</p>
+            </div>
+
+            <button type="button"
+                    class="account-modal-close"
+                    id="closeEditAccountModal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <form id="editAccountForm">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   id="editUserId" />
+
+
+            <div class="account-form-grid">
+
+                <!-- MÃ NHÂN VIÊN -->
+                <div class="account-form-group">
+
+                    <label>Mã nhân viên</label>
+
+                    <input type="text"
+                           id="editEmployeeCode"
+                           readonly />
+
+                    <small>
+                        Mã nhân viên do hệ thống tự sinh và không thể thay đổi.
+                    </small>
+
+                </div>
+
+
+                <!-- HỌ TÊN -->
+                <div class="account-form-group">
+
+                    <label>
+                        Họ tên
+                        <span>*</span>
+                    </label>
+
+                    <input type="text"
+                           id="editFullName"
+                           name="FullName"
+                           maxlength="150"
+                           required />
+
+                </div>
+
+
+                <!-- EMAIL -->
+                <div class="account-form-group">
+
+                    <label>
+                        Email
+                        <span>*</span>
+                    </label>
+
+                    <input type="email"
+                           id="editEmail"
+                           name="Email"
+                           maxlength="150"
+                           required />
+
+                </div>
+
+
+                <!-- PHONE -->
+                <div class="account-form-group">
+
+                    <label>
+                        Số điện thoại
+                    </label>
+
+                    <input type="text"
+                           id="editPhoneNumber"
+                           name="PhoneNumber"
+                           maxlength="20" />
+
+                </div>
+
+
+                <!-- ROLE -->
+                <div class="account-form-group">
+
+                    <label>
+                        Vai trò
+                        <span>*</span>
+                    </label>
+
+                    <select id="editRoleId"
+                            name="RoleId"
+                            required>
+
+                        @foreach (var role in Model.Roles)
+                        {
+                            if (role.RoleName == RoleNames.Manager ||
+                                role.RoleName == RoleNames.HallManager ||
+                                role.RoleName == RoleNames.Coordinator)
+                            {
+                                <option value="@role.RoleId">
+                                    @role.RoleName
+                                </option>
+                            }
+                        }
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <div id="editAccountError"
+                 class="account-form-error">
+            </div>
+
+
+            <div class="account-modal-actions">
+
+                <button type="button"
+                        class="btn-modal-cancel"
+                        id="cancelEditAccount">
+                    Hủy
+                </button>
+
+                <button type="submit"
+                        class="btn-modal-save"
+                        id="saveEditAccountButton">
+
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    Lưu thay đổi
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+<!-- MODAL TRẠNG THÁI TÀI KHOẢN -->
+<div id="statusAccountModal"
+     class="account-modal-overlay">
+
+    <div class="account-modal status-account-modal">
+
+        <div class="account-modal-header">
+
+            <div>
+                <h3>Trạng Thái Tài Khoản</h3>
+                <p>Khóa, mở lại hoặc ngừng hoạt động tài khoản</p>
+            </div>
+
+            <button type="button"
+                    class="account-modal-close"
+                    id="closeStatusAccountModal">
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+
+        <form id="statusAccountForm">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   id="statusUserId" />
+
+
+            <div class="status-account-user">
+
+                <div class="status-account-icon">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+
+                <div>
+                    <strong id="statusAccountName"></strong>
+
+                    <span id="statusAccountEmail"></span>
+                </div>
+
+            </div>
+
+
+            <div class="account-form-group">
+
+                <label>
+                    Trạng thái tài khoản
+                    <span>*</span>
+                </label>
+
+                <select id="statusAccountSelect"
+                        name="status"
+                        required>
+
+                    <option value="@AccountStatusCodes.Active">
+                        Hoạt động
+                    </option>
+
+                    <option value="@AccountStatusCodes.Locked">
+                        Bị khóa
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="status-account-note">
+
+                <i class="fa-solid fa-circle-info"></i>
+
+                <span>
+                    Bị khóa chỉ ngăn tài khoản đăng nhập.
+                    Trạng thái làm việc của nhân viên không bị thay đổi.
+                </span>
+
+            </div>
+
+
+            <div id="statusAccountError"
+                 class="account-form-error">
+            </div>
+
+
+            <div class="account-modal-actions">
+
+                <button type="button"
+                        class="btn-modal-cancel"
+                        id="cancelStatusAccount">
+
+                    Hủy
+
+                </button>
+
+                <button type="submit"
+                        class="btn-modal-save"
+                        id="saveStatusAccountButton">
+
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Lưu trạng thái
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+<!-- MODAL GỬI LIÊN KẾT ĐẶT LẠI MẬT KHẨU -->
+<div id="resetPasswordModal"
+     class="account-modal-overlay">
+
+    <div class="account-modal status-account-modal">
+
+        <div class="account-modal-header">
+
+            <div>
+                <h3>Gửi Liên Kết Đặt Lại Mật Khẩu</h3>
+                <p>Người dùng sẽ tự đặt mật khẩu mới qua liên kết bảo mật gửi đến email</p>
+            </div>
+
+            <button type="button"
+                    class="account-modal-close"
+                    id="closeResetPasswordModal">
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+
+        <form id="resetPasswordForm"
+              autocomplete="off">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   id="resetPasswordUserId" />
+
+
+            <div class="status-account-user">
+
+                <div class="status-account-icon">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+
+                <div>
+                    <strong>Tài khoản</strong>
+
+                    <span id="resetPasswordEmail"></span>
+                </div>
+
+            </div>
+
+
+            <p class="account-form-help">
+                Admin không thể xem hoặc đặt mật khẩu thay người dùng. Liên kết có thời hạn và chỉ sử dụng được một lần.
+            </p>
+
+
+            <div id="resetPasswordError"
+                 class="account-form-error">
+            </div>
+
+
+            <div class="account-modal-actions">
+
+                <button type="button"
+                        class="btn-modal-cancel"
+                        id="cancelResetPassword">
+
+                    Hủy
+
+                </button>
+
+                <button type="submit"
+                        class="btn-modal-save"
+                        id="saveResetPasswordButton">
+
+                    <i class="fa-solid fa-envelope"></i>
+                    Gửi liên kết
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+@section Scripts {
+
+    <script>
+
+        const addAccountModal =
+            document.getElementById("addAccountModal");
+
+        const openAddAccountModal =
+            document.getElementById("openAddAccountModal");
+
+        const closeAddAccountModal =
+            document.getElementById("closeAddAccountModal");
+
+        const cancelAddAccount =
+            document.getElementById("cancelAddAccount");
+
+        const addAccountForm =
+            document.getElementById("addAccountForm");
+
+        const addAccountError =
+            document.getElementById("addAccountError");
+
+
+        function openAccountModal() {
+
+            addAccountError.textContent = "";
+
+            addAccountModal.classList.add("show");
+        }
+
+
+        function closeAccountModal() {
+
+            addAccountModal.classList.remove("show");
+
+            addAccountForm.reset();
+
+            addAccountError.textContent = "";
+        }
+
+
+        openAddAccountModal.addEventListener(
+            "click",
+            openAccountModal
+        );
+
+
+        closeAddAccountModal.addEventListener(
+            "click",
+            closeAccountModal
+        );
+
+
+        cancelAddAccount.addEventListener(
+            "click",
+            closeAccountModal
+        );
+
+        addAccountForm.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+                addAccountError.textContent = "";
+
+                const saveButton =
+                    document.getElementById(
+                        "saveAccountButton"
+                    );
+
+                const formData =
+                    new FormData(addAccountForm);
+
+
+                saveButton.disabled = true;
+
+                saveButton.innerHTML =
+                    '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo...';
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/admin/quan-ly-tai-khoan/them-nhan-vien",
+                            {
+                                method: "POST",
+                                body: formData
+                            }
+                        );
+
+
+                    const result =
+                        await response.json();
+
+
+                    if (!result.success) {
+
+                        addAccountError.textContent =
+                            result.message
+                            ?? "Không thể tạo tài khoản.";
+
+                        return;
+                    }
+
+
+                    alert(result.message ?? "Đã tạo tài khoản nội bộ thành công.");
+                    window.location.reload();
+
+                }
+                catch (error) {
+
+                    addAccountError.textContent =
+                        "Không thể kết nối đến hệ thống.";
+                }
+                finally {
+
+                    saveButton.disabled = false;
+
+                    saveButton.innerHTML =
+                        '<i class="fa-solid fa-user-plus"></i> Tạo tài khoản';
+                }
+
+            }
+        );
+
+                // =====================================================
+        // CHỈNH SỬA NHÂN VIÊN
+        // =====================================================
+
+        const editAccountModal =
+            document.getElementById("editAccountModal");
+
+        const editAccountForm =
+            document.getElementById("editAccountForm");
+
+        const editAccountButtons =
+            document.querySelectorAll(".edit-account");
+
+        const closeEditAccountModal =
+            document.getElementById("closeEditAccountModal");
+
+        const cancelEditAccount =
+            document.getElementById("cancelEditAccount");
+
+        const editAccountError =
+            document.getElementById("editAccountError");
+
+
+        function closeEditEmployeeModal() {
+
+            editAccountModal.classList.remove("show");
+
+            editAccountError.textContent = "";
+        }
+
+
+        editAccountButtons.forEach(function (button) {
+
+            button.addEventListener("click", function () {
+
+                document.getElementById("editUserId").value =
+                    button.dataset.userId;
+
+                document.getElementById("editEmployeeCode").value =
+                    button.dataset.employeeCode ?? "";
+
+                document.getElementById("editFullName").value =
+                    button.dataset.fullName ?? "";
+
+                document.getElementById("editEmail").value =
+                    button.dataset.email ?? "";
+
+                document.getElementById("editPhoneNumber").value =
+                    button.dataset.phoneNumber ?? "";
+
+                document.getElementById("editRoleId").value =
+                    button.dataset.roleId;
+
+                editAccountError.textContent = "";
+
+                editAccountModal.classList.add("show");
+            });
+
+        });
+
+
+        closeEditAccountModal.addEventListener(
+            "click",
+            closeEditEmployeeModal
+        );
+
+
+        cancelEditAccount.addEventListener(
+            "click",
+            closeEditEmployeeModal
+        );
+
+
+        editAccountModal.addEventListener(
+            "click",
+            function (event) {
+
+                if (event.target === editAccountModal) {
+                    closeEditEmployeeModal();
+                }
+
+            }
+        );
+
+
+        editAccountForm.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+                editAccountError.textContent = "";
+
+                const userId =
+                    document.getElementById(
+                        "editUserId"
+                    ).value;
+
+                const formData =
+                    new FormData(editAccountForm);
+
+                const saveButton =
+                    document.getElementById(
+                        "saveEditAccountButton"
+                    );
+
+
+                saveButton.disabled = true;
+
+                saveButton.innerHTML =
+                    '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            `/admin/quan-ly-tai-khoan/sua-nhan-vien/${userId}`,
+                            {
+                                method: "POST",
+                                body: formData
+                            }
+                        );
+
+
+                    const result =
+                        await response.json();
+
+
+                    if (!result.success) {
+
+                        editAccountError.textContent =
+                            result.message
+                            ?? "Không thể cập nhật nhân viên.";
+
+                        return;
+                    }
+
+
+                    window.location.reload();
+
+                }
+                catch (error) {
+
+                    editAccountError.textContent =
+                        "Không thể kết nối đến hệ thống.";
+                }
+                finally {
+
+                    saveButton.disabled = false;
+
+                    saveButton.innerHTML =
+                        '<i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi';
+                }
+
+            }
+        );
+
+            // =====================================================
+        // TRẠNG THÁI TÀI KHOẢN
+        // =====================================================
+
+        const statusAccountModal =
+            document.getElementById("statusAccountModal");
+
+        const statusAccountForm =
+            document.getElementById("statusAccountForm");
+
+        const statusAccountButtons =
+            document.querySelectorAll(".status-account");
+
+        const closeStatusAccountModal =
+            document.getElementById("closeStatusAccountModal");
+
+        const cancelStatusAccount =
+            document.getElementById("cancelStatusAccount");
+
+        const statusAccountError =
+            document.getElementById("statusAccountError");
+
+
+        function closeStatusModal() {
+
+            statusAccountModal.classList.remove("show");
+
+            statusAccountError.textContent = "";
+        }
+
+
+        statusAccountButtons.forEach(function (button) {
+
+            button.addEventListener("click", function () {
+
+                document.getElementById(
+                    "statusUserId"
+                ).value = button.dataset.userId;
+
+
+                document.getElementById(
+                    "statusAccountName"
+                ).textContent =
+                    button.dataset.fullName || "Tài khoản";
+
+
+                document.getElementById(
+                    "statusAccountEmail"
+                ).textContent =
+                    button.dataset.email ?? "";
+
+
+                document.getElementById(
+                    "statusAccountSelect"
+                ).value =
+                    button.dataset.status;
+
+
+                statusAccountError.textContent = "";
+
+                statusAccountModal.classList.add("show");
+            });
+
+        });
+
+
+        closeStatusAccountModal.addEventListener(
+            "click",
+            closeStatusModal
+        );
+
+
+        cancelStatusAccount.addEventListener(
+            "click",
+            closeStatusModal
+        );
+
+
+        statusAccountForm.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+                statusAccountError.textContent = "";
+
+
+                const userId =
+                    document.getElementById(
+                        "statusUserId"
+                    ).value;
+
+
+                const formData =
+                    new FormData(statusAccountForm);
+
+
+                const saveButton =
+                    document.getElementById(
+                        "saveStatusAccountButton"
+                    );
+
+
+                saveButton.disabled = true;
+
+                saveButton.innerHTML =
+                    '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            `/admin/quan-ly-tai-khoan/trang-thai/${userId}`,
+                            {
+                                method: "POST",
+                                body: formData
+                            }
+                        );
+
+
+                    const result =
+                        await response.json();
+
+
+                    if (!result.success) {
+
+                        statusAccountError.textContent =
+                            result.message
+                            ?? "Không thể cập nhật trạng thái.";
+
+                        return;
+                    }
+
+
+                    window.location.reload();
+
+                }
+                catch (error) {
+
+                    statusAccountError.textContent =
+                        "Không thể kết nối đến hệ thống.";
+                }
+                finally {
+
+                    saveButton.disabled = false;
+
+                    saveButton.innerHTML =
+                        '<i class="fa-solid fa-shield-halved"></i> Lưu trạng thái';
+                }
+
+            }
+        );
+
+        document.querySelectorAll(".inline-status-select").forEach(function (select) {
+            select.addEventListener("change", async function () {
+                const previousStatus = select.dataset.previousStatus;
+                const formData = new FormData();
+                formData.append("status", select.value);
+                const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (antiForgeryToken) formData.append("__RequestVerificationToken", antiForgeryToken.value);
+
+                select.disabled = true;
+                try {
+                    const response = await fetch(`/admin/quan-ly-tai-khoan/trang-thai/${select.dataset.userId}`, {
+                        method: "POST",
+                        body: formData
+                    });
+                    const result = await response.json();
+                    if (!result.success) {
+                        alert(result.message ?? "Không thể cập nhật trạng thái.");
+                        select.value = previousStatus;
+                        return;
+                    }
+                    window.location.reload();
+                } catch (error) {
+                    alert("Không thể kết nối đến hệ thống.");
+                    select.value = previousStatus;
+                } finally {
+                    select.disabled = false;
+                }
+            });
+        });
+
+                // =====================================================
+        // GỬI LIÊN KẾT ĐẶT LẠI MẬT KHẨU
+        // =====================================================
+
+        const resetPasswordModal =
+            document.getElementById("resetPasswordModal");
+
+        const resetPasswordForm =
+            document.getElementById("resetPasswordForm");
+
+        const resetPasswordButtons =
+            document.querySelectorAll(".password-account");
+
+        const closeResetPasswordModal =
+            document.getElementById("closeResetPasswordModal");
+
+        const cancelResetPassword =
+            document.getElementById("cancelResetPassword");
+
+        const resetPasswordError =
+            document.getElementById("resetPasswordError");
+
+
+        function closePasswordModal() {
+
+            resetPasswordModal.classList.remove("show");
+
+            resetPasswordForm.reset();
+
+            resetPasswordError.textContent = "";
+        }
+
+
+        resetPasswordButtons.forEach(function (button) {
+
+            button.addEventListener("click", function () {
+
+                document.getElementById(
+                    "resetPasswordUserId"
+                ).value = button.dataset.userId;
+
+                document.getElementById(
+                    "resetPasswordEmail"
+                ).textContent =
+                    button.dataset.email ?? "";
+
+                resetPasswordError.textContent = "";
+
+                resetPasswordModal.classList.add("show");
+
+            });
+
+        });
+
+
+        closeResetPasswordModal.addEventListener(
+            "click",
+            closePasswordModal
+        );
+
+
+        cancelResetPassword.addEventListener(
+            "click",
+            closePasswordModal
+        );
+
+
+        resetPasswordForm.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+                resetPasswordError.textContent = "";
+
+
+                const userId =
+                    document.getElementById(
+                        "resetPasswordUserId"
+                    ).value;
+
+
+                const formData =
+                    new FormData(resetPasswordForm);
+
+
+                const saveButton =
+                    document.getElementById(
+                        "saveResetPasswordButton"
+                    );
+
+
+                saveButton.disabled = true;
+
+                saveButton.innerHTML =
+                    '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...';
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            `/admin/quan-ly-tai-khoan/gui-lien-ket-dat-lai-mat-khau/${userId}`,
+                            {
+                                method: "POST",
+                                body: formData
+                            }
+                        );
+
+
+                    const result =
+                        await response.json();
+
+
+                    if (!result.success) {
+
+                        resetPasswordError.textContent =
+                            result.message
+                            ?? "Không thể gửi liên kết đặt lại mật khẩu.";
+
+                        return;
+                    }
+
+
+                    closePasswordModal();
+
+                    alert(result.message ?? "Đã gửi liên kết đặt lại mật khẩu.");
+
+                }
+                catch (error) {
+
+                    resetPasswordError.textContent =
+                        "Không thể kết nối đến hệ thống.";
+                }
+                finally {
+
+                    saveButton.disabled = false;
+
+                    saveButton.innerHTML =
+                        '<i class="fa-solid fa-envelope"></i> Gửi liên kết';
+                }
+
+            }
+        );
+
+    </script>
+
+}

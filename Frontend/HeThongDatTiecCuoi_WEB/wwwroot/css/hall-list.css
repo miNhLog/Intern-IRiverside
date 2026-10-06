@@ -1,0 +1,78 @@
+.hall-list-page main { padding-top: 80px; }
+.hall-list-hero { position: relative; min-height: 330px; overflow: hidden; background: var(--home-primary); color: #fff; }
+.hall-list-hero-image { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(15,27,38,.94) 0%, rgba(15,27,38,.72) 44%, rgba(15,27,38,.18) 78%), url('/images/home/hero-wedding.jpg') center 53%/cover no-repeat; transform: scale(1.02); }
+.hall-list-hero-content { position: relative; display: flex; min-height: 330px; flex-direction: column; justify-content: center; align-items: flex-start; padding-block: 48px; }
+.hall-list-eyebrow { margin-bottom: 12px; color: #d9bc66; font-size: 11px; font-weight: 700; letter-spacing: .18em; }
+.hall-list-hero h1 { color: #fff; font: 500 48px/1.2 "Playfair Display", Georgia, serif; letter-spacing: -.02em; }
+.hall-list-hero p { max-width: 650px; margin-top: 16px; color: rgba(255,255,255,.82); font-size: 15px; line-height: 1.65; }
+.hall-breadcrumb { border-bottom: 1px solid #e8e1d5; background: #fff; }
+.hall-breadcrumb .home-container { display: flex; min-height: 58px; align-items: center; gap: 8px; color: #77736d; font-size: 13px; }
+.hall-breadcrumb a { display: inline-flex; align-items: center; gap: 7px; transition: color .2s; }
+.hall-breadcrumb a:hover { color: #7e6413; }
+.hall-breadcrumb .material-symbols-outlined { font-size: 17px; }
+.hall-catalog { padding: 42px 0 72px; background: #fdfbf7; }
+.hall-filter { display: grid; grid-template-columns: 1.3fr 1fr 1fr auto; align-items: end; gap: 22px; border: 1px solid #eee4d5; border-radius: 10px; padding: 24px; background: #faf6ee; box-shadow: 0 8px 25px rgba(60,45,20,.035); }
+.hall-filter-field { min-width: 0; }
+.hall-filter-field label { display: block; margin-bottom: 7px; color: #45413b; font-size: 12px; font-weight: 600; }
+.hall-filter-field :is(input, select) { width: 100%; height: 46px; border: 1px solid #ddd8ce; border-radius: 5px; padding: 0 13px; background: #fff; color: #37342f; font-size: 13px; outline: none; }
+.hall-filter-field :is(input, select):focus { border-color: #b89432; box-shadow: 0 0 0 3px rgba(212,175,55,.15); }
+.input-with-icon { position: relative; }
+.input-with-icon .material-symbols-outlined { position: absolute; top: 50%; left: 13px; color: #a28638; font-size: 18px; transform: translateY(-50%); pointer-events: none; }
+.input-with-icon input { padding-left: 40px; }
+.hall-filter-button { display: inline-flex; min-width: 164px; height: 46px; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 5px; padding-inline: 22px; background: #bd9840; color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 5px 12px rgba(126,94,20,.16); transition: background .2s, transform .2s; }
+.hall-filter-button:hover { background: #a9842f; transform: translateY(-1px); }
+.hall-filter-button .material-symbols-outlined { font-size: 19px; }
+.hall-list-toolbar { display: flex; min-height: 84px; align-items: center; justify-content: space-between; gap: 20px; }
+.hall-list-toolbar > p { color: #3e3a35; font-size: 14px; }
+.hall-list-toolbar > p strong { font-weight: 700; }
+.hall-list-toolbar form { display: flex; align-items: center; gap: 10px; color: #67625b; font-size: 12px; }
+.hall-list-toolbar select { min-width: 166px; height: 38px; border: 1px solid #ddd8ce; border-radius: 5px; padding: 0 34px 0 12px; background: #fff; color: #3d3933; font-size: 12px; }
+.public-hall-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 20px; }
+.public-hall-card { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid #e5dfd5; border-radius: 8px; background: #fff; box-shadow: 0 4px 15px rgba(38,30,19,.035); transition: transform .22s, box-shadow .22s; }
+.public-hall-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(38,30,19,.09); }
+.public-hall-image { display: block; height: 228px; overflow: hidden; background: #eee7da; }
+.public-hall-image img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+.public-hall-card:hover .public-hall-image img { transform: scale(1.035); }
+.public-hall-content { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 18px 20px 20px; }
+.public-hall-content h2 { color: #24211e; font: 600 22px/1.25 "Playfair Display", Georgia, serif; }
+.public-hall-capacity { display: flex; align-items: center; gap: 7px; margin-top: 8px !important; color: #4f4a44; font-size: 12px; }
+.public-hall-capacity .material-symbols-outlined { color: #b28c2e; font-size: 19px; }
+.public-hall-price { margin-top: 6px !important; color: #a17c24; font-size: 16px; font-weight: 700; }
+.public-hall-description { min-height: 66px; margin-top: 8px !important; overflow: hidden; color: #64605a; font-size: 12px; line-height: 1.75; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.public-hall-detail { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; color: #a17c24 !important; font-size: 12px; font-weight: 600; }
+.public-hall-detail .material-symbols-outlined { font-size: 17px; transition: transform .2s; }
+.public-hall-detail:hover .material-symbols-outlined { transform: translateX(4px); }
+.hall-pagination { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 42px; }
+.hall-pagination a { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #ded8cd; border-radius: 5px; background: #fff; color: #4c4842; font-size: 13px; transition: background .2s, border-color .2s, color .2s; }
+.hall-pagination a:hover:not(.disabled), .hall-pagination a.active { border-color: #b68f31; background: #b68f31; color: #fff; }
+.hall-pagination a.disabled { opacity: .4; pointer-events: none; }
+.hall-pagination .material-symbols-outlined { font-size: 18px; }
+.hall-empty-state { display: flex; min-height: 340px; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #e9e0d2; border-radius: 8px; padding: 40px 20px; background: #fff; text-align: center; }
+.hall-empty-state > .material-symbols-outlined { color: #ba963e; font-size: 46px; }
+.hall-empty-state h2 { margin-top: 12px; color: #292520; font: 600 25px/1.35 "Playfair Display", Georgia, serif; }
+.hall-empty-state p { margin-top: 7px; color: #6c665e; font-size: 14px; }
+.hall-empty-state a { margin-top: 18px; border-radius: 5px; padding: 10px 19px; background: #b68f31; color: #fff; font-size: 13px; font-weight: 600; }
+
+@media (max-width: 1023px) {
+    .hall-filter { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hall-filter-button { width: 100%; }
+    .public-hall-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+    .hall-list-page main { padding-top: 68px; }
+    .hall-list-hero, .hall-list-hero-content { min-height: 300px; }
+    .hall-list-hero-image { background-position: 61% center; }
+    .hall-list-hero h1 { font-size: 36px; }
+    .hall-list-hero p { font-size: 14px; }
+    .hall-catalog { padding-top: 26px; }
+    .hall-filter { grid-template-columns: 1fr; gap: 14px; padding: 18px; }
+    .hall-list-toolbar { align-items: flex-start; flex-direction: column; justify-content: center; padding-block: 20px; }
+    .hall-list-toolbar form { width: 100%; justify-content: space-between; }
+    .hall-list-toolbar select { flex: 1; min-width: 0; }
+    .public-hall-grid { grid-template-columns: 1fr; }
+    .public-hall-image { height: 250px; }
+}
+@media (max-width: 430px) {
+    .hall-list-hero h1 { font-size: 31px; }
+    .public-hall-image { height: 220px; }
+}

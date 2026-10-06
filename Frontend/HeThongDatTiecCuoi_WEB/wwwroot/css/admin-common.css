@@ -1,0 +1,116 @@
+/* Chuẩn typography được lấy từ admin-hall.css (Quản lý Sảnh & Lịch). */
+#adminMainContent {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1e242b;
+}
+
+#adminMainContent :is(p, span, strong, small, label, td, th, button, input, select,
+    textarea, a, li) {
+    font-family: "Segoe UI", Arial, sans-serif !important;
+}
+
+/* Heading của Quản lý Sảnh & Lịch dùng Georgia; các module giữ cùng hierarchy này. */
+#adminMainContent :is(h1, h2, h3, h4, h5, h6),
+#adminMainContent :is(.font-serif) {
+    font-family: Georgia, "Times New Roman", serif !important;
+}
+
+#adminMainContent :is(button, input, select, textarea) {
+    line-height: 1.25;
+}
+
+/* Các primitive lặp lại ở module Admin theo đúng thông số card/filter của admin-hall.css. */
+#adminMainContent :is(.card-shadow, .custom-card-shadow) {
+    border-radius: 12px;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.04);
+}
+
+#adminMainContent :is(input, select, textarea):focus-visible,
+#adminMainContent .focus-ring:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 2px;
+}
+
+/* Các module trước đây tự nạp Plus Jakarta Sans / Playfair Display. */
+#adminMainContent .booking-page-wrapper,
+#adminMainContent .decor-page-wrapper,
+#adminMainContent .policy-page,
+#adminMainContent .bi-page-wrapper {
+    font-family: "Segoe UI", Arial, sans-serif !important;
+}
+
+/* Dashboard và bổ nhiệm dành cho role Quản lý, kế thừa primitive của Quản lý Sảnh & Lịch. */
+.manager-dashboard-intro,
+.assignment-hero {
+    background: #fff;
+    border: 1px solid #e2e5e9;
+    border-radius: 12px;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, .04);
+    padding: 22px;
+}
+
+.manager-dashboard-intro h1,
+.assignment-hero h1 {
+    margin: 5px 0;
+    font-size: 25px;
+}
+
+.manager-dashboard-intro p,
+.assignment-hero p { margin: 0; color: #7b8491; font-size: 13px; }
+.assignment-hero { display: flex; gap: 18px; align-items: center; justify-content: space-between; }
+.assignment-hero .btn-add { white-space: nowrap; }
+.manager-kpi-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.manager-kpi-card,
+.manager-overview-card,
+.assignment-empty-state,
+.assignment-form { background: #fff; border: 1px solid #e2e5e9; border-radius: 12px; box-shadow: 0 3px 14px rgba(0, 0, 0, .04); }
+.manager-kpi-card { min-height: 105px; padding: 17px; display: flex; align-items: center; gap: 13px; }
+.manager-kpi-icon,
+.assignment-empty-icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; flex: 0 0 42px; border-radius: 11px; color: #a77b18; background: #fbf3df; }
+.manager-kpi-card small { display: block; color: #64748b; font-size: 12px; }
+.manager-kpi-card strong { display: block; color: #1e242b; font-size: 24px; line-height: 1.15; }
+.manager-kpi-card em { display: block; color: #94a3b8; font-size: 11px; font-style: normal; }
+.manager-overview-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.manager-overview-card { min-height: 145px; padding: 18px; }
+.manager-overview-card > i { color: #b38f24; font-size: 20px; }
+.manager-overview-card h3 { margin: 14px 0 5px; font-size: 16px; }
+.manager-overview-card p { margin: 0; color: #94a3b8; font-size: 12px; }
+.assignment-empty-state { padding: 40px 24px; text-align: center; }
+.assignment-empty-icon { width: 52px; height: 52px; font-size: 21px; }
+.assignment-empty-state h3 { margin: 13px 0 5px; font-size: 17px; }
+.assignment-empty-state p { max-width: 540px; margin: 0 auto; color: #7b8491; font-size: 13px; }
+.assignment-form { padding: 18px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.assignment-field { display: grid; gap: 6px; }
+.assignment-field label { color: #64748b; font-size: 12px; font-weight: 600; }
+.assignment-field input,
+.assignment-field select { min-height: 38px; box-sizing: border-box; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0 10px; color: #64748b; background: #f8fafc; }
+.assignment-note { grid-column: span 3; }
+.assignment-actions { display: flex; align-items: end; justify-content: end; }
+.assignment-form :disabled { cursor: not-allowed; opacity: .78; }
+
+/* Khu vực vận hành của Quản lý sảnh: chỉ xem và điều phối trong phạm vi được giao. */
+.hall-schedule-table-wrap { overflow-x: auto; background: #fff; border: 1px solid #e2e5e9; border-radius: 12px; box-shadow: 0 3px 14px rgba(0, 0, 0, .04); }
+.hall-schedule-table { width: 100%; min-width: 620px; border-collapse: collapse; }
+.hall-schedule-table th { padding: 13px 16px; background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 700; text-align: left; white-space: nowrap; }
+.hall-schedule-table td { padding: 24px 16px; border-top: 1px solid #edf0f3; color: #7b8491; font-size: 13px; }
+.hall-schedule-table .table-empty-state { text-align: center; color: #94a3b8; }
+.table-empty-state i { margin-right: 6px; color: #b38f24; }
+.coordination-table { min-width: 1050px; }
+.coordinator-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.coordinator-work-table { min-width: 760px; }
+.assigned-party-table { min-width: 1400px; }
+.coordinator-action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-outline { min-height: 38px; padding: 0 14px; border: 1px solid #d4af37; border-radius: 8px; color: #8e6d1d; background: #fff; font-weight: 600; cursor: pointer; }
+.coordinator-detail-notice { margin-top: 20px; padding: 13px 15px; color: #7b6a41; background: #fff9eb; border: 1px solid #f0dfb0; border-radius: 10px; font-size: 13px; }
+.coordinator-detail-notice i { margin-right: 6px; color: #b38f24; }
+.coordinator-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.coordinator-detail-section { padding: 18px; background: #fff; border: 1px solid #e2e5e9; border-radius: 12px; box-shadow: 0 3px 14px rgba(0, 0, 0, .04); }
+.coordinator-detail-section h3 { margin: 0 0 14px; font-size: 17px; }
+.coordinator-detail-section h3 i { margin-right: 7px; color: #b38f24; }
+.coordinator-detail-section p { margin: 0 0 14px; color: #7b8491; font-size: 13px; }
+.coordinator-detail-section dl { display: grid; grid-template-columns: minmax(130px, .8fr) 1.2fr; gap: 10px 14px; margin: 0; font-size: 13px; }
+.coordinator-detail-section dt { color: #64748b; }
+.coordinator-detail-section dd { margin: 0; color: #94a3b8; }
+
+@media (max-width: 1100px) { .manager-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .assignment-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .assignment-note { grid-column: span 2; } .coordinator-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .manager-kpi-grid, .manager-overview-grid, .assignment-form, .coordinator-kpi-grid, .coordinator-detail-grid { grid-template-columns: 1fr; } .assignment-note { grid-column: auto; } .assignment-hero { align-items: stretch; flex-direction: column; } .assignment-hero .btn-add { width: 100%; } }

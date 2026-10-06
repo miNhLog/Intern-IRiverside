@@ -1,0 +1,102 @@
+.hall-detail-page main { padding-top: 80px; }
+.hall-detail-hero { position: relative; min-height: 290px; overflow: hidden; background: var(--home-primary); color: #fff; }
+.hall-detail-hero-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hall-detail-hero-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(13,25,35,.92), rgba(13,25,35,.57) 48%, rgba(13,25,35,.2)); }
+.hall-detail-hero-content { position: relative; display: flex; min-height: 290px; flex-direction: column; justify-content: center; align-items: flex-start; padding-block: 44px; }
+.hall-detail-hero-content > span, .hall-detail-label { color: #a9862d; font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.hall-detail-hero-content > span { color: #dfc271; }
+.hall-detail-hero h1 { margin-top: 8px; color: #fff; font: 500 48px/1.12 "Playfair Display", Georgia, serif; }
+.hall-detail-hero p { margin-top: 8px; color: rgba(255,255,255,.88); font: 400 20px/1.45 "Playfair Display", Georgia, serif; }
+.hall-detail-breadcrumb { border-bottom: 1px solid #e9e2d7; background: #fff; }
+.hall-detail-breadcrumb .home-container { display: flex; min-height: 58px; align-items: center; gap: 8px; overflow: hidden; color: #77716a; font-size: 12px; white-space: nowrap; }
+.hall-detail-breadcrumb a { display: inline-flex; align-items: center; gap: 6px; transition: color .2s; }
+.hall-detail-breadcrumb a:hover { color: #927120; }
+.hall-detail-breadcrumb .material-symbols-outlined { flex: none; font-size: 16px; }
+.hall-detail-breadcrumb span[aria-current] { overflow: hidden; color: #3d3934; text-overflow: ellipsis; }
+.hall-detail-main { padding: 42px 0 72px; background: #fdfbf7; }
+.hall-detail-overview { display: grid; grid-template-columns: minmax(0, 1.32fr) minmax(330px, .9fr); gap: 38px; align-items: stretch; }
+.hall-detail-photo { min-height: 510px; overflow: hidden; border-radius: 9px; background: #eee7da; box-shadow: 0 7px 22px rgba(35,29,20,.09); }
+.hall-detail-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hall-detail-summary { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; padding: 12px 0 4px; }
+.hall-detail-summary h2 { margin-top: 5px; color: #26221e; font: 600 38px/1.2 "Playfair Display", Georgia, serif; }
+.hall-detail-highlight { display: flex; align-items: center; gap: 11px; margin-top: 15px; color: #352f29; }
+.hall-detail-highlight > .material-symbols-outlined { color: #b48c2a; font-size: 29px; }
+.hall-detail-highlight div { display: grid; gap: 1px; }
+.hall-detail-highlight small { color: #77716a; font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.hall-detail-highlight strong { font-size: 17px; line-height: 1.35; }
+.hall-detail-intro { margin-top: 18px !important; color: #625c55; font-size: 13px; line-height: 1.75; }
+.hall-detail-actions { display: grid; width: 100%; gap: 10px; margin-top: auto; padding-top: 24px; }
+.hall-detail-actions button, .hall-detail-cta button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: 8px; border-radius: 5px; padding: 10px 20px; font-size: 13px; font-weight: 600; transition: background .2s, color .2s, transform .2s; }
+.hall-detail-actions button:hover, .hall-detail-cta button:hover { transform: translateY(-1px); }
+.hall-detail-primary { border: 1px solid #b89134; background: #bd9840; color: #fff; }
+.hall-detail-primary:hover { background: #a9832d; }
+.hall-detail-secondary { border: 1px solid #cbb987; background: #fff; color: #9b7824; }
+.hall-detail-secondary:hover { background: #faf4e5; }
+.hall-detail-actions .material-symbols-outlined, .hall-detail-cta .material-symbols-outlined { font-size: 19px; }
+.hall-detail-note { display: flex; align-items: center; gap: 6px; margin-top: 9px !important; color: #77716a; font-size: 10px; }
+.hall-detail-note .material-symbols-outlined { font-size: 15px; }
+.hall-amenities { margin-top: 42px; border: 1px solid #eee4d3; border-radius: 9px; padding: 22px 24px; background: #faf6eb; }
+.hall-amenities > h2 { margin-bottom: 18px; color: #50483d; font: 600 14px/1.4 "Playfair Display", Georgia, serif; text-align: center; }
+.hall-amenity-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.hall-amenity-grid > div { display: flex; min-width: 0; flex-direction: column; align-items: center; gap: 8px; border-right: 1px solid #e9dfca; color: #514b43; text-align: center; font-size: 11px; line-height: 1.4; }
+.hall-amenity-grid > div:last-child { border-right: 0; }
+.hall-amenity-grid .material-symbols-outlined { color: #b28b2d; font-size: 28px; }
+.hall-detail-information { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.2fr); gap: 70px; margin-top: 48px; }
+.hall-detail-information h2 { margin-top: 5px; color: #302a25; font: 600 25px/1.35 "Playfair Display", Georgia, serif; }
+.hall-detail-table { margin-top: 16px; border-top: 1px solid #e0d9ce; }
+.hall-detail-table > div { display: grid; grid-template-columns: minmax(110px, .8fr) minmax(0, 1.3fr); border-bottom: 1px solid #e0d9ce; padding: 11px 8px; font-size: 13px; }
+.hall-detail-table dt { color: #77716a; }
+.hall-detail-table dd { margin: 0; color: #3e3934; font-weight: 500; overflow-wrap: anywhere; }
+.hall-status-badge { display: inline-flex; border-radius: 100px; padding: 4px 10px; background: #daf3df; color: #277338; font-size: 11px; font-weight: 700; }
+.hall-detail-information section:last-child > p { margin-top: 16px; color: #625c55; font-size: 13px; line-height: 1.85; white-space: pre-line; }
+.hall-detail-cta { position: relative; display: flex; min-height: 145px; align-items: center; justify-content: space-between; gap: 30px; overflow: hidden; margin-top: 52px; border-radius: 9px; padding: 30px 42px; background: #eee5d5; }
+.hall-detail-cta > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .32; }
+.hall-detail-cta-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(253,248,238,.97), rgba(253,248,238,.83) 64%, rgba(253,248,238,.56)); }
+.hall-detail-cta-copy, .hall-detail-cta button { position: relative; }
+.hall-detail-cta-copy h2 { color: #453c31; font: italic 500 25px/1.3 "Playfair Display", Georgia, serif; }
+.hall-detail-cta-copy p { margin-top: 5px; color: #6f675f; font-size: 12px; }
+.hall-detail-cta button { flex: none; min-width: 180px; border: 1px solid #b89134; background: #bd9840; color: #fff; }
+.hall-detail-feedback { min-height: 650px; padding: 170px 0 90px; background: linear-gradient(rgba(253,251,247,.94), rgba(253,251,247,.94)), url('/images/home/hero-wedding.jpg') center/cover; }
+.hall-detail-feedback-card { display: flex; width: min(100%, 650px); min-height: 360px; flex-direction: column; align-items: center; justify-content: center; margin-inline: auto; border: 1px solid #eadfcf; border-radius: 12px; padding: 48px 26px; background: rgba(255,255,255,.96); text-align: center; box-shadow: 0 18px 45px rgba(36,29,21,.1); }
+.hall-detail-feedback-card > .material-symbols-outlined { color: #b48c2a; font-size: 50px; }
+.hall-detail-feedback-card .hall-detail-label { margin-top: 14px; }
+.hall-detail-feedback-card h1 { margin-top: 7px; color: #302a25; font: 600 34px/1.3 "Playfair Display", Georgia, serif; }
+.hall-detail-feedback-card p { margin-top: 9px; color: #6a645d; font-size: 14px; }
+.hall-detail-feedback-card a { display: inline-flex; min-height: 46px; align-items: center; gap: 7px; margin-top: 24px; border-radius: 5px; padding: 10px 18px; background: #b89134; color: #fff; font-size: 13px; font-weight: 600; }
+.hall-detail-feedback-card a .material-symbols-outlined { font-size: 18px; }
+
+@media (max-width: 1023px) {
+    .hall-detail-overview { grid-template-columns: 1fr; }
+    .hall-detail-photo { min-height: 460px; }
+    .hall-detail-actions { margin-top: 8px; }
+    .hall-amenity-grid { grid-template-columns: repeat(3, 1fr); gap: 22px 0; }
+    .hall-amenity-grid > div:nth-child(3) { border-right: 0; }
+    .hall-detail-information { gap: 42px; }
+}
+@media (max-width: 767px) {
+    .hall-detail-page main { padding-top: 68px; }
+    .hall-detail-hero, .hall-detail-hero-content { min-height: 260px; }
+    .hall-detail-hero h1 { font-size: 39px; }
+    .hall-detail-hero p { font-size: 17px; }
+    .hall-detail-main { padding-top: 26px; }
+    .hall-detail-overview { gap: 25px; }
+    .hall-detail-photo { min-height: 0; aspect-ratio: 4 / 3; }
+    .hall-detail-summary { padding-top: 0; }
+    .hall-detail-summary h2 { font-size: 33px; }
+    .hall-detail-actions button { width: 100%; }
+    .hall-amenities { margin-top: 32px; padding-inline: 12px; }
+    .hall-amenity-grid { grid-template-columns: repeat(2, 1fr); }
+    .hall-amenity-grid > div:nth-child(3) { border-right: 1px solid #e9dfca; }
+    .hall-amenity-grid > div:nth-child(even) { border-right: 0; }
+    .hall-detail-information { grid-template-columns: 1fr; gap: 38px; margin-top: 38px; }
+    .hall-detail-cta { align-items: stretch; flex-direction: column; padding: 28px 24px; }
+    .hall-detail-cta button { width: 100%; }
+    .hall-detail-feedback { min-height: 560px; padding-top: 100px; }
+}
+@media (max-width: 430px) {
+    .hall-detail-hero h1 { font-size: 35px; }
+    .hall-detail-hero p { font-size: 15px; }
+    .hall-detail-breadcrumb .home-container { padding-inline: 15px; }
+    .hall-detail-table > div { grid-template-columns: 100px minmax(0, 1fr); }
+    .hall-detail-feedback-card h1 { font-size: 29px; }
+}

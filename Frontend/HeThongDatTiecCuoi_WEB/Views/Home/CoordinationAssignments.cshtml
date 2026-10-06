@@ -1,0 +1,38 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Phân công nhân viên điều phối";
+}
+
+<header class="top-header">
+    <div>
+        <div class="breadcrumb">Điều phối <span>›</span> <strong>Phân công nhân viên điều phối</strong></div>
+        <h2>Phân công nhân viên điều phối</h2>
+    </div>
+</header>
+
+<section class="content coordination-page">
+    <div class="assignment-hero">
+        <div>
+            <span class="eyebrow">ĐIỀU PHỐI SẢNH</span>
+            <h1>Phân công điều phối cho tiệc</h1>
+            <p>Mỗi tiệc có một điều phối viên chính. Việc phân công chỉ áp dụng cho các tiệc thuộc sảnh bạn đang phụ trách.</p>
+        </div>
+        <button type="button" class="btn-add developing"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Phân công điều phối</button>
+    </div>
+
+    <div class="section-header"><div><h3>Danh sách tiệc cần điều phối</h3><p>Danh sách chỉ hiển thị tiệc thuộc các sảnh được phân công.</p></div></div>
+    <div class="hall-schedule-table-wrap">
+        <table class="hall-schedule-table coordination-table">
+            <thead><tr><th>Mã booking</th><th>Khách hàng</th><th>Sảnh</th><th>Ngày</th><th>Ca</th><th>Số bàn</th><th>Điều phối viên</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <tbody><tr><td colspan="9" class="table-empty-state"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Chưa có dữ liệu. Cần API trả về tiệc theo phạm vi sảnh và danh sách Nhân viên điều phối.</td></tr></tbody>
+        </table>
+    </div>
+
+    <div class="section-header"><div><h3>Thông tin phân công</h3><p>Danh sách điều phối viên chỉ bao gồm nhân sự có role Nhân viên điều phối và cần kiểm tra trùng lịch.</p></div></div>
+    <form class="assignment-form" aria-label="Biểu mẫu phân công điều phối">
+        <div class="assignment-field"><label for="coordinationBooking">Tiệc</label><select id="coordinationBooking" disabled><option>Đang chờ dữ liệu tiệc</option></select></div>
+        <div class="assignment-field"><label for="coordinationEmployee">Nhân viên điều phối</label><select id="coordinationEmployee" disabled><option>Đang chờ dữ liệu nhân sự</option></select></div>
+        <div class="assignment-field assignment-note"><label for="coordinationNote">Ghi chú</label><input id="coordinationNote" type="text" placeholder="Ghi chú phân công" disabled /></div>
+        <div class="assignment-actions"><button type="button" class="btn-add developing">Xác nhận phân công</button></div>
+    </form>
+</section>

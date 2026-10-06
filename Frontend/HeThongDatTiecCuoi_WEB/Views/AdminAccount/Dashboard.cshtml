@@ -1,0 +1,45 @@
+@model HeThongDatTiecCuoi_WEB.Models.AdminAccount.AccountManagementViewModel
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Tổng quan hệ thống";
+    var activeCount = Model.Accounts.Count(x => x.Status == AccountStatusCodes.Active);
+    var lockedCount = Model.Accounts.Count(x => x.Status == AccountStatusCodes.Locked);
+    var inactiveCount = Model.Accounts.Count - activeCount - lockedCount;
+    var managers = Model.Accounts.Count(x => x.RoleName == RoleNames.Manager);
+    var hallManagers = Model.Accounts.Count(x => x.RoleName == RoleNames.HallManager);
+    var coordinators = Model.Accounts.Count(x => x.RoleName == RoleNames.Coordinator);
+}
+
+<link rel="stylesheet" href="~/css/admin-account.css" asp-append-version="true" />
+
+<header class="top-header">
+    <div>
+        <div class="breadcrumb">Quản trị hệ thống <span>›</span> <strong>Tổng quan hệ thống</strong></div>
+        <h2>Tổng quan hệ thống</h2>
+        <p class="account-page-subtitle">Theo dõi tài khoản và trạng thái vận hành hệ thống</p>
+    </div>
+</header>
+
+<section class="content account-content admin-dashboard-content">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="error-box"><i class="fa-solid fa-circle-exclamation"></i> @Model.ErrorMessage</div>
+    }
+
+    <div class="account-summary">
+        <div class="summary-card"><div class="summary-icon"><i class="fa-solid fa-users"></i></div><div><span>Tổng tài khoản</span><strong>@Model.Accounts.Count</strong></div></div>
+        <div class="summary-card"><div class="summary-icon active-icon"><i class="fa-solid fa-circle-check"></i></div><div><span>Đang hoạt động</span><strong>@activeCount</strong></div></div>
+        <div class="summary-card"><div class="summary-icon locked-icon"><i class="fa-solid fa-lock"></i></div><div><span>Bị khóa</span><strong>@lockedCount</strong></div></div>
+        <div class="summary-card"><div class="summary-icon inactive-icon"><i class="fa-solid fa-user-slash"></i></div><div><span>Ngừng hoạt động</span><strong>@inactiveCount</strong></div></div>
+    </div>
+
+    <div class="account-panel account-section">
+        <div class="account-panel-header"><div><h3><i class="fa-solid fa-people-group"></i> Phân bố nhân sự theo vai trò</h3><p>Thông tin tài khoản nội bộ đang có trong hệ thống</p></div></div>
+        <div class="role-distribution">
+            <div><span>Quản lý</span><strong>@managers</strong></div>
+            <div><span>Quản lý sảnh</span><strong>@hallManagers</strong></div>
+            <div><span>Nhân viên điều phối</span><strong>@coordinators</strong></div>
+        </div>
+    </div>
+</section>
