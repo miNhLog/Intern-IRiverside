@@ -1,0 +1,132 @@
+@using System.Security.Claims
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Trang điều khiển";
+    var role = User.FindFirstValue(ClaimTypes.Role) ?? "Người dùng";
+}
+
+@if (role == RoleNames.Manager)
+{
+    <header class="top-header">
+        <div>
+            <div class="breadcrumb">Quản trị hệ thống <span>›</span> <strong>Dashboard</strong></div>
+            <h2>Dashboard quản lý</h2>
+        </div>
+    </header>
+
+    <section class="content manager-dashboard">
+        @if (TempData["Success"] is string message)
+        {
+            <div class="success-banner">@message</div>
+        }
+
+        <div class="manager-dashboard-intro">
+            <div>
+                <span class="eyebrow">RIVERSIDE PALACE</span>
+                <h1>Chào mừng, @User.Identity?.Name</h1>
+                <p>Tổng quan hoạt động kinh doanh và vận hành của Riverside Palace.</p>
+            </div>
+        </div>
+
+        <div class="manager-kpi-grid" aria-label="Chỉ số vận hành">
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-calendar-check"></i></span><div><small>Tổng booking</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-champagne-glasses"></i></span><div><small>Tiệc tháng này</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-wallet"></i></span><div><small>Doanh thu</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-file-signature"></i></span><div><small>Hợp đồng đang xử lý</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-money-bill-wave"></i></span><div><small>Thanh toán chưa hoàn tất</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-building"></i></span><div><small>Sảnh đang sử dụng</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+        </div>
+
+        <div class="section-header">
+            <div><h3>Theo dõi vận hành</h3><p>Các thông tin được cập nhật khi nguồn dữ liệu nghiệp vụ sẵn sàng.</p></div>
+        </div>
+        <div class="manager-overview-grid">
+            <article class="manager-overview-card"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i><h3>Tiệc sắp diễn ra</h3><p>Chưa có dữ liệu hiển thị.</p></article>
+            <article class="manager-overview-card"><i class="fa-solid fa-building" aria-hidden="true"></i><h3>Tình trạng sảnh</h3><p>Chưa có dữ liệu hiển thị.</p></article>
+            <article class="manager-overview-card"><i class="fa-solid fa-bookmark" aria-hidden="true"></i><h3>Booking gần đây</h3><p>Chưa có dữ liệu hiển thị.</p></article>
+            <article class="manager-overview-card"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><h3>Sự cố đang mở</h3><p>Chưa có dữ liệu hiển thị.</p></article>
+        </div>
+    </section>
+}
+else if (role == RoleNames.HallManager)
+{
+    <header class="top-header">
+        <div>
+            <div class="breadcrumb">Quản trị hệ thống <span>›</span> <strong>Dashboard sảnh</strong></div>
+            <h2>Dashboard sảnh</h2>
+        </div>
+    </header>
+
+    <section class="content hall-manager-dashboard">
+        <div class="manager-dashboard-intro">
+            <div>
+                <span class="eyebrow">VẬN HÀNH SẢNH</span>
+                <h1>Chào mừng, @User.Identity?.Name</h1>
+                <p>Tổng quan các sảnh và hoạt động được phân công cho bạn.</p>
+            </div>
+        </div>
+
+        <div class="manager-kpi-grid" aria-label="Chỉ số vận hành sảnh">
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-building"></i></span><div><small>Sảnh đang phụ trách</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-calendar-day"></i></span><div><small>Tiệc hôm nay</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-champagne-glasses"></i></span><div><small>Tiệc sắp diễn ra</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-people-group"></i></span><div><small>Điều phối viên đang làm việc</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></span><div><small>Sự cố đang mở</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-calendar-xmark"></i></span><div><small>Yêu cầu đổi lịch</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+        </div>
+
+        <div class="section-header"><div><h3>Lịch sảnh hôm nay</h3><p>Chỉ hiển thị các sảnh được bổ nhiệm cho tài khoản đang đăng nhập.</p></div></div>
+        <div class="hall-schedule-table-wrap">
+            <table class="hall-schedule-table">
+                <thead><tr><th>Sảnh</th><th>Ca trưa</th><th>Ca tối</th><th>Trạng thái</th></tr></thead>
+                <tbody><tr><td colspan="4" class="table-empty-state"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Cần triển khai API lọc sảnh theo phân công trước khi hiển thị lịch thực tế.</td></tr></tbody>
+            </table>
+        </div>
+    </section>
+}
+else if (role == RoleNames.Coordinator)
+{
+    <header class="top-header">
+        <div>
+            <div class="breadcrumb">Quản trị hệ thống <span>›</span> <strong>Hôm nay</strong></div>
+            <h2>Công việc hôm nay</h2>
+        </div>
+    </header>
+
+    <section class="content coordinator-dashboard">
+        <div class="manager-dashboard-intro">
+            <div>
+                <span class="eyebrow">ĐIỀU PHỐI TIỆC</span>
+                <h1>Chào mừng, @User.Identity?.Name</h1>
+                <p>Theo dõi các tiệc và công việc được phân công cho bạn.</p>
+            </div>
+        </div>
+
+        <div class="coordinator-kpi-grid" aria-label="Chỉ số công việc điều phối">
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-calendar-day"></i></span><div><small>Tiệc hôm nay</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-champagne-glasses"></i></span><div><small>Tiệc sắp tới</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-list-check"></i></span><div><small>Công việc chưa hoàn thành</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></span><div><small>Sự cố đang mở</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+        </div>
+
+        <div class="section-header"><div><h3>Lịch làm việc hôm nay</h3><p>Chỉ hiển thị các tiệc được phân công cho tài khoản đang đăng nhập.</p></div></div>
+        <div class="hall-schedule-table-wrap">
+            <table class="hall-schedule-table coordinator-work-table">
+                <thead><tr><th>Thời gian</th><th>Sảnh</th><th>Tiệc</th><th>Công việc</th><th>Trạng thái</th></tr></thead>
+                <tbody><tr><td colspan="5" class="table-empty-state"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Cần triển khai API lấy tiệc theo điều phối viên đăng nhập trước khi hiển thị lịch thực tế.</td></tr></tbody>
+            </table>
+        </div>
+    </section>
+}
+else
+{
+    <main class="dashboard">
+        <div class="dashboard-card">
+            <span class="eyebrow">RIVERSIDE PALACE</span>
+            <h1>Xin chào, @User.Identity?.Name</h1>
+            <p>Đăng nhập thành công với vai trò <strong>@role</strong>.</p>
+            <p>Không gian nghiệp vụ tư vấn, xác nhận booking và quản lý hợp đồng.</p>
+            <form asp-action="Logout" asp-controller="Auth" method="post"><button class="logout-button" type="submit">Đăng xuất</button></form>
+        </div>
+    </main>
+}

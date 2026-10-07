@@ -1,0 +1,2205 @@
+@using System.Globalization
+@using System.Linq
+@model HeThongDatTiecCuoi_WEB.Models.AdminMenu.MenuManagementViewModel
+
+@{
+    Layout = "_AdminLayout";
+
+    ViewData["Title"] = "Quản lý Thực đơn & Món ăn";
+    ViewData["ActiveMenu"] = "Menu";
+
+    var totalMenus = Model.Menus.Count;
+    var activeMenus = Model.Menus.Count(
+        x => x.Status == MenuStatusCodes.Active
+    );
+
+    var totalDishes = Model.DishesForCounts.Count;
+    var activeDishCount = Model.DishesForCounts.Count(
+        x => x.Status == DishStatusCodes.Active
+    );
+
+    var averagePrice = totalMenus > 0
+        ? Model.Menus.Average(x => x.PricePerTable)
+        : 0;
+
+    var selectedMenu = Model.Menus
+        .FirstOrDefault(
+            x => x.MenuId == Model.SelectedMenuId
+        );
+
+    var appetizerCount = Model.DishesForCounts.Count(
+        x => x.Category == "Món khai vị"
+    );
+
+    var soupCount = Model.DishesForCounts.Count(
+        x => x.Category == "Món súp"
+    );
+
+    var mainCourseCount = Model.DishesForCounts.Count(
+        x => x.Category == "Món chính"
+    );
+
+    var dessertCount = Model.DishesForCounts.Count(
+        x => x.Category == "Món tráng miệng"
+    );
+}
+
+@section Styles {
+    <link rel="stylesheet"
+          href="~/css/admin-thuc-don.css"
+          asp-append-version="true" />
+}
+
+
+<!-- =====================================================
+     HEADER
+     ===================================================== -->
+<header class="top-header food-header">
+
+    <div>
+
+        <div class="breadcrumb">
+            Quản trị hệ thống
+            <span>›</span>
+            <strong>Quản lý Thực đơn & Món ăn</strong>
+        </div>
+
+        <div class="food-title-row">
+
+            <div>
+                <h2>
+                    Quản Trị Danh Mục Thực Đơn & Ẩm Thực Tiệc Cưới
+                </h2>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="food-header-actions">
+
+        <button type="button"
+                class="food-button food-button-gold"
+                data-open-modal="createMenuModal">
+
+            <i class="fa-solid fa-circle-plus"></i>
+
+            Thêm thực đơn mới
+
+        </button>
+
+    </div>
+
+</header>
+
+
+<!-- =====================================================
+     PAGE CONTENT
+     ===================================================== -->
+<section class="content food-page">
+
+
+    <!-- =========================
+         THÔNG BÁO
+         ========================= -->
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="food-alert success">
+
+            <i class="fa-solid fa-circle-check"></i>
+
+            <span>
+                @successMessage
+            </span>
+
+        </div>
+    }
+
+
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="food-alert error">
+
+            <i class="fa-solid fa-circle-exclamation"></i>
+
+            <span>
+                @errorMessage
+            </span>
+
+        </div>
+    }
+
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="food-alert error">
+
+            <i class="fa-solid fa-circle-exclamation"></i>
+
+            <div asp-validation-summary="All"></div>
+
+        </div>
+    }
+
+
+    <!-- =====================================================
+         4 THẺ THỐNG KÊ
+         ===================================================== -->
+
+    <div class="food-stat-grid">
+
+
+        <!-- TỔNG THỰC ĐƠN -->
+        <div class="food-stat-card">
+
+            <div>
+
+                <span class="food-stat-label">
+                    Tổng số thực đơn
+                </span>
+
+                <div class="food-stat-value">
+
+                    <strong>
+                        @totalMenus
+                    </strong>
+
+                    <span>
+                        Bộ thực đơn
+                    </span>
+
+                </div>
+
+                <div class="food-stat-note">
+                    <i class="fa-regular fa-circle-check"></i>
+                    @activeMenus thực đơn đang áp dụng
+                </div>
+
+            </div>
+
+            <div class="food-stat-icon gold">
+                <i class="fa-solid fa-book-open"></i>
+            </div>
+
+        </div>
+
+
+        <!-- TỔNG MÓN -->
+        <div class="food-stat-card">
+
+            <div>
+
+                <span class="food-stat-label">
+                    Món trong kho
+                </span>
+
+                <div class="food-stat-value">
+
+                    <strong>
+                        @totalDishes
+                    </strong>
+
+                    <span>
+                        Món ăn
+                    </span>
+
+                </div>
+
+                <div class="food-stat-note">
+                    <i class="fa-solid fa-utensils"></i>
+                    @activeDishCount món đang phục vụ
+                </div>
+
+            </div>
+
+            <div class="food-stat-icon blue">
+                <i class="fa-solid fa-utensils"></i>
+            </div>
+
+        </div>
+
+
+        <!-- GIÁ BÌNH QUÂN -->
+        <div class="food-stat-card">
+
+            <div>
+
+                <span class="food-stat-label">
+                    Giá thực đơn bình quân
+                </span>
+
+                <div class="food-stat-value price">
+
+                    <strong>
+                        @averagePrice.ToString("N0")
+                    </strong>
+
+                    <span>
+                        VNĐ / bàn
+                    </span>
+
+                </div>
+
+                <div class="food-stat-note">
+                    Theo danh sách đang hiển thị
+                </div>
+
+            </div>
+
+            <div class="food-stat-icon blue">
+                <i class="fa-solid fa-money-bill-wave"></i>
+            </div>
+
+        </div>
+
+
+        <!-- NHÓM MÓN -->
+        <div class="food-stat-card">
+
+            <div>
+
+                <span class="food-stat-label">
+                    Các nhóm món ăn
+                </span>
+
+                <div class="food-stat-value">
+
+                    <strong>
+                        4
+                    </strong>
+
+                    <span>
+                        Nhóm món
+                    </span>
+
+                </div>
+
+                <div class="food-stat-note">
+                    Khai vị • Súp • Chính • Tráng miệng
+                </div>
+
+            </div>
+
+            <div class="food-stat-icon gold">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         MASTER DETAIL
+         ===================================================== -->
+
+    <div class="food-master-detail">
+
+
+        <!-- =================================================
+             LEFT: THỰC ĐƠN
+             ================================================= -->
+        <div class="food-menu-column">
+
+
+            <!-- HEADER -->
+            <div class="food-panel">
+
+                <div class="food-panel-title">
+
+                    <div>
+
+                        <div class="food-heading-row">
+
+                            <h3>
+                                Danh Sách Set Menu
+                            </h3>
+
+                            <span class="food-count">
+                                @totalMenus bộ
+                            </span>
+
+                        </div>
+
+                        <p>
+                            Quản lý giá mỗi bàn, trạng thái và thành phần món.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- STATUS FILTER -->
+                <div class="food-pills">
+
+                    <a class="food-pill
+                        @(string.IsNullOrWhiteSpace(Model.MenuStatus)
+                           ? "active"
+                           : "")"
+                       href="@Url.Action(
+                                                  "Index",
+                                                  "AdminMenu",
+                                                  new
+                                                  {
+                                                      menuId = Model.SelectedMenuId,
+                                                      menuKeyword = Model.MenuKeyword,
+                                                      menuStatus = "",
+                                                      dishKeyword = Model.DishKeyword,
+                                                      category = Model.Category,
+                                                      dishStatus = Model.DishStatus
+                                                  })">
+
+                        Tất cả
+
+                    </a>
+
+
+                    <a class="food-pill
+                        @(Model.MenuStatus == MenuStatusCodes.Active
+                           ? "active"
+                           : "")"
+                       href="@Url.Action(
+                                                  "Index",
+                                                  "AdminMenu",
+                                                  new
+                                                  {
+                                                      menuId = Model.SelectedMenuId,
+                                                      menuKeyword = Model.MenuKeyword,
+                                                      menuStatus = MenuStatusCodes.Active,
+                                                      dishKeyword = Model.DishKeyword,
+                                                      category = Model.Category,
+                                                      dishStatus = Model.DishStatus
+                                                  })">
+
+                        Đang áp dụng
+
+                    </a>
+
+
+                    <a class="food-pill
+                        @(Model.MenuStatus == MenuStatusCodes.Inactive
+                           ? "active"
+                           : "")"
+                       href="@Url.Action(
+                                                  "Index",
+                                                  "AdminMenu",
+                                                  new
+                                                  {
+                                                      menuId = Model.SelectedMenuId,
+                                                      menuKeyword = Model.MenuKeyword,
+                                                      menuStatus = MenuStatusCodes.Inactive,
+                                                      dishKeyword = Model.DishKeyword,
+                                                      category = Model.Category,
+                                                      dishStatus = Model.DishStatus
+                                                  })">
+
+                        Ngừng áp dụng
+
+                    </a>
+
+                </div>
+
+
+                <!-- SEARCH MENU -->
+                <form method="get"
+                      asp-controller="AdminMenu"
+                      asp-action="Index"
+                      class="food-search-box">
+
+                    <input type="hidden"
+                           name="menuId"
+                           value="@Model.SelectedMenuId" />
+
+                    <input type="hidden"
+                           name="menuStatus"
+                           value="@Model.MenuStatus" />
+
+                    <input type="hidden"
+                           name="dishKeyword"
+                           value="@Model.DishKeyword" />
+
+                    <input type="hidden"
+                           name="category"
+                           value="@Model.Category" />
+
+                    <input type="hidden"
+                           name="dishStatus"
+                           value="@Model.DishStatus" />
+
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input type="text"
+                           name="menuKeyword"
+                           value="@Model.MenuKeyword"
+                           placeholder="Tìm tên hoặc mã thực đơn..." />
+
+                </form>
+
+            </div>
+
+
+            <!-- =============================================
+                 MENU CARDS
+                 ============================================= -->
+
+            <div class="food-menu-list">
+
+                @if (Model.Menus.Count == 0)
+                {
+                    <div class="food-empty">
+                        Không tìm thấy thực đơn phù hợp.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var menu in Model.Menus)
+                    {
+                        var selected =
+                            menu.MenuId ==
+                            Model.SelectedMenuId;
+
+                        <div class="food-menu-card @(selected ? "selected" : "")">
+
+
+                            <!-- TOP -->
+                            <div class="food-menu-card-top">
+
+                                <div class="food-menu-main">
+
+                                    <div class="food-menu-meta">
+
+                                        <span class="food-status
+                                            @(menu.Status == MenuStatusCodes.Active
+                                                ? "active"
+                                                : "inactive")">
+
+                                            @(string.IsNullOrWhiteSpace(menu.StatusName)
+                                                ? StatusDisplayNames.GetMenuStatusName(menu.Status)
+                                                : menu.StatusName)
+
+                                        </span>
+
+                                        <span class="food-code">
+                                            MÃ: @menu.MenuCode
+                                        </span>
+
+                                    </div>
+
+
+                                    <h4>
+                                        @menu.MenuName
+                                    </h4>
+
+
+                                    @if (!string.IsNullOrWhiteSpace(menu.Description))
+                                    {
+                                        <p>
+                                            @menu.Description
+                                        </p>
+                                    }
+
+                                </div>
+
+
+                                <div class="food-menu-price">
+
+                                    <strong>
+                                        @menu.PricePerTable.ToString("N0")
+                                    </strong>
+
+                                    <span>
+                                        VNĐ / bàn
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- =================================
+                                 THỰC ĐƠN ĐƯỢC CHỌN
+                                 ================================= -->
+                            @if (selected)
+                            {
+                                <div class="food-composition">
+
+
+                                    <div class="food-composition-header">
+
+                                        <strong>
+                                            Danh mục
+                                            @Model.MenuDishes.Count
+                                            món:
+                                        </strong>
+
+                                        <span>
+                                            Thành phần thực đơn
+                                        </span>
+
+                                    </div>
+
+
+                                    <!-- ADD DISH -->
+                                    <form method="post"
+                                          asp-controller="AdminMenu"
+                                          asp-action="AddDishToMenu"
+                                          class="food-add-dish-form">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="menuId"
+                                               value="@menu.MenuId" />
+
+
+                                        <select name="dishId"
+                                                required>
+
+                                            <option value="">
+                                                Chọn món đang phục vụ...
+                                            </option>
+
+
+                                            @foreach (
+                                                var menuDish
+                                                in Model.ActiveDishes
+                                                    .Where(
+                                                        x =>
+                                                            !Model
+                                                                .MenuDishes
+                                                                .Any(
+                                                                    ct =>
+                                                                        ct.DishId ==
+                                                                        x.DishId
+                                                                )
+                                                    )
+                                            )
+                                            {
+                                                <option value="@menuDish.DishId">
+                                                    @menuDish.DishCode - @menuDish.DishName
+                                                </option>
+                                            }
+
+                                        </select>
+
+
+                                        <button type="submit">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+
+                                    </form>
+
+
+                                    <!-- COMPOSITION LIST -->
+                                    @if (Model.MenuDishes.Count == 0)
+                                    {
+                                        <div class="food-composition-empty">
+                                            Thực đơn chưa có món ăn.
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="food-composition-grid"
+                                             id="compositionList">
+
+
+                                            @for (
+                                                var i = 0;
+                                                i < Model.MenuDishes.Count;
+                                                i++
+                                            )
+                                            {
+                                                var menuDish =
+                                                    Model.MenuDishes[i];
+
+
+                                                <div class="food-composition-item"
+                                                     data-menuDish-id="@menuDish.DishId"
+                                                     data-index="@i">
+
+
+                                                    <div class="food-composition-text">
+
+                                                        <span class="food-order">
+                                                            @(i + 1).
+                                                        </span>
+
+                                                        <span>
+                                                            @menuDish.DishName
+                                                        </span>
+
+                                                    </div>
+
+
+                                                    <div class="food-composition-actions">
+
+                                                        <button type="button"
+                                                                class="food-small-btn move-dish"
+                                                                data-index="@i"
+                                                                data-direction="up"
+                                                                title="Đưa lên">
+
+                                                            <i class="fa-solid fa-chevron-up"></i>
+
+                                                        </button>
+
+
+                                                        <button type="button"
+                                                                class="food-small-btn move-dish"
+                                                                data-index="@i"
+                                                                data-direction="down"
+                                                                title="Đưa xuống">
+
+                                                            <i class="fa-solid fa-chevron-down"></i>
+
+                                                        </button>
+
+
+                                                        <form method="post"
+                                                              asp-controller="AdminMenu"
+                                                              asp-action="RemoveDishFromMenu"
+                                                              onsubmit="return confirm('Bỏ món này khỏi thực đơn?');">
+
+                                                            @Html.AntiForgeryToken()
+
+                                                            <input type="hidden"
+                                                                   name="menuId"
+                                                                   value="@menu.MenuId" />
+
+                                                            <input type="hidden"
+                                                                   name="dishId"
+                                                                   value="@menuDish.DishId" />
+
+                                                            <button type="submit"
+                                                                    class="food-small-btn danger">
+
+                                                                <i class="fa-solid fa-xmark"></i>
+
+                                                            </button>
+
+                                                        </form>
+
+                                                    </div>
+
+                                                </div>
+                                            }
+
+                                        </div>
+
+
+                                        <form method="post"
+                                              asp-controller="AdminMenu"
+                                              asp-action="ReorderMenuDishes"
+                                              id="reorderForm">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="menuId"
+                                                   value="@menu.MenuId" />
+
+                                            <input type="hidden"
+                                                   name="dishIds"
+                                                   id="reorderIds" />
+
+                                        </form>
+                                    }
+
+                                </div>
+                            }
+
+
+                            <!-- ACTIONS -->
+                            <div class="food-menu-actions">
+
+
+                                <button type="button"
+                                        class="food-action gold edit-menu-button"
+                                        data-id="@menu.MenuId"
+                                        data-name="@menu.MenuName"
+                                        data-description="@menu.Description"
+                                        data-price="@menu.PricePerTable.ToString(
+                                                                                CultureInfo.InvariantCulture
+                                                                            )">
+
+                                    <i class="fa-solid fa-pen"></i>
+
+                                    Chỉnh sửa
+
+                                </button>
+
+
+                                @if (!selected)
+                                {
+                                    <a class="food-action secondary"
+                                       href="@Url.Action(
+                                                                                  "Index",
+                                                                                  "AdminMenu",
+                                                                                  new
+                                                                                  {
+                                                                                      menuId = menu.MenuId,
+                                                                                      menuKeyword = Model.MenuKeyword,
+                                                                                      menuStatus = Model.MenuStatus,
+                                                                                      dishKeyword = Model.DishKeyword,
+                                                                                      category = Model.Category,
+                                                                                      dishStatus = Model.DishStatus
+                                                                                  })">
+
+                                        Xem chi tiết
+
+                                        <i class="fa-solid fa-arrow-right"></i>
+
+                                    </a>
+                                }
+
+
+                                <form method="post"
+                                      asp-controller="AdminMenu"
+                                      asp-action="UpdateMenuStatus">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden"
+                                           name="menuId"
+                                           value="@menu.MenuId" />
+
+                                    <input type="hidden"
+                                           name="status"
+                                           value="@(menu.Status == MenuStatusCodes.Active
+                                                                                   ? MenuStatusCodes.Inactive
+                                                                                   : MenuStatusCodes.Active)" />
+
+
+                                    <button type="submit"
+                                            class="food-status-toggle
+                                        @(menu.Status == MenuStatusCodes.Active
+                                            ? "on"
+                                            : "")"
+                                            title="Đổi trạng thái"
+                                            onclick="return confirm('Xác nhận đổi trạng thái thực đơn?');">
+
+                                        <span></span>
+
+                                    </button>
+
+                                </form>
+
+                            </div>
+
+                        </div>
+                    }
+                }
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             RIGHT: MÓN ĂN
+             ================================================= -->
+        <div class="food-dish-column">
+
+
+            <div class="food-panel food-dish-panel">
+
+
+                <!-- HEADER -->
+                <div class="food-dish-header">
+
+                    <div>
+
+                        <div class="food-heading-row">
+
+                            <h3>
+                                Kho Món Ăn & Cấu Phần Chi Tiết
+                            </h3>
+
+                            <span class="food-count">
+                                @totalDishes món
+                            </span>
+
+                        </div>
+
+                        <p>
+                            Quản lý món ăn chuẩn hóa,
+                            nhóm món và trạng thái phục vụ.
+                        </p>
+
+                    </div>
+
+
+                    <button type="button"
+                            class="food-button food-button-dark"
+                            data-open-modal="createDishModal">
+
+                        <i class="fa-solid fa-plus"></i>
+
+                        Thêm món mới
+
+                    </button>
+
+                </div>
+
+
+                <!-- CATEGORY FILTER -->
+                <div class="food-pills food-category-pills">
+
+
+                    <a class="food-pill
+                        @(string.IsNullOrWhiteSpace(Model.Category)
+                           ? "active"
+                           : "")"
+                       href="@Url.Action(
+                                                  "Index",
+                                                  "AdminMenu",
+                                                  new
+                                                  {
+                                                      menuId = Model.SelectedMenuId,
+                                                      menuKeyword = Model.MenuKeyword,
+                                                      menuStatus = Model.MenuStatus,
+                                                      dishKeyword = Model.DishKeyword,
+                                                      category = "",
+                                                      dishStatus = Model.DishStatus
+                                                  })">
+
+                        Tất cả (@totalDishes)
+
+                    </a>
+
+
+                    <a class="food-pill
+                        @(Model.Category == "Món khai vị"
+                           ? "active"
+                           : "")"
+                       href="@Url.Action(
+                                                  "Index",
+                                                  "AdminMenu",
+                                                  new
+                                                  {
+                                                      menuId = Model.SelectedMenuId,
+                                                      menuKeyword = Model.MenuKeyword,
+                                                      menuStatus = Model.MenuStatus,
+                                                      dishKeyword = Model.DishKeyword,
+                                                      category = "Món khai vị",
+                                                      dishStatus = Model.DishStatus
+                                                  })">
+
+                        Khai vị (@appetizerCount)
+
+                    </a>
+
+
+                    <a class="food-pill
+                        @(Model.Category == "Món súp"
+                           ? "active"
+                           : "")"
+                       href="@Url.Action(
+                                                  "Index",
+                                                  "AdminMenu",
+                                                  new
+                                                  {
+                                                      menuId = Model.SelectedMenuId,
+                                                      menuKeyword = Model.MenuKeyword,
+                                                      menuStatus = Model.MenuStatus,
+                                                      dishKeyword = Model.DishKeyword,
+                                                      category = "Món súp",
+                                                      dishStatus = Model.DishStatus
+                                                  })">
+
+                        Món súp (@soupCount)
+
+                    </a>
+
+
+                    <a class="food-pill
+                        @(Model.Category == "Món chính"
+                           ? "active"
+                           : "")"
+                       href="@Url.Action(
+                                                  "Index",
+                                                  "AdminMenu",
+                                                  new
+                                                  {
+                                                      menuId = Model.SelectedMenuId,
+                                                      menuKeyword = Model.MenuKeyword,
+                                                      menuStatus = Model.MenuStatus,
+                                                      dishKeyword = Model.DishKeyword,
+                                                      category = "Món chính",
+                                                      dishStatus = Model.DishStatus
+                                                  })">
+
+                        Món chính (@mainCourseCount)
+
+                    </a>
+
+
+                    <a class="food-pill
+                        @(Model.Category == "Món tráng miệng"
+                           ? "active"
+                           : "")"
+                       href="@Url.Action(
+                                                  "Index",
+                                                  "AdminMenu",
+                                                  new
+                                                  {
+                                                      menuId = Model.SelectedMenuId,
+                                                      menuKeyword = Model.MenuKeyword,
+                                                      menuStatus = Model.MenuStatus,
+                                                      dishKeyword = Model.DishKeyword,
+                                                      category = "Món tráng miệng",
+                                                      dishStatus = Model.DishStatus
+                                                  })">
+
+                        Tráng miệng (@dessertCount)
+
+                    </a>
+
+                </div>
+
+
+                <!-- SEARCH -->
+                <form method="get"
+                      asp-controller="AdminMenu"
+                      asp-action="Index"
+                      class="food-search-box">
+
+                    <input type="hidden"
+                           name="menuId"
+                           value="@Model.SelectedMenuId" />
+
+                    <input type="hidden"
+                           name="menuKeyword"
+                           value="@Model.MenuKeyword" />
+
+                    <input type="hidden"
+                           name="menuStatus"
+                           value="@Model.MenuStatus" />
+
+                    <input type="hidden"
+                           name="category"
+                           value="@Model.Category" />
+
+                    <input type="hidden"
+                           name="dishStatus"
+                           value="@Model.DishStatus" />
+
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+
+                    <input type="text"
+                           name="dishKeyword"
+                           value="@Model.DishKeyword"
+                           placeholder="Tìm kiếm theo tên hoặc mã món ăn..." />
+
+                </form>
+
+
+                <!-- TABLE -->
+                <div class="food-table-wrapper">
+
+                    <table class="food-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Mã & Hình ảnh
+                                </th>
+
+                                <th>
+                                    Tên món ăn
+                                </th>
+
+                                <th>
+                                    Phân loại
+                                </th>
+
+                                <th>
+                                    Trạng thái
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @if (Model.Dishes.Count == 0)
+                            {
+                                <tr>
+
+                                    <td colspan="4">
+
+                                        <div class="food-empty">
+                                            Không tìm thấy món ăn phù hợp.
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var dish in Model.Dishes)
+                                {
+                                    <tr class="food-dish-row edit-dish-row"
+                                        tabindex="0"
+                                        role="button"
+                                        aria-label="Chỉnh sửa món @dish.DishName"
+                                        data-id="@dish.DishId"
+                                        data-name="@dish.DishName"
+                                        data-category="@dish.Category"
+                                        data-image="@dish.ImageUrl"
+                                        data-status="@dish.Status"
+                                        data-status-name="@(string.IsNullOrWhiteSpace(dish.StatusName)
+                                            ? StatusDisplayNames.GetDishStatusName(dish.Status)
+                                            : dish.StatusName)">
+
+
+                                        <!-- IMAGE + CODE -->
+                                        <td>
+
+                                            <div class="food-dish-id">
+
+                                                @if (!string.IsNullOrWhiteSpace(dish.ImageUrl))
+                                                {
+                                                    <img src="@($"https://localhost:7101{dish.ImageUrl}")"
+                                                         alt="@dish.DishName"
+                                                         loading="lazy" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="food-no-image">
+                                                        <i class="fa-regular fa-image"></i>
+                                                    </div>
+                                                }
+
+
+                                                <span>
+                                                    @dish.DishCode
+                                                </span>
+
+                                            </div>
+
+                                        </td>
+
+
+                                        <!-- NAME -->
+                                        <td>
+
+                                            <strong class="food-dish-name">
+                                                @dish.DishName
+                                            </strong>
+
+                                        </td>
+
+
+                                        <!-- GROUP -->
+                                        <td>
+
+                                            <span class="food-group-badge">
+                                                @(dish.Category ?? "Chưa phân nhóm")
+                                            </span>
+
+                                        </td>
+
+
+                                        <!-- STATUS -->
+                                        <td>
+
+                                            <span class="food-dish-status
+                                                @(dish.Status == DishStatusCodes.Active
+                                                    ? "serving"
+                                                    : "stopped")">
+
+                                                @(string.IsNullOrWhiteSpace(dish.StatusName)
+                                                    ? StatusDisplayNames.GetDishStatusName(dish.Status)
+                                                    : dish.StatusName)
+
+                                            </span>
+
+                                        </td>
+                                    </tr>
+                                }
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <nav class="food-pagination"
+                     id="dishPagination"
+                     aria-label="Phân trang danh sách món ăn"
+                     hidden>
+                    <button type="button"
+                            class="food-page-button"
+                            id="dishPreviousPage"
+                            aria-label="Trang trước">
+                        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                    </button>
+
+                    <div class="food-page-numbers" id="dishPageNumbers"></div>
+
+                    <button type="button"
+                            class="food-page-button"
+                            id="dishNextPage"
+                            aria-label="Trang sau">
+                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                    </button>
+                </nav>
+
+
+                <!-- FOOT NOTE -->
+                <div class="food-soft-delete-note">
+
+                    <i class="fa-solid fa-circle-check"></i>
+
+                    <span>
+                        Món ăn không bị xóa cứng.
+                        Hãy sử dụng trạng thái
+                        <strong>Ngừng phục vụ</strong>
+                        khi món không còn được sử dụng.
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     MODAL: THÊM THỰC ĐƠN
+     ========================================================= -->
+
+<div class="food-modal"
+     id="createMenuModal">
+
+    <div class="food-modal-box">
+
+        <div class="food-modal-header">
+
+            <div>
+                <h3>Thêm thực đơn mới</h3>
+                <span>Mã thực đơn được hệ thống tự sinh.</span>
+            </div>
+
+            <button type="button"
+                    data-close-modal>
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <form method="post"
+              asp-controller="AdminMenu"
+              asp-action="CreateMenu"
+              class="food-modal-form">
+
+            @Html.AntiForgeryToken()
+
+
+            <div class="food-form-field">
+
+                <label>
+                    Tên thực đơn
+                </label>
+
+                <input type="text"
+                       name="MenuName"
+                       required />
+
+            </div>
+
+
+            <div class="food-form-field">
+
+                <label>
+                    Mô tả
+                </label>
+
+                <textarea name="Description"
+                          rows="4"></textarea>
+
+            </div>
+
+
+            <div class="food-form-field">
+
+                <label>
+                    Giá mỗi bàn
+                </label>
+
+                <div class="food-price-input">
+
+                    <input type="number"
+                           name="PricePerTable"
+                           min="0"
+                           step="1000"
+                           required />
+
+                    <span>
+                        VNĐ
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="food-modal-actions">
+
+                <button type="button"
+                        class="food-button food-button-light"
+                        data-close-modal>
+                    Hủy
+                </button>
+
+                <button type="submit"
+                        class="food-button food-button-gold">
+
+                    <i class="fa-solid fa-floppy-disk"></i>
+
+                    Tạo thực đơn
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     MODAL: SỬA THỰC ĐƠN
+     ========================================================= -->
+
+<div class="food-modal"
+     id="editMenuModal">
+
+    <div class="food-modal-box">
+
+        <div class="food-modal-header">
+
+            <div>
+                <h3>Cập nhật thực đơn</h3>
+                <span>Chỉnh sửa thông tin cơ bản và giá mỗi bàn.</span>
+            </div>
+
+            <button type="button"
+                    data-close-modal>
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <form method="post"
+              asp-controller="AdminMenu"
+              asp-action="UpdateMenu"
+              class="food-modal-form">
+
+            @Html.AntiForgeryToken()
+
+
+            <input type="hidden"
+                   name="MenuId"
+                   id="editMenuId" />
+
+
+            <div class="food-form-field">
+
+                <label>
+                    Tên thực đơn
+                </label>
+
+                <input type="text"
+                       name="MenuName"
+                       id="editMenuName"
+                       required />
+
+            </div>
+
+
+            <div class="food-form-field">
+
+                <label>
+                    Mô tả
+                </label>
+
+                <textarea name="Description"
+                          id="editMenuDescription"
+                          rows="4"></textarea>
+
+            </div>
+
+
+            <div class="food-form-field">
+
+                <label>
+                    Giá mỗi bàn
+                </label>
+
+                <div class="food-price-input">
+
+                    <input type="number"
+                           name="PricePerTable"
+                           id="editMenuPrice"
+                           min="0"
+                           step="1000"
+                           required />
+
+                    <span>
+                        VNĐ
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="food-modal-actions">
+
+                <button type="button"
+                        class="food-button food-button-light"
+                        data-close-modal>
+                    Hủy
+                </button>
+
+                <button type="submit"
+                        class="food-button food-button-gold">
+
+                    <i class="fa-solid fa-floppy-disk"></i>
+
+                    Lưu thay đổi
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     MODAL: THÊM MÓN
+     ========================================================= -->
+
+<div class="food-modal"
+     id="createDishModal">
+
+    <div class="food-modal-box">
+
+        <div class="food-modal-header">
+
+            <div>
+                <h3>Thêm món ăn mới</h3>
+                <span>Mã món ăn được hệ thống tự sinh.</span>
+            </div>
+
+            <button type="button"
+                    data-close-modal>
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <form method="post"
+              enctype="multipart/form-data"
+              asp-controller="AdminMenu"
+              asp-action="CreateDish"
+              class="food-modal-form">
+
+            @Html.AntiForgeryToken()
+
+
+            <div class="food-form-field">
+
+                <label>
+                    Tên món ăn
+                </label>
+
+                <input type="text"
+                       name="DishName"
+                       required />
+
+            </div>
+
+
+            <div class="food-form-field">
+
+                <label>
+                    Nhóm món
+                </label>
+
+                <select name="Category"
+                        required>
+
+                    <option value="Món khai vị">
+                        Món khai vị
+                    </option>
+
+                    <option value="Món súp">
+                        Món súp
+                    </option>
+
+                    <option value="Món chính">
+                        Món chính
+                    </option>
+
+                    <option value="Món tráng miệng">
+                        Món tráng miệng
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="food-form-field">
+
+                <label>
+                    Hình ảnh
+                </label>
+
+                <input type="file"
+                       name="Image"
+                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+
+                <small>
+                    JPG, JPEG, PNG hoặc WEBP. Tối đa 5MB.
+                </small>
+
+            </div>
+
+
+            <div class="food-modal-actions">
+
+                <button type="button"
+                        class="food-button food-button-light"
+                        data-close-modal>
+                    Hủy
+                </button>
+
+                <button type="submit"
+                        class="food-button food-button-dark">
+
+                    <i class="fa-solid fa-plus"></i>
+
+                    Thêm món
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     MODAL: SỬA MÓN
+     ========================================================= -->
+
+<div class="food-modal"
+     id="editDishModal">
+
+    <div class="food-modal-box">
+
+        <div class="food-modal-header">
+
+            <div>
+                <h3>Cập nhật món ăn</h3>
+                <span>Chỉnh sửa thông tin hoặc thay đổi trạng thái món ăn.</span>
+            </div>
+
+            <button type="button"
+                    data-close-modal>
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <form method="post"
+              enctype="multipart/form-data"
+              asp-controller="AdminMenu"
+              asp-action="UpdateDish"
+              class="food-modal-form">
+
+            @Html.AntiForgeryToken()
+
+
+            <input type="hidden"
+                   name="DishId"
+                   id="editDishId" />
+
+
+            <div class="food-form-field">
+
+                <label>
+                    Tên món ăn
+                </label>
+
+                <input type="text"
+                       name="DishName"
+                       id="editDishName"
+                       required />
+
+            </div>
+
+
+            <div class="food-form-field">
+
+                <label>
+                    Nhóm món
+                </label>
+
+                <select name="Category"
+                        id="editDishGroup"
+                        required>
+
+                    <option value="Món khai vị">
+                        Món khai vị
+                    </option>
+
+                    <option value="Món súp">
+                        Món súp
+                    </option>
+
+                    <option value="Món chính">
+                        Món chính
+                    </option>
+
+                    <option value="Món tráng miệng">
+                        Món tráng miệng
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="food-form-field">
+
+                <label>
+                    Thay hình ảnh
+                </label>
+
+                <input type="file"
+                       name="NewImage"
+                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+
+
+                <label class="food-checkbox"
+                       id="deleteImageWrapper">
+
+                    <input type="checkbox"
+                           name="DeleteImage"
+                           value="true"
+                           id="deleteDishImage" />
+
+                    Xóa hình ảnh hiện tại
+
+                </label>
+
+            </div>
+
+
+            <div class="food-modal-actions">
+
+                <button type="button"
+                        class="food-button food-button-light"
+                        data-close-modal>
+                    Hủy
+                </button>
+
+                <button type="submit"
+                        class="food-button food-button-gold">
+
+                    <i class="fa-solid fa-floppy-disk"></i>
+
+                    Lưu thay đổi
+
+                </button>
+
+            </div>
+
+        </form>
+
+        <form method="post"
+              asp-controller="AdminMenu"
+              asp-action="UpdateDishStatus"
+              class="food-dish-status-form">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" name="dishId" id="editDishStatusId" />
+            <input type="hidden" name="status" id="editDishStatusValue" />
+
+            <div class="food-status-form-copy">
+                <span>Trạng thái hiện tại</span>
+                <strong id="editDishCurrentStatus"></strong>
+            </div>
+
+            <button type="submit"
+                    class="food-button food-button-status"
+                    id="editDishStatusButton"
+                    onclick="return confirm('Xác nhận đổi trạng thái món ăn?');">
+                <i class="fa-solid fa-eye-slash" aria-hidden="true"></i>
+                <span>Ngừng phục vụ</span>
+            </button>
+        </form>
+
+    </div>
+
+</div>
+
+
+
+@section Scripts {
+
+    <script>
+
+        // =====================================================
+        // MODAL
+        // =====================================================
+
+        function openFoodModal(id) {
+
+            const modal =
+                document.getElementById(id);
+
+            if (modal) {
+                modal.classList.add("show");
+            }
+
+        }
+
+
+        function closeFoodModal(modal) {
+
+            if (modal) {
+                modal.classList.remove("show");
+            }
+
+        }
+
+
+        document
+            .querySelectorAll("[data-open-modal]")
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        openFoodModal(
+                            button.dataset.openModal
+                        );
+
+                    }
+                );
+
+            });
+
+
+        document
+            .querySelectorAll("[data-close-modal]")
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        closeFoodModal(
+                            button.closest(".food-modal")
+                        );
+
+                    }
+                );
+
+            });
+
+
+        document
+            .querySelectorAll(".food-modal")
+            .forEach(function (modal) {
+
+                modal.addEventListener(
+                    "click",
+                    function (event) {
+
+                        if (event.target === modal) {
+
+                            closeFoodModal(modal);
+
+                        }
+
+                    }
+                );
+
+            });
+
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (event.key === "Escape") {
+
+                    document
+                        .querySelectorAll(
+                            ".food-modal.show"
+                        )
+                        .forEach(
+                            function (modal) {
+
+                                closeFoodModal(modal);
+
+                            }
+                        );
+
+                }
+
+            }
+        );
+
+
+        // =====================================================
+        // EDIT MENU
+        // =====================================================
+
+        document
+            .querySelectorAll(
+                ".edit-menu-button"
+            )
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        document.getElementById(
+                            "editMenuId"
+                        ).value =
+                            button.dataset.id;
+
+
+                        document.getElementById(
+                            "editMenuName"
+                        ).value =
+                            button.dataset.name ?? "";
+
+
+                        document.getElementById(
+                            "editMenuDescription"
+                        ).value =
+                            button.dataset.description ?? "";
+
+
+                        document.getElementById(
+                            "editMenuPrice"
+                        ).value =
+                            button.dataset.price ?? "0";
+
+
+                        openFoodModal(
+                            "editMenuModal"
+                        );
+
+                    }
+                );
+
+            });
+
+
+        // =====================================================
+        // EDIT DISH
+        // =====================================================
+
+        function openDishEditor(row) {
+
+                        document.getElementById(
+                            "editDishId"
+                        ).value =
+                            row.dataset.id;
+
+
+                        document.getElementById(
+                            "editDishName"
+                        ).value =
+                            row.dataset.name ?? "";
+
+
+                        document.getElementById(
+                            "editDishGroup"
+                        ).value =
+                            row.dataset.category
+                            ?? "Món chính";
+
+
+                        document.getElementById(
+                            "deleteDishImage"
+                        ).checked =
+                            false;
+
+
+                        document.getElementById(
+                            "deleteImageWrapper"
+                        ).style.display =
+                            row.dataset.image
+                                ? "flex"
+                                : "none";
+
+                        const isServing =
+                            row.dataset.status === "@DishStatusCodes.Active";
+
+                        document.getElementById(
+                            "editDishStatusId"
+                        ).value = row.dataset.id;
+
+                        document.getElementById(
+                            "editDishStatusValue"
+                        ).value = isServing
+                            ? "@DishStatusCodes.Inactive"
+                            : "@DishStatusCodes.Active";
+
+                        const currentStatus = document.getElementById(
+                            "editDishCurrentStatus"
+                        );
+                        currentStatus.textContent =
+                            row.dataset.statusName ?? "";
+                        currentStatus.className = isServing
+                            ? "serving"
+                            : "stopped";
+
+                        const statusButton = document.getElementById(
+                            "editDishStatusButton"
+                        );
+                        statusButton.querySelector("i").className = isServing
+                            ? "fa-solid fa-eye-slash"
+                            : "fa-solid fa-eye";
+                        statusButton.querySelector("span").textContent = isServing
+                            ? "Ngừng phục vụ"
+                            : "Phục vụ trở lại";
+
+
+                        openFoodModal(
+                            "editDishModal"
+                        );
+
+        }
+
+        document
+            .querySelectorAll(".edit-dish-row")
+            .forEach(function (row) {
+
+                row.addEventListener("click", function () {
+                    openDishEditor(row);
+                });
+
+                row.addEventListener("keydown", function (event) {
+                    if (event.key !== "Enter" && event.key !== " ") {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    openDishEditor(row);
+                });
+
+            });
+
+
+        // =====================================================
+        // DISH PAGINATION
+        // =====================================================
+
+        const dishRows = Array.from(
+            document.querySelectorAll(".edit-dish-row")
+        );
+        const dishesPerPage = 10;
+        const visibleDishPageCount = 5;
+        const dishPageCount = Math.ceil(
+            dishRows.length / dishesPerPage
+        );
+        const dishPagination = document.getElementById(
+            "dishPagination"
+        );
+        const dishPageNumbers = document.getElementById(
+            "dishPageNumbers"
+        );
+        const dishPreviousPage = document.getElementById(
+            "dishPreviousPage"
+        );
+        const dishNextPage = document.getElementById(
+            "dishNextPage"
+        );
+        let currentDishPage = 1;
+
+        function renderDishPage(page) {
+            currentDishPage = Math.min(
+                Math.max(page, 1),
+                Math.max(dishPageCount, 1)
+            );
+
+            const firstDishIndex =
+                (currentDishPage - 1) * dishesPerPage;
+            const lastDishIndex =
+                firstDishIndex + dishesPerPage;
+
+            dishRows.forEach(function (row, index) {
+                row.hidden =
+                    index < firstDishIndex || index >= lastDishIndex;
+            });
+
+            dishPageNumbers.replaceChildren();
+
+            const firstVisiblePage =
+                Math.floor(
+                    (currentDishPage - 1) / visibleDishPageCount
+                ) * visibleDishPageCount + 1;
+            const lastVisiblePage = Math.min(
+                firstVisiblePage + visibleDishPageCount - 1,
+                dishPageCount
+            );
+
+            for (let pageNumber = firstVisiblePage;
+                pageNumber <= lastVisiblePage;
+                pageNumber++) {
+                const pageButton = document.createElement("button");
+                pageButton.type = "button";
+                pageButton.className = "food-page-button";
+                pageButton.textContent = pageNumber;
+                pageButton.setAttribute(
+                    "aria-label",
+                    `Chuyển đến trang ${pageNumber}`
+                );
+
+                if (pageNumber === currentDishPage) {
+                    pageButton.classList.add("active");
+                    pageButton.setAttribute("aria-current", "page");
+                }
+
+                pageButton.addEventListener("click", function () {
+                    renderDishPage(pageNumber);
+                });
+
+                dishPageNumbers.appendChild(pageButton);
+            }
+
+            dishPreviousPage.disabled = currentDishPage === 1;
+            dishNextPage.disabled =
+                currentDishPage === dishPageCount;
+        }
+
+        if (dishPageCount > 1) {
+            dishPagination.hidden = false;
+            dishPreviousPage.addEventListener("click", function () {
+                renderDishPage(currentDishPage - 1);
+            });
+            dishNextPage.addEventListener("click", function () {
+                renderDishPage(currentDishPage + 1);
+            });
+        }
+
+        if (dishPageCount > 0) {
+            renderDishPage(1);
+        }
+
+
+        // =====================================================
+        // REORDER DISH
+        // =====================================================
+
+        function getCompositionIds() {
+
+            return Array.from(
+                document.querySelectorAll(
+                    "#compositionList .food-composition-item"
+                )
+            ).map(
+                function (row) {
+
+                    return Number(
+                        row.dataset.dishId
+                    );
+
+                }
+            );
+
+        }
+
+
+        document
+            .querySelectorAll(".move-dish")
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        const ids =
+                            getCompositionIds();
+
+
+                        const index =
+                            Number(
+                                button.dataset.index
+                            );
+
+
+                        const targetIndex =
+                            button.dataset.direction
+                            === "up"
+                                ? index - 1
+                                : index + 1;
+
+
+                        if (
+                            targetIndex < 0 ||
+                            targetIndex >= ids.length
+                        ) {
+                            return;
+                        }
+
+
+                        const temp =
+                            ids[index];
+
+
+                        ids[index] =
+                            ids[targetIndex];
+
+
+                        ids[targetIndex] =
+                            temp;
+
+
+                        document.getElementById(
+                            "reorderIds"
+                        ).value =
+                            ids.join(",");
+
+
+                        document.getElementById(
+                            "reorderForm"
+                        ).submit();
+
+                    }
+                );
+
+            });
+
+                    // =====================================================
+        // GIỮ NGUYÊN VỊ TRÍ CUỘN SAU KHI THAO TÁC
+        // =====================================================
+
+        const foodScrollKey = "adminMenuScrollPosition";
+
+
+        function saveFoodScrollPosition() {
+
+            sessionStorage.setItem(
+                foodScrollKey,
+                window.scrollY.toString()
+            );
+
+        }
+
+
+        // Lưu vị trí khi submit các form trong trang thực đơn
+        document
+            .querySelectorAll(
+                ".food-page form, .food-modal form"
+            )
+            .forEach(function (form) {
+
+                form.addEventListener(
+                    "submit",
+                    saveFoodScrollPosition
+                );
+
+            });
+
+
+        // Lưu vị trí khi click các link lọc / xem chi tiết
+        document
+            .querySelectorAll(
+                ".food-page a[href]"
+            )
+            .forEach(function (link) {
+
+                link.addEventListener(
+                    "click",
+                    saveFoodScrollPosition
+                );
+
+            });
+
+
+        // Sau khi trang load lại,
+        // đưa màn hình về đúng vị trí trước đó
+        window.addEventListener(
+            "pageshow",
+            function () {
+
+                const savedPosition =
+                    sessionStorage.getItem(
+                        foodScrollKey
+                    );
+
+                if (savedPosition === null) {
+                    return;
+                }
+
+                setTimeout(
+                    function () {
+
+                        window.scrollTo({
+                            top: Number(savedPosition),
+                            left: 0,
+                            behavior: "auto"
+                        });
+
+                        sessionStorage.removeItem(
+                            foodScrollKey
+                        );
+
+                    },
+                    50
+                );
+
+            }
+        );
+
+    </script>
+
+}

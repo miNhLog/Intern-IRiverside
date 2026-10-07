@@ -1,0 +1,197 @@
+/* Typography riêng của khu vực nội dung quản trị; sidebar giữ nguyên stylesheet của nó. */
+#adminMainContent {
+    font-family: "Be Vietnam Pro", sans-serif;
+    color: #1e242b;
+}
+
+#adminMainContent :is(p, span, strong, small, label, td, th, button, input, select,
+    textarea, a, li) {
+    font-family: "Be Vietnam Pro", sans-serif !important;
+}
+
+#adminMainContent :is(h1, h2, h3, h4, h5, h6),
+#adminMainContent :is(.font-serif) {
+    font-family: "Be Vietnam Pro", sans-serif !important;
+}
+
+/* Topbar dùng chung cho Back Office; sidebar không chịu ảnh hưởng bởi các selector này. */
+.backoffice-topbar {
+    min-height: 70px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 0 30px;
+    background: #fff;
+    border-bottom: 1px solid #e9e6df;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
+    position: sticky;
+    top: 0;
+    z-index: 30;
+}
+
+.topbar-left { min-width: 0; display: flex; align-items: center; }
+.topbar-search { width: min(420px, 34vw); height: 44px; position: relative; display: flex; align-items: center; gap: 11px; box-sizing: border-box; padding: 0 14px; border: 1px solid transparent; border-radius: 12px; color: #142033; background: #f5f6f7; }
+.topbar-search:focus-within { border-color: #e5d3b0; background: #fff; box-shadow: 0 0 0 3px rgba(183, 138, 59, .1); }
+.topbar-search i { color: #142033; font-size: 17px; }
+.topbar-search input { width: 100%; min-width: 0; border: 0; outline: 0; color: #142033; background: transparent; font: 400 14px/1.25 "Be Vietnam Pro", sans-serif; }
+.topbar-search input::placeholder { color: #8290a3; opacity: 1; }
+.topbar-search-results { position: absolute; top: calc(100% + 8px); left: 0; z-index: 50; width: 100%; max-height: 280px; display: none; overflow-y: auto; padding: 6px; box-sizing: border-box; border: 1px solid #e9e6df; border-radius: 10px; background: #fff; box-shadow: 0 12px 28px rgba(15, 23, 42, .13); }
+.topbar-search-results.is-open { display: block; }
+.topbar-search-result { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px; border: 0; border-radius: 7px; color: #2b3440; background: transparent; font: 500 13px/1.25 "Be Vietnam Pro", sans-serif; text-align: left; cursor: pointer; }
+.topbar-search-result:hover, .topbar-search-result:focus-visible { color: #9b722d; background: #fbf7ef; outline: none; }
+.topbar-search-result i { width: 16px; color: #9b722d; text-align: center; }
+.topbar-search-empty { display: block; padding: 11px 10px; color: #728096; font-size: 13px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }
+.topbar-right { min-width: 0; display: flex; align-items: center; gap: 18px; }
+.topbar-date { display: inline-flex; align-items: center; gap: 11px; color: #2b3440; font-size: 14px; font-weight: 500; white-space: nowrap; }
+.topbar-date i { color: #263545; font-size: 18px; }
+.topbar-divider { width: 1px; height: 35px; flex: 0 0 1px; background: rgba(43, 52, 64, .09); }
+.topbar-notifications { position: relative; }
+.topbar-notification { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; color: #263545; background: transparent; font-size: 19px; cursor: pointer; }
+.topbar-notification:hover, .topbar-notification[aria-expanded="true"] { color: #9b722d; background: #fbf7ef; }
+.topbar-notification:focus-visible { outline: 2px solid #b78a3b; outline-offset: 3px; }
+.notification-panel { position: absolute; top: calc(100% + 15px); right: -10px; z-index: 45; width: 300px; overflow: hidden; border: 1px solid #e9e6df; border-radius: 12px; background: #fff; box-shadow: 0 12px 28px rgba(15, 23, 42, .13); }
+.notification-panel-header { min-height: 45px; display: flex; align-items: center; gap: 9px; box-sizing: border-box; padding: 0 14px; border-bottom: 1px solid #f0ede8; color: #9b722d; }
+.notification-panel-header h2 { margin: 0; color: #263545; font-size: 13px; font-weight: 700; }
+.notification-empty-state { min-height: 132px; display: grid; place-content: center; gap: 9px; padding: 18px; color: #8290a3; text-align: center; }
+.notification-empty-state > i { color: #b9c1ca; font-size: 25px; }
+.notification-empty-state p { margin: 0; font-size: 13px; }
+.topbar-account { position: relative; }
+.topbar-account summary { list-style: none; }
+.topbar-account summary::-webkit-details-marker { display: none; }
+.topbar-user { min-width: 0; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.topbar-avatar { width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: linear-gradient(135deg, #c9a55f, #9b722d); font-size: 14px; font-weight: 700; }
+.topbar-user-text { min-width: 0; display: grid; gap: 2px; line-height: 1.2; }
+.topbar-user-name { max-width: 145px; overflow: hidden; color: #142033; font-size: 14px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-user-role { overflow: hidden; color: #728096; font-size: 12px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-chevron { margin-left: 5px; color: #142033; font-size: 12px; transition: transform .16s ease; }
+.topbar-account[open] .topbar-chevron { transform: rotate(180deg); }
+.topbar-user:focus-visible { outline: 2px solid #b78a3b; outline-offset: 4px; border-radius: 6px; }
+.user-dropdown { position: absolute; top: calc(100% + 13px); right: 0; z-index: 40; width: 220px; padding: 8px; border: 1px solid #e9e6df; border-radius: 12px; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, .13); }
+.user-dropdown a, .user-dropdown button { width: 100%; min-height: 42px; display: flex; align-items: center; gap: 11px; box-sizing: border-box; padding: 0 10px; border: 0; border-radius: 8px; color: #2b3440; background: transparent; font-size: 13px; font-weight: 500; text-align: left; text-decoration: none; cursor: pointer; }
+.user-dropdown a:hover, .user-dropdown button:hover { color: #9b722d; background: #fbf7ef; }
+.user-dropdown i { width: 16px; color: #697586; text-align: center; }
+.user-dropdown-divider { height: 1px; margin: 6px 2px; background: #ebe8e3; }
+
+/* Page header thống nhất: breadcrumb / tiêu đề / mô tả. */
+#adminMainContent .top-header { min-height: 0; box-sizing: border-box; display: flex; align-items: center; gap: 20px; padding: 16px 46px; background: #fbfaf8; border-bottom: 0; box-shadow: none; position: static; }
+#adminMainContent .top-header > :first-child { min-width: 0; }
+#adminMainContent .top-header .breadcrumb { margin: 0 0 5px; color: #637186; font-size: 14px; font-weight: 500; line-height: 1.35; }
+#adminMainContent .top-header .breadcrumb span { padding: 0 8px; color: #a3acb8; }
+#adminMainContent .top-header .breadcrumb strong { color: #a77b28; font-weight: 600; }
+#adminMainContent .top-header h2,
+#adminMainContent .top-header :is(.account-page-subtitle, .page-subtitle) { display: none; }
+
+#adminMainContent :is(button, input, select, textarea) {
+    line-height: 1.25;
+}
+
+/* Các primitive lặp lại ở module Admin theo đúng thông số card/filter của admin-hall.css. */
+#adminMainContent :is(.card-shadow, .custom-card-shadow) {
+    border-radius: 12px;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.04);
+}
+
+#adminMainContent :is(input, select, textarea):focus-visible,
+#adminMainContent .focus-ring:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 2px;
+}
+
+/* Các module trước đây tự nạp Plus Jakarta Sans / Playfair Display. */
+#adminMainContent .booking-page-wrapper,
+#adminMainContent .decor-page-wrapper,
+#adminMainContent .policy-page,
+#adminMainContent .bi-page-wrapper {
+    font-family: "Be Vietnam Pro", sans-serif !important;
+}
+
+/* Dashboard và bổ nhiệm dành cho role Quản lý, kế thừa primitive của Quản lý Sảnh & Lịch. */
+.manager-dashboard-intro,
+.assignment-hero {
+    background: #fff;
+    border: 1px solid #e2e5e9;
+    border-radius: 12px;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, .04);
+    padding: 22px;
+}
+
+.manager-dashboard-intro h1,
+.assignment-hero h1 {
+    margin: 5px 0;
+    font-size: 25px;
+}
+
+.manager-dashboard-intro p,
+.assignment-hero p { margin: 0; color: #7b8491; font-size: 13px; }
+.assignment-hero { display: flex; gap: 18px; align-items: center; justify-content: space-between; }
+.assignment-hero .btn-add { white-space: nowrap; }
+.manager-kpi-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.manager-kpi-card,
+.manager-overview-card,
+.assignment-empty-state,
+.assignment-form { background: #fff; border: 1px solid #e2e5e9; border-radius: 12px; box-shadow: 0 3px 14px rgba(0, 0, 0, .04); }
+.manager-kpi-card { min-height: 105px; padding: 17px; display: flex; align-items: center; gap: 13px; }
+.manager-kpi-icon,
+.assignment-empty-icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; flex: 0 0 42px; border-radius: 11px; color: #a77b18; background: #fbf3df; }
+.manager-kpi-card small { display: block; color: #64748b; font-size: 12px; }
+.manager-kpi-card strong { display: block; color: #1e242b; font-size: 24px; line-height: 1.15; }
+.manager-kpi-card em { display: block; color: #94a3b8; font-size: 11px; font-style: normal; }
+.manager-overview-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.manager-overview-card { min-height: 145px; padding: 18px; }
+.manager-overview-card > i { color: #b38f24; font-size: 20px; }
+.manager-overview-card h3 { margin: 14px 0 5px; font-size: 16px; }
+.manager-overview-card p { margin: 0; color: #94a3b8; font-size: 12px; }
+.assignment-empty-state { padding: 40px 24px; text-align: center; }
+.assignment-empty-icon { width: 52px; height: 52px; font-size: 21px; }
+.assignment-empty-state h3 { margin: 13px 0 5px; font-size: 17px; }
+.assignment-empty-state p { max-width: 540px; margin: 0 auto; color: #7b8491; font-size: 13px; }
+.assignment-form { padding: 18px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.assignment-field { display: grid; gap: 6px; }
+.assignment-field label { color: #64748b; font-size: 12px; font-weight: 600; }
+.assignment-field input,
+.assignment-field select { min-height: 38px; box-sizing: border-box; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0 10px; color: #64748b; background: #f8fafc; }
+.assignment-note { grid-column: span 3; }
+.assignment-actions { display: flex; align-items: end; justify-content: end; }
+.assignment-form :disabled { cursor: not-allowed; opacity: .78; }
+
+/* Khu vực vận hành của Quản lý sảnh: chỉ xem và điều phối trong phạm vi được giao. */
+.hall-schedule-table-wrap { overflow-x: auto; background: #fff; border: 1px solid #e2e5e9; border-radius: 12px; box-shadow: 0 3px 14px rgba(0, 0, 0, .04); }
+.hall-schedule-table { width: 100%; min-width: 620px; border-collapse: collapse; }
+.hall-schedule-table th { padding: 13px 16px; background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 700; text-align: left; white-space: nowrap; }
+.hall-schedule-table td { padding: 24px 16px; border-top: 1px solid #edf0f3; color: #7b8491; font-size: 13px; }
+.hall-schedule-table .table-empty-state { text-align: center; color: #94a3b8; }
+.table-empty-state i { margin-right: 6px; color: #b38f24; }
+.coordination-table { min-width: 1050px; }
+.coordinator-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.coordinator-work-table { min-width: 760px; }
+.assigned-party-table { min-width: 1400px; }
+.coordinator-action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-outline { min-height: 38px; padding: 0 14px; border: 1px solid #d4af37; border-radius: 8px; color: #8e6d1d; background: #fff; font-weight: 600; cursor: pointer; }
+.coordinator-detail-notice { margin-top: 20px; padding: 13px 15px; color: #7b6a41; background: #fff9eb; border: 1px solid #f0dfb0; border-radius: 10px; font-size: 13px; }
+.coordinator-detail-notice i { margin-right: 6px; color: #b38f24; }
+.coordinator-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.coordinator-detail-section { padding: 18px; background: #fff; border: 1px solid #e2e5e9; border-radius: 12px; box-shadow: 0 3px 14px rgba(0, 0, 0, .04); }
+.coordinator-detail-section h3 { margin: 0 0 14px; font-size: 17px; }
+.coordinator-detail-section h3 i { margin-right: 7px; color: #b38f24; }
+.coordinator-detail-section p { margin: 0 0 14px; color: #7b8491; font-size: 13px; }
+.coordinator-detail-section dl { display: grid; grid-template-columns: minmax(130px, .8fr) 1.2fr; gap: 10px 14px; margin: 0; font-size: 13px; }
+.coordinator-detail-section dt { color: #64748b; }
+.coordinator-detail-section dd { margin: 0; color: #94a3b8; }
+
+@media (max-width: 1100px) { .manager-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .assignment-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .assignment-note { grid-column: span 2; } .coordinator-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .manager-kpi-grid, .manager-overview-grid, .assignment-form, .coordinator-kpi-grid, .coordinator-detail-grid { grid-template-columns: 1fr; } .assignment-note { grid-column: auto; } .assignment-hero { align-items: stretch; flex-direction: column; } .assignment-hero .btn-add { width: 100%; } }
+
+@media (max-width: 760px) {
+    .backoffice-topbar { min-height: 60px; gap: 12px; padding: 0 16px; }
+    .topbar-search { width: min(260px, 50vw); height: 40px; padding: 0 11px; }
+    .topbar-right { gap: 11px; }
+    .topbar-date span, .topbar-divider, .topbar-user-role, .topbar-chevron { display: none; }
+    .topbar-date { gap: 0; }
+    .notification-panel { position: fixed; top: 68px; right: 16px; width: min(300px, calc(100vw - 32px)); }
+    .topbar-user-name { max-width: 86px; }
+    .topbar-avatar { width: 38px; height: 38px; flex-basis: 38px; }
+    #adminMainContent .top-header { min-height: 0; align-items: flex-start; flex-direction: column; padding: 14px 18px; gap: 0; }
+}

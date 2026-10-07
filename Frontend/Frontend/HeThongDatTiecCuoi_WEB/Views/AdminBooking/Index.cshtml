@@ -1,0 +1,1118 @@
+﻿@model HeThongDatTiecCuoi_WEB.Models.AdminBooking.BookingListResponseViewModel
+@{
+    ViewData["Title"] = "Quản Lý Đặt Tiệc & Hợp Đồng";
+    Layout = "_AdminLayout";
+}
+
+<!-- Font dùng chung được nạp bởi _AdminLayout. -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Thêm SheetJS để xuất Excel -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    brand: {
+                        gold: '#B89758',
+                        goldLight: '#E8D8B6',
+                        goldHover: '#8C6D32',
+                        darkNavy: '#111822',
+                        sidebar: '#141E28',
+                        surface: '#FFFFFF',
+                        canvas: '#F8F9FA',
+                        border: '#E2E8F0'
+                    }
+                },
+                fontFamily: {
+                    serif: ['"Playfair Display"', 'Georgia', 'serif'],
+                    sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif']
+                }
+            }
+        }
+    }
+</script>
+
+<style>
+    .booking-page-wrapper {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        color: #1E293B;
+    }
+
+        .booking-page-wrapper .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+    .card-shadow {
+        box-shadow: 0 4px 20px -2px rgba(30, 41, 59, 0.05), 0 2px 6px -1px rgba(30, 41, 59, 0.02);
+    }
+
+    .focus-ring:focus-visible {
+        outline: 2px solid #B89758;
+        outline-offset: 2px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        height: 8px;
+        width: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #F1F5F9;
+        border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 4px;
+    }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #B89758;
+        }
+
+    /* Trạng thái tab */
+    .status-tab-btn {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+        .status-tab-btn:hover {
+            transform: translateY(-1px);
+        }
+
+    /* Booking row hover */
+    .booking-row {
+        transition: all 0.15s ease;
+    }
+
+        .booking-row:hover {
+            background-color: #FAF8F5;
+            box-shadow: inset 3px 0 0 #B89758;
+        }
+
+    /* Avatar khách hàng */
+    .customer-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #B89758 0%, #8C6D32 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+</style>
+
+<!-- TOAST THÔNG BÁO TỰ ĐỘNG -->
+<div id="bookingToast" class="fixed top-5 right-5 z-[999999] transform translate-x-full transition-transform duration-300 flex items-center gap-3 bg-white border border-[#E5D5B8] shadow-2xl px-4 py-3 rounded-xl">
+    <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs" id="toastIcon">
+        <i class="fa-solid fa-circle-check"></i>
+    </div>
+    <div>
+        <p class="text-xs font-bold text-slate-900" id="toastTitle">Thông báo</p>
+        <p class="text-[11px] text-slate-500" id="toastMsg">Nội dung</p>
+    </div>
+</div>
+
+<!-- CONTAINER CHÍNH: Căn chỉnh padding và căn giữa đồng bộ với các trang khác -->
+<div class="booking-page-wrapper p-6 lg:p-8 space-y-6 w-full max-w-[1600px] mx-auto">
+
+    <!-- ================= 1. HEADER TRANG ================= -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                <span>Quản trị hệ thống</span>
+                <i class="fa-solid fa-chevron-right text-[9px] text-slate-400"></i>
+                <span class="text-[#B89758] font-semibold">Hợp Đồng &amp; Đặt Tiệc</span>
+            </nav>
+            <h2 class="font-serif text-2xl font-bold text-slate-900 tracking-tight">
+                Quản Lý Đặt Tiệc Cưới &amp; Hợp Đồng Đặt Cọc
+            </h2>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <div class="flex items-center bg-slate-50 rounded-lg px-3 py-1.5 border border-slate-200 text-xs shadow-2xs">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+                <span class="text-slate-600 font-medium">CSDL thời gian thực • Niên độ 2026</span>
+            </div>
+
+            <button type="button" onclick="exportBookingsExcel()" class="flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 focus-ring min-h-[40px] shadow-2xs cursor-pointer">
+                <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i>
+                <span>Xuất Excel</span>
+            </button>
+
+            <button type="button" onclick="openCreateBookingModal()" class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white rounded-lg text-xs font-bold transition-all shadow-sm min-h-[40px] cursor-pointer">
+                <i class="fa-solid fa-plus text-xs"></i>
+                <span>Tạo Đơn Đặt Tiệc Mới</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= 2. TABS TRẠNG THÁI NHANH (Segmented Control) ================= -->
+    <div class="bg-white rounded-xl border border-slate-200 card-shadow p-1.5">
+        <div class="flex items-center gap-1 overflow-x-auto custom-scrollbar">
+            <button type="button" onclick="filterByStatus(event, 'ALL')" class="status-tab-btn active px-3.5 py-2 rounded-lg font-bold border-0 transition-all bg-[#1E293B] text-white shrink-0 text-xs flex items-center gap-1.5">
+                <i class="fa-solid fa-list-ul text-[10px]"></i>
+                <span>Tất cả</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-bold" id="countTotal">@Model.TotalCount</span>
+            </button>
+            <button type="button" onclick="filterByStatus(event, 'Chờ xác nhận')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-700 shrink-0 text-xs flex items-center gap-1.5">
+                <i class="fa-regular fa-clock text-[10px]"></i>
+                <span>Chờ xác nhận</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 font-bold" id="countPending">@Model.PendingConfirmationCount</span>
+            </button>
+            <button type="button" onclick="filterByStatus(event, 'Đã xác nhận')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 shrink-0 text-xs flex items-center gap-1.5">
+                <i class="fa-solid fa-check-double text-[10px]"></i>
+                <span>Đã xác nhận</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-indigo-100 text-indigo-700 font-bold" id="countConfirmed">@Model.ConfirmedCount</span>
+            </button>
+            <button type="button" onclick="filterByStatus(event, 'Đã cọc')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-amber-50 hover:text-amber-700 shrink-0 text-xs flex items-center gap-1.5">
+                <i class="fa-solid fa-hand-holding-dollar text-[10px]"></i>
+                <span>Đã cọc</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800 font-bold" id="countDeposited">@Model.DepositedCount</span>
+            </button>
+            <button type="button" onclick="filterByStatus(event, 'Hoàn tất')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 shrink-0 text-xs flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-check text-[10px]"></i>
+                <span>Hoàn tất</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-700 font-bold" id="countCompleted">@Model.CompletedCount</span>
+            </button>
+            <button type="button" onclick="filterByStatus(event, 'Đã hủy')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-rose-50 hover:text-rose-700 shrink-0 text-xs flex items-center gap-1.5">
+                <i class="fa-solid fa-ban text-[10px]"></i>
+                <span>Đã hủy</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-rose-100 text-rose-700 font-bold" id="countCancelled">@Model.CancelledCount</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= 3. BỘ LỌC TÌM KIẾM ================= -->
+    <section class="bg-white rounded-xl p-4 border border-slate-200 card-shadow flex flex-col md:flex-row flex-wrap items-stretch md:items-center justify-between gap-3">
+        <div class="flex-1 flex flex-wrap items-center gap-3">
+            <!-- Tìm kiếm từ khóa -->
+            <div class="relative min-w-[240px] flex-1 max-w-md">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="text" id="filterKeyword" placeholder="Tìm theo mã tiệc, tên khách, SĐT..." onkeydown="if(event.key==='Enter') executeFilter(1)" class="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#B89758] focus:bg-white focus:ring-1 focus:ring-[#B89758] min-h-[42px] transition-all">
+            </div>
+
+            <!-- Lọc theo sảnh -->
+            <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 min-h-[42px] min-w-[200px]">
+                <i class="fa-solid fa-building-columns text-slate-500 mr-2 text-xs"></i>
+                <label for="filterHallId" class="text-xs text-slate-500 mr-1.5 whitespace-nowrap font-medium">Sảnh:</label>
+                <select id="filterHallId" onchange="executeFilter(1)" class="w-full bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer pr-1">
+                    <option value="0">Tất cả đại sảnh</option>
+                    <option value="1">Sảnh Amur</option>
+                    <option value="2">Sảnh Elbe</option>
+                    <option value="3">Sảnh Danube</option>
+                    <option value="4">Sảnh Seine</option>
+                    <option value="5">Sảnh Thames</option>
+                    <option value="6">Sảnh Volga</option>
+                    <option value="7">Sảnh Green Riverside</option>
+                    <option value="8">Sảnh Nile</option>
+                    <option value="9">Sảnh Grand Ballroom</option>
+                </select>
+            </div>
+
+            <!-- Lọc theo khoảng ngày -->
+            <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 min-h-[42px] text-xs">
+                <i class="fa-regular fa-calendar text-slate-500 text-xs"></i>
+                <span class="text-slate-500 font-medium">Từ:</span>
+                <input type="date" id="filterFromDate" class="bg-transparent text-xs text-slate-800 focus:outline-none cursor-pointer">
+                <span class="text-slate-300">|</span>
+                <span class="text-slate-500 font-medium">Đến:</span>
+                <input type="date" id="filterToDate" class="bg-transparent text-xs text-slate-800 focus:outline-none cursor-pointer">
+            </div>
+
+            <button type="button" onclick="executeFilter(1)" class="px-4 py-2 bg-[#1E293B] hover:bg-[#0F172A] text-white rounded-lg text-xs font-bold transition-colors cursor-pointer min-h-[42px] flex items-center gap-1.5">
+                <i class="fa-solid fa-filter text-[11px]"></i>
+                <span>Lọc dữ liệu</span>
+            </button>
+            <button type="button" onclick="resetFilters()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold transition-colors cursor-pointer min-h-[42px]" title="Đặt lại bộ lọc">
+                <i class="fa-solid fa-arrow-rotate-left"></i>
+            </button>
+        </div>
+    </section>
+
+    <!-- ================= 4. BẢNG DANH SÁCH ĐẶT TIỆC ================= -->
+    <div class="bg-white rounded-xl border border-slate-200 card-shadow overflow-hidden">
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-[#FAF8F5] text-slate-700 border-b border-slate-200 font-semibold uppercase text-[10.5px] tracking-wider">
+                        <th class="py-3.5 px-4">Mã Tiệc</th>
+                        <th class="py-3.5 px-4">Khách Hàng</th>
+                        <th class="py-3.5 px-4">Đại Sảnh &amp; Ca</th>
+                        <th class="py-3.5 px-3 text-center">Ngày Tổ Chức</th>
+                        <th class="py-3.5 px-3 text-center">Quy Mô</th>
+                        <th class="py-3.5 px-4 text-right">Tổng Dự Kiến</th>
+                        <th class="py-3.5 px-3 text-center">Trạng Thái</th>
+                        <th class="py-3.5 px-4 text-center">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody id="bookingsTbody" class="divide-y divide-slate-100">
+                    @if (Model.Items != null && Model.Items.Count > 0)
+                    {
+                        foreach (var b in Model.Items)
+                        {
+                            var initial = !string.IsNullOrEmpty(b.CustomerName) ? b.CustomerName.Substring(0, 1).ToUpper() : "?";
+                            <tr class="booking-row">
+                                <td class="py-3.5 px-4 font-mono font-bold text-[#8C6D32]">@b.BookingCode</td>
+                                <td class="py-3.5 px-4">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="customer-avatar">@initial</div>
+                                        <div class="min-w-0">
+                                            <p class="font-bold text-slate-900 truncate">@b.CustomerName</p>
+                                            <p class="text-[11px] text-slate-500 flex items-center gap-1">
+                                                <i class="fa-solid fa-phone text-[9px]"></i>
+                                                @b.CustomerPhone
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <p class="font-semibold text-slate-800 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-hotel text-[10px] text-[#B89758]"></i>
+                                        @b.HallName
+                                    </p>
+                                    <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">
+                                        @if (b.Shift == "Ca tối")
+                                        {
+                                            <i class="fa-regular fa-moon text-indigo-500 mr-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa-regular fa-sun text-amber-500 mr-1"></i>
+                                        }
+                                        @b.Shift
+                                    </span>
+                                </td>
+                                <td class="py-3.5 px-3 text-center font-medium text-slate-700">
+                                    <div class="flex flex-col items-center">
+                                        <span class="font-bold">@b.EventDate.ToString("dd")</span>
+                                        <span class="text-[10px] text-slate-500">Tháng @b.EventDate.ToString("MM/yyyy")</span>
+                                    </div>
+                                </td>
+                                <td class="py-3.5 px-3 text-center">
+                                    <span class="font-bold text-slate-800">@b.TableCount</span>
+                                    <span class="text-[10px] text-slate-500 ml-0.5">bàn</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-right font-serif font-bold text-slate-900">
+                                    @b.EstimatedTotal.ToString("N0") <span class="text-[10px] font-sans text-slate-500 font-normal">đ</span>
+                                </td>
+                                <td class="py-3.5 px-3 text-center">
+                                    @if (b.Status == "Hoàn tất")
+                                    {
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                                            <i class="fa-solid fa-circle-check text-[9px]"></i> Hoàn tất
+                                        </span>
+                                    }
+                                    else if (b.Status == "Đã cọc")
+                                    {
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                                            <i class="fa-solid fa-hand-holding-dollar text-[9px]"></i> Đã cọc
+                                        </span>
+                                    }
+                                    else if (b.Status == "Đã xác nhận")
+                                    {
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                            <i class="fa-solid fa-check-double text-[9px]"></i> Đã xác nhận
+                                        </span>
+                                    }
+                                    else if (b.Status == "Đã hủy")
+                                    {
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                            <i class="fa-solid fa-ban text-[9px]"></i> Đã hủy
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                            <i class="fa-regular fa-clock text-[9px]"></i> Chờ xác nhận
+                                        </span>
+                                    }
+                                </td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <button type="button" onclick="viewBookingDetail(@b.BookingId)" class="h-[32px] w-[32px] rounded-lg bg-slate-100 hover:bg-[#B89758]/15 text-[#8C6D32] hover:text-[#B89758] transition-colors flex items-center justify-center" title="Xem hợp đồng chi tiết">
+                                            <i class="fa-solid fa-file-contract text-sm"></i>
+                                        </button>
+                                        @if (b.Status == "Chờ xác nhận")
+                                        {
+                                            <button type="button" onclick="quickUpdateStatus(@b.BookingId, 'Đã xác nhận')" class="h-[32px] w-[32px] rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center justify-center" title="Xác nhận đơn tiệc">
+                                                <i class="fa-solid fa-check text-sm"></i>
+                                            </button>
+                                        }
+                                        else if (b.Status == "Đã xác nhận")
+                                        {
+                                            <button type="button" onclick="quickDepositModal(@b.BookingId, @b.EstimatedTotal)" class="h-[32px] w-[32px] rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-colors flex items-center justify-center" title="Xác nhận đặt cọc">
+                                                <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
+                                            </button>
+                                        }
+                                        @if (b.Status != "Đã hủy" && b.Status != "Hoàn tất")
+                                        {
+                                            <button type="button" onclick="cancelBookingPrompt(@b.BookingId)" class="h-[32px] w-[32px] rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 transition-colors flex items-center justify-center" title="Hủy đơn tiệc">
+                                                <i class="fa-solid fa-ban text-sm"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="py-10 text-center text-slate-400 italic">
+                                <i class="fa-regular fa-folder-open text-3xl mb-2 text-slate-300 block"></i>
+                                Chưa có đơn đặt tiệc nào phù hợp với điều kiện tìm kiếm.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Phân trang -->
+        <div class="p-4 bg-[#FAF8F5] border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+            <div>
+                Hiển thị <span id="pageInfoStart" class="font-bold text-slate-800">1</span> – <span id="pageInfoEnd" class="font-bold text-slate-800">@(Model.Items?.Count ?? 0)</span> trên tổng số <strong id="pageInfoTotal" class="text-slate-800">@Model.TotalCount</strong> hợp đồng
+            </div>
+            <div class="flex items-center gap-1.5" id="paginationWrapper">
+                <!-- Nút phân trang render qua JS -->
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= MODAL CHI TIẾT HỢP ĐỒNG & THANH TOÁN ================= -->
+<div id="bookingDetailModal" class="fixed inset-0 hidden items-center justify-center bg-slate-950/75 backdrop-blur-xs p-2 sm:p-4 md:p-6 transition-all duration-300" style="z-index: 99999; font-family: 'Plus Jakarta Sans', sans-serif;">
+    <div class="bg-white w-full max-w-4xl max-h-[92vh] rounded-2xl shadow-2xl flex flex-col border border-[#E5D5B8] overflow-hidden">
+
+        <!-- Header Modal -->
+        <header class="p-4 sm:p-5 border-b border-slate-200 bg-gradient-to-r from-[#FAF8F5] via-white to-[#FAF8F5] flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#B89758] to-[#8C6D32] flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-file-invoice-dollar text-base"></i>
+                </div>
+                <div>
+                    <h3 class="font-serif font-bold text-base sm:text-lg text-slate-900 flex items-center gap-2">
+                        <span>Hồ Sơ Đặt Tiệc:</span>
+                        <span id="mdBookingCode" class="font-mono text-[#8C6D32]">DT-XXXX</span>
+                    </h3>
+                    <p class="text-[11px] text-slate-500">Chi tiết dịch vụ, thực đơn &amp; tiến độ đặt cọc</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeDetailModal()" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 rounded-lg transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </header>
+
+        <!-- Thân Modal -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5">
+
+            <!-- Thông tin khách hàng & Tiệc cưới -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div class="bg-gradient-to-br from-slate-50 to-white p-4 rounded-xl border border-slate-200">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-7 h-7 rounded-lg bg-[#B89758]/15 border border-[#B89758]/30 flex items-center justify-center text-[#8C6D32]">
+                            <i class="fa-solid fa-user text-[11px]"></i>
+                        </div>
+                        <span class="text-slate-500 text-[10.5px] uppercase font-bold tracking-wider">Khách Hàng Đại Diện</span>
+                    </div>
+                    <p class="font-bold text-slate-900 text-sm" id="mdCustomerName">---</p>
+                    <p class="text-slate-600 mt-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-phone text-[11px] text-slate-400"></i>
+                        <span id="mdCustomerPhone">---</span>
+                    </p>
+                </div>
+                <div class="bg-gradient-to-br from-slate-50 to-white p-4 rounded-xl border border-slate-200">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-7 h-7 rounded-lg bg-[#B89758]/15 border border-[#B89758]/30 flex items-center justify-center text-[#8C6D32]">
+                            <i class="fa-solid fa-calendar-check text-[11px]"></i>
+                        </div>
+                        <span class="text-slate-500 text-[10.5px] uppercase font-bold tracking-wider">Thời Gian &amp; Địa Điểm</span>
+                    </div>
+                    <p class="font-bold text-[#8C6D32] text-sm" id="mdHallAndShift">---</p>
+                    <p class="text-slate-600 mt-1 flex items-center gap-1.5">
+                        <i class="fa-regular fa-calendar text-[11px] text-slate-400"></i>
+                        Ngày tổ chức: <span id="mdEventDate" class="font-semibold text-slate-800">---</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Bảng kê chi tiết chi phí hợp đồng -->
+            <div>
+                <h4 class="font-bold text-xs text-slate-800 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <i class="fa-solid fa-receipt text-[#B89758]"></i> Bảng Dự Toán Hợp Đồng Chi Tiết
+                </h4>
+                <div class="rounded-xl overflow-hidden border border-slate-200">
+                    <table class="w-full text-xs">
+                        <thead class="bg-[#FAF8F5] text-slate-700 border-b border-slate-200 font-semibold">
+                            <tr>
+                                <th class="py-2.5 px-3 text-left">Hạng Mục</th>
+                                <th class="py-2.5 px-3 text-center">Số Lượng</th>
+                                <th class="py-2.5 px-3 text-right">Đơn Giá Tạm Tính</th>
+                                <th class="py-2.5 px-3 text-right">Thành Tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <tr class="hover:bg-[#FAF8F5]/50">
+                                <td class="py-2.5 px-3">
+                                    <p class="font-semibold text-slate-800" id="mdMenuName">Thực đơn ẩm thực</p>
+                                    <span class="text-[10px] text-slate-400">Tiêu chuẩn bàn tiệc 10 khách</span>
+                                </td>
+                                <td class="py-2.5 px-3 text-center font-bold" id="mdTableCount">0 bàn</td>
+                                <td class="py-2.5 px-3 text-right" id="mdMenuUnitPrice">0 đ</td>
+                                <td class="py-2.5 px-3 text-right font-semibold text-slate-800" id="mdMenuSubtotal">0 đ</td>
+                            </tr>
+                            <tr class="hover:bg-[#FAF8F5]/50">
+                                <td class="py-2.5 px-3">
+                                    <p class="font-semibold text-slate-800">Chi phí mặt bằng Đại Sảnh</p>
+                                    <span class="text-[10px] text-slate-400">Hệ thống âm thanh &amp; ánh sáng tiêu chuẩn</span>
+                                </td>
+                                <td class="py-2.5 px-3 text-center">1 sảnh</td>
+                                <td class="py-2.5 px-3 text-right" id="mdHallPrice">0 đ</td>
+                                <td class="py-2.5 px-3 text-right font-semibold text-slate-800" id="mdHallSubtotal">0 đ</td>
+                            </tr>
+                            <tr class="hover:bg-[#FAF8F5]/50">
+                                <td class="py-2.5 px-3">
+                                    <p class="font-semibold text-slate-800" id="mdDecorName">Gói Trang Trí Tiệc Cưới</p>
+                                    <span class="text-[10px] text-slate-400">Backdrop, bàn Gallery, hoa tươi lễ đường</span>
+                                </td>
+                                <td class="py-2.5 px-3 text-center">1 gói</td>
+                                <td class="py-2.5 px-3 text-right" id="mdDecorPrice">0 đ</td>
+                                <td class="py-2.5 px-3 text-right font-semibold text-slate-800" id="mdDecorSubtotal">0 đ</td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="bg-[#FAF8F5] border-t-2 border-[#B89758]/40">
+                            <tr>
+                                <td colspan="3" class="py-3.5 px-3 text-right font-bold text-slate-800 uppercase text-[11px] tracking-wider">Tổng Dự Toán Hợp Đồng:</td>
+                                <td class="py-3.5 px-3 text-right font-serif font-bold text-lg text-[#8C6D32]" id="mdTotalAmount">0 đ</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Khung đặt cọc gợi ý -->
+            <div class="bg-gradient-to-br from-[#FAF8F5] to-[#F5EFE3] border border-[#E5D5B8] p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div>
+                    <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                        <i class="fa-solid fa-coins text-[#B89758]"></i> Chính Sách Đặt Cọc Tiệc Cưới Riverside Palace:
+                    </span>
+                    <div class="mt-2 space-y-1 text-[11px]">
+                        <p class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#B89758]"></span>
+                            Đợt 1 (Giữ sảnh): <strong>20%</strong> (<span id="mdDeposit20" class="text-[#8C6D32] font-bold">---</span>)
+                        </p>
+                        <p class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                            Đợt 2 (Chốt thực đơn trước 15 ngày): <strong>50%</strong> (<span id="mdDeposit50" class="text-slate-700 font-bold">---</span>)
+                        </p>
+                    </div>
+                </div>
+                <div id="mdActionBtnGroup" class="shrink-0">
+                    <!-- Nút thao tác theo trạng thái -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Modal -->
+        <footer class="p-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
+            <span class="text-slate-500 flex items-center gap-1.5">
+                Trạng thái hiện tại:
+                <strong id="mdStatusBadge" class="text-slate-800">---</strong>
+            </span>
+            <button type="button" onclick="closeDetailModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-semibold cursor-pointer transition-colors">
+                Đóng
+            </button>
+        </footer>
+
+    </div>
+</div>
+
+<!-- ================= MODAL TẠO MỚI ĐẶT TIỆC (CREATE BOOKING) ================= -->
+<div id="createBookingModal" class="fixed inset-0 hidden items-center justify-center bg-slate-950/75 backdrop-blur-xs p-2 sm:p-4 transition-all duration-300" style="z-index: 99999; font-family: 'Plus Jakarta Sans', sans-serif;">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col border border-[#E5D5B8] overflow-hidden max-h-[92vh]">
+        <header class="p-4 sm:p-5 border-b border-slate-200 bg-gradient-to-r from-[#FAF8F5] via-white to-[#FAF8F5] flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#B89758] to-[#8C6D32] flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-calendar-plus text-base"></i>
+                </div>
+                <div>
+                    <h3 class="font-serif font-bold text-base sm:text-lg text-slate-900">
+                        Tạo Mới Đơn Đặt Tiệc Cưới
+                    </h3>
+                    <p class="text-[11px] text-slate-500">Điền thông tin để khởi tạo hợp đồng đặt tiệc</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeCreateBookingModal()" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 rounded-lg transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </header>
+
+        <form id="createBookingForm" onsubmit="handleCreateBooking(event)" class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5 text-xs">
+
+            <!-- Section 1: Thông tin khách hàng -->
+            <div class="bg-slate-50/60 rounded-xl p-4 border border-slate-200/70">
+                <h4 class="font-bold text-xs text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <i class="fa-solid fa-user text-[#B89758]"></i> Thông Tin Khách Hàng
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Mã Khách Hàng (CustomerId) <span class="text-rose-500">*</span></label>
+                        <input type="number" id="newCustomerId" required min="1" value="1" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Số điện thoại liên hệ</label>
+                        <input type="tel" placeholder="0901 234 567" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Thông tin tiệc -->
+            <div class="bg-slate-50/60 rounded-xl p-4 border border-slate-200/70">
+                <h4 class="font-bold text-xs text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <i class="fa-solid fa-calendar-check text-[#B89758]"></i> Thông Tin Tiệc Cưới
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div class="sm:col-span-2">
+                        <label class="block font-semibold text-slate-700 mb-1">Đại Sảnh Tổ Chức <span class="text-rose-500">*</span></label>
+                        <select id="newHallId" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758] cursor-pointer">
+                            <option value="1">Sảnh Amur (Max 580 bàn)</option>
+                            <option value="2">Sảnh Elbe (Max 360 bàn)</option>
+                            <option value="3">Sảnh Danube (Max 540 bàn)</option>
+                            <option value="4">Sảnh Seine (Max 650 bàn)</option>
+                            <option value="5">Sảnh Thames (Max 580 bàn)</option>
+                            <option value="6">Sảnh Volga (Max 580 bàn)</option>
+                            <option value="7">Sảnh Green Riverside (Max 300 bàn)</option>
+                            <option value="8">Sảnh Nile (Max 650 bàn)</option>
+                            <option value="9">Sảnh Grand Ballroom (Max 2000 bàn)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Ngày Tổ Chức Tiệc <span class="text-rose-500">*</span></label>
+                        <input type="date" id="newEventDate" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Ca Tổ Chức <span class="text-rose-500">*</span></label>
+                        <select id="newShift" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758] cursor-pointer">
+                            <option value="Ca tối" selected>Ca tối (17:30 – 21:30)</option>
+                            <option value="Ca trưa">Ca trưa (10:30 – 14:00)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Số Lượng Bàn Tiệc <span class="text-rose-500">*</span></label>
+                        <input type="number" id="newTableCount" required min="5" max="300" value="25" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Số Lượng Khách Dự Kiến</label>
+                        <input type="number" id="newGuestCount" min="50" max="3000" value="250" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Ghi chú -->
+            <div class="bg-slate-50/60 rounded-xl p-4 border border-slate-200/70">
+                <h4 class="font-bold text-xs text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <i class="fa-solid fa-pen-to-square text-[#B89758]"></i> Ghi Chú Đặc Biệt
+                </h4>
+                <textarea id="newSpecialRequests" rows="3" placeholder="Ghi chú hoa trang trí, thời gian đón khách, yêu cầu đặc biệt..." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758] resize-none"></textarea>
+            </div>
+
+        </form>
+
+        <footer class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5 shrink-0">
+            <button type="button" onclick="closeCreateBookingModal()" class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-lg font-semibold border border-slate-200 cursor-pointer transition-colors">
+                Hủy bỏ
+            </button>
+            <button type="submit" form="createBookingForm" class="px-5 py-2 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white rounded-lg font-bold shadow-sm cursor-pointer transition-all flex items-center gap-2">
+                <i class="fa-solid fa-check text-xs"></i>
+                Lưu &amp; Tạo Hợp Đồng
+            </button>
+        </footer>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentFilter = {
+            keyword: '',
+            status: 'ALL',
+            hallId: 0,
+            fromDate: null,
+            toDate: null,
+            pageIndex: 1,
+            pageSize: 10
+        };
+
+        let selectedBookingId = null;
+        let currentBookings = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items ?? new List<HeThongDatTiecCuoi_WEB.Models.AdminBooking.BookingSummaryViewModel>()));
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Đặt mặc định ngày tạo tiệc mới là 30 ngày tới
+            const defaultDate = new Date();
+            defaultDate.setDate(defaultDate.getDate() + 30);
+            document.getElementById('newEventDate').value = defaultDate.toISOString().split('T')[0];
+
+            // Thoát stacking context cho các Modal
+            const detailModal = document.getElementById('bookingDetailModal');
+            const createModal = document.getElementById('createBookingModal');
+            if (detailModal && detailModal.parentElement !== document.body) document.body.appendChild(detailModal);
+            if (createModal && createModal.parentElement !== document.body) document.body.appendChild(createModal);
+
+            // Render phân trang lần đầu
+            renderPagination(@Model.TotalCount, 1, 10);
+        });
+
+        function showToast(title, msg, isSuccess = true) {
+            const toast = document.getElementById('bookingToast');
+            const icon = document.getElementById('toastIcon');
+            document.getElementById('toastTitle').innerText = title;
+            document.getElementById('toastMsg').innerText = msg;
+
+            if (isSuccess) {
+                icon.className = "w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs";
+                icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            } else {
+                icon.className = "w-7 h-7 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs";
+                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            }
+
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => toast.classList.add('translate-x-full'), 3000);
+        }
+
+        // ================= 1. XỬ LÝ LỌC & PHÂN TRANG =================
+        function filterByStatus(event, status) {
+            currentFilter.status = status;
+
+            // Reset tất cả nút
+            document.querySelectorAll('.status-tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-[#1E293B]', 'text-white');
+                btn.classList.add('text-slate-700', 'hover:bg-slate-50');
+            });
+
+            // Active nút được chọn
+            event.currentTarget.classList.add('active', 'bg-[#1E293B]', 'text-white');
+            event.currentTarget.classList.remove('text-slate-700', 'hover:bg-slate-50');
+
+            executeFilter(1);
+        }
+
+        function resetFilters() {
+            document.getElementById('filterKeyword').value = '';
+            document.getElementById('filterHallId').value = '0';
+            document.getElementById('filterFromDate').value = '';
+            document.getElementById('filterToDate').value = '';
+            currentFilter = { keyword: '', status: 'ALL', hallId: 0, fromDate: null, toDate: null, pageIndex: 1, pageSize: 10 };
+            executeFilter(1);
+        }
+
+        async function executeFilter(page = 1) {
+            currentFilter.pageIndex = page;
+            currentFilter.keyword = document.getElementById('filterKeyword').value.trim();
+            currentFilter.hallId = parseInt(document.getElementById('filterHallId').value) || 0;
+            currentFilter.fromDate = document.getElementById('filterFromDate').value || null;
+            currentFilter.toDate = document.getElementById('filterToDate').value || null;
+
+            const params = new URLSearchParams();
+            params.append('pageIndex', currentFilter.pageIndex);
+            params.append('pageSize', currentFilter.pageSize);
+            if (currentFilter.keyword) params.append('keyword', currentFilter.keyword);
+            if (currentFilter.status && currentFilter.status !== 'ALL') params.append('status', currentFilter.status);
+            if (currentFilter.hallId > 0) params.append('hallId', currentFilter.hallId);
+            if (currentFilter.fromDate) params.append('fromDate', currentFilter.fromDate);
+            if (currentFilter.toDate) params.append('toDate', currentFilter.toDate);
+
+            try {
+                const res = await fetch(`/AdminBooking/GetBookingsData?${params.toString()}`);
+                const result = await res.json();
+
+                if (result.success && result.data) {
+                    renderBookingsTable(result.data);
+                } else {
+                    showToast('Lỗi', result.message || 'Không thể tải danh sách đặt tiệc.', false);
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Lỗi kết nối', 'Không thể kết nối máy chủ.', false);
+            }
+        }
+
+        function renderBookingsTable(data) {
+            const tbody = document.getElementById('bookingsTbody');
+            tbody.innerHTML = '';
+            const items = data.items || data.Items || [];
+            currentBookings = items;
+
+            // Cập nhật số liệu tabs
+            document.getElementById('countTotal').innerText = data.totalCount ?? data.TotalCount ?? 0;
+            document.getElementById('countPending').innerText = data.pendingConfirmationCount ?? data.PendingConfirmationCount ?? 0;
+            document.getElementById('countConfirmed').innerText = data.confirmedCount ?? data.ConfirmedCount ?? 0;
+            document.getElementById('countDeposited').innerText = data.depositedCount ?? data.DepositedCount ?? 0;
+            document.getElementById('countCompleted').innerText = data.completedCount ?? data.CompletedCount ?? 0;
+            document.getElementById('countCancelled').innerText = data.cancelledCount ?? data.CancelledCount ?? 0;
+
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-10 text-center text-slate-400 italic"><i class="fa-regular fa-folder-open text-3xl mb-2 text-slate-300 block"></i>Không tìm thấy đơn đặt tiệc nào.</td></tr>`;
+                renderPagination(0, 1, 10);
+                return;
+            }
+
+            items.forEach(b => {
+                const id = b.bookingId || b.BookingId;
+                const code = b.bookingCode || b.BookingCode;
+                const custName = b.customerName || b.CustomerName || '';
+                const phone = b.customerPhone || b.CustomerPhone || '';
+                const hall = b.hallName || b.HallName;
+                const shift = b.shift || b.Shift;
+                const eventDate = new Date(b.eventDate || b.EventDate);
+                const day = String(eventDate.getDate()).padStart(2, '0');
+                const monthYear = String(eventDate.getMonth() + 1).padStart(2, '0') + '/' + eventDate.getFullYear();
+                const tables = b.tableCount ?? b.TableCount ?? 0;
+                const total = Number(b.estimatedTotal ?? b.EstimatedTotal ?? 0).toLocaleString('vi-VN');
+                const status = b.status || b.Status;
+                const initial = custName ? custName.substring(0, 1).toUpperCase() : '?';
+
+                let badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-blue-50 text-blue-700 border border-blue-200"><i class="fa-regular fa-clock text-[9px]"></i> Chờ xác nhận</span>`;
+                if (status === 'Hoàn tất') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300"><i class="fa-solid fa-circle-check text-[9px]"></i> Hoàn tất</span>`;
+                else if (status === 'Đã cọc') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-300"><i class="fa-solid fa-hand-holding-dollar text-[9px]"></i> Đã cọc</span>`;
+                else if (status === 'Đã xác nhận') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"><i class="fa-solid fa-check-double text-[9px]"></i> Đã xác nhận</span>`;
+                else if (status === 'Đã hủy') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-rose-50 text-rose-700 border border-rose-200"><i class="fa-solid fa-ban text-[9px]"></i> Đã hủy</span>`;
+
+                let shiftIcon = shift === 'Ca tối'
+                    ? '<i class="fa-regular fa-moon text-indigo-500 mr-1"></i>'
+                    : '<i class="fa-regular fa-sun text-amber-500 mr-1"></i>';
+
+                let actionBtns = `
+                    <button type="button" onclick="viewBookingDetail(${id})" class="h-[32px] w-[32px] rounded-lg bg-slate-100 hover:bg-[#B89758]/15 text-[#8C6D32] hover:text-[#B89758] transition-colors flex items-center justify-center" title="Xem hợp đồng chi tiết">
+                        <i class="fa-solid fa-file-contract text-sm"></i>
+                    </button>
+                `;
+                if (status === 'Chờ xác nhận') {
+                    actionBtns += `
+                        <button type="button" onclick="quickUpdateStatus(${id}, 'Đã xác nhận')" class="h-[32px] w-[32px] rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center justify-center" title="Xác nhận đơn tiệc">
+                            <i class="fa-solid fa-check text-sm"></i>
+                        </button>
+                    `;
+                } else if (status === 'Đã xác nhận') {
+                    actionBtns += `
+                        <button type="button" onclick="quickDepositModal(${id}, ${b.estimatedTotal ?? b.EstimatedTotal ?? 0})" class="h-[32px] w-[32px] rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-colors flex items-center justify-center" title="Xác nhận đặt cọc">
+                            <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
+                        </button>
+                    `;
+                }
+                if (status !== 'Đã hủy' && status !== 'Hoàn tất') {
+                    actionBtns += `
+                        <button type="button" onclick="cancelBookingPrompt(${id})" class="h-[32px] w-[32px] rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 transition-colors flex items-center justify-center" title="Hủy đơn tiệc">
+                            <i class="fa-solid fa-ban text-sm"></i>
+                        </button>
+                    `;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="booking-row">
+                        <td class="py-3.5 px-4 font-mono font-bold text-[#8C6D32]">${code}</td>
+                        <td class="py-3.5 px-4">
+                            <div class="flex items-center gap-2.5">
+                                <div class="customer-avatar">${initial}</div>
+                                <div class="min-w-0">
+                                    <p class="font-bold text-slate-900 truncate">${custName}</p>
+                                    <p class="text-[11px] text-slate-500 flex items-center gap-1">
+                                        <i class="fa-solid fa-phone text-[9px]"></i>
+                                        ${phone}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <p class="font-semibold text-slate-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-hotel text-[10px] text-[#B89758]"></i>
+                                ${hall}
+                            </p>
+                            <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">
+                                ${shiftIcon}${shift}
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-3 text-center font-medium text-slate-700">
+                            <div class="flex flex-col items-center">
+                                <span class="font-bold">${day}</span>
+                                <span class="text-[10px] text-slate-500">Tháng ${monthYear}</span>
+                            </div>
+                        </td>
+                        <td class="py-3.5 px-3 text-center">
+                            <span class="font-bold text-slate-800">${tables}</span>
+                            <span class="text-[10px] text-slate-500 ml-0.5">bàn</span>
+                        </td>
+                        <td class="py-3.5 px-4 text-right font-serif font-bold text-slate-900">
+                            ${total} <span class="text-[10px] font-sans text-slate-500 font-normal">đ</span>
+                        </td>
+                        <td class="py-3.5 px-3 text-center">${badge}</td>
+                        <td class="py-3.5 px-4 text-center"><div class="inline-flex items-center gap-1.5">${actionBtns}</div></td>
+                    </tr>
+                `;
+            });
+
+            // Render phân trang
+            const totalCount = data.totalCount ?? data.TotalCount ?? 0;
+            const pageSize = currentFilter.pageSize;
+            renderPagination(totalCount, currentFilter.pageIndex, pageSize);
+
+            // Update page info
+            const start = (currentFilter.pageIndex - 1) * pageSize + 1;
+            const end = Math.min(start + items.length - 1, totalCount);
+            document.getElementById('pageInfoStart').innerText = items.length > 0 ? start : 0;
+            document.getElementById('pageInfoEnd').innerText = end;
+            document.getElementById('pageInfoTotal').innerText = totalCount;
+        }
+
+        function renderPagination(totalCount, currentPage, pageSize) {
+            const wrapper = document.getElementById('paginationWrapper');
+            wrapper.innerHTML = '';
+            const totalPages = Math.ceil(totalCount / pageSize) || 1;
+
+            // Nút Previous
+            const prevBtn = document.createElement('button');
+            prevBtn.type = 'button';
+            prevBtn.className = `px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-medium ${currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 cursor-pointer'}`;
+            prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left text-[10px]"></i>';
+            if (currentPage > 1) prevBtn.onclick = () => executeFilter(currentPage - 1);
+            wrapper.appendChild(prevBtn);
+
+            // Số trang
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                if (i === currentPage) {
+                    btn.className = 'px-3 py-1.5 rounded-lg bg-[#B89758] text-white font-bold border border-[#B89758] cursor-pointer';
+                } else {
+                    btn.className = 'px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-100 cursor-pointer';
+                }
+                btn.innerText = i;
+                btn.onclick = () => executeFilter(i);
+                wrapper.appendChild(btn);
+            }
+
+            // Nút Next
+            const nextBtn = document.createElement('button');
+            nextBtn.type = 'button';
+            nextBtn.className = `px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-medium ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 cursor-pointer'}`;
+            nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right text-[10px]"></i>';
+            if (currentPage < totalPages) nextBtn.onclick = () => executeFilter(currentPage + 1);
+            wrapper.appendChild(nextBtn);
+        }
+
+        // ================= 2. XỬ LÝ CHI TIẾT HỢP ĐỒNG & ĐẶT CỌC =================
+        async function viewBookingDetail(id) {
+            selectedBookingId = id;
+            try {
+                const res = await fetch(`/AdminBooking/GetDetail/${id}`);
+                const result = await res.json();
+
+                if (result.success && result.data) {
+                    const b = result.data;
+                    document.getElementById('mdBookingCode').innerText = b.bookingCode || b.BookingCode;
+                    document.getElementById('mdCustomerName').innerText = b.customerName || b.CustomerName;
+                    document.getElementById('mdCustomerPhone').innerText = b.customerPhone || b.CustomerPhone || 'Chưa có SĐT';
+                    document.getElementById('mdHallAndShift').innerText = `${b.hallName || b.HallName} • ${b.shift || b.Shift}`;
+                    document.getElementById('mdEventDate').innerText = new Date(b.eventDate || b.EventDate).toLocaleDateString('vi-VN');
+
+                    const tables = b.tableCount ?? b.TableCount ?? 0;
+                    const menuUnit = b.finalMenuPrice ?? b.FinalMenuPrice ?? 0;
+                    const hallPrice = b.finalHallPrice ?? b.FinalHallPrice ?? 0;
+                    const decorPrice = b.finalDecorationPrice ?? b.FinalDecorationPrice ?? 0;
+                    const total = b.estimatedTotal ?? b.EstimatedTotal ?? 0;
+
+                    document.getElementById('mdTableCount').innerText = `${tables} bàn`;
+                    document.getElementById('mdMenuUnitPrice').innerText = `${Number(menuUnit).toLocaleString('vi-VN')} đ`;
+                    document.getElementById('mdMenuSubtotal').innerText = `${Number(menuUnit * tables).toLocaleString('vi-VN')} đ`;
+                    document.getElementById('mdHallPrice').innerText = `${Number(hallPrice).toLocaleString('vi-VN')} đ`;
+                    document.getElementById('mdHallSubtotal').innerText = `${Number(hallPrice).toLocaleString('vi-VN')} đ`;
+                    document.getElementById('mdDecorPrice').innerText = `${Number(decorPrice).toLocaleString('vi-VN')} đ`;
+                    document.getElementById('mdDecorSubtotal').innerText = `${Number(decorPrice).toLocaleString('vi-VN')} đ`;
+                    document.getElementById('mdTotalAmount').innerText = `${Number(total).toLocaleString('vi-VN')} VNĐ`;
+
+                    document.getElementById('mdDeposit20').innerText = `${Number(total * 0.2).toLocaleString('vi-VN')} đ`;
+                    document.getElementById('mdDeposit50').innerText = `${Number(total * 0.5).toLocaleString('vi-VN')} đ`;
+
+                    const status = b.status || b.Status;
+                    document.getElementById('mdStatusBadge').innerText = status;
+
+                    const btnGroup = document.getElementById('mdActionBtnGroup');
+                    btnGroup.innerHTML = '';
+                    if (status === 'Chờ xác nhận') {
+                        btnGroup.innerHTML = `<button type="button" onclick="quickUpdateStatus(${id}, 'Đã xác nhận')" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-sm transition-colors flex items-center gap-2"><i class="fa-solid fa-check text-xs"></i>Duyệt Hợp Đồng</button>`;
+                    } else if (status === 'Đã xác nhận') {
+                        btnGroup.innerHTML = `<button type="button" onclick="quickDepositModal(${id}, ${total})" class="px-4 py-2.5 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] text-white rounded-lg font-bold shadow-sm transition-all flex items-center gap-2"><i class="fa-solid fa-hand-holding-dollar text-xs"></i>Thu Cọc 20%</button>`;
+                    } else if (status === 'Đã cọc') {
+                        btnGroup.innerHTML = `<button type="button" onclick="quickUpdateStatus(${id}, 'Hoàn tất')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-sm transition-colors flex items-center gap-2"><i class="fa-solid fa-circle-check text-xs"></i>Quyết Toán</button>`;
+                    }
+
+                    const modal = document.getElementById('bookingDetailModal');
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Lỗi', 'Không thể lấy chi tiết hợp đồng.', false);
+            }
+        }
+
+        function closeDetailModal() {
+            const modal = document.getElementById('bookingDetailModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // ================= 3. CẬP NHẬT TRẠNG THÁI / ĐẶT CỌC / HỦY =================
+        async function quickUpdateStatus(id, newStatus) {
+            if (!confirm(`Bạn có chắc muốn chuyển trạng thái đơn tiệc sang "${newStatus}"?`)) return;
+
+            try {
+                const res = await fetch(`/AdminBooking/UpdateStatus/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newStatus: newStatus })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    showToast('Thành công', result.message);
+                    closeDetailModal();
+                    executeFilter(currentFilter.pageIndex);
+                } else {
+                    showToast('Lỗi', result.message, false);
+                }
+            } catch (e) {
+                showToast('Lỗi', 'Không thể cập nhật trạng thái.', false);
+            }
+        }
+
+        function quickDepositModal(id, totalAmount) {
+            const deposit20 = totalAmount * 0.2;
+            if (confirm(`Xác nhận khách hàng đã nộp tiền cọc đợt 1 (20%): ${deposit20.toLocaleString('vi-VN')} đ?`)) {
+                quickUpdateStatus(id, 'Đã cọc');
+            }
+        }
+
+        function cancelBookingPrompt(id) {
+            const reason = prompt("Nhập lý do hủy tiệc cưới (lịch sảnh sẽ tự động giải phóng):", "Khách hàng đổi kế hoạch");
+            if (reason === null) return;
+
+            fetch(`/AdminBooking/UpdateStatus/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newStatus: 'Đã hủy', cancellationReason: reason })
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    showToast('Đã hủy', 'Đã hủy tiệc và giải phóng lịch sảnh thành công.');
+                    closeDetailModal();
+                    executeFilter(currentFilter.pageIndex);
+                } else {
+                    showToast('Lỗi', result.message, false);
+                }
+            });
+        }
+
+        // ================= 4. TẠO MỚI ĐẶT TIỆC =================
+        function openCreateBookingModal() {
+            const modal = document.getElementById('createBookingModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeCreateBookingModal() {
+            const modal = document.getElementById('createBookingModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function handleCreateBooking(e) {
+            e.preventDefault();
+            const payload = {
+                customerId: parseInt(document.getElementById('newCustomerId').value),
+                hallId: parseInt(document.getElementById('newHallId').value),
+                eventDate: document.getElementById('newEventDate').value,
+                shift: document.getElementById('newShift').value,
+                tableCount: parseInt(document.getElementById('newTableCount').value),
+                guestCount: parseInt(document.getElementById('newGuestCount').value),
+                specialRequests: document.getElementById('newSpecialRequests').value
+            };
+
+            try {
+                const res = await fetch('/AdminBooking/Create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    showToast('Thành công', result.message);
+                    closeCreateBookingModal();
+                    executeFilter(1);
+                } else {
+                    showToast('Thất bại', result.message, false);
+                }
+            } catch (err) {
+                showToast('Lỗi', 'Không thể kết nối máy chủ.', false);
+            }
+        }
+
+        // ================= 5. XUẤT EXCEL =================
+        function exportBookingsExcel() {
+            if (!currentBookings || currentBookings.length === 0) {
+                showToast('Thông báo', 'Không có dữ liệu để xuất.', false);
+                return;
+            }
+
+            try {
+                const wb = XLSX.utils.book_new();
+
+                const dataToExport = currentBookings.map((b, idx) => {
+                    const eventDateRaw = b.eventDate || b.EventDate;
+                    const dateFormatted = eventDateRaw ? new Date(eventDateRaw).toLocaleDateString('vi-VN') : '';
+                    return {
+                        'STT': idx + 1,
+                        'Mã Tiệc': b.bookingCode || b.BookingCode,
+                        'Tên Khách Hàng': b.customerName || b.CustomerName,
+                        'Số Điện Thoại': b.customerPhone || b.CustomerPhone || '',
+                        'Đại Sảnh': b.hallName || b.HallName,
+                        'Ca Tổ Chức': b.shift || b.Shift,
+                        'Ngày Tổ Chức': dateFormatted,
+                        'Số Bàn': b.tableCount || b.TableCount || 0,
+                        'Tổng Dự Kiến (VNĐ)': b.estimatedTotal || b.EstimatedTotal || 0,
+                        'Trạng Thái': b.status || b.Status
+                    };
+                });
+
+                const ws = XLSX.utils.json_to_sheet(dataToExport);
+                const wscols = [
+                    { wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 },
+                    { wch: 20 }, { wch: 12 }, { wch: 15 }, { wch: 10 },
+                    { wch: 20 }, { wch: 15 }
+                ];
+                ws['!cols'] = wscols;
+                XLSX.utils.book_append_sheet(wb, ws, 'DanhSach_DatTiec');
+
+                XLSX.writeFile(wb, `Riverside_DanhSach_DatTiec_${new Date().toISOString().slice(0,10)}.xlsx`);
+                showToast('Thành công', `Đã xuất ${currentBookings.length} hợp đồng ra Excel!`);
+            } catch (err) {
+                console.error('Lỗi xuất Excel:', err);
+                showToast('Lỗi', 'Không thể xuất file Excel: ' + err.message, false);
+            }
+        }
+    </script>
+}

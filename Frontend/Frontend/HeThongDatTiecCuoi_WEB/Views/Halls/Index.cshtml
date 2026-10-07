@@ -1,0 +1,103 @@
+@using System.Globalization
+@model HeThongDatTiecCuoi_WEB.Models.Halls.HallListViewModel
+@{
+    ViewData["Title"] = "Danh sách sảnh";
+    ViewData["PublicActivePage"] = "halls";
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+    var placeholderImage = Url.Content("~/images/home/hall-placeholder.jpg");
+}
+
+@section Styles {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Plus+Jakarta+Sans:wght@300..800&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/hall-list.css" asp-append-version="true" />
+}
+
+<div class="home-page hall-list-page">
+    <partial name="_PublicHeader" />
+    <main>
+        <section class="hall-list-hero" aria-labelledby="hall-list-title">
+            <div class="hall-list-hero-image" aria-hidden="true"></div>
+            <div class="home-container hall-list-hero-content">
+                <span class="hall-list-eyebrow">SẢNH TIỆC</span>
+                <h1 id="hall-list-title">Không gian hoàn hảo<br />cho ngày trọng đại</h1>
+                <p>Những sảnh tiệc sang trọng, đa dạng phong cách tại Riverside Palace sẵn sàng biến giấc mơ của bạn thành hiện thực.</p>
+            </div>
+        </section>
+
+        <nav class="hall-breadcrumb" aria-label="Đường dẫn trang">
+            <div class="home-container"><a asp-controller="Home" asp-action="Index"><span class="material-symbols-outlined" aria-hidden="true">home</span> Trang chủ</a><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span><span aria-current="page">Sảnh tiệc</span></div>
+        </nav>
+
+        <section class="hall-catalog" aria-label="Danh sách sảnh tiệc">
+            <div class="home-container">
+                <form class="hall-filter" method="get" asp-controller="Halls" asp-action="Index">
+                    <div class="hall-filter-field hall-filter-keyword"><label for="keyword">Tìm theo tên sảnh</label><div class="input-with-icon"><span class="material-symbols-outlined" aria-hidden="true">search</span><input id="keyword" name="keyword" value="@Model.Keyword" placeholder="Nhập tên sảnh..." /></div></div>
+                    <div class="hall-filter-field"><label for="capacity">Sức chứa</label><select id="capacity" name="capacity"><option value="" selected="@(string.IsNullOrEmpty(Model.Capacity))">Tất cả</option><option value="under-200" selected="@(Model.Capacity == "under-200")">Dưới 200 khách</option><option value="200-300" selected="@(Model.Capacity == "200-300")">200 - 300 khách</option><option value="300-500" selected="@(Model.Capacity == "300-500")">300 - 500 khách</option><option value="500-700" selected="@(Model.Capacity == "500-700")">500 - 700 khách</option><option value="over-700" selected="@(Model.Capacity == "over-700")">Trên 700 khách</option></select></div>
+                    <div class="hall-filter-field"><label for="priceRange">Khoảng giá thuê</label><select id="priceRange" name="priceRange"><option value="" selected="@(string.IsNullOrEmpty(Model.PriceRange))">Tất cả</option><option value="under-20000000" selected="@(Model.PriceRange == "under-20000000")">Dưới 20 triệu</option><option value="20000000-30000000" selected="@(Model.PriceRange == "20000000-30000000")">20 - 30 triệu</option><option value="30000000-40000000" selected="@(Model.PriceRange == "30000000-40000000")">30 - 40 triệu</option><option value="40000000-50000000" selected="@(Model.PriceRange == "40000000-50000000")">40 - 50 triệu</option><option value="over-50000000" selected="@(Model.PriceRange == "over-50000000")">Trên 50 triệu</option></select></div>
+                    <input type="hidden" name="sort" value="@Model.Sort" />
+                    <button class="hall-filter-button" type="submit"><span class="material-symbols-outlined" aria-hidden="true">search</span> Lọc sảnh</button>
+                </form>
+
+                <div class="hall-list-toolbar">
+                    <p>Có <strong>@Model.TotalItems</strong> sảnh tiệc phù hợp</p>
+                    <form method="get" asp-controller="Halls" asp-action="Index" data-sort-form>
+                        <input type="hidden" name="keyword" value="@Model.Keyword" /><input type="hidden" name="capacity" value="@Model.Capacity" /><input type="hidden" name="priceRange" value="@Model.PriceRange" />
+                        <label for="sort">Sắp xếp theo</label><select id="sort" name="sort"><option value="name-asc" selected="@(Model.Sort == "name-asc")">Tên A - Z</option><option value="price-asc" selected="@(Model.Sort == "price-asc")">Giá thấp → cao</option><option value="price-desc" selected="@(Model.Sort == "price-desc")">Giá cao → thấp</option><option value="capacity-desc" selected="@(Model.Sort == "capacity-desc")">Sức chứa lớn → nhỏ</option></select>
+                    </form>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                {
+                    <div class="hall-empty-state" role="alert"><span class="material-symbols-outlined" aria-hidden="true">error</span><h2>Không thể tải danh sách sảnh</h2><p>Vui lòng thử lại sau.</p><a asp-controller="Halls" asp-action="Index">Thử lại</a></div>
+                }
+                else if (Model.Halls.Count == 0)
+                {
+                    <div class="hall-empty-state"><span class="material-symbols-outlined" aria-hidden="true">search_off</span><h2>Không tìm thấy sảnh phù hợp</h2><p>Không tìm thấy sảnh phù hợp với tiêu chí của bạn.</p><a asp-controller="Halls" asp-action="Index">Xóa bộ lọc</a></div>
+                }
+                else
+                {
+                    <div class="public-hall-grid">
+                        @foreach (var hall in Model.Halls)
+                        {
+                            var capacityText = hall.MinimumCapacity.HasValue && hall.MinimumCapacity.Value > 0
+                                ? hall.MinimumCapacity.Value == hall.MaximumCapacity ? $"{hall.MaximumCapacity.ToString("N0", vi)} khách" : $"{hall.MinimumCapacity.Value.ToString("N0", vi)} - {hall.MaximumCapacity.ToString("N0", vi)} khách"
+                                : $"Tối đa {hall.MaximumCapacity.ToString("N0", vi)} khách";
+                            var image = string.IsNullOrWhiteSpace(hall.ImageUrl) ? placeholderImage : hall.ImageUrl;
+                            <article class="public-hall-card">
+                                <a class="public-hall-image" asp-controller="Halls" asp-action="Details" asp-route-hallId="@hall.HallId" aria-label="Xem chi tiết @hall.HallName"><img src="@image" alt="@hall.HallName" loading="lazy" data-fallback="@placeholderImage" /></a>
+                                <div class="public-hall-content">
+                                    <h2>@hall.HallName</h2>
+                                    <p class="public-hall-capacity"><span class="material-symbols-outlined" aria-hidden="true">groups</span> @capacityText</p>
+                                    <p class="public-hall-price">@hall.RentalPrice.ToString("N0", vi) VNĐ</p>
+                                    <p class="public-hall-description">@(string.IsNullOrWhiteSpace(hall.Description) ? "Không gian tiệc cưới sang trọng tại Riverside Palace." : hall.Description)</p>
+                                    <a class="public-hall-detail" asp-controller="Halls" asp-action="Details" asp-route-hallId="@hall.HallId">Xem chi tiết <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+
+                @if (Model.TotalPages > 1)
+                {
+                    <nav class="hall-pagination" aria-label="Phân trang danh sách sảnh">
+                        <a class="@(Model.Page <= 1 ? "disabled" : null)" asp-controller="Halls" asp-action="Index" asp-route-keyword="@Model.Keyword" asp-route-capacity="@Model.Capacity" asp-route-priceRange="@Model.PriceRange" asp-route-sort="@Model.Sort" asp-route-page="@(Model.Page - 1)" aria-label="Trang trước" aria-disabled="@(Model.Page <= 1)"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></a>
+                        @for (var pageNumber = 1; pageNumber <= Model.TotalPages; pageNumber++)
+                        {
+                            <a class="@(pageNumber == Model.Page ? "active" : null)" asp-controller="Halls" asp-action="Index" asp-route-keyword="@Model.Keyword" asp-route-capacity="@Model.Capacity" asp-route-priceRange="@Model.PriceRange" asp-route-sort="@Model.Sort" asp-route-page="@pageNumber" aria-current="@(pageNumber == Model.Page ? "page" : null)">@pageNumber</a>
+                        }
+                        <a class="@(Model.Page >= Model.TotalPages ? "disabled" : null)" asp-controller="Halls" asp-action="Index" asp-route-keyword="@Model.Keyword" asp-route-capacity="@Model.Capacity" asp-route-priceRange="@Model.PriceRange" asp-route-sort="@Model.Sort" asp-route-page="@(Model.Page + 1)" aria-label="Trang sau" aria-disabled="@(Model.Page >= Model.TotalPages)"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
+                    </nav>
+                }
+            </div>
+        </section>
+    </main>
+    <partial name="_PublicFooter" />
+    <div class="home-toast" role="status" aria-live="polite" hidden></div>
+</div>
+
+@section Scripts {
+    <script src="~/js/hall-list.js" asp-append-version="true"></script>
+}

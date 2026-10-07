@@ -1,0 +1,331 @@
+﻿@model List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>
+@{
+    ViewData["Title"] = "Tiệc Của Tôi - Riverside Palace";
+    ViewData["PublicActivePage"] = "my-bookings";
+    var currentPhone = ViewBag.CurrentPhone as string ?? "";
+}
+
+@section Styles {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Plus+Jakarta+Sans:wght@300..800&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+
+    <style>
+        .myb-page-wrap {
+            background-color: #FAF8F5;
+            padding: 50px 20px 80px 20px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #1E293B;
+            min-height: 80vh;
+        }
+
+        .myb-container {
+            max-width: 1140px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .myb-card {
+            background: #FFFFFF;
+            border-radius: 24px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+            padding: 28px;
+            transition: all 0.2s;
+        }
+
+            .myb-card:hover {
+                border-color: #B89758;
+                box-shadow: 0 15px 30px -8px rgba(184, 151, 88, 0.15);
+            }
+
+        .myb-badge-pending {
+            background: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #FDE68A;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .myb-badge-success {
+            background: #ECFDF5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .myb-badge-cancelled {
+            background: #F1F5F9;
+            color: #64748B;
+            border: 1px solid #E2E8F0;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .myb-stepper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            margin: 24px 0 16px 0;
+            padding: 0 10px;
+        }
+
+            .myb-stepper::before {
+                content: '';
+                position: absolute;
+                top: 14px;
+                left: 20px;
+                right: 20px;
+                height: 2px;
+                background: #E2E8F0;
+                z-index: 1;
+            }
+
+        .myb-step-item {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            background: #FFFFFF;
+            padding: 0 8px;
+        }
+
+        .myb-step-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .myb-step-active {
+            background: #B89758;
+            color: #FFFFFF;
+            box-shadow: 0 0 0 4px rgba(184, 151, 88, 0.2);
+        }
+
+        .myb-step-done {
+            background: #10B981;
+            color: #FFFFFF;
+        }
+
+        .myb-step-wait {
+            background: #F1F5F9;
+            color: #94A3B8;
+            border: 1.5px solid #CBD5E1;
+        }
+    </style>
+}
+
+<div class="home-page">
+    <!-- Header kế thừa đồng bộ -->
+    <partial name="_PublicHeader" />
+
+    <main class="myb-page-wrap">
+        <div class="myb-container">
+
+            <!-- Banner tiêu đề -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid #E2E8F0; padding-bottom: 20px;">
+                <div>
+                    <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #B89758;">
+                        Không Gian Quản Lý Tiệc Cưới Cá Nhân
+                    </span>
+                    <h1 style="font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: #0F172A; margin: 4px 0 0 0;">
+                        Tiệc Cưới Của Tôi
+                    </h1>
+                </div>
+
+                <!-- Ô tìm kiếm bằng số điện thoại nếu khách chưa đăng nhập -->
+                <form method="get" asp-action="Index" style="display: flex; gap: 8px;">
+                    <input type="tel" name="phone" value="@currentPhone" placeholder="Nhập SĐT để tra cứu..." style="padding: 10px 14px; border-radius: 12px; border: 1px solid #CBD5E1; font-size: 13px; outline: none; width: 200px;">
+                    <button type="submit" style="padding: 10px 18px; border-radius: 12px; background: #B89758; color: #FFF; font-weight: 700; border: none; font-size: 13px; cursor: pointer;">
+                        <i class="fa-solid fa-magnifying-glass"></i> Tra cứu
+                    </button>
+                </form>
+            </div>
+
+            <!-- Danh sách đơn tiệc -->
+            @if (Model == null || Model.Count == 0)
+            {
+                <div class="myb-card" style="text-align: center; padding: 60px 20px;">
+                    <div style="width: 64px; height: 64px; border-radius: 50%; background: #FAF8F5; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 26px; color: #94A3B8;">
+                        <i class="fa-regular fa-calendar-xmark"></i>
+                    </div>
+                    <h3 style="font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: #0F172A; margin: 0 0 8px 0;">
+                        Hai bạn chưa có đơn tiệc cưới nào
+                    </h3>
+                    <p style="font-size: 13px; color: #64748B; margin: 0 0 20px 0; max-width: 480px; margin-left: auto; margin-right: auto;">
+                        Hãy trải nghiệm công nghệ AI Recommendation để nhận ngay Top 3 gói tiệc cưới tối ưu theo ngân sách và sở thích.
+                    </p>
+                    <a asp-controller="Recommendation" asp-action="Index" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 12px; background: #B89758; color: #FFFFFF; font-weight: 700; font-size: 13px; text-decoration: none;">
+                        <i class="fa-solid fa-sparkles"></i> Nhận Gợi Ý Gói Tiệc Ngay
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    @foreach (var item in Model)
+                    {
+                        var isCancelled = item.Status == "Đã hủy";
+                        var isPending = item.Status == "Chờ xác nhận";
+                        var isConfirmed = item.Status == "Đã cọc" || item.Status == "Đã ký hợp đồng";
+
+                        <div class="myb-card">
+                            <!-- Tiêu đề thẻ -->
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid #F1F5F9;">
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-family: monospace; font-size: 15px; font-weight: 800; color: #B89758; background: #FFF9EE; border: 1px solid #EEDBB2; padding: 2px 8px; border-radius: 6px;">
+                                            @item.BookingCode
+                                        </span>
+                                        @if (isPending)
+                                        {
+                                            <span class="myb-badge-pending"><i class="fa-regular fa-clock"></i> Chờ xác nhận</span>
+                                        }
+                                        else if (isCancelled)
+                                        {
+                                            <span class="myb-badge-cancelled"><i class="fa-solid fa-ban"></i> Đã hủy</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="myb-badge-success"><i class="fa-solid fa-circle-check"></i> @item.Status</span>
+                                        }
+                                    </div>
+                                    <span style="font-size: 11px; color: #94A3B8; display: block; margin-top: 4px;">
+                                        Thời gian đăng ký: @item.BookedAt.ToString("HH:mm - dd/MM/yyyy")
+                                    </span>
+                                </div>
+
+                                <div style="text-align: right;">
+                                    <span style="font-size: 11px; color: #64748B;">Dự toán trọn gói:</span>
+                                    <span style="font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: #0F172A; display: block;">
+                                        @item.EstimatedTotal.ToString("N0") đ
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Stepper Tiến trình tiệc cưới (Không hiển thị khi đã hủy) -->
+                            @if (!isCancelled)
+                            {
+                                <div class="myb-stepper">
+                                    <div class="myb-step-item">
+                                        <div class="myb-step-dot @(isPending ? "myb-step-active" : "myb-step-done")">1</div>
+                                        <span style="font-size: 11px; font-weight: 700; color: #0F172A;">Giữ chỗ</span>
+                                    </div>
+                                    <div class="myb-step-item">
+                                        <div class="myb-step-dot @(isPending ? "myb-step-wait" : "myb-step-active")">2</div>
+                                        <span style="font-size: 11px; font-weight: 600; color: #64748B;">Tư vấn sảnh</span>
+                                    </div>
+                                    <div class="myb-step-item">
+                                        <div class="myb-step-dot @(isConfirmed ? "myb-step-done" : "myb-step-wait")">3</div>
+                                        <span style="font-size: 11px; font-weight: 600; color: #64748B;">Ký hợp đồng</span>
+                                    </div>
+                                    <div class="myb-step-item">
+                                        <div class="myb-step-dot myb-step-wait">4</div>
+                                        <span style="font-size: 11px; font-weight: 600; color: #64748B;">Chuẩn bị</span>
+                                    </div>
+                                    <div class="myb-step-item">
+                                        <div class="myb-step-dot myb-step-wait">5</div>
+                                        <span style="font-size: 11px; font-weight: 600; color: #64748B;">Hoàn tất</span>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Nội dung 4 cột thông tin -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; background: #FAF8F5; padding: 18px; border-radius: 16px; border: 1px solid #E2E8F0; margin-top: 14px; font-size: 12.5px;">
+                                <div>
+                                    <span style="color: #64748B; display: block; margin-bottom: 2px;">Không gian &amp; Thời gian:</span>
+                                    <strong style="color: #0F172A; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-archway" style="color: #B89758;"></i> Sảnh @item.HallName
+                                    </strong>
+                                    <span style="color: #334155; font-size: 12px; display: block; margin-top: 2px;">
+                                        @item.Shift, @item.EventDate.ToString("dd/MM/yyyy")
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <span style="color: #64748B; display: block; margin-bottom: 2px;">Quy mô tiệc cưới:</span>
+                                    <strong style="color: #0F172A; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-users" style="color: #B89758;"></i> @item.TableCount bàn tiệc
+                                    </strong>
+                                    <span style="color: #64748B; font-size: 12px; display: block; margin-top: 2px;">
+                                        Dự kiến khoảng @item.GuestCount khách
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <span style="color: #64748B; display: block; margin-bottom: 2px;">Ẩm thực &amp; Trang trí:</span>
+                                    <span style="color: #0F172A; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        🍲 @item.MenuName
+                                    </span>
+                                    <span style="color: #64748B; font-size: 12px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
+                                        ✨ @item.DecorName
+                                    </span>
+                                </div>
+
+                            </div>
+
+                            <!-- Nút thao tác -->
+                            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 16px;">
+                                @if (isPending)
+                                {
+                                    <button type="button" onclick="cancelMyBooking(@item.BookingId, '@item.BookingCode')" style="padding: 9px 16px; border-radius: 10px; background: #FFFFFF; border: 1px solid #EF4444; color: #EF4444; font-weight: 700; font-size: 12px; cursor: pointer;">
+                                        <i class="fa-regular fa-trash-can"></i> Hủy Giữ Chỗ
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+        </div>
+    </main>
+
+    <!-- Footer kế thừa đồng bộ -->
+    <partial name="_PublicFooter" />
+</div>
+
+@section Scripts {
+    <script>
+        async function cancelMyBooking(bookingId, bookingCode) {
+            if (!confirm(`Bạn có chắc chắn muốn hủy yêu cầu giữ chỗ cho đơn tiệc [${bookingCode}]?`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/MyBookings/CancelBooking?bookingId=${bookingId}`, {
+                    method: 'POST'
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert("Đã hủy đơn giữ chỗ tiệc cưới thành công!");
+                    window.location.reload();
+                } else {
+                    alert(result.message || "Không thể hủy đơn lúc này.");
+                }
+            } catch (e) {
+                alert("Lỗi kết nối khi gửi yêu cầu hủy đơn.");
+            }
+        }
+    </script>
+}

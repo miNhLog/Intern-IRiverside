@@ -1,0 +1,71 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+}
+
+@section Styles {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..600,0..1,-50..200&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+}
+
+<main class="auth-shell login-page">
+    <section class="auth-story" aria-label="Giới thiệu Riverside Palace">
+        <div class="brand-pill"><span></span> RIVERSIDE PALACE STAFF PORTAL</div>
+        <div class="story-content">
+        
+            <h1>Chào Mừng Trở Lại<br /><em>Riverside Palace</em></h1>
+            <p>Cổng truy cập dành cho Admin và nhân viên vận hành Riverside Palace.</p>
+            <ul>
+                <li><b><span class="material-symbols-outlined" aria-hidden="true">verified_user</span></b><span>Bảo mật thông tin hợp đồng &amp; thanh toán chuẩn quốc tế</span></li>
+                <li><b><span class="material-symbols-outlined" aria-hidden="true">smart_toy</span></b><span>Trợ lý AI tư vấn và theo dõi tiến độ sự kiện 24/7</span></li>
+                <li><b><span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span></b><span>Phân quyền truy cập theo vai trò công việc</span></li>
+            </ul>
+        </div>
+        <small>© 2026 Riverside Palace. All rights reserved. Tiêu chuẩn dịch vụ hội nghị &amp; yến tiệc 5 sao.</small>
+    </section>
+
+    <section class="auth-form-side">
+        <div class="auth-card">
+            <div class="crest"><span class="material-symbols-outlined" aria-hidden="true">login</span></div>
+            <h2>Đăng Nhập</h2>
+            <p class="subtitle">Đăng nhập để truy cập khu vực quản trị và vận hành</p>
+
+            @if (TempData["Success"] is string successMessage)
+            {
+                <div class="alert-success">@successMessage</div>
+            }
+            @if (TempData["Error"] is string errorMessage)
+            {
+                <div class="alert-error">@errorMessage</div>
+            }
+
+            <form asp-action="Login" asp-controller="Auth" method="post" novalidate>
+                <input asp-for="ReturnUrl" type="hidden" />
+                <div asp-validation-summary="ModelOnly" class="alert-error"></div>
+
+                <div class="field">
+                    <label asp-for="Identifier">EMAIL HOẶC SỐ ĐIỆN THOẠI <i>*</i></label>
+                    <div class="input-wrap"><span class="material-symbols-outlined" aria-hidden="true">alternate_email</span><input asp-for="Identifier" placeholder="example@email.com hoặc 0903xxxxxx" autocomplete="username" /></div>
+                    <span asp-validation-for="Identifier" class="field-error"></span>
+                </div>
+
+                <div class="field">
+                    <label asp-for="Password">MẬT KHẨU <i>*</i></label>
+                    <div class="input-wrap"><span class="material-symbols-outlined" aria-hidden="true">lock</span><input asp-for="Password" placeholder="••••••••••••" autocomplete="current-password" /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu"><span class="material-symbols-outlined" aria-hidden="true">visibility</span></button></div>
+                    <span asp-validation-for="Password" class="field-error"></span>
+                </div>
+
+                <div class="form-row between compact">
+                    <label class="check"><input asp-for="RememberMe" /> <span>Ghi nhớ phiên đăng nhập</span></label>
+                    <a class="muted-link" asp-action="ForgotPassword">Quên mật khẩu?</a>
+                </div>
+
+                <button class="primary-button" type="submit">Đăng Nhập <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
+
+            </form>
+            <footer>Hotline hỗ trợ: <strong>0933 777 888</strong> <span>│</span> 360D Bến Vân Đồn, P.1, Q.4, TP.HCM</footer>
+        </div>
+    </section>
+</main>

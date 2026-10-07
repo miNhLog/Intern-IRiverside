@@ -1,0 +1,132 @@
+@using System.Globalization
+@model HeThongDatTiecCuoi_WEB.Models.Halls.HallDetailViewModel
+@{
+    var hasHall = !Model.IsNotFound && string.IsNullOrWhiteSpace(Model.ErrorMessage);
+    ViewData["Title"] = hasHall ? Model.HallName : "Không tìm thấy sảnh";
+    ViewData["PublicActivePage"] = "halls";
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+    var placeholderImage = Url.Content("~/images/home/hall-placeholder.jpg");
+    var publicHeroImage = Url.Content("~/images/home/hero-wedding.jpg");
+    var image = string.IsNullOrWhiteSpace(Model.ImageUrl) ? placeholderImage : Model.ImageUrl;
+    var description = string.IsNullOrWhiteSpace(Model.Description)
+        ? "Không gian tiệc cưới sang trọng tại Riverside Palace."
+        : Model.Description;
+    var capacity = Model.MinimumCapacity.HasValue && Model.MinimumCapacity.Value > 0
+        ? Model.MinimumCapacity.Value == Model.MaximumCapacity
+            ? $"{Model.MaximumCapacity.ToString("N0", vi)} khách"
+            : $"{Model.MinimumCapacity.Value.ToString("N0", vi)} - {Model.MaximumCapacity.ToString("N0", vi)} khách"
+        : $"Tối đa {Model.MaximumCapacity.ToString("N0", vi)} khách";
+}
+
+@section Styles {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Plus+Jakarta+Sans:wght@300..800&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/hall-detail.css" asp-append-version="true" />
+}
+
+<div class="home-page hall-detail-page">
+    <partial name="_PublicHeader" />
+    <main>
+        @if (!hasHall)
+        {
+            <section class="hall-detail-feedback">
+                <div class="home-container">
+                    <div class="hall-detail-feedback-card">
+                        <span class="material-symbols-outlined" aria-hidden="true">@(Model.IsNotFound ? "search_off" : "error")</span>
+                        <span class="hall-detail-label">RIVERSIDE PALACE</span>
+                        <h1>@(Model.IsNotFound ? "Không tìm thấy sảnh." : "Không thể tải thông tin sảnh")</h1>
+                        <p>@(Model.IsNotFound ? "Sảnh bạn đang tìm không tồn tại hoặc hiện không được phục vụ." : Model.ErrorMessage)</p>
+                        <a asp-controller="Halls" asp-action="Index"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Quay lại danh sách sảnh</a>
+                    </div>
+                </div>
+            </section>
+        }
+        else
+        {
+            <section class="hall-detail-hero" aria-labelledby="hall-detail-title">
+                <img class="hall-detail-hero-image" src="@publicHeroImage" alt="" aria-hidden="true" />
+                <div class="hall-detail-hero-shade" aria-hidden="true"></div>
+                <div class="home-container hall-detail-hero-content">
+                    <span>SẢNH TIỆC</span>
+                    <h1 id="hall-detail-title">@Model.HallName</h1>
+                    <p>Sự kết hợp hoàn hảo giữa sang trọng và lãng mạn</p>
+                </div>
+            </section>
+
+            <nav class="hall-detail-breadcrumb" aria-label="Đường dẫn trang">
+                <div class="home-container">
+                    <a asp-controller="Home" asp-action="Index"><span class="material-symbols-outlined" aria-hidden="true">home</span> Trang chủ</a>
+                    <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                    <a asp-controller="Halls" asp-action="Index">Sảnh tiệc</a>
+                    <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                    <span aria-current="page">@Model.HallName</span>
+                </div>
+            </nav>
+
+            <section class="hall-detail-main" aria-label="Thông tin sảnh @Model.HallName">
+                <div class="home-container">
+                    <div class="hall-detail-overview">
+                        <figure class="hall-detail-photo"><img src="@image" alt="@Model.HallName" data-fallback="@placeholderImage" /></figure>
+                        <div class="hall-detail-summary">
+                            <span class="hall-detail-label">KHÔNG GIAN TIỆC CƯỚI</span>
+                            <h2>@Model.HallName</h2>
+                            <div class="hall-detail-highlight"><span class="material-symbols-outlined" aria-hidden="true">groups</span><div><small>Sức chứa</small><strong>@capacity</strong></div></div>
+                            <div class="hall-detail-highlight"><span class="material-symbols-outlined" aria-hidden="true">payments</span><div><small>Giá thuê sảnh</small><strong>@Model.RentalPrice.ToString("N0", vi) VNĐ</strong></div></div>
+                            <p class="hall-detail-intro">@description</p>
+                            <div class="hall-detail-actions">
+                                <button class="hall-detail-primary" type="button" data-toast-message="Chức năng kiểm tra lịch trống đang được phát triển."><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span> Kiểm tra lịch trống</button>
+                                <button class="hall-detail-secondary" type="button" data-toast-message="Chức năng đặt tiệc đang được phát triển."><span class="material-symbols-outlined" aria-hidden="true">favorite</span> Đặt tiệc ngay</button>
+                            </div>
+                            <p class="hall-detail-note"><span class="material-symbols-outlined" aria-hidden="true">info</span> Chức năng đặt tiệc đang được phát triển.</p>
+                        </div>
+                    </div>
+
+                    <section class="hall-amenities" aria-labelledby="amenities-title">
+                        <h2 id="amenities-title">Tiện ích chung tại Riverside Palace</h2>
+                        <div class="hall-amenity-grid">
+                            <div><span class="material-symbols-outlined" aria-hidden="true">speaker</span><span>Âm thanh<br />hiện đại</span></div>
+                            <div><span class="material-symbols-outlined" aria-hidden="true">lightbulb</span><span>Ánh sáng<br />chuyên nghiệp</span></div>
+                            <div><span class="material-symbols-outlined" aria-hidden="true">ac_unit</span><span>Điều hòa<br />không khí</span></div>
+                            <div><span class="material-symbols-outlined" aria-hidden="true">meeting_room</span><span>Không gian<br />đón khách</span></div>
+                            <div><span class="material-symbols-outlined" aria-hidden="true">local_parking</span><span>Bãi đỗ xe<br />thuận tiện</span></div>
+                            <div><span class="material-symbols-outlined" aria-hidden="true">support_agent</span><span>Đội ngũ<br />hỗ trợ</span></div>
+                        </div>
+                    </section>
+
+                    <div class="hall-detail-information">
+                        <section aria-labelledby="information-title">
+                            <span class="hall-detail-label">DỮ LIỆU SẢNH</span>
+                            <h2 id="information-title">Thông tin chi tiết</h2>
+                            <dl class="hall-detail-table">
+                                <div><dt>Mã sảnh</dt><dd>@Model.HallCode</dd></div>
+                                <div><dt>Sức chứa</dt><dd>@capacity</dd></div>
+                                <div><dt>Giá thuê</dt><dd>@Model.RentalPrice.ToString("N0", vi) VNĐ</dd></div>
+                                <div><dt>Trạng thái</dt><dd><span class="hall-status-badge">@Model.StatusName</span></dd></div>
+                            </dl>
+                        </section>
+                        <section aria-labelledby="description-title">
+                            <span class="hall-detail-label">CÂU CHUYỆN KHÔNG GIAN</span>
+                            <h2 id="description-title">Mô tả chi tiết</h2>
+                            <p>@description</p>
+                        </section>
+                    </div>
+
+                    <section class="hall-detail-cta" aria-labelledby="hall-cta-title">
+                        <img src="@publicHeroImage" alt="" aria-hidden="true" />
+                        <div class="hall-detail-cta-shade" aria-hidden="true"></div>
+                        <div class="hall-detail-cta-copy"><h2 id="hall-cta-title">Để lại thông tin, chúng tôi sẽ tư vấn cho bạn</h2><p>Nhận tư vấn miễn phí về sảnh tiệc phù hợp nhất với nhu cầu của bạn.</p></div>
+                        <button type="button" data-toast-message="Chức năng tư vấn đang được phát triển."><span class="material-symbols-outlined" aria-hidden="true">chat_bubble</span> Tư vấn ngay</button>
+                    </section>
+                </div>
+            </section>
+        }
+    </main>
+    <partial name="_PublicFooter" />
+    <div class="home-toast" role="status" aria-live="polite" hidden></div>
+</div>
+
+@section Scripts {
+    <script src="~/js/hall-list.js" asp-append-version="true"></script>
+}
