@@ -10,16 +10,10 @@ using HeThongDatTiecCuoi_WEB.Models.AdminBooking;
 using HeThongDatTiecCuoi_WEB.Models.Recommendation;
 using HeThongDatTiecCuoi_WEB.Models.RoleChangeRequest;
 using HeThongDatTiecCuoi_WEB.Models.Notification;
-using HeThongDatTiecCuoi_WEB.Models.Home;
-using HeThongDatTiecCuoi_WEB.Models.ManagerHr;
 using Microsoft.AspNetCore.Mvc;
 
 public interface IRiversideApiClient
 {
-    Task<ApiCallResult<ManagerHrPageViewModel>> GetManagerHrAsync(string accessToken,string? search,string? role,string? status,string? assignmentStatus,int page,int pageSize,CancellationToken cancellationToken);
-    Task<ApiCallResult<ManagerHrActionViewModel>> AssignManagerHallsAsync(int employeeId,AssignHallsViewModel model,string accessToken,CancellationToken cancellationToken);
-    Task<ApiCallResult<ManagerHrActionViewModel>> EndManagerHallAssignmentAsync(int assignmentId,string accessToken,CancellationToken cancellationToken);
-    Task<ApiCallResult<ManagerDashboardViewModel>> GetManagerDashboardAsync(string accessToken, CancellationToken cancellationToken);
     Task<ApiCallResult<List<NotificationViewModel>>> GetRecentNotificationsAsync(string accessToken, int limit, CancellationToken cancellationToken);
     Task<ApiCallResult<NotificationCountViewModel>> GetUnreadNotificationCountAsync(string accessToken, CancellationToken cancellationToken);
     Task<ApiCallResult<NotificationPageViewModel>> GetNotificationsAsync(string accessToken, int page, int pageSize, string? readStatus, CancellationToken cancellationToken);
@@ -42,7 +36,6 @@ public interface IRiversideApiClient
         bool rememberMe,
         CancellationToken cancellationToken);
     Task<ApiCallResult<MessageResponseDto>> ChangePasswordAsync(ChangePasswordViewModel model, string accessToken, CancellationToken cancellationToken);
-    Task<ApiCallResult<FirstPasswordOtpResponseDto>> SendFirstPasswordOtpAsync(string accessToken, CancellationToken cancellationToken);
 
     Task<ApiCallResult<MessageResponseDto>> ForgotPasswordAsync(
         ForgotPasswordViewModel model,

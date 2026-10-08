@@ -20,8 +20,6 @@ public sealed class ManagerRoleChangeRequestController : Controller
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        return RedirectToAction("Index", "ManagerHr", new { tab = "requests" });
-#pragma warning disable CS0162
         var accessToken = await GetAccessTokenAsync();
         if (accessToken is null)
             return RedirectToAction("Login", "Auth");
@@ -36,7 +34,6 @@ public sealed class ManagerRoleChangeRequestController : Controller
                 : !requestsResult.Succeeded ? requestsResult.Error : null
         };
         return View(model);
-#pragma warning restore CS0162
     }
 
     [HttpPost("")]

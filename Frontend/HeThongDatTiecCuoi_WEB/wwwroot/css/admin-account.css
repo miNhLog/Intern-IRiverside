@@ -958,9 +958,11 @@
         cursor: wait;
     }
 
-#resetPasswordForm { padding: 0 28px; }
+#resetPasswordForm {
+    padding: 22px 28px 0;
+}
 
-.dashboard-audit-table{min-width:820px}.dashboard-audit-badge{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap}.dashboard-audit-badge.action-create_account,.dashboard-audit-badge.action-unlock_account,.dashboard-audit-badge.action-role_change_approved{color:#18794e;background:#e8f7ef}.dashboard-audit-badge.action-update_account{color:#2867a7;background:#eaf2fb}.dashboard-audit-badge.action-lock_account,.dashboard-audit-badge.action-role_change_rejected{color:#b33a3a;background:#fdecec}.dashboard-audit-badge.action-change_role{color:#896016;background:#fbf1dd}.dashboard-audit-badge.action-reset_password,.dashboard-audit-badge.action-first_password_changed,.dashboard-audit-badge.action-admin_password_changed{color:#a85d16;background:#fff0df}.dashboard-audit-badge.action-role_change_requested{color:#6941c6;background:#f4f3ff}
+.dashboard-audit-table{min-width:820px}.dashboard-audit-badge{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap}.dashboard-audit-badge.action-create_account,.dashboard-audit-badge.action-unlock_account{color:#18794e;background:#e8f7ef}.dashboard-audit-badge.action-update_account{color:#2867a7;background:#eaf2fb}.dashboard-audit-badge.action-lock_account{color:#b33a3a;background:#fdecec}.dashboard-audit-badge.action-change_role{color:#896016;background:#fbf1dd}.dashboard-audit-badge.action-reset_password{color:#a85d16;background:#fff0df}
 
 /* Quản lý tài khoản: content theo bố cục navy / champagne của Riverside Palace. */
 .account-management-page {
@@ -1182,7 +1184,9 @@
 
 .employee-row-actions { display: flex; justify-content: center; gap: 7px; }
 
-.account-form-note {
+.account-form-note,
+.reset-password-notice,
+.reset-password-locked {
     display: flex;
     gap: 9px;
     margin: 16px 0 0;
@@ -1195,31 +1199,12 @@
     line-height: 1.55;
 }
 
-.reset-password-modal { width: min(640px, 100%); }
-.reset-password-heading { display: flex; align-items: center; gap: 12px; }
-.reset-password-heading > span { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 11px; color: #9b722d; background: #fbf1dd; font-size: 15px; }
-.reset-password-content { padding: 22px 28px 0; }
-.reset-password-user { display: flex; align-items: center; gap: 13px; padding: 15px 16px; border: 1px solid #e4e8ee; border-radius: 12px; background: #f8fafc; }
-.reset-password-avatar { width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #172b4d; font-size: 16px; }
-.reset-password-user > div { min-width: 0; flex: 1; }
-.reset-password-user strong, .reset-password-user div span { display: block; overflow-wrap: anywhere; }
-.reset-password-user strong { color: #172b4d; font-size: 14px; }
-.reset-password-user div span { margin-top: 4px; color: #718096; font-size: 11px; }
-.reset-account-status { flex: 0 0 auto; padding: 5px 9px; border-radius: 999px; color: #18795a; background: #e8f6f0; font-size: 10px; font-weight: 700; }
-.reset-account-status.is-locked { color: #b33a3a; background: #fdecec; }
-.reset-password-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
-.reset-password-summary div { min-width: 0; padding: 12px 14px; border: 1px solid #edf0f4; border-radius: 10px; background: #fff; }
-.reset-password-summary dt { display: flex; align-items: center; gap: 7px; color: #7a8798; font-size: 10px; font-weight: 600; }
-.reset-password-summary dt i { color: #a77b28; }
-.reset-password-summary dd { margin: 6px 0 0; color: #172b4d; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
-.reset-password-notice, .reset-password-locked { display: flex; align-items: flex-start; gap: 11px; padding: 13px 14px; border: 1px solid #eadcb5; border-radius: 10px; color: #594b2b; background: #fffaf0; font-size: 12px; line-height: 1.5; }
-.reset-password-notice > i, .reset-password-locked > i { margin-top: 2px; flex: 0 0 auto; }
-.reset-password-notice strong, .reset-password-notice span, .reset-password-locked strong, .reset-password-locked span { display: block; }
-.reset-password-notice strong, .reset-password-locked strong { margin-bottom: 3px; font-size: 12px; }
-.reset-password-locked { margin-top: 12px; border-color: #f1c4c0; color: #8f2720; background: #fff4f3; }
-.reset-password-locked[hidden] { display: none; }
-.reset-password-modal .account-form-error { margin: 10px 0 0; min-height: 0; }
-.reset-password-modal .account-modal-actions { margin-top: 20px; }
+.reset-password-summary { margin: 4px 0 16px; }
+.reset-password-summary div { display: grid; grid-template-columns: 125px 1fr; gap: 12px; padding: 9px 0; border-bottom: 1px solid #edf0f4; }
+.reset-password-summary dt { color: #667085; }
+.reset-password-summary dd { margin: 0; color: #172b4d; font-weight: 700; overflow-wrap: anywhere; }
+.reset-password-notice { margin-top: 0; }
+.reset-password-locked { border-color: #f1c4c0; color: #8f2720; background: #fff4f3; }
 .account-form-success { margin-top: 12px; color: #18734b; font-size: 13px; font-weight: 700; }
 .account-form-success:empty { display: none; }
 .employee-action-button { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 1px solid #dce3ea; border-radius: 8px; color: #526783; background: #fff; font-size: 12px; cursor: pointer; }
@@ -1260,7 +1245,4 @@
     .employee-search { grid-column: auto; }
     .account-filter-clear { position: static; width: 100%; }
     .administrator-password-grid { grid-template-columns: 1fr; }
-    .reset-password-summary { grid-template-columns: 1fr; }
-    .reset-password-user { align-items: flex-start; flex-wrap: wrap; }
-    .reset-account-status { margin-left: 57px; }
 }

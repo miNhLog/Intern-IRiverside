@@ -15,18 +15,15 @@ public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IPasswordResetService _passwordResetService;
-    private readonly IFirstPasswordOtpService _firstPasswordOtpService;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         IAuthService authService,
         IPasswordResetService passwordResetService,
-        IFirstPasswordOtpService firstPasswordOtpService,
         ILogger<AuthController> logger)
     {
         _authService = authService;
         _passwordResetService = passwordResetService;
-        _firstPasswordOtpService = firstPasswordOtpService;
         _logger = logger;
     }
 
@@ -48,24 +45,6 @@ public sealed class AuthController : ControllerBase
     {
         if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId)) return Unauthorized();
         return ToActionResult(await _authService.ChangePasswordAsync(userId, request, cancellationToken));
-    }
-
-    [HttpPost("first-password-otp")]
-    [Authorize]
-    [EnableRateLimiting("auth")]
-    public async Task<IActionResult> SendFirstPasswordOtp(CancellationToken cancellationToken)
-    {
-        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId)) return Unauthorized();
-        try
-        {
-            return ToActionResult(await _firstPasswordOtpService.SendAsync(userId, cancellationToken));
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            _logger.LogError(exception, "Không thể gửi OTP đổi mật khẩu lần đầu cho UserId {UserId}.", userId);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                new ApiErrorResponse("Không thể gửi mã OTP. Vui lòng kiểm tra cấu hình email và thử lại."));
-        }
     }
 
     [HttpPost("forgot-password")]

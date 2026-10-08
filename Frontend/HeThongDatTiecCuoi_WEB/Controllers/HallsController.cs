@@ -1,3 +1,4 @@
+using HeThongDatTiecCuoi_WEB.Constants;
 using HeThongDatTiecCuoi_WEB.Models.Halls;
 using HeThongDatTiecCuoi_WEB.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -26,6 +27,12 @@ public sealed class HallsController : Controller
         int page = 1,
         CancellationToken cancellationToken = default)
     {
+        if (User.IsInRole(RoleNames.Admin))
+            return RedirectToAction("Dashboard", "AdminAccount");
+
+        if (User.IsInRole(RoleNames.Coordinator))
+            return RedirectToAction("Dashboard", "Home");
+
         page = Math.Max(1, page);
         sort = string.IsNullOrWhiteSpace(sort) ? "name-asc" : sort;
         var result = await _apiClient.GetPublicHallsAsync(
@@ -67,6 +74,12 @@ public sealed class HallsController : Controller
         int hallId,
         CancellationToken cancellationToken)
     {
+        if (User.IsInRole(RoleNames.Admin))
+            return RedirectToAction("Dashboard", "AdminAccount");
+
+        if (User.IsInRole(RoleNames.Coordinator))
+            return RedirectToAction("Dashboard", "Home");
+
         var result = await _apiClient.GetPublicHallAsync(hallId, cancellationToken);
         if (!result.Succeeded || result.Value is null)
         {

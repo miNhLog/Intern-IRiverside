@@ -25,39 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const passwordForm = document.querySelector("[data-password-form]");
     if (passwordForm) {
-        const otpInput = passwordForm.querySelector("#OtpCode");
-        const otpButton = passwordForm.querySelector("#sendFirstPasswordOtp");
-        const otpButtonText = otpButton?.querySelector("[data-otp-button-text]");
-        const otpFeedback = passwordForm.querySelector("#otpFeedback");
-        let otpTimer;
-        otpInput?.addEventListener("input", () => { otpInput.value = otpInput.value.replace(/\D/g, "").slice(0, 6); });
-        otpButton?.addEventListener("click", async () => {
-            clearInterval(otpTimer);
-            otpButton.disabled = true;
-            if (otpButtonText) otpButtonText.textContent = "Đang gửi...";
-            if (otpFeedback) { otpFeedback.textContent = ""; otpFeedback.classList.remove("is-error"); }
-            try {
-                const csrfToken = passwordForm.querySelector('input[name="__RequestVerificationToken"]')?.value ?? "";
-                const response = await fetch("/doi-mat-khau/gui-otp", { method: "POST", headers: { "RequestVerificationToken": csrfToken } });
-                const result = await response.json();
-                if (!result.success) throw new Error(result.message || "Không thể gửi mã OTP.");
-                if (otpFeedback) otpFeedback.textContent = result.message;
-                let remaining = Number(result.cooldownSeconds) || 60;
-                if (otpButtonText) otpButtonText.textContent = `Gửi lại sau ${remaining}s`;
-                otpTimer = setInterval(() => {
-                    remaining -= 1;
-                    if (remaining <= 0) {
-                        clearInterval(otpTimer);
-                        otpButton.disabled = false;
-                        if (otpButtonText) otpButtonText.textContent = "Gửi lại mã";
-                    } else if (otpButtonText) otpButtonText.textContent = `Gửi lại sau ${remaining}s`;
-                }, 1000);
-            } catch (error) {
-                otpButton.disabled = false;
-                if (otpButtonText) otpButtonText.textContent = "Gửi mã OTP";
-                if (otpFeedback) { otpFeedback.textContent = error.message || "Không thể gửi mã OTP."; otpFeedback.classList.add("is-error"); }
-            }
-        });
         const newPassword = passwordForm.querySelector("#NewPassword");
         const confirmPassword = passwordForm.querySelector("#ConfirmPassword");
         const confirmError = passwordForm.querySelector(".client-confirm-error");

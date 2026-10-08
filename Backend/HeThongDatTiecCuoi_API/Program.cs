@@ -79,7 +79,6 @@ builder.Services
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-builder.Services.AddScoped<IPasswordHasher<FirstPasswordOtp>, PasswordHasher<FirstPasswordOtp>>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IStatusService, StatusService>();
@@ -87,7 +86,6 @@ builder.Services.AddScoped<IEmployeeCodeGenerator, EmployeeCodeGenerator>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
-builder.Services.AddScoped<IFirstPasswordOtpService, FirstPasswordOtpService>();
 builder.Services.AddScoped<DevelopmentAuthSeeder>();
 builder.Services.AddHttpClient();
 

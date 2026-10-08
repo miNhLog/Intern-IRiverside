@@ -436,13 +436,6 @@ html.sidebar-is-collapsed .sidebar-header {
     padding-inline: 8px;
 }
 
-.flash-toast { display: flex; align-items: center; gap: 10px; min-width: 280px; max-width: min(420px, calc(100vw - 32px)); padding: 13px 14px; }
-.flash-toast.is-success { border-color: #9dd9bd; color: #155f43; background: #effaf4; box-shadow: 0 12px 32px rgba(23, 121, 90, .18); }
-.flash-toast > i { color: #18825d; font-size: 18px; }
-.flash-toast > span { flex: 1; font-weight: 600; line-height: 1.45; }
-.flash-toast button { width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 6px; color: #4f7567; background: transparent; cursor: pointer; }
-.flash-toast button:hover { background: #dcefe5; }
-
 html.sidebar-is-collapsed .sidebar-brand {
     flex: 0 0 38px;
     justify-content: center;

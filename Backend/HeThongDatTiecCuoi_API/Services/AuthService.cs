@@ -30,12 +30,6 @@ public sealed partial class AuthService : IAuthService
         if (_passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.NewPassword) != PasswordVerificationResult.Failed)
             return ServiceResult<object>.Failure("Mật khẩu mới phải khác mật khẩu hiện tại.", StatusCodes.Status400BadRequest);
         var wasFirstPasswordChange = user.MustChangePassword;
-        if (wasFirstPasswordChange)
-        {
-            var otpResult = await _firstPasswordOtpService.ValidateAsync(userId, request.OtpCode, cancellationToken);
-            if (!otpResult.Succeeded)
-                return ServiceResult<object>.Failure(otpResult.Error!, otpResult.StatusCode);
-        }
         await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
         user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
         user.MustChangePassword = false;
@@ -98,7 +92,6 @@ public sealed partial class AuthService : IAuthService
     private readonly INotificationService _notifications;
     private readonly ILogger<AuthService> _logger;
     private readonly AccountProvisioningOptions _accountProvisioningOptions;
-    private readonly IFirstPasswordOtpService _firstPasswordOtpService;
 
     public AuthService(
         ApplicationDbContext db,
@@ -107,7 +100,6 @@ public sealed partial class AuthService : IAuthService
         IStatusService statusService,
         IHttpClientFactory httpClientFactory,
         INotificationService notifications,
-        IFirstPasswordOtpService firstPasswordOtpService,
         IOptions<AccountProvisioningOptions> accountProvisioningOptions,
         ILogger<AuthService> logger)
     {
@@ -117,7 +109,6 @@ public sealed partial class AuthService : IAuthService
         _statusService = statusService;
         _httpClientFactory = httpClientFactory;
         _notifications = notifications;
-        _firstPasswordOtpService = firstPasswordOtpService;
         _accountProvisioningOptions = accountProvisioningOptions.Value;
         _logger = logger;
     }

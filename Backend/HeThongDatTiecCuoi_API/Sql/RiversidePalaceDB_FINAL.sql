@@ -82,23 +82,6 @@ CREATE TABLE TokenDatLaiMatKhau (
 );
 GO
 
--- 05B. MaOtpDoiMatKhauLanDau
-CREATE TABLE MaOtpDoiMatKhauLanDau (
-    MaOtpID BIGINT IDENTITY(1,1) NOT NULL,
-    TaiKhoanID INT NOT NULL,
-    MaHash NVARCHAR(255) NOT NULL,
-    SoLanNhapSai INT NOT NULL CONSTRAINT DF_MaOtpDoiMatKhauLanDau_SoLanNhapSai DEFAULT 0,
-    HetHanLuc DATETIME2(0) NOT NULL,
-    DaDungLuc DATETIME2(0) NULL,
-    NgayTao DATETIME2(0) NOT NULL CONSTRAINT DF_MaOtpDoiMatKhauLanDau_NgayTao DEFAULT SYSDATETIME(),
-    CONSTRAINT PK_MaOtpDoiMatKhauLanDau PRIMARY KEY (MaOtpID),
-    CONSTRAINT FK_MaOtpDoiMatKhauLanDau_TaiKhoan FOREIGN KEY (TaiKhoanID) REFERENCES TaiKhoan(TaiKhoanID),
-    CONSTRAINT CK_MaOtpDoiMatKhauLanDau_HetHan CHECK (HetHanLuc > NgayTao),
-    CONSTRAINT CK_MaOtpDoiMatKhauLanDau_SoLanNhapSai CHECK (SoLanNhapSai BETWEEN 0 AND 5)
-);
-CREATE INDEX IX_MaOtpDoiMatKhauLanDau_TaiKhoan_NgayTao ON MaOtpDoiMatKhauLanDau(TaiKhoanID, NgayTao DESC);
-GO
-
 -- 06. KhachHang
 CREATE TABLE KhachHang (
     KhachHangID INT IDENTITY(1,1) NOT NULL,

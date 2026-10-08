@@ -18,12 +18,8 @@ public sealed record AuthResponseDto(
 
 public sealed record ApiErrorDto(string Message, Dictionary<string, string[]>? Errors = null);
 public sealed record MessageResponseDto(string Message);
-public sealed record FirstPasswordOtpResponseDto(string Message, int CooldownSeconds);
 public sealed class ChangePasswordViewModel
 {
-    [RegularExpression(@"^\d{6}$", ErrorMessage = "Mã OTP phải gồm đúng 6 chữ số.")]
-    public string? OtpCode { get; set; }
-
     [Required(ErrorMessage = "Vui lòng nhập mật khẩu hiện tại.")]
     public string CurrentPassword { get; set; } = string.Empty;
 

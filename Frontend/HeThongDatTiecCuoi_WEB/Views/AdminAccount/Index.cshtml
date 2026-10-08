@@ -181,11 +181,11 @@
             @Html.AntiForgeryToken()
             <div class="account-form-grid">
                 <div class="account-form-group"><label>Họ tên <span>*</span></label><input type="text" name="FullName" maxlength="150" required /></div>
-                <div class="account-form-group"><label>Email <span>*</span></label><input type="email" name="Email" maxlength="255" data-validated-email required /></div>
+                <div class="account-form-group"><label>Email <span>*</span></label><input type="email" name="Email" maxlength="255" required /></div>
                 <div class="account-form-group"><label>Số điện thoại <span>*</span></label><input type="tel" name="PhoneNumber" maxlength="20" required /></div>
                 <div class="account-form-group"><label>Vai trò <span>*</span></label><select name="RoleId" required><option value="">Chọn vai trò</option>@foreach (var role in internalRoles) { <option value="@role.RoleId">@role.RoleName</option> }</select></div>
             </div>
-            <p class="account-form-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>Mật khẩu ban đầu: <strong>StaffRiverside@123</strong>. Nhân viên phải thay đổi mật khẩu khi đăng nhập lần đầu.</span></p>
+            <p class="account-form-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i>Mật khẩu ban đầu sẽ được hệ thống cấp tự động. Nhân viên phải thay đổi mật khẩu khi đăng nhập lần đầu.</p>
             <div id="addAccountError" class="account-form-error" role="alert"></div>
             <div class="account-modal-actions"><button type="button" class="btn-modal-cancel" data-close-modal>Hủy</button><button type="submit" class="btn-modal-save" id="saveAccountButton"><i class="fa-solid fa-user-plus" aria-hidden="true"></i>Cấp tài khoản</button></div>
         </form>
@@ -193,20 +193,13 @@
 </div>
 
 <div id="resetPasswordModal" class="account-modal-overlay" aria-hidden="true">
-    <div class="account-modal reset-password-modal" role="dialog" aria-modal="true" aria-labelledby="resetPasswordTitle">
-        <div class="account-modal-header"><div class="reset-password-heading"><span><i class="fa-solid fa-key" aria-hidden="true"></i></span><div><h3 id="resetPasswordTitle">Đặt lại mật khẩu</h3><p>Gửi liên kết bảo mật qua email cho nhân viên</p></div></div><button type="button" class="account-modal-close" data-close-modal aria-label="Đóng"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
-        <div class="reset-password-content">
-            <section class="reset-password-user" aria-label="Tài khoản nhận liên kết đặt lại mật khẩu">
-                <span class="reset-password-avatar" aria-hidden="true"><i class="fa-solid fa-user"></i></span>
-                <div><strong id="resetFullName"></strong><span id="resetEmail"></span></div>
-                <span id="resetAccountStatus" class="reset-account-status"></span>
-            </section>
-            <dl class="reset-password-summary"><div><dt><i class="fa-solid fa-id-badge" aria-hidden="true"></i>Mã nhân viên</dt><dd id="resetEmployeeCode"></dd></div><div><dt><i class="fa-solid fa-user-shield" aria-hidden="true"></i>Vai trò</dt><dd id="resetRoleName"></dd></div></dl>
-            <div class="reset-password-notice"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><div><strong>Quy trình đặt lại mật khẩu</strong><span>Hệ thống sẽ gửi một liên kết bảo mật đến email của nhân viên. Mật khẩu hiện tại chỉ thay đổi sau khi nhân viên hoàn tất thao tác qua liên kết.</span></div></div>
-            <div id="resetLockedNotice" class="reset-password-locked" hidden><i class="fa-solid fa-lock" aria-hidden="true"></i><div><strong>Tài khoản đang bị khóa</strong><span>Đặt lại mật khẩu không tự động mở khóa tài khoản.</span></div></div>
-            <div id="resetPasswordError" class="account-form-error" role="alert"></div>
-            <div id="resetPasswordSuccess" class="account-form-success" role="status"></div>
-        </div>
+    <div class="account-modal status-account-modal" role="dialog" aria-modal="true" aria-labelledby="resetPasswordTitle">
+        <div class="account-modal-header"><div><h3 id="resetPasswordTitle">Đặt lại mật khẩu</h3><p>Gửi liên kết bảo mật qua email cho nhân viên</p></div><button type="button" class="account-modal-close" data-close-modal aria-label="Đóng"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
+        <dl class="reset-password-summary"><div><dt>Họ tên</dt><dd id="resetFullName"></dd></div><div><dt>Mã nhân viên</dt><dd id="resetEmployeeCode"></dd></div><div><dt>Email</dt><dd id="resetEmail"></dd></div><div><dt>Vai trò</dt><dd id="resetRoleName"></dd></div></dl>
+        <p class="reset-password-notice">Hệ thống sẽ gửi liên kết đặt lại mật khẩu đến email của nhân viên. Mật khẩu hiện tại sẽ không thay đổi cho đến khi nhân viên hoàn tất đặt lại mật khẩu.</p>
+        <p id="resetLockedNotice" class="reset-password-locked" hidden>Tài khoản hiện đang bị khóa. Việc đặt lại mật khẩu không tự động mở khóa tài khoản.</p>
+        <div id="resetPasswordError" class="account-form-error" role="alert"></div>
+        <div id="resetPasswordSuccess" class="account-form-success" role="status"></div>
         <form id="resetPasswordForm">
             @Html.AntiForgeryToken()
             <input type="hidden" id="resetUserId" />
@@ -224,7 +217,7 @@
             <div class="account-form-grid">
                 <div class="account-form-group"><label>Mã tài khoản</label><input type="text" id="editAccountCode" readonly /></div>
                 <div class="account-form-group"><label>Họ tên <span>*</span></label><input type="text" id="editFullName" name="FullName" maxlength="150" required /></div>
-                <div class="account-form-group"><label>Email <span>*</span></label><input type="email" id="editEmail" name="Email" maxlength="255" data-validated-email required /></div>
+                <div class="account-form-group"><label>Email <span>*</span></label><input type="email" id="editEmail" name="Email" maxlength="255" required /></div>
                 <div class="account-form-group"><label>Số điện thoại <span>*</span></label><input type="tel" id="editPhoneNumber" name="PhoneNumber" maxlength="20" required /></div>
                 <div class="account-form-group"><label>Vai trò hiện tại</label><input type="text" id="editRoleName" readonly /></div>
             </div>
@@ -241,7 +234,7 @@
             @Html.AntiForgeryToken()
             <input type="hidden" id="editAdministratorUserId" />
             <div class="status-account-user"><div class="status-account-icon"><i class="fa-solid fa-user-shield" aria-hidden="true"></i></div><div><strong>Quản trị viên hệ thống</strong><span>Thông tin tài khoản quản trị</span></div></div>
-            <div class="account-form-group"><label>Email <span>*</span></label><input type="email" id="editAdministratorEmail" name="Email" maxlength="255" data-validated-email required /></div>
+            <div class="account-form-group"><label>Email <span>*</span></label><input type="email" id="editAdministratorEmail" name="Email" maxlength="255" required /></div>
             <section class="administrator-password-section" aria-labelledby="administratorPasswordTitle">
                 <div class="administrator-password-heading">
                     <span><i class="fa-solid fa-key" aria-hidden="true"></i></span>
@@ -262,17 +255,6 @@
 @section Scripts {
 <script>
 (() => {
-    const commonEmailDomainTypos = { 'gmaiil.com':'gmail.com', 'gmaill.com':'gmail.com', 'gmial.com':'gmail.com', 'gmal.com':'gmail.com', 'gmail.co':'gmail.com', 'gmail.con':'gmail.com', 'gmail.cm':'gmail.com', 'hotmaiil.com':'hotmail.com', 'hotmal.com':'hotmail.com', 'outlok.com':'outlook.com', 'yahooo.com':'yahoo.com' };
-    const validateEmail = input => {
-        const domain = input.value.trim().toLowerCase().split('@@')[1] || '';
-        const suggestion = commonEmailDomainTypos[domain];
-        input.setCustomValidity(suggestion ? `Tên miền "${domain}" có thể đã nhập sai. Bạn có muốn dùng "${suggestion}"?` : '');
-    };
-    document.querySelectorAll('[data-validated-email]').forEach(input => {
-        input.addEventListener('input', () => validateEmail(input));
-        input.addEventListener('change', () => validateEmail(input));
-    });
-
     const openModal = modal => { modal.classList.add('show'); modal.setAttribute('aria-hidden', 'false'); };
     const closeModal = modal => { modal.classList.remove('show'); modal.setAttribute('aria-hidden', 'true'); };
     document.querySelectorAll('.account-modal-overlay').forEach(modal => {
@@ -314,16 +296,12 @@
     const resetError = document.getElementById('resetPasswordError');
     const resetSuccess = document.getElementById('resetPasswordSuccess');
     document.querySelectorAll('.reset-password-account').forEach(button => button.addEventListener('click', () => {
-        const isLocked = button.dataset.isLocked === 'true';
         document.getElementById('resetUserId').value = button.dataset.userId;
         document.getElementById('resetFullName').textContent = button.dataset.fullName || '—';
         document.getElementById('resetEmployeeCode').textContent = button.dataset.employeeCode || '—';
         document.getElementById('resetEmail').textContent = button.dataset.email || '—';
         document.getElementById('resetRoleName').textContent = button.dataset.roleName || '—';
-        const status = document.getElementById('resetAccountStatus');
-        status.textContent = isLocked ? 'Đang bị khóa' : 'Đang hoạt động';
-        status.classList.toggle('is-locked', isLocked);
-        document.getElementById('resetLockedNotice').hidden = !isLocked;
+        document.getElementById('resetLockedNotice').hidden = button.dataset.isLocked !== 'true';
         resetError.textContent = '';
         resetSuccess.textContent = '';
         openModal(resetModal);

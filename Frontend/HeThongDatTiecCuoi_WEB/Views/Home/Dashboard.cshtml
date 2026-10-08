@@ -1,115 +1,51 @@
-@model HeThongDatTiecCuoi_WEB.Models.Home.ManagerDashboardViewModel
 @using System.Security.Claims
-@using System.Globalization
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "Tổng quan quản lý";
+    ViewData["Title"] = "Trang điều khiển";
     var role = User.FindFirstValue(ClaimTypes.Role) ?? "Người dùng";
-    var viCulture = CultureInfo.GetCultureInfo("vi-VN");
 }
 
 @if (role == RoleNames.Manager)
 {
-    <section class="manager-dashboard manager-overview-page">
-        <header class="manager-page-header">
-            <div>
-                <div class="breadcrumb">Quản trị hệ thống <span>›</span> <strong>Tổng quan quản lý</strong></div>
-                <h1>Tổng quan quản lý</h1>
-                <p>Theo dõi hoạt động kinh doanh và vận hành trên toàn hệ thống</p>
-            </div>
-            <div class="manager-page-header-actions">
-                @if (Model.GeneratedAt != default)
-                {
-                    <small><i class="fa-regular fa-clock"></i> Cập nhật @Model.GeneratedAt.ToString("HH:mm, dd/MM/yyyy")</small>
-                }
-                <a asp-controller="AdminReport" asp-action="Index"><i class="fa-solid fa-chart-line"></i> Mở báo cáo thống kê</a>
-            </div>
-        </header>
+    <header class="top-header">
+        <div>
+            <div class="breadcrumb">Quản trị hệ thống <span>›</span> <strong>Dashboard</strong></div>
+            <h2>Dashboard quản lý</h2>
+        </div>
+    </header>
 
+    <section class="content manager-dashboard">
         @if (TempData["Success"] is string message)
         {
             <div class="success-banner">@message</div>
         }
 
-        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
-        {
-            <div class="manager-data-alert" role="alert"><i class="fa-solid fa-circle-exclamation"></i><span>@Model.ErrorMessage</span></div>
-        }
+        <div class="manager-dashboard-intro">
+            <div>
+                <span class="eyebrow">RIVERSIDE PALACE</span>
+                <h1>Chào mừng, @User.Identity?.Name</h1>
+                <p>Tổng quan hoạt động kinh doanh và vận hành của Riverside Palace.</p>
+            </div>
+        </div>
 
         <div class="manager-kpi-grid" aria-label="Chỉ số vận hành">
-            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-champagne-glasses"></i></span><div><small>Tiệc hôm nay</small><strong>@Model.TodayEventCount</strong><em>Theo lịch sảnh đang hiệu lực</em></div></article>
-            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-calendar-week"></i></span><div><small>Tiệc trong 7 ngày tới</small><strong>@Model.UpcomingEventCount</strong><em>Từ ngày mai</em></div></article>
-            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-hourglass-half"></i></span><div><small>Booking chờ xử lý</small><strong>@Model.PendingBookingCount</strong><em>@Model.NewBookingCount booking mới trong 7 ngày</em></div></article>
-            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-wallet"></i></span><div><small>Doanh thu tháng này</small><strong class="manager-kpi-money">@Model.RevenueThisMonth.ToString("N0", viCulture) ₫</strong><em>Chỉ gồm thanh toán thành công</em></div></article>
-            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-file-invoice-dollar"></i></span><div><small>Công nợ hợp đồng</small><strong class="manager-kpi-money">@Model.OutstandingDebt.ToString("N0", viCulture) ₫</strong><em>Giá trị hợp đồng còn phải thu</em></div></article>
-            <article class="manager-kpi-card @(Model.OpenIncidentCount > 0 ? "is-warning" : string.Empty)"><span class="manager-kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></span><div><small>Sự cố cần xử lý</small><strong>@Model.OpenIncidentCount</strong><em>Đang chờ hoặc đang xử lý</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-calendar-check"></i></span><div><small>Tổng booking</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-champagne-glasses"></i></span><div><small>Tiệc tháng này</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-wallet"></i></span><div><small>Doanh thu</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-file-signature"></i></span><div><small>Hợp đồng đang xử lý</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-money-bill-wave"></i></span><div><small>Thanh toán chưa hoàn tất</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
+            <article class="manager-kpi-card"><span class="manager-kpi-icon"><i class="fa-solid fa-building"></i></span><div><small>Sảnh đang sử dụng</small><strong>—</strong><em>Chưa kết nối dữ liệu</em></div></article>
         </div>
 
-        <div class="manager-operational-grid">
-            <article class="manager-panel manager-events-panel">
-                <div class="manager-panel-header"><div><h3>Tiệc sắp diễn ra</h3><p>Hôm nay và 7 ngày tiếp theo</p></div><a asp-controller="AdminBooking" asp-action="Index">Xem đặt tiệc <i class="fa-solid fa-arrow-right"></i></a></div>
-                <div class="manager-table-wrap">
-                    <table class="manager-data-table">
-                        <thead><tr><th>Ngày tổ chức</th><th>Booking / Khách hàng</th><th>Sảnh &amp; ca</th><th>Khách</th><th>Trạng thái</th></tr></thead>
-                        <tbody>
-                        @if (Model.UpcomingEvents.Count == 0)
-                        {
-                            <tr><td colspan="5" class="manager-empty"><i class="fa-regular fa-calendar-check"></i> Không có tiệc trong khoảng thời gian này.</td></tr>
-                        }
-                        else
-                        {
-                            @foreach (var item in Model.UpcomingEvents)
-                            {
-                                <tr>
-                                    <td><strong>@item.EventDate.ToString("dd/MM/yyyy")</strong><small>@(item.EventDate.Date == DateTime.Today ? "Hôm nay" : item.EventDate.ToString("dddd", viCulture))</small></td>
-                                    <td><a asp-controller="AdminBooking" asp-action="Index" asp-route-keyword="@item.BookingCode">@item.BookingCode</a><small>@item.CustomerName</small></td>
-                                    <td><strong>@item.HallName</strong><small>@item.Shift</small></td>
-                                    <td>@item.GuestCount.ToString("N0", viCulture)</td>
-                                    <td><span class="manager-status status-@item.StatusCode.ToLowerInvariant()">@item.StatusName</span></td>
-                                </tr>
-                            }
-                        }
-                        </tbody>
-                    </table>
-                </div>
-            </article>
-
-            <aside class="manager-side-stack">
-                <article class="manager-panel">
-                    <div class="manager-panel-header"><div><h3>Cần chú ý</h3><p>Sự cố chưa hoàn tất</p></div><span class="manager-count-badge">@Model.OpenIncidentCount</span></div>
-                    <div class="manager-incident-list">
-                    @if (Model.OpenIncidents.Count == 0)
-                    {
-                        <div class="manager-compact-empty"><i class="fa-solid fa-circle-check"></i><span>Không có sự cố đang mở.</span></div>
-                    }
-                    else
-                    {
-                        @foreach (var incident in Model.OpenIncidents)
-                        {
-                            <div class="manager-incident-item"><span class="manager-severity severity-@incident.Severity.ToLowerInvariant()"><i class="fa-solid fa-triangle-exclamation"></i></span><div><strong>@incident.IncidentType</strong><small>@incident.BookingCode · @incident.StatusName</small><time>@incident.OccurredAt.ToString("dd/MM/yyyy HH:mm")</time></div></div>
-                        }
-                    }
-                    </div>
-                </article>
-            </aside>
+        <div class="section-header">
+            <div><h3>Theo dõi vận hành</h3><p>Các thông tin được cập nhật khi nguồn dữ liệu nghiệp vụ sẵn sàng.</p></div>
         </div>
-
-        <article class="manager-panel manager-recent-panel">
-            <div class="manager-panel-header"><div><h3>Booking gần đây</h3><p>Các booking mới nhất trên toàn hệ thống</p></div><a asp-controller="AdminBooking" asp-action="Index">Xem tất cả <i class="fa-solid fa-arrow-right"></i></a></div>
-            <div class="manager-recent-grid">
-            @if (Model.RecentBookings.Count == 0)
-            {
-                <div class="manager-compact-empty"><i class="fa-regular fa-folder-open"></i><span>Chưa có booking trong database.</span></div>
-            }
-            else
-            {
-                @foreach (var booking in Model.RecentBookings)
-                {
-                    <a class="manager-booking-item" asp-controller="AdminBooking" asp-action="Index" asp-route-keyword="@booking.BookingCode"><span class="manager-booking-icon"><i class="fa-solid fa-receipt"></i></span><span><strong>@booking.BookingCode</strong><small>@booking.CustomerName · Tiệc @booking.EventDate.ToString("dd/MM/yyyy")</small></span><span class="manager-booking-meta"><strong>@booking.EstimatedTotal.ToString("N0", viCulture) ₫</strong><small>@booking.BookedAt.ToString("dd/MM HH:mm")</small></span></a>
-                }
-            }
-            </div>
-        </article>
+        <div class="manager-overview-grid">
+            <article class="manager-overview-card"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i><h3>Tiệc sắp diễn ra</h3><p>Chưa có dữ liệu hiển thị.</p></article>
+            <article class="manager-overview-card"><i class="fa-solid fa-building" aria-hidden="true"></i><h3>Tình trạng sảnh</h3><p>Chưa có dữ liệu hiển thị.</p></article>
+            <article class="manager-overview-card"><i class="fa-solid fa-bookmark" aria-hidden="true"></i><h3>Booking gần đây</h3><p>Chưa có dữ liệu hiển thị.</p></article>
+            <article class="manager-overview-card"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><h3>Sự cố đang mở</h3><p>Chưa có dữ liệu hiển thị.</p></article>
+        </div>
     </section>
 }
 else if (role == RoleNames.HallManager)

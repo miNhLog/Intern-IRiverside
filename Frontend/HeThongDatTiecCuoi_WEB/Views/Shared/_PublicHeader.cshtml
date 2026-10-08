@@ -9,12 +9,12 @@
 }
 <header class="home-header">
     <div class="home-container header-inner">
-        <a class="brand" asp-controller="Home" asp-action="Index" asp-route-publicSite="@(isInternalUser ? "true" : null)" aria-label="Riverside Palace - Trang chủ">
+        <a class="brand" asp-controller="Home" asp-action="Index" aria-label="Riverside Palace - Trang chủ">
             <span class="brand-mark" aria-hidden="true">✧</span>
             <span class="brand-name">Riverside Palace</span>
         </a>
         <nav class="desktop-nav" aria-label="Điều hướng chính">
-            <a class="@(activePage == "home" ? "active" : null)" asp-controller="Home" asp-action="Index" asp-route-publicSite="@(isInternalUser ? "true" : null)" aria-current="@(activePage == "home" ? "page" : null)">Trang chủ</a>
+            <a class="@(activePage == "home" ? "active" : null)" asp-controller="Home" asp-action="Index" aria-current="@(activePage == "home" ? "page" : null)">Trang chủ</a>
             <a class="@(activePage == "halls" ? "active" : null)" asp-controller="Halls" asp-action="Index" aria-current="@(activePage == "halls" ? "page" : null)">Sảnh tiệc</a>
             <a class="@(activePage == "menus" ? "active" : null)" asp-controller="Menus" asp-action="Index" aria-current="@(activePage == "menus" ? "page" : null)">Thực đơn</a>
             <a href="#" data-coming-soon>Gói trang trí</a>
@@ -65,7 +65,7 @@
         </div>
     </div>
     <nav class="mobile-nav" id="mobileNavigation" aria-label="Điều hướng di động" hidden>
-        <a asp-controller="Home" asp-action="Index" asp-route-publicSite="@(isInternalUser ? "true" : null)" aria-current="@(activePage == "home" ? "page" : null)">Trang chủ</a>
+        <a asp-controller="Home" asp-action="Index" aria-current="@(activePage == "home" ? "page" : null)">Trang chủ</a>
         <a asp-controller="Halls" asp-action="Index" aria-current="@(activePage == "halls" ? "page" : null)">Sảnh tiệc</a>
         <a class="@(activePage == "menus" ? "active" : null)" asp-controller="Menus" asp-action="Index" aria-current="@(activePage == "menus" ? "page" : null)">Thực đơn</a>
         <a href="#" data-coming-soon>Gói trang trí</a>

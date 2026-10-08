@@ -14,8 +14,6 @@ using HeThongDatTiecCuoi_WEB.Models.AdminBooking;
 using HeThongDatTiecCuoi_WEB.Models.Recommendation;
 using HeThongDatTiecCuoi_WEB.Models.RoleChangeRequest;
 using HeThongDatTiecCuoi_WEB.Models.Notification;
-using HeThongDatTiecCuoi_WEB.Models.Home;
-using HeThongDatTiecCuoi_WEB.Models.ManagerHr;
 using Microsoft.AspNetCore.Mvc;
 
 public sealed class RiversideApiClient : IRiversideApiClient
@@ -50,9 +48,6 @@ public sealed class RiversideApiClient : IRiversideApiClient
 
     public Task<ApiCallResult<MessageResponseDto>> ChangePasswordAsync(ChangePasswordViewModel model, string accessToken, CancellationToken cancellationToken) =>
         SendAsync<MessageResponseDto>(HttpMethod.Post, "api/auth/change-password", model, accessToken, cancellationToken);
-
-    public Task<ApiCallResult<FirstPasswordOtpResponseDto>> SendFirstPasswordOtpAsync(string accessToken, CancellationToken cancellationToken) =>
-        SendAsync<FirstPasswordOtpResponseDto>(HttpMethod.Post, "api/auth/first-password-otp", new { }, accessToken, cancellationToken);
 
     public Task<ApiCallResult<MessageResponseDto>> ForgotPasswordAsync(
         ForgotPasswordViewModel model,
@@ -408,16 +403,6 @@ public sealed class RiversideApiClient : IRiversideApiClient
             accessToken,
             cancellationToken);
     }
-
-    public Task<ApiCallResult<ManagerHrPageViewModel>> GetManagerHrAsync(string accessToken,string? search,string? role,string? status,string? assignmentStatus,int page,int pageSize,CancellationToken cancellationToken)
-    { var q=new List<string>{$"page={Math.Max(1,page)}",$"pageSize={Math.Clamp(pageSize,1,50)}"}; AddQueryParameter(q,"search",search);AddQueryParameter(q,"role",role);AddQueryParameter(q,"status",status);AddQueryParameter(q,"assignmentStatus",assignmentStatus);return SendAsync<ManagerHrPageViewModel>(HttpMethod.Get,"api/manager/hr?"+string.Join('&',q),null,accessToken,cancellationToken); }
-    public Task<ApiCallResult<ManagerHrActionViewModel>> AssignManagerHallsAsync(int employeeId,AssignHallsViewModel model,string accessToken,CancellationToken cancellationToken)=>SendAsync<ManagerHrActionViewModel>(HttpMethod.Post,$"api/manager/hr/employees/{employeeId}/hall-assignments",model,accessToken,cancellationToken);
-    public Task<ApiCallResult<ManagerHrActionViewModel>> EndManagerHallAssignmentAsync(int assignmentId,string accessToken,CancellationToken cancellationToken)=>SendAsync<ManagerHrActionViewModel>(HttpMethod.Post,$"api/manager/hr/hall-assignments/{assignmentId}/end",null,accessToken,cancellationToken);
-
-    public Task<ApiCallResult<ManagerDashboardViewModel>> GetManagerDashboardAsync(
-        string accessToken,
-        CancellationToken cancellationToken) =>
-        SendAsync<ManagerDashboardViewModel>(HttpMethod.Get, "api/manager/dashboard", null, accessToken, cancellationToken);
 
     public Task<ApiCallResult<List<NotificationViewModel>>> GetRecentNotificationsAsync(string accessToken, int limit, CancellationToken cancellationToken) =>
         SendAsync<List<NotificationViewModel>>(HttpMethod.Get, $"api/notifications/recent?limit={Math.Clamp(limit, 1, 5)}", null, accessToken, cancellationToken);

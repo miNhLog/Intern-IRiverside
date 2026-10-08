@@ -8,20 +8,7 @@
     var lockedPercent = Model.TotalAccounts == 0 ? 0 : Math.Round(Model.LockedAccounts * 100m / Model.TotalAccounts, 1);
     var chartLabels = Model.RoleDistribution.Select(x => x.RoleName).ToList();
     var chartValues = Model.RoleDistribution.Select(x => x.Count).ToList();
-    var auditLabels = new Dictionary<string, string>
-    {
-        ["CREATE_ACCOUNT"] = "Tạo tài khoản",
-        ["UPDATE_ACCOUNT"] = "Cập nhật",
-        ["LOCK_ACCOUNT"] = "Khóa tài khoản",
-        ["UNLOCK_ACCOUNT"] = "Mở khóa",
-        ["CHANGE_ROLE"] = "Đổi vai trò",
-        ["RESET_PASSWORD"] = "Đặt lại mật khẩu",
-        ["ROLE_CHANGE_REQUESTED"] = "Gửi yêu cầu đổi vai trò",
-        ["ROLE_CHANGE_APPROVED"] = "Duyệt đổi vai trò",
-        ["ROLE_CHANGE_REJECTED"] = "Từ chối đổi vai trò",
-        ["FIRST_PASSWORD_CHANGED"] = "Hoàn tất đổi mật khẩu lần đầu",
-        ["ADMIN_PASSWORD_CHANGED"] = "Đổi mật khẩu quản trị viên"
-    };
+    var auditLabels = new Dictionary<string, string> { ["CREATE_ACCOUNT"] = "Tạo tài khoản", ["UPDATE_ACCOUNT"] = "Cập nhật", ["LOCK_ACCOUNT"] = "Khóa tài khoản", ["UNLOCK_ACCOUNT"] = "Mở khóa", ["CHANGE_ROLE"] = "Đổi vai trò", ["RESET_PASSWORD"] = "Reset mật khẩu" };
 }
 <link rel="stylesheet" href="~/css/admin-account.css" asp-append-version="true" />
 

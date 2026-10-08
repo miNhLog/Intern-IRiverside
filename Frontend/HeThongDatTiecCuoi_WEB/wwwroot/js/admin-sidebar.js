@@ -7,19 +7,11 @@
     const backdrop = document.getElementById("sidebarBackdrop");
     const tooltip = document.getElementById("sidebarTooltip");
     const toast = document.getElementById("globalToast");
-    const flashToast = document.getElementById("flashToast");
     const searchInput = document.getElementById("backofficeSearch");
     const searchResults = document.getElementById("backofficeSearchResults");
     const notificationButton = document.getElementById("notificationButton");
     const notificationPanel = document.getElementById("notificationPanel");
     const desktopMedia = window.matchMedia("(min-width: 851px)");
-
-    if (flashToast?.hasAttribute("data-auto-show")) {
-        window.requestAnimationFrame(() => flashToast.classList.add("show"));
-        const closeFlash = () => flashToast.classList.remove("show");
-        flashToast.querySelector("button")?.addEventListener("click", closeFlash);
-        window.setTimeout(closeFlash, 4500);
-    }
 
     if (!sidebar || !desktopToggle || !mobileToggle || !backdrop || !tooltip) {
         return;

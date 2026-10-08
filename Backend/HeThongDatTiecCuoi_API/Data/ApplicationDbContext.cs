@@ -38,7 +38,6 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<Status> Statuses => Set<Status>();
     public DbSet<DataStatus> DataStatuses => Set<DataStatus>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
-    public DbSet<FirstPasswordOtp> FirstPasswordOtps => Set<FirstPasswordOtp>();
     public DbSet<DecorPackage> DecorPackages { get; set; }
     public DbSet<ServiceItem> ServiceItems { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -175,22 +174,6 @@ public sealed class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.DataStatusId)
                 .OnDelete(DeleteBehavior.NoAction);
-        });
-
-        modelBuilder.Entity<FirstPasswordOtp>(entity =>
-        {
-            entity.ToTable("MaOtpDoiMatKhauLanDau", table =>
-                table.HasCheckConstraint("CK_MaOtpDoiMatKhauLanDau_HetHan", "[HetHanLuc] > [NgayTao]"));
-            entity.HasKey(x => x.FirstPasswordOtpId);
-            entity.Property(x => x.FirstPasswordOtpId).HasColumnName("MaOtpID");
-            entity.Property(x => x.UserId).HasColumnName("TaiKhoanID");
-            entity.Property(x => x.CodeHash).HasColumnName("MaHash").HasMaxLength(255).IsRequired();
-            entity.Property(x => x.FailedAttempts).HasColumnName("SoLanNhapSai").HasDefaultValue(0);
-            entity.Property(x => x.ExpiresAt).HasColumnName("HetHanLuc").HasPrecision(0);
-            entity.Property(x => x.UsedAt).HasColumnName("DaDungLuc").HasPrecision(0);
-            entity.Property(x => x.CreatedAt).HasColumnName("NgayTao").HasPrecision(0).HasDefaultValueSql("SYSDATETIME()");
-            entity.HasIndex(x => new { x.UserId, x.CreatedAt });
-            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<RoleChangeRequest>(entity =>

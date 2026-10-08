@@ -17,7 +17,6 @@
     var vietnameseCulture = CultureInfo.GetCultureInfo("vi-VN");
     var currentDateText = DateTime.Today.ToString("dddd, dd 'tháng' MM 'năm' yyyy", vietnameseCulture);
     currentDateText = char.ToUpper(currentDateText[0], vietnameseCulture) + currentDateText[1..];
-    var passwordChangeSuccess = TempData["PasswordChangeSuccess"] as string;
 
     bool IsActive(string controller, string action = "Index") =>
         string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase) &&
@@ -136,6 +135,19 @@
                         </a>
                     </nav>
                 </section>
+                <section class="sidebar-section" aria-labelledby="adminProfileMenuTitle">
+                    <h2 class="sidebar-section-title" id="adminProfileMenuTitle">Tài khoản</h2>
+                    <nav class="sidebar-menu" aria-label="Tài khoản cá nhân">
+                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Hồ sơ cá nhân">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-user"></i></span>
+                            <span class="sidebar-label">Hồ sơ cá nhân</span>
+                        </button>
+                        <a asp-controller="Auth" asp-action="ChangePassword" class="sidebar-item" data-sidebar-tooltip="Đổi mật khẩu">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-key"></i></span>
+                            <span class="sidebar-label">Đổi mật khẩu</span>
+                        </a>
+                    </nav>
+                </section>
                 }
                 else if (isManager)
                 {
@@ -145,9 +157,9 @@
                         <a asp-controller="Home" asp-action="Dashboard"
                            class="sidebar-item @(IsActive("Home", "Dashboard") ? "active" : string.Empty)"
                            aria-current="@(IsActive("Home", "Dashboard") ? "page" : null)"
-                           data-sidebar-tooltip="Tổng quan quản lý">
+                           data-sidebar-tooltip="Dashboard">
                             <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-gauge-high"></i></span>
-                            <span class="sidebar-label">Tổng quan quản lý</span>
+                            <span class="sidebar-label">Dashboard</span>
                         </a>
                     </nav>
                 </section>
@@ -160,6 +172,13 @@
                            data-sidebar-tooltip="Sảnh &amp; Lịch">
                             <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-building"></i></span>
                             <span class="sidebar-label">Sảnh &amp; Lịch</span>
+                        </a>
+                        <a asp-controller="Home" asp-action="HallManagerAssignments"
+                           class="sidebar-item @(IsActive("Home", "HallManagerAssignments") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("Home", "HallManagerAssignments") ? "page" : null)"
+                           data-sidebar-tooltip="Bổ nhiệm Quản lý sảnh">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-user-check"></i></span>
+                            <span class="sidebar-label">Bổ nhiệm Quản lý sảnh</span>
                         </a>
                         <a asp-controller="AdminMenu" asp-action="Index"
                            class="sidebar-item @(IsActive("AdminMenu") ? "active" : string.Empty)"
@@ -185,14 +204,14 @@
                     </nav>
                 </section>
                 <section class="sidebar-section" aria-labelledby="managerHrMenuTitle">
-                    <h2 class="sidebar-section-title" id="managerHrMenuTitle">Nhân sự</h2>
+                    <h2 class="sidebar-section-title" id="managerHrMenuTitle">Quản lý nhân sự</h2>
                     <nav class="sidebar-menu" aria-label="Quản lý nhân sự">
-                        <a asp-controller="ManagerHr" asp-action="Index"
-                           class="sidebar-item @(IsActive("ManagerHr") ? "active" : string.Empty)"
-                           aria-current="@(IsActive("ManagerHr") ? "page" : null)"
-                           data-sidebar-tooltip="Quản lý nhân sự">
-                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-users-gear"></i></span>
-                            <span class="sidebar-label">Quản lý nhân sự</span>
+                        <a asp-controller="ManagerRoleChangeRequest" asp-action="Index"
+                           class="sidebar-item @(IsActive("ManagerRoleChangeRequest") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("ManagerRoleChangeRequest") ? "page" : null)"
+                           data-sidebar-tooltip="Yêu cầu thay đổi vai trò">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-user-gear"></i></span>
+                            <span class="sidebar-label">Yêu cầu thay đổi vai trò</span>
                         </a>
                     </nav>
                 </section>
@@ -409,14 +428,6 @@
     <div class="sidebar-toast" id="globalToast" role="status" aria-live="polite">
         Chức năng đang được phát triển. Vui lòng quay lại sau.
     </div>
-    @if (!string.IsNullOrWhiteSpace(passwordChangeSuccess))
-    {
-        <div class="sidebar-toast flash-toast is-success" id="flashToast" role="status" aria-live="polite" data-auto-show>
-            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
-            <span>@passwordChangeSuccess</span>
-            <button type="button" aria-label="Đóng thông báo"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
-        </div>
-    }
 
     <script src="~/js/admin-sidebar.js" asp-append-version="true"></script>
     @if (isAdmin || isManager) { <script src="~/js/notifications.js" asp-append-version="true"></script> }

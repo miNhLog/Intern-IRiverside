@@ -31,7 +31,7 @@ builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/login";
+        options.LoginPath = "/dang-nhap";
         options.AccessDeniedPath = "/khong-co-quyen";
         options.Cookie.Name = "rp_auth";
         options.Cookie.HttpOnly = true;
