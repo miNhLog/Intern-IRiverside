@@ -16,4 +16,5 @@ public sealed class AccountDto
     public string DataStatusName { get; set; } = string.Empty;
     public string? EmployeeDataStatus { get; set; }
     public string? EmployeeDataStatusName { get; set; }
+    public bool MustChangePassword { get; set; }
 }

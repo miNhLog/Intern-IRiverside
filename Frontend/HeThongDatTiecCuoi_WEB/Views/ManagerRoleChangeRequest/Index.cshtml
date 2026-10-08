@@ -1,0 +1,82 @@
+@model HeThongDatTiecCuoi_WEB.Models.RoleChangeRequest.ManagerRoleChangeRequestPageViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Yêu cầu thay đổi vai trò";
+    string RoleClass(string role) => role == "Quản lý sảnh" ? "role-hall-manager" : "role-coordinator";
+    string StatusLabel(string status) => status switch { "APPROVED" => "Đã duyệt", "REJECTED" => "Từ chối", _ => "Chờ duyệt" };
+}
+
+@section Styles { <link rel="stylesheet" href="~/css/manager-role-change.css" asp-append-version="true" /> }
+
+<main class="role-change-page">
+    <nav class="role-change-breadcrumb" aria-label="Breadcrumb">Quản lý nhân sự <i class="fa-solid fa-chevron-right"></i> Yêu cầu thay đổi vai trò</nav>
+    <header class="role-change-header">
+        <h1>Yêu cầu thay đổi vai trò</h1>
+        <p>Gửi và theo dõi yêu cầu điều chỉnh vai trò của nhân sự nội bộ.</p>
+    </header>
+
+    @if (TempData["RoleChangeSuccess"] is string success) { <div class="role-alert success"><i class="fa-solid fa-circle-check"></i> @success</div> }
+    @if (TempData["RoleChangeError"] is string error) { <div class="role-alert error"><i class="fa-solid fa-circle-exclamation"></i> @error</div> }
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage)) { <div class="role-alert error">@Model.ErrorMessage</div> }
+
+    <section class="role-change-card">
+        <div class="role-card-heading"><div><h2>Gửi yêu cầu mới</h2><p>Chọn nhân viên để hệ thống xác định vai trò đề xuất phù hợp.</p></div></div>
+        @if (Model.Candidates.Count == 0)
+        {
+            <div class="role-form-empty"><i class="fa-solid fa-user-slash"></i><span>Hiện không có nhân viên nào đủ điều kiện để tạo yêu cầu mới.</span></div>
+        }
+        <form asp-action="Index" method="post" class="role-change-form" id="roleChangeForm">
+            @Html.AntiForgeryToken()
+            <div class="role-field employee-field">
+                <label asp-for="Form.EmployeeId">Nhân viên</label>
+                <select asp-for="Form.EmployeeId" id="employeeSelect" disabled="@(Model.Candidates.Count == 0)">
+                    <option value="0">-- Chọn nhân viên --</option>
+                    @foreach (var candidate in Model.Candidates)
+                    {
+                        <option value="@candidate.EmployeeId" data-code="@candidate.EmployeeCode" data-name="@candidate.FullName" data-current="@candidate.CurrentRoleName" data-requested="@candidate.RequestedRoleName">@candidate.EmployeeCode – @candidate.FullName – @candidate.CurrentRoleName</option>
+                    }
+                </select>
+            </div>
+            <div class="role-transition" aria-live="polite">
+                <div><span>Vai trò hiện tại</span><strong id="currentRole" class="role-badge neutral">Chưa chọn</strong></div>
+                <i class="fa-solid fa-arrow-right"></i>
+                <div><span>Vai trò đề xuất</span><strong id="requestedRole" class="role-badge neutral">Chưa chọn</strong></div>
+            </div>
+            <div class="selected-employee" id="selectedEmployee">Chọn một nhân viên để xem thông tin chuyển đổi.</div>
+            <div class="role-field reason-field">
+                <label asp-for="Form.Reason">Lý do thay đổi</label>
+                <textarea asp-for="Form.Reason" maxlength="500" rows="4" placeholder="Nhập lý do thay đổi vai trò (không bắt buộc)"></textarea>
+                <span class="field-hint"><span id="reasonCount">0</span>/500</span>
+            </div>
+            <div class="role-form-actions"><button type="submit" class="role-submit" disabled><i class="fa-solid fa-paper-plane"></i> Gửi yêu cầu</button></div>
+        </form>
+    </section>
+
+    <section class="role-change-card history-card">
+        <div class="role-card-heading history-heading"><div><h2>Lịch sử yêu cầu</h2><p>Các yêu cầu do tài khoản Quản lý hiện tại đã gửi.</p></div>
+            @if (Model.Requests.Count > 0) { <select id="statusFilter" aria-label="Lọc trạng thái"><option value="">Tất cả trạng thái</option><option value="PENDING">Chờ duyệt</option><option value="APPROVED">Đã duyệt</option><option value="REJECTED">Từ chối</option></select> }
+        </div>
+        @if (Model.Requests.Count == 0)
+        {
+            <div class="history-empty"><i class="fa-solid fa-clock-rotate-left"></i><h3>Chưa có yêu cầu thay đổi vai trò</h3><p>Các yêu cầu do bạn gửi sẽ được hiển thị tại đây.</p></div>
+        }
+        else
+        {
+            <div class="role-table-wrap"><table class="role-history-table"><thead><tr><th>Nhân viên</th><th>Mã NV</th><th>Vai trò hiện tại</th><th>Vai trò đề xuất</th><th>Lý do</th><th>Ngày gửi</th><th>Trạng thái</th></tr></thead>
+                <tbody>@foreach (var item in Model.Requests) { <tr data-status="@item.Status"><td><strong>@item.FullName</strong></td><td>@(item.EmployeeCodeBefore ?? item.EmployeeCode)@if(item.EmployeeCodeAfter is not null){<text> → @item.EmployeeCodeAfter</text>}</td><td><span class="role-badge @RoleClass(item.CurrentRoleName)">@item.CurrentRoleName</span></td><td><span class="role-badge @RoleClass(item.RequestedRoleName)">@item.RequestedRoleName</span></td><td class="reason-cell">@(item.Reason ?? "—")@if(item.Status == "REJECTED"){<small class="reject-note">Lý do từ chối: @item.RejectionReason</small>}</td><td>@item.RequestedAt.ToString("dd/MM/yyyy HH:mm")</td><td><span class="status-badge status-@item.Status.ToLowerInvariant()">@StatusLabel(item.Status)</span></td></tr> }</tbody>
+            </table><div id="filterEmpty" class="filter-empty" hidden>Không có yêu cầu phù hợp với trạng thái đã chọn.</div></div>
+        }
+    </section>
+</main>
+
+@section Scripts {
+<script>
+(() => {
+ const select=document.getElementById('employeeSelect'), current=document.getElementById('currentRole'), requested=document.getElementById('requestedRole'), info=document.getElementById('selectedEmployee'), submit=document.querySelector('.role-submit'), reason=document.getElementById('Form_Reason'), count=document.getElementById('reasonCount');
+ const roleClass=v=>v==='Quản lý sảnh'?'role-hall-manager':'role-coordinator';
+ select?.addEventListener('change',()=>{const o=select.selectedOptions[0], valid=Number(select.value)>0; current.textContent=valid?o.dataset.current:'Chưa chọn'; requested.textContent=valid?o.dataset.requested:'Chưa chọn'; current.className='role-badge '+(valid?roleClass(o.dataset.current):'neutral'); requested.className='role-badge '+(valid?roleClass(o.dataset.requested):'neutral'); info.textContent=valid?`${o.dataset.code} – ${o.dataset.name}`:'Chọn một nhân viên để xem thông tin chuyển đổi.'; submit.disabled=!valid;});
+ reason?.addEventListener('input',()=>count.textContent=reason.value.length);
+ const filter=document.getElementById('statusFilter'), rows=[...document.querySelectorAll('tr[data-status]')], empty=document.getElementById('filterEmpty'); filter?.addEventListener('change',()=>{let shown=0; rows.forEach(r=>{const show=!filter.value||r.dataset.status===filter.value;r.hidden=!show;if(show)shown++;});empty.hidden=shown!==0;});
+})();
+</script>
+}

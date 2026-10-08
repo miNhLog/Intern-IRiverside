@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HeThongDatTiecCuoi_WEB.Controllers;
 
-[Authorize(Roles = RoleNames.Admin + "," + RoleNames.Manager)]
+[Authorize(Roles = RoleNames.Manager)]
 public sealed class AdminHallController : Controller
 {
     private const string ApiTokenCookie = "rp_api_token";

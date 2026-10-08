@@ -82,6 +82,23 @@ CREATE TABLE TokenDatLaiMatKhau (
 );
 GO
 
+-- 05B. MaOtpDoiMatKhauLanDau
+CREATE TABLE MaOtpDoiMatKhauLanDau (
+    MaOtpID BIGINT IDENTITY(1,1) NOT NULL,
+    TaiKhoanID INT NOT NULL,
+    MaHash NVARCHAR(255) NOT NULL,
+    SoLanNhapSai INT NOT NULL CONSTRAINT DF_MaOtpDoiMatKhauLanDau_SoLanNhapSai DEFAULT 0,
+    HetHanLuc DATETIME2(0) NOT NULL,
+    DaDungLuc DATETIME2(0) NULL,
+    NgayTao DATETIME2(0) NOT NULL CONSTRAINT DF_MaOtpDoiMatKhauLanDau_NgayTao DEFAULT SYSDATETIME(),
+    CONSTRAINT PK_MaOtpDoiMatKhauLanDau PRIMARY KEY (MaOtpID),
+    CONSTRAINT FK_MaOtpDoiMatKhauLanDau_TaiKhoan FOREIGN KEY (TaiKhoanID) REFERENCES TaiKhoan(TaiKhoanID),
+    CONSTRAINT CK_MaOtpDoiMatKhauLanDau_HetHan CHECK (HetHanLuc > NgayTao),
+    CONSTRAINT CK_MaOtpDoiMatKhauLanDau_SoLanNhapSai CHECK (SoLanNhapSai BETWEEN 0 AND 5)
+);
+CREATE INDEX IX_MaOtpDoiMatKhauLanDau_TaiKhoan_NgayTao ON MaOtpDoiMatKhauLanDau(TaiKhoanID, NgayTao DESC);
+GO
+
 -- 06. KhachHang
 CREATE TABLE KhachHang (
     KhachHangID INT IDENTITY(1,1) NOT NULL,
@@ -118,6 +135,37 @@ CREATE TABLE NhanVien (
     CONSTRAINT FK_NhanVien_TaiKhoan FOREIGN KEY (TaiKhoanID) REFERENCES TaiKhoan(TaiKhoanID),
     CONSTRAINT FK_NhanVien_TrangThaiDuLieu FOREIGN KEY (TrangThaiDuLieuID) REFERENCES TrangThaiDuLieu(TrangThaiDuLieuID)
 );
+GO
+
+-- 07A. YeuCauThayDoiVaiTro
+CREATE TABLE YeuCauThayDoiVaiTro (
+    YeuCauThayDoiVaiTroID INT IDENTITY(1,1) NOT NULL,
+    NhanVienID INT NOT NULL,
+    VaiTroHienTaiID TINYINT NOT NULL,
+    VaiTroDeXuatID TINYINT NOT NULL,
+    NguoiYeuCauTaiKhoanID INT NOT NULL,
+    LyDo NVARCHAR(500) NULL,
+    MaNhanVienTruoc NVARCHAR(20) NULL,
+    MaNhanVienSau NVARCHAR(20) NULL,
+    TrangThai VARCHAR(20) NOT NULL CONSTRAINT DF_YeuCauThayDoiVaiTro_TrangThai DEFAULT 'PENDING',
+    NgayYeuCau DATETIME2(0) NOT NULL CONSTRAINT DF_YeuCauThayDoiVaiTro_NgayYeuCau DEFAULT SYSDATETIME(),
+    NguoiXuLyTaiKhoanID INT NULL,
+    NgayXuLy DATETIME2(0) NULL,
+    LyDoTuChoi NVARCHAR(500) NULL,
+    CONSTRAINT PK_YeuCauThayDoiVaiTro PRIMARY KEY (YeuCauThayDoiVaiTroID),
+    CONSTRAINT FK_YeuCauThayDoiVaiTro_NhanVien FOREIGN KEY (NhanVienID) REFERENCES NhanVien(NhanVienID),
+    CONSTRAINT FK_YeuCauThayDoiVaiTro_VaiTroHienTai FOREIGN KEY (VaiTroHienTaiID) REFERENCES VaiTro(VaiTroID),
+    CONSTRAINT FK_YeuCauThayDoiVaiTro_VaiTroDeXuat FOREIGN KEY (VaiTroDeXuatID) REFERENCES VaiTro(VaiTroID),
+    CONSTRAINT FK_YeuCauThayDoiVaiTro_NguoiYeuCau FOREIGN KEY (NguoiYeuCauTaiKhoanID) REFERENCES TaiKhoan(TaiKhoanID),
+    CONSTRAINT FK_YeuCauThayDoiVaiTro_NguoiXuLy FOREIGN KEY (NguoiXuLyTaiKhoanID) REFERENCES TaiKhoan(TaiKhoanID),
+    CONSTRAINT CK_YeuCauThayDoiVaiTro_TrangThai CHECK (TrangThai IN ('PENDING', 'APPROVED', 'REJECTED')),
+    CONSTRAINT CK_YeuCauThayDoiVaiTro_VaiTroKhacNhau CHECK (VaiTroHienTaiID <> VaiTroDeXuatID)
+);
+GO
+
+CREATE UNIQUE INDEX UX_YeuCauThayDoiVaiTro_NhanVien_PENDING
+ON YeuCauThayDoiVaiTro(NhanVienID)
+WHERE TrangThai = 'PENDING';
 GO
 
 -- 08. SanhTiec
@@ -537,4 +585,28 @@ CREATE TABLE NhatKyThaoTac (
     CONSTRAINT PK_NhatKyThaoTac PRIMARY KEY (NhatKyThaoTacID),
     CONSTRAINT FK_NhatKyThaoTac_TaiKhoan FOREIGN KEY (TaiKhoanID) REFERENCES TaiKhoan(TaiKhoanID)
 );
+GO
+
+CREATE INDEX IX_NhatKyThaoTac_ThoiGian_ID ON NhatKyThaoTac(ThoiGian DESC, NhatKyThaoTacID DESC);
+GO
+CREATE INDEX IX_NhatKyThaoTac_HanhDong_ThoiGian ON NhatKyThaoTac(HanhDong, ThoiGian DESC);
+GO
+
+-- 28. ThongBao
+CREATE TABLE ThongBao (
+    ThongBaoID INT IDENTITY(1,1) NOT NULL,
+    TaiKhoanNhanID INT NOT NULL,
+    Loai VARCHAR(50) NOT NULL,
+    TieuDe NVARCHAR(200) NOT NULL,
+    NoiDung NVARCHAR(1000) NOT NULL,
+    LoaiDoiTuong VARCHAR(50) NULL,
+    DoiTuongID INT NULL,
+    DaDoc BIT NOT NULL CONSTRAINT DF_ThongBao_DaDoc DEFAULT 0,
+    NgayDoc DATETIME2(0) NULL,
+    NgayTao DATETIME2(0) NOT NULL CONSTRAINT DF_ThongBao_NgayTao DEFAULT SYSDATETIME(),
+    CONSTRAINT PK_ThongBao PRIMARY KEY (ThongBaoID),
+    CONSTRAINT FK_ThongBao_TaiKhoanNhan FOREIGN KEY (TaiKhoanNhanID) REFERENCES TaiKhoan(TaiKhoanID)
+);
+GO
+CREATE INDEX IX_ThongBao_NguoiNhan_DaDoc_NgayTao ON ThongBao(TaiKhoanNhanID, DaDoc, NgayTao DESC);
 GO

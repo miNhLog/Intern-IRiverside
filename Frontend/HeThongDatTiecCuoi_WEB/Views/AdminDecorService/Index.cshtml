@@ -99,7 +99,7 @@
         <header class="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 border-b border-slate-100">
             <div class="min-w-0">
                 <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-500 mb-1 flex-wrap">
-                    <span>Quản trị Master Data</span>
+                    <span>Quản trị hệ thống</span>
                     <i class="fa-solid fa-chevron-right text-[9px] text-slate-400"></i>
                     <span id="breadcrumb-current-tab" class="text-[#B89758] font-semibold">Gói Decor Tiệc Cưới</span>
                 </nav>
@@ -109,15 +109,6 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
-                <!-- System Status Badge -->
-                <div class="flex items-center bg-slate-50 rounded-lg px-2.5 sm:px-3 py-1.5 border border-slate-200 text-xs shadow-2xs">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse flex-shrink-0"></span>
-                    <span id="badge-system-status" class="text-slate-600 font-medium whitespace-nowrap">
-                        <span class="hidden sm:inline">CSDL đồng bộ • Niên độ 2026</span>
-                        <span class="sm:hidden">Đồng bộ 2026</span>
-                    </span>
-                </div>
-
                 <!-- Notification Bell -->
                 <div class="relative" id="notification-wrapper">
                     <button id="btn-notification" onclick="toggleNotificationDropdown()" class="p-2.5 text-slate-500 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 relative focus-ring min-h-[42px] min-w-[42px] flex items-center justify-center transition-colors shadow-2xs" aria-label="Thông báo hệ thống">
@@ -925,7 +916,6 @@
             document.getElementById('metric-active').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> ${activeCount} Đang áp dụng`;
             document.getElementById('metric-inactive').innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span> ${inactiveCount} Ngừng áp dụng`;
             document.getElementById('pagination-summary').innerHTML = `Hiển thị <strong>1 – ${filteredList.length}</strong> trong tổng số <strong>${totalList.length}</strong> ${currentTab === 'decor' ? 'gói Decor' : 'dịch vụ'}`;
-            document.getElementById('badge-system-status').innerText = `Hệ thống sẵn sàng • ${activeCount}/${totalList.length} Áp dụng`;
         }
 
         // 7. RENDER TAB 1: CARD GRID

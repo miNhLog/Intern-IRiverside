@@ -23,7 +23,7 @@ public sealed class AuthController : Controller
         _configuration = configuration;
     }
 
-    [HttpGet("dang-nhap")]
+    [HttpGet("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login(string? returnUrl = null)
     {
@@ -60,7 +60,7 @@ public sealed class AuthController : Controller
         return View(new LoginViewModel { ReturnUrl = returnUrl });
     }
 
-    [HttpPost("dang-nhap")]
+    [HttpPost("login")]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model, CancellationToken cancellationToken)
@@ -96,6 +96,9 @@ public sealed class AuthController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model, CancellationToken cancellationToken)
     {
+        var requiresOtp = bool.TryParse(User.FindFirstValue(MustChangePasswordClaim), out var mustChange) && mustChange;
+        if (requiresOtp && (string.IsNullOrWhiteSpace(model.OtpCode) || model.OtpCode.Length != 6 || !model.OtpCode.All(char.IsDigit)))
+            ModelState.AddModelError(nameof(model.OtpCode), "Vui lòng nhập mã OTP gồm 6 chữ số.");
         if (!ModelState.IsValid) return View(model);
 
         var token = Request.Cookies[ApiTokenCookie];
@@ -103,8 +106,26 @@ public sealed class AuthController : Controller
         var result = await _apiClient.ChangePasswordAsync(model, token, cancellationToken);
         if (!result.Succeeded) { ModelState.AddModelError(string.Empty, result.Error ?? "Không thể đổi mật khẩu."); return View(model); }
         await UpdateMustChangePasswordClaimAsync(false);
-        TempData["Success"] = result.Value?.Message ?? "Đổi mật khẩu thành công.";
+        TempData["PasswordChangeSuccess"] = result.Value?.Message ?? "Đổi mật khẩu thành công.";
         return RedirectForRole(User.FindFirstValue(ClaimTypes.Role));
+    }
+
+    [HttpPost("doi-mat-khau/gui-otp")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendFirstPasswordOtp(CancellationToken cancellationToken)
+    {
+        var token = Request.Cookies[ApiTokenCookie];
+        if (string.IsNullOrWhiteSpace(token))
+            return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn." });
+
+        var result = await _apiClient.SendFirstPasswordOtpAsync(token, cancellationToken);
+        return Json(new
+        {
+            success = result.Succeeded,
+            message = result.Succeeded ? result.Value?.Message : result.Error,
+            cooldownSeconds = result.Value?.CooldownSeconds ?? 60
+        });
     }
 
     [HttpGet("auth/google")]
@@ -210,6 +231,7 @@ public sealed class AuthController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
+        TempData.Remove("PasswordChangeSuccess");
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         Response.Cookies.Delete(ApiTokenCookie);
         return RedirectToAction(nameof(Login));
@@ -219,7 +241,7 @@ public sealed class AuthController : Controller
     {
         if (roleName == RoleNames.Admin)
         {
-            return RedirectToAction("Index", "AdminHall");
+            return RedirectToAction("Dashboard", "AdminAccount");
         }
 
         if (roleName is RoleNames.Manager or RoleNames.HallManager or RoleNames.Coordinator)

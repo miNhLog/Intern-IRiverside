@@ -1,4 +1,5 @@
 using HeThongDatTiecCuoi_API.Models;
+using HeThongDatTiecCuoi_API.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeThongDatTiecCuoi_API.Data;
@@ -15,6 +16,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<RoleChangeRequest> RoleChangeRequests => Set<RoleChangeRequest>();
     public DbSet<HallSchedule> HallSchedules => Set<HallSchedule>();
     public DbSet<ImageAsset> ImageAssets => Set<ImageAsset>();
     public DbSet<HallManagerAssignment> HallManagerAssignments => Set<HallManagerAssignment>();
@@ -24,6 +26,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<ReviewQrCode> ReviewQrCodes => Set<ReviewQrCode>();
     public DbSet<WeddingReview> WeddingReviews => Set<WeddingReview>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<WeddingBooking> WeddingBookings => Set<WeddingBooking>();
     public DbSet<WeddingBookingService> WeddingBookingServices => Set<WeddingBookingService>();
     public DbSet<Contract> Contracts => Set<Contract>();
@@ -35,6 +38,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<Status> Statuses => Set<Status>();
     public DbSet<DataStatus> DataStatuses => Set<DataStatus>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<FirstPasswordOtp> FirstPasswordOtps => Set<FirstPasswordOtp>();
     public DbSet<DecorPackage> DecorPackages { get; set; }
     public DbSet<ServiceItem> ServiceItems { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -171,6 +175,52 @@ public sealed class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.DataStatusId)
                 .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<FirstPasswordOtp>(entity =>
+        {
+            entity.ToTable("MaOtpDoiMatKhauLanDau", table =>
+                table.HasCheckConstraint("CK_MaOtpDoiMatKhauLanDau_HetHan", "[HetHanLuc] > [NgayTao]"));
+            entity.HasKey(x => x.FirstPasswordOtpId);
+            entity.Property(x => x.FirstPasswordOtpId).HasColumnName("MaOtpID");
+            entity.Property(x => x.UserId).HasColumnName("TaiKhoanID");
+            entity.Property(x => x.CodeHash).HasColumnName("MaHash").HasMaxLength(255).IsRequired();
+            entity.Property(x => x.FailedAttempts).HasColumnName("SoLanNhapSai").HasDefaultValue(0);
+            entity.Property(x => x.ExpiresAt).HasColumnName("HetHanLuc").HasPrecision(0);
+            entity.Property(x => x.UsedAt).HasColumnName("DaDungLuc").HasPrecision(0);
+            entity.Property(x => x.CreatedAt).HasColumnName("NgayTao").HasPrecision(0).HasDefaultValueSql("SYSDATETIME()");
+            entity.HasIndex(x => new { x.UserId, x.CreatedAt });
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<RoleChangeRequest>(entity =>
+        {
+            entity.ToTable("YeuCauThayDoiVaiTro", table =>
+            {
+                table.HasCheckConstraint("CK_YeuCauThayDoiVaiTro_TrangThai", "[TrangThai] IN ('PENDING', 'APPROVED', 'REJECTED')");
+                table.HasCheckConstraint("CK_YeuCauThayDoiVaiTro_VaiTroKhacNhau", "[VaiTroHienTaiID] <> [VaiTroDeXuatID]");
+            });
+            entity.HasKey(x => x.RoleChangeRequestId);
+            entity.Property(x => x.RoleChangeRequestId).HasColumnName("YeuCauThayDoiVaiTroID");
+            entity.Property(x => x.EmployeeId).HasColumnName("NhanVienID");
+            entity.Property(x => x.CurrentRoleId).HasColumnName("VaiTroHienTaiID").HasColumnType("tinyint");
+            entity.Property(x => x.RequestedRoleId).HasColumnName("VaiTroDeXuatID").HasColumnType("tinyint");
+            entity.Property(x => x.RequestedByUserId).HasColumnName("NguoiYeuCauTaiKhoanID");
+            entity.Property(x => x.Reason).HasColumnName("LyDo").HasMaxLength(500);
+            entity.Property(x => x.EmployeeCodeBefore).HasColumnName("MaNhanVienTruoc").HasMaxLength(20);
+            entity.Property(x => x.EmployeeCodeAfter).HasColumnName("MaNhanVienSau").HasMaxLength(20);
+            entity.Property(x => x.Status).HasColumnName("TrangThai").HasColumnType("varchar(20)").HasMaxLength(20).HasDefaultValue(RoleChangeRequestStatusCodes.Pending).IsRequired();
+            entity.Property(x => x.RequestedAt).HasColumnName("NgayYeuCau").HasPrecision(0).HasDefaultValueSql("SYSDATETIME()");
+            entity.Property(x => x.ReviewedByUserId).HasColumnName("NguoiXuLyTaiKhoanID");
+            entity.Property(x => x.ReviewedAt).HasColumnName("NgayXuLy").HasPrecision(0);
+            entity.Property(x => x.RejectionReason).HasColumnName("LyDoTuChoi").HasMaxLength(500);
+            entity.HasIndex(x => x.EmployeeId, "UX_YeuCauThayDoiVaiTro_NhanVien_PENDING")
+                .IsUnique().HasFilter("[TrangThai] = 'PENDING'");
+            entity.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.CurrentRole).WithMany().HasForeignKey(x => x.CurrentRoleId).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.RequestedRole).WithMany().HasForeignKey(x => x.RequestedRoleId).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.RequestedByUser).WithMany().HasForeignKey(x => x.RequestedByUserId).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.ReviewedByUser).WithMany().HasForeignKey(x => x.ReviewedByUserId).OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<Hall>(entity =>
@@ -502,10 +552,30 @@ public sealed class ApplicationDbContext : DbContext
             entity.Property(x => x.Timestamp).HasColumnName("ThoiGian").HasPrecision(0)
                 .HasDefaultValueSql("SYSDATETIME()");
             entity.Property(x => x.Notes).HasColumnName("GhiChu").HasMaxLength(500);
+            entity.HasIndex(x => new { x.Timestamp, x.AuditLogId }, "IX_NhatKyThaoTac_ThoiGian_ID").IsDescending(true, true);
+            entity.HasIndex(x => new { x.Action, x.Timestamp }, "IX_NhatKyThaoTac_HanhDong_ThoiGian").IsDescending(false, true);
             entity.HasOne(x => x.User)
                 .WithMany(x => x.AuditLogs)
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.ToTable("ThongBao");
+            entity.HasKey(x => x.NotificationId);
+            entity.Property(x => x.NotificationId).HasColumnName("ThongBaoID");
+            entity.Property(x => x.RecipientUserId).HasColumnName("TaiKhoanNhanID");
+            entity.Property(x => x.Type).HasColumnName("Loai").HasColumnType("varchar(50)").HasMaxLength(50).IsRequired();
+            entity.Property(x => x.Title).HasColumnName("TieuDe").HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Message).HasColumnName("NoiDung").HasMaxLength(1000).IsRequired();
+            entity.Property(x => x.RelatedEntityType).HasColumnName("LoaiDoiTuong").HasColumnType("varchar(50)").HasMaxLength(50);
+            entity.Property(x => x.RelatedEntityId).HasColumnName("DoiTuongID");
+            entity.Property(x => x.IsRead).HasColumnName("DaDoc").HasDefaultValue(false);
+            entity.Property(x => x.ReadAt).HasColumnName("NgayDoc").HasPrecision(0);
+            entity.Property(x => x.CreatedAt).HasColumnName("NgayTao").HasPrecision(0).HasDefaultValueSql("SYSDATETIME()");
+            entity.HasIndex(x => new { x.RecipientUserId, x.IsRead, x.CreatedAt }, "IX_ThongBao_NguoiNhan_DaDoc_NgayTao").IsDescending(false, false, true);
+            entity.HasOne(x => x.RecipientUser).WithMany().HasForeignKey(x => x.RecipientUserId).OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<DecorPackage>(entity =>

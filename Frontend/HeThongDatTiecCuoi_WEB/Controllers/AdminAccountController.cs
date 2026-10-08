@@ -1,6 +1,7 @@
 using HeThongDatTiecCuoi_WEB.Constants.StatusCodes;
 using HeThongDatTiecCuoi_WEB.Constants;
 using HeThongDatTiecCuoi_WEB.Models.AdminAccount;
+using HeThongDatTiecCuoi_WEB.Models.Auth;
 using HeThongDatTiecCuoi_WEB.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +26,7 @@ public sealed class AdminAccountController : Controller
         string? keyword,
         int? roleId,
         string? status,
+        bool? mustChangePassword,
         CancellationToken cancellationToken)
     {
         var accessToken = Request.Cookies[ApiTokenCookie];
@@ -34,24 +36,45 @@ public sealed class AdminAccountController : Controller
             return RedirectToAction("Login", "Auth");
         }
 
+        var rolesResult = await _apiClient.GetRolesAsync(
+            accessToken,
+            cancellationToken);
+
         var accountsResult = await _apiClient.GetAccountsAsync(
             accessToken,
             keyword,
             roleId,
             status,
+            mustChangePassword,
             cancellationToken);
 
-        var rolesResult = await _apiClient.GetRolesAsync(
-            accessToken,
-            cancellationToken);
+        var adminRoleId = rolesResult.Value?
+            .FirstOrDefault(role => role.RoleName == RoleNames.Admin)?
+            .RoleId;
+        var adminResult = adminRoleId.HasValue
+            ? await _apiClient.GetAccountsAsync(
+                accessToken,
+                null,
+                adminRoleId,
+                null,
+                null,
+                cancellationToken)
+            : null;
 
         var model = new AccountManagementViewModel
         {
             Keyword = keyword,
             RoleId = roleId,
             Status = status,
+            MustChangePassword = mustChangePassword,
+            AdminAccount = adminResult?.Succeeded == true
+                ? adminResult.Value?.FirstOrDefault(account => account.RoleName == RoleNames.Admin)
+                : null,
             Accounts = accountsResult.Succeeded && accountsResult.Value is not null
-                ? accountsResult.Value
+                ? accountsResult.Value.Where(account =>
+                    account.RoleName == RoleNames.Manager ||
+                    account.RoleName == RoleNames.HallManager ||
+                    account.RoleName == RoleNames.Coordinator).ToList()
                 : new List<AccountDto>(),
             Roles = rolesResult.Succeeded && rolesResult.Value is not null
                 ? rolesResult.Value
@@ -68,12 +91,20 @@ public sealed class AdminAccountController : Controller
             model.ErrorMessage = rolesResult.Error
                 ?? "Không thể tải danh sách vai trò.";
         }
+        else if (adminResult is not null && !adminResult.Succeeded)
+        {
+            model.ErrorMessage = adminResult.Error
+                ?? "Không thể tải tài khoản Quản trị viên.";
+        }
 
         return View(model);
     }
 
     [HttpGet("tong-quan")]
-    public async Task<IActionResult> Dashboard(CancellationToken cancellationToken)
+    public async Task<IActionResult> Dashboard(
+        DateTime? fromDate,
+        DateTime? toDate,
+        CancellationToken cancellationToken)
     {
         var accessToken = Request.Cookies[ApiTokenCookie];
         if (string.IsNullOrWhiteSpace(accessToken))
@@ -81,17 +112,23 @@ public sealed class AdminAccountController : Controller
             return RedirectToAction("Login", "Auth");
         }
 
-        var accountsResult = await _apiClient.GetAccountsAsync(
-            accessToken, null, null, null, cancellationToken);
+        var dashboardResult = await _apiClient.GetSystemDashboardAsync(
+            accessToken,
+            fromDate,
+            toDate,
+            cancellationToken);
 
-        return View(new AccountManagementViewModel
+        if (dashboardResult.Succeeded && dashboardResult.Value is not null)
         {
-            Accounts = accountsResult.Succeeded && accountsResult.Value is not null
-                ? accountsResult.Value
-                : [],
-            ErrorMessage = accountsResult.Succeeded
-                ? null
-                : accountsResult.Error ?? "Không thể tải dữ liệu tổng quan hệ thống."
+            return View(dashboardResult.Value);
+        }
+
+        var today = DateTime.Today;
+        return View(new SystemDashboardViewModel
+        {
+            FromDate = fromDate?.Date ?? new DateTime(today.Year, today.Month, 1),
+            ToDate = toDate?.Date ?? new DateTime(today.Year, today.Month, 1).AddMonths(1).AddDays(-1),
+            ErrorMessage = dashboardResult.Error ?? "Không thể tải dữ liệu tổng quan hệ thống."
         });
     }
 
@@ -132,6 +169,79 @@ public sealed class AdminAccountController : Controller
             success = true,
             message = result.Value?.Message
                 ?? "Tạo tài khoản nhân viên thành công."
+        });
+    }
+
+    [HttpPost("sua-quan-tri-vien/{userId:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateAdministrator(
+        int userId,
+        [FromForm] UpdateAdministratorAccountRequest model,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = Request.Cookies[ApiTokenCookie];
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn." });
+        }
+
+        if (userId <= 0 || string.IsNullOrWhiteSpace(model.Email))
+        {
+            return Json(new { success = false, message = "Thông tin Quản trị viên không hợp lệ." });
+        }
+
+        var result = await _apiClient.UpdateAdministratorAccountAsync(
+            userId,
+            model,
+            accessToken,
+            cancellationToken);
+
+        return Json(new
+        {
+            success = result.Succeeded,
+            message = result.Succeeded
+                ? result.Value?.Message ?? "Cập nhật Quản trị viên thành công."
+                : result.Error ?? "Không thể cập nhật Quản trị viên."
+        });
+    }
+
+    [HttpPost("doi-mat-khau-quan-tri-vien")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangeAdministratorPassword(
+        [FromForm] ChangePasswordViewModel model,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = Request.Cookies[ApiTokenCookie];
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn." });
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var validationMessage = ModelState.Values
+                .SelectMany(value => value.Errors)
+                .Select(error => error.ErrorMessage)
+                .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
+
+            return Json(new
+            {
+                success = false,
+                message = validationMessage ?? "Thông tin mật khẩu không hợp lệ."
+            });
+        }
+
+        var result = await _apiClient.ChangePasswordAsync(
+            model,
+            accessToken,
+            cancellationToken);
+
+        return Json(new
+        {
+            success = result.Succeeded,
+            message = result.Succeeded
+                ? result.Value?.Message ?? "Đổi mật khẩu thành công."
+                : result.Error ?? "Không thể đổi mật khẩu."
         });
     }
 

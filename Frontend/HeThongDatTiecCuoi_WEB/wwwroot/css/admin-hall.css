@@ -219,23 +219,6 @@ select {
     font-size: 23px;
 }
 
-.system-status {
-    background: #f4f6f8;
-    border: 1px solid #e2e5e9;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 11px;
-}
-
-    .system-status span {
-        width: 8px;
-        height: 8px;
-        background: #22c55e;
-        display: inline-block;
-        border-radius: 50%;
-        margin-right: 6px;
-    }
-
 .content {
     padding: 28px;
 }

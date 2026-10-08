@@ -1,4 +1,5 @@
 @using HeThongDatTiecCuoi_WEB.Constants
+@using System.Globalization
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
@@ -13,6 +14,10 @@
     var isHallManager = User.IsInRole(RoleNames.HallManager);
     var isCoordinator = User.IsInRole(RoleNames.Coordinator);
     var dashboardController = isAdmin ? "AdminAccount" : "Home";
+    var vietnameseCulture = CultureInfo.GetCultureInfo("vi-VN");
+    var currentDateText = DateTime.Today.ToString("dddd, dd 'tháng' MM 'năm' yyyy", vietnameseCulture);
+    currentDateText = char.ToUpper(currentDateText[0], vietnameseCulture) + currentDateText[1..];
+    var passwordChangeSuccess = TempData["PasswordChangeSuccess"] as string;
 
     bool IsActive(string controller, string action = "Index") =>
         string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase) &&
@@ -38,6 +43,10 @@
 
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap"
+          rel="stylesheet" />
     <link rel="stylesheet"
           href="~/css/admin-hall.css"
           asp-append-version="true" />
@@ -47,6 +56,7 @@
     <link rel="stylesheet"
           href="~/css/admin-common.css"
           asp-append-version="true" />
+    @if (isAdmin || isManager) { <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" /> }
 
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -114,22 +124,15 @@
                             <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-users"></i></span>
                             <span class="sidebar-label">Quản lý tài khoản</span>
                         </a>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Nhật ký hệ thống">
+                        <a asp-controller="AdminAuditLog" asp-action="Index"
+                           class="sidebar-item @(IsActive("AdminAuditLog") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("AdminAuditLog") ? "page" : null)"
+                           data-sidebar-tooltip="Nhật ký hệ thống">
                             <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-clock-rotate-left"></i></span>
                             <span class="sidebar-label">Nhật ký hệ thống</span>
-                        </button>
-                    </nav>
-                </section>
-                <section class="sidebar-section" aria-labelledby="adminProfileMenuTitle">
-                    <h2 class="sidebar-section-title" id="adminProfileMenuTitle">Tài khoản</h2>
-                    <nav class="sidebar-menu" aria-label="Tài khoản cá nhân">
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Hồ sơ cá nhân">
-                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-user"></i></span>
-                            <span class="sidebar-label">Hồ sơ cá nhân</span>
-                        </button>
-                        <a asp-controller="Auth" asp-action="ChangePassword" class="sidebar-item" data-sidebar-tooltip="Đổi mật khẩu">
-                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-key"></i></span>
-                            <span class="sidebar-label">Đổi mật khẩu</span>
+                        </a>
+                        <a asp-controller="AdminRoleChangeRequest" asp-action="Index" class="sidebar-item @(IsActive("AdminRoleChangeRequest") ? "active" : string.Empty)" aria-current="@(IsActive("AdminRoleChangeRequest") ? "page" : null)" data-sidebar-tooltip="Yêu cầu thay đổi vai trò">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-user-check"></i></span><span class="sidebar-label">Yêu cầu thay đổi vai trò</span>
                         </a>
                     </nav>
                 </section>
@@ -142,9 +145,9 @@
                         <a asp-controller="Home" asp-action="Dashboard"
                            class="sidebar-item @(IsActive("Home", "Dashboard") ? "active" : string.Empty)"
                            aria-current="@(IsActive("Home", "Dashboard") ? "page" : null)"
-                           data-sidebar-tooltip="Dashboard">
+                           data-sidebar-tooltip="Tổng quan quản lý">
                             <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-gauge-high"></i></span>
-                            <span class="sidebar-label">Dashboard</span>
+                            <span class="sidebar-label">Tổng quan quản lý</span>
                         </a>
                     </nav>
                 </section>
@@ -157,13 +160,6 @@
                            data-sidebar-tooltip="Sảnh &amp; Lịch">
                             <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-building"></i></span>
                             <span class="sidebar-label">Sảnh &amp; Lịch</span>
-                        </a>
-                        <a asp-controller="Home" asp-action="HallManagerAssignments"
-                           class="sidebar-item @(IsActive("Home", "HallManagerAssignments") ? "active" : string.Empty)"
-                           aria-current="@(IsActive("Home", "HallManagerAssignments") ? "page" : null)"
-                           data-sidebar-tooltip="Bổ nhiệm Quản lý sảnh">
-                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-user-check"></i></span>
-                            <span class="sidebar-label">Bổ nhiệm Quản lý sảnh</span>
                         </a>
                         <a asp-controller="AdminMenu" asp-action="Index"
                            class="sidebar-item @(IsActive("AdminMenu") ? "active" : string.Empty)"
@@ -185,6 +181,18 @@
                            data-sidebar-tooltip="Bảng giá &amp; Chính sách">
                             <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-tags"></i></span>
                             <span class="sidebar-label">Bảng giá &amp; Chính sách</span>
+                        </a>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="managerHrMenuTitle">
+                    <h2 class="sidebar-section-title" id="managerHrMenuTitle">Nhân sự</h2>
+                    <nav class="sidebar-menu" aria-label="Quản lý nhân sự">
+                        <a asp-controller="ManagerHr" asp-action="Index"
+                           class="sidebar-item @(IsActive("ManagerHr") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("ManagerHr") ? "page" : null)"
+                           data-sidebar-tooltip="Quản lý nhân sự">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-users-gear"></i></span>
+                            <span class="sidebar-label">Quản lý nhân sự</span>
                         </a>
                     </nav>
                 </section>
@@ -319,16 +327,7 @@
 
             </div>
 
-            <footer class="sidebar-footer"
-                    data-sidebar-tooltip="@displayName · @roleName">
-                <div class="sidebar-account">
-                    <div class="avatar" aria-hidden="true">@initials</div>
-                    <div class="user-info">
-                        <strong>@displayName</strong>
-                        <span>@roleName</span>
-                    </div>
-                </div>
-
+            <footer class="sidebar-footer">
                 <a asp-controller="Home"
                    asp-action="Index"
                    asp-route-publicSite="true"
@@ -337,21 +336,71 @@
                    title="Về trang chủ Riverside Palace"
                    data-sidebar-tooltip="Về trang chủ Riverside Palace">
                     <i class="fa-solid fa-house" aria-hidden="true"></i>
+                    <span>Về trang chủ Riverside Palace</span>
                 </a>
-
-                <form method="post" action="/dang-xuat" class="sidebar-logout-form">
-                    @Html.AntiForgeryToken()
-                    <button type="submit"
-                            class="logout-button"
-                            aria-label="Đăng xuất"
-                            title="Đăng xuất">
-                        <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>
-                    </button>
-                </form>
             </footer>
         </aside>
 
         <main class="main-content" id="adminMainContent">
+            <header class="backoffice-topbar" aria-label="Thanh công cụ quản trị">
+                <div class="topbar-left">
+                    <label class="topbar-search">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <span class="visually-hidden">Tìm kiếm</span>
+                        <input id="backofficeSearch" type="search" placeholder="Tìm kiếm chức năng, dữ liệu..." autocomplete="off" aria-controls="backofficeSearchResults" aria-expanded="false" />
+                        <span id="backofficeSearchResults" class="topbar-search-results" role="listbox" aria-label="Kết quả tìm kiếm chức năng"></span>
+                    </label>
+                </div>
+                <div class="topbar-right">
+                    <div class="topbar-date" title="Ngày hiện tại">
+                        <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                        <span>@currentDateText</span>
+                    </div>
+                    <span class="topbar-divider" aria-hidden="true"></span>
+                    @if (isAdmin || isManager)
+                    {
+                    <div class="topbar-notifications" data-notification-root>
+                        <button type="button"
+                                class="topbar-notification"
+                                id="notificationButton"
+                                aria-label="Mở thông báo"
+                                aria-controls="notificationPanel"
+                                aria-expanded="false">
+                            <i class="fa-regular fa-bell" aria-hidden="true"></i>
+                            <span class="notification-badge" id="notificationBadge" hidden></span>
+                        </button>
+                        <section class="notification-panel"
+                                 id="notificationPanel"
+                                 aria-label="Thông báo"
+                                 hidden>
+                            <header class="notification-panel-header"><h2>Thông báo</h2><button type="button" id="markAllNotificationsRead">Đánh dấu tất cả đã đọc</button></header>
+                            <div id="notificationRecentList" class="notification-recent-list"><div class="notification-empty-state"><i class="fa-regular fa-bell-slash"></i><p>Chưa có thông báo</p><span>Các cập nhật quan trọng sẽ xuất hiện tại đây.</span></div></div>
+                            <footer class="notification-panel-footer"><a asp-controller="Notification" asp-action="Index">Xem tất cả thông báo</a></footer>
+                        </section>
+                        <form id="notificationCsrfForm" hidden>@Html.AntiForgeryToken()</form>
+                    </div>
+                    }
+                    <span class="topbar-divider" aria-hidden="true"></span>
+                    <details class="topbar-account">
+                        <summary class="topbar-user" aria-label="Mở menu tài khoản">
+                            <span class="topbar-avatar" aria-hidden="true">@initials</span>
+                            <span class="topbar-user-text">
+                                <strong class="topbar-user-name" title="@displayName">@displayName</strong>
+                                <span class="topbar-user-role">@roleName</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-down topbar-chevron" aria-hidden="true"></i>
+                        </summary>
+                        <div class="user-dropdown">
+                            <a asp-controller="Auth" asp-action="ChangePassword"><i class="fa-solid fa-key" aria-hidden="true"></i>Đổi mật khẩu</a>
+                            <div class="user-dropdown-divider" aria-hidden="true"></div>
+                            <form asp-controller="Auth" asp-action="Logout" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>Đăng xuất</button>
+                            </form>
+                        </div>
+                    </details>
+                </div>
+            </header>
             @RenderBody()
         </main>
     </div>
@@ -360,8 +409,17 @@
     <div class="sidebar-toast" id="globalToast" role="status" aria-live="polite">
         Chức năng đang được phát triển. Vui lòng quay lại sau.
     </div>
+    @if (!string.IsNullOrWhiteSpace(passwordChangeSuccess))
+    {
+        <div class="sidebar-toast flash-toast is-success" id="flashToast" role="status" aria-live="polite" data-auto-show>
+            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+            <span>@passwordChangeSuccess</span>
+            <button type="button" aria-label="Đóng thông báo"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        </div>
+    }
 
     <script src="~/js/admin-sidebar.js" asp-append-version="true"></script>
+    @if (isAdmin || isManager) { <script src="~/js/notifications.js" asp-append-version="true"></script> }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

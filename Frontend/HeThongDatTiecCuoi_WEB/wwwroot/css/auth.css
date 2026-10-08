@@ -74,6 +74,19 @@
 .alert-error:empty { display: none; }
 .alert-error { margin-bottom: 16px; padding: 11px 14px; border: 1px solid #f2b8b5; border-radius: 8px; color: #9f1c16; background: #fff0ef; font: 13px Arial, sans-serif; }
 .alert-error ul { margin: 0; padding-left: 18px; }
+.auth-alert { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 20px; padding: 13px 15px; border: 1px solid; border-radius: 11px; font-family: Arial, sans-serif; }
+.auth-alert > .material-symbols-outlined { flex: 0 0 auto; margin-top: 1px; font-size: 22px; }
+.auth-alert > div { min-width: 0; }
+.auth-alert strong, .auth-alert p { display: block; }
+.auth-alert strong { margin-bottom: 3px; font-size: 12px; }
+.auth-alert p { margin: 0; font-size: 12px; line-height: 1.5; }
+.auth-alert-success { border-color: #abdcc3; color: #176445; background: #effaf4; }
+.auth-alert-error { border-color: #f0bbb6; color: #9d2b23; background: #fff3f2; }
+.auth-alert-details { font-size: 12px; line-height: 1.5; }
+.auth-alert-details ul { margin: 0; padding-left: 17px; }
+.auth-alert-single { align-items: center; }
+.auth-alert-single > .material-symbols-outlined { margin-top: 0; }
+.auth-alert-single > span:last-child { font-size: 12px; font-weight: 600; line-height: 1.45; }
 .form-row { display: flex; gap: 18px; }
 .between { justify-content: space-between; align-items: center; }
 .compact { margin: 0 0 24px; }
@@ -90,6 +103,9 @@
 .google-logo { width: 19px; height: 19px; margin-right: 10px; flex: none; }
 .google-button:hover { border-color: #b8bec8; background: #f8f9fb; box-shadow: 0 3px 10px rgba(31,41,55,.08); }
 .switch-page { text-align: center; margin: 26px 0; color: #7c8797; font: 13px Arial, sans-serif; }
+.switch-page a { display: inline-flex; align-items: center; gap: 6px; }
+.switch-page a .material-symbols-outlined { font-size: 17px; transition: transform .2s ease; }
+.switch-page a:hover .material-symbols-outlined { transform: translateX(-3px); }
 .auth-card footer { border-top: 1px solid #e4e0d8; padding-top: 28px; text-align: center; color: #8b94a1; font: 11px Arial, sans-serif; }
 .auth-card footer strong { color: #555e69; }
 .auth-card footer span { margin: 0 8px; color: #d8d3ca; }
@@ -110,6 +126,21 @@
 .first-password-heading { display: flex; align-items: center; justify-content: center; gap: 15px; }.first-password-heading .crest { width: 48px; height: 48px; margin: 0; background: #fdf9ee; }.first-password-heading h1 { margin: 0; color: #1e242b; font-family: Cambria, "Times New Roman", serif; font-size: 29px; font-weight: 700; letter-spacing: .005em; line-height: 1.2; }
 .first-password-subtitle { max-width: 420px; margin: 18px auto 24px; color: #687180; text-align: center; font: 14px/1.55 Arial, sans-serif; }.first-password-form .field { margin-bottom: 17px; }.first-password-form .field label { font-size: 12px; color: #303844; }.field-helper { display: block; margin-top: 7px; color: #7a8492; font: 12px Arial, sans-serif; }
 .password-requirements { margin: 5px 0 18px; padding: 15px 18px; border-radius: 10px; background: #fbf8f1; color: #697381; }.password-requirements > div { display: flex; align-items: center; gap: 9px; color: #29313b; font: 13px Arial, sans-serif; }.password-requirements .material-symbols-outlined { color: #b89327; font-size: 22px; }.password-requirements ul { margin: 10px 0 0 31px; padding: 0; list-style: circle; font: 12px/1.75 Arial, sans-serif; }.password-requirements li::marker { color: #c8b080; }.password-requirements li.met { color: #317557; }.password-requirements li.met::marker { content: "✓  "; color: #317557; }
+.first-password-otp { margin-bottom: 20px; padding: 15px; border: 1px solid #e6dfd0; border-radius: 12px; background: #fbfaf7; }
+.otp-heading { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
+.otp-heading > .material-symbols-outlined { color: #b89327; font-size: 23px; }
+.otp-heading strong, .otp-heading small { display: block; font-family: Arial, sans-serif; }
+.otp-heading strong { color: #29313b; font-size: 13px; }
+.otp-heading small { margin-top: 3px; color: #7d8794; font-size: 11px; }
+.otp-control { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+.otp-control .input-wrap { height: 44px; }
+.otp-control input { letter-spacing: .22em; font-weight: 700; }
+.otp-send-button { min-width: 132px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 14px; border: 0; border-radius: 9px; color: #fff; background: #ad812d; cursor: pointer; font: 700 11px Arial, sans-serif; }
+.otp-send-button .material-symbols-outlined { font-size: 17px; }
+.otp-send-button:disabled { opacity: .65; cursor: not-allowed; }
+.otp-feedback { min-height: 16px; margin: 8px 0 0; color: #317557; font: 11px/1.45 Arial, sans-serif; }
+.otp-feedback:empty { display: none; }
+.otp-feedback.is-error { color: #b42318; }
 .first-password-submit { height: 48px; color: #fff; background: linear-gradient(90deg, #c9a14e, #aa7d27); box-shadow: 0 8px 20px rgba(170,125,39,.18); }.first-password-submit:hover { filter: brightness(.96); }.first-password-submit:disabled { opacity: .72; cursor: not-allowed; }.first-password-divider { height: 1px; margin: 16px 0 0; background: #e7e3da; }.logout-form { text-align: center; }.logout-link { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; border: 0; background: transparent; color: #a77925; cursor: pointer; font: 700 13px Arial, sans-serif; }.logout-link .material-symbols-outlined { font-size: 18px; }.logout-link:hover { color: #78541c; }.alert-success { margin-bottom: 16px; padding: 11px 14px; border: 1px solid #b9dfcb; border-radius: 8px; color: #256748; background: #effaf3; font: 13px Arial, sans-serif; }
 
 @media (max-width: 920px) {
@@ -123,5 +154,5 @@
     .auth-card h2 { font-size: 34px; }
     .auth-card footer span { display: none; }
     .auth-card footer { line-height: 1.7; }
-    .first-password-page { padding: 28px 16px; }.first-password-card { padding: 24px 20px; }.first-password-brand strong { font-size: 18px; }.first-password-heading { align-items: flex-start; justify-content: flex-start; }.first-password-heading h1 { padding-top: 8px; font-size: 23px; }.first-password-subtitle { text-align: left; }
+    .first-password-page { padding: 28px 16px; }.first-password-card { padding: 24px 20px; }.first-password-brand strong { font-size: 18px; }.first-password-heading { align-items: flex-start; justify-content: flex-start; }.first-password-heading h1 { padding-top: 8px; font-size: 23px; }.first-password-subtitle { text-align: left; }.otp-control { grid-template-columns: 1fr; }.otp-send-button { min-height: 42px; }
 }

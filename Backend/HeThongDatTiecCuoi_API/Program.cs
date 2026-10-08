@@ -1,6 +1,7 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using HeThongDatTiecCuoi_API.Data;
+using HeThongDatTiecCuoi_API.Helpers;
 using HeThongDatTiecCuoi_API.DTOs.Auth;
 using HeThongDatTiecCuoi_API.Models;
 using HeThongDatTiecCuoi_API.Options;
@@ -48,6 +49,12 @@ builder.Services.Configure<SmtpOptions>(
     builder.Configuration.GetSection(SmtpOptions.SectionName));
 builder.Services.Configure<PasswordResetOptions>(
     builder.Configuration.GetSection(PasswordResetOptions.SectionName));
+builder.Services
+    .AddOptions<AccountProvisioningOptions>()
+    .Bind(builder.Configuration.GetSection(AccountProvisioningOptions.SectionName))
+    .Validate(options => PasswordPolicy.IsValid(options.DefaultStaffPassword),
+        "AccountProvisioning:DefaultStaffPassword bị thiếu hoặc không đáp ứng chính sách mật khẩu.")
+    .ValidateOnStart();
 
 var jwtOptions = builder.Configuration
     .GetSection(JwtOptions.SectionName)
@@ -72,11 +79,15 @@ builder.Services
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IPasswordHasher<FirstPasswordOtp>, PasswordHasher<FirstPasswordOtp>>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IStatusService, StatusService>();
+builder.Services.AddScoped<IEmployeeCodeGenerator, EmployeeCodeGenerator>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+builder.Services.AddScoped<IFirstPasswordOtpService, FirstPasswordOtpService>();
 builder.Services.AddScoped<DevelopmentAuthSeeder>();
 builder.Services.AddHttpClient();
 

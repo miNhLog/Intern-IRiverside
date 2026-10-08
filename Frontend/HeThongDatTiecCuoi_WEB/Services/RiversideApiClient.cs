@@ -12,6 +12,10 @@ using HeThongDatTiecCuoi_WEB.Models.AdminMenu;
 using HeThongDatTiecCuoi_WEB.Models.AdminReport;
 using HeThongDatTiecCuoi_WEB.Models.AdminBooking;
 using HeThongDatTiecCuoi_WEB.Models.Recommendation;
+using HeThongDatTiecCuoi_WEB.Models.RoleChangeRequest;
+using HeThongDatTiecCuoi_WEB.Models.Notification;
+using HeThongDatTiecCuoi_WEB.Models.Home;
+using HeThongDatTiecCuoi_WEB.Models.ManagerHr;
 using Microsoft.AspNetCore.Mvc;
 
 public sealed class RiversideApiClient : IRiversideApiClient
@@ -46,6 +50,9 @@ public sealed class RiversideApiClient : IRiversideApiClient
 
     public Task<ApiCallResult<MessageResponseDto>> ChangePasswordAsync(ChangePasswordViewModel model, string accessToken, CancellationToken cancellationToken) =>
         SendAsync<MessageResponseDto>(HttpMethod.Post, "api/auth/change-password", model, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<FirstPasswordOtpResponseDto>> SendFirstPasswordOtpAsync(string accessToken, CancellationToken cancellationToken) =>
+        SendAsync<FirstPasswordOtpResponseDto>(HttpMethod.Post, "api/auth/first-password-otp", new { }, accessToken, cancellationToken);
 
     public Task<ApiCallResult<MessageResponseDto>> ForgotPasswordAsync(
         ForgotPasswordViewModel model,
@@ -362,6 +369,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         string? keyword,
         int? roleId,
         string? status,
+        bool? mustChangePassword,
         CancellationToken cancellationToken)
     {
         var query = new List<string>();
@@ -381,6 +389,11 @@ public sealed class RiversideApiClient : IRiversideApiClient
             query.Add($"status={Uri.EscapeDataString(status)}");
         }
 
+        if (mustChangePassword.HasValue)
+        {
+            query.Add($"mustChangePassword={mustChangePassword.Value.ToString().ToLowerInvariant()}");
+        }
+
         var uri = "api/admin/accounts";
 
         if (query.Count > 0)
@@ -391,6 +404,112 @@ public sealed class RiversideApiClient : IRiversideApiClient
         return SendAsync<List<AccountDto>>(
             HttpMethod.Get,
             uri,
+            null,
+            accessToken,
+            cancellationToken);
+    }
+
+    public Task<ApiCallResult<ManagerHrPageViewModel>> GetManagerHrAsync(string accessToken,string? search,string? role,string? status,string? assignmentStatus,int page,int pageSize,CancellationToken cancellationToken)
+    { var q=new List<string>{$"page={Math.Max(1,page)}",$"pageSize={Math.Clamp(pageSize,1,50)}"}; AddQueryParameter(q,"search",search);AddQueryParameter(q,"role",role);AddQueryParameter(q,"status",status);AddQueryParameter(q,"assignmentStatus",assignmentStatus);return SendAsync<ManagerHrPageViewModel>(HttpMethod.Get,"api/manager/hr?"+string.Join('&',q),null,accessToken,cancellationToken); }
+    public Task<ApiCallResult<ManagerHrActionViewModel>> AssignManagerHallsAsync(int employeeId,AssignHallsViewModel model,string accessToken,CancellationToken cancellationToken)=>SendAsync<ManagerHrActionViewModel>(HttpMethod.Post,$"api/manager/hr/employees/{employeeId}/hall-assignments",model,accessToken,cancellationToken);
+    public Task<ApiCallResult<ManagerHrActionViewModel>> EndManagerHallAssignmentAsync(int assignmentId,string accessToken,CancellationToken cancellationToken)=>SendAsync<ManagerHrActionViewModel>(HttpMethod.Post,$"api/manager/hr/hall-assignments/{assignmentId}/end",null,accessToken,cancellationToken);
+
+    public Task<ApiCallResult<ManagerDashboardViewModel>> GetManagerDashboardAsync(
+        string accessToken,
+        CancellationToken cancellationToken) =>
+        SendAsync<ManagerDashboardViewModel>(HttpMethod.Get, "api/manager/dashboard", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<List<NotificationViewModel>>> GetRecentNotificationsAsync(string accessToken, int limit, CancellationToken cancellationToken) =>
+        SendAsync<List<NotificationViewModel>>(HttpMethod.Get, $"api/notifications/recent?limit={Math.Clamp(limit, 1, 5)}", null, accessToken, cancellationToken);
+    public Task<ApiCallResult<NotificationCountViewModel>> GetUnreadNotificationCountAsync(string accessToken, CancellationToken cancellationToken) =>
+        SendAsync<NotificationCountViewModel>(HttpMethod.Get, "api/notifications/unread-count", null, accessToken, cancellationToken);
+    public Task<ApiCallResult<NotificationPageViewModel>> GetNotificationsAsync(string accessToken, int page, int pageSize, string? readStatus, CancellationToken cancellationToken)
+    {
+        var uri = $"api/notifications?page={Math.Max(1, page)}&pageSize={Math.Clamp(pageSize, 1, 100)}";
+        if (!string.IsNullOrWhiteSpace(readStatus)) uri += $"&readStatus={Uri.EscapeDataString(readStatus)}";
+        return SendAsync<NotificationPageViewModel>(HttpMethod.Get, uri, null, accessToken, cancellationToken);
+    }
+    public Task<ApiCallResult<NotificationUpdateViewModel>> MarkNotificationReadAsync(string accessToken, int id, CancellationToken cancellationToken) =>
+        SendAsync<NotificationUpdateViewModel>(HttpMethod.Post, $"api/notifications/{id}/read", null, accessToken, cancellationToken);
+    public Task<ApiCallResult<NotificationUpdateViewModel>> MarkAllNotificationsReadAsync(string accessToken, CancellationToken cancellationToken) =>
+        SendAsync<NotificationUpdateViewModel>(HttpMethod.Post, "api/notifications/read-all", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<List<RoleChangeCandidateViewModel>>> GetRoleChangeCandidatesAsync(
+        string accessToken, CancellationToken cancellationToken) =>
+        SendAsync<List<RoleChangeCandidateViewModel>>(HttpMethod.Get,
+            "api/manager/role-change-requests/candidates", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<List<RoleChangeRequestViewModel>>> GetManagerRoleChangeRequestsAsync(
+        string accessToken, CancellationToken cancellationToken) =>
+        SendAsync<List<RoleChangeRequestViewModel>>(HttpMethod.Get,
+            "api/manager/role-change-requests", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<RoleChangeRequestViewModel>> CreateRoleChangeRequestAsync(
+        CreateRoleChangeRequestViewModel model, string accessToken, CancellationToken cancellationToken) =>
+        SendAsync<RoleChangeRequestViewModel>(HttpMethod.Post,
+            "api/manager/role-change-requests", model, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<List<AdminRoleChangeRequestViewModel>>> GetAdminRoleChangeRequestsAsync(
+        string? status, string? keyword, string accessToken, CancellationToken cancellationToken)
+    {
+        var query = new List<string>();
+        AddQueryParameter(query, "status", status);
+        AddQueryParameter(query, "keyword", keyword);
+        var suffix = query.Count == 0 ? string.Empty : $"?{string.Join('&', query)}";
+        return SendAsync<List<AdminRoleChangeRequestViewModel>>(HttpMethod.Get,
+            $"api/admin/role-change-requests{suffix}", null, accessToken, cancellationToken);
+    }
+
+    public Task<ApiCallResult<ActionResponseDto>> ApproveRoleChangeRequestAsync(
+        int id, string accessToken, CancellationToken cancellationToken) =>
+        SendAsync<ActionResponseDto>(HttpMethod.Post, $"api/admin/role-change-requests/{id}/approve", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ActionResponseDto>> RejectRoleChangeRequestAsync(
+        int id, RejectRoleChangeRequestViewModel model, string accessToken, CancellationToken cancellationToken) =>
+        SendAsync<ActionResponseDto>(HttpMethod.Post, $"api/admin/role-change-requests/{id}/reject", model, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SystemDashboardViewModel>> GetSystemDashboardAsync(
+        string accessToken,
+        DateTime? fromDate,
+        DateTime? toDate,
+        CancellationToken cancellationToken)
+    {
+        var query = new List<string>();
+        if (fromDate.HasValue) query.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+        if (toDate.HasValue) query.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+        var uri = "api/admin/accounts/dashboard" + (query.Count == 0 ? string.Empty : "?" + string.Join("&", query));
+
+        return SendAsync<SystemDashboardViewModel>(
+            HttpMethod.Get,
+            uri,
+            null,
+            accessToken,
+            cancellationToken);
+    }
+
+    public Task<ApiCallResult<AuditLogPageViewModel>> GetAuditLogsAsync(
+        string accessToken,
+        int page,
+        int pageSize,
+        string? action,
+        DateTime? fromDate,
+        DateTime? toDate,
+        string? keyword,
+        CancellationToken cancellationToken)
+    {
+        var query = new List<string>
+        {
+            $"page={Math.Max(1, page)}",
+            $"pageSize={Math.Clamp(pageSize, 1, 100)}"
+        };
+        if (!string.IsNullOrWhiteSpace(action)) query.Add($"action={Uri.EscapeDataString(action)}");
+        if (fromDate.HasValue) query.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+        if (toDate.HasValue) query.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+        if (!string.IsNullOrWhiteSpace(keyword)) query.Add($"keyword={Uri.EscapeDataString(keyword)}");
+
+        return SendAsync<AuditLogPageViewModel>(
+            HttpMethod.Get,
+            "api/admin/audit-logs?" + string.Join("&", query),
             null,
             accessToken,
             cancellationToken);
@@ -435,6 +554,21 @@ public sealed class RiversideApiClient : IRiversideApiClient
         return SendAsync<AccountActionResponse>(
             HttpMethod.Put,
             $"api/admin/accounts/employees/{userId}",
+            model,
+            accessToken,
+            cancellationToken);
+    }
+
+    public Task<ApiCallResult<AccountActionResponse>>
+        UpdateAdministratorAccountAsync(
+            int userId,
+            UpdateAdministratorAccountRequest model,
+            string accessToken,
+            CancellationToken cancellationToken)
+    {
+        return SendAsync<AccountActionResponse>(
+            HttpMethod.Put,
+            $"api/admin/accounts/administrator/{userId}",
             model,
             accessToken,
             cancellationToken);

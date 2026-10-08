@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using HeThongDatTiecCuoi_API.Constants.StatusCodes;
 using HeThongDatTiecCuoi_API.Constants;
 using HeThongDatTiecCuoi_API.Data;
@@ -10,6 +9,9 @@ using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json;
+using HeThongDatTiecCuoi_API.Options;
+using Microsoft.Extensions.Options;
 
 namespace HeThongDatTiecCuoi_API.Services;
 
@@ -17,15 +19,75 @@ public sealed partial class AuthService : IAuthService
 {
     public async Task<ServiceResult<object>> ChangePasswordAsync(int userId, ChangePasswordRequest request, CancellationToken cancellationToken)
     {
-        if (request.NewPassword != request.ConfirmPassword || !StrongPasswordRegex().IsMatch(request.NewPassword))
+        if (request.NewPassword != request.ConfirmPassword || !PasswordPolicy.IsValid(request.NewPassword))
             return ServiceResult<object>.Failure("Mật khẩu mới không hợp lệ hoặc xác nhận không khớp.", StatusCodes.Status400BadRequest);
-        var user = await _db.Users.SingleOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+        var user = await _db.Users.Include(x => x.Role).Include(x => x.Employee)
+            .SingleOrDefaultAsync(x => x.UserId == userId, cancellationToken);
         if (user is null || _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword) == PasswordVerificationResult.Failed)
             return ServiceResult<object>.Failure("Mật khẩu hiện tại không chính xác.", StatusCodes.Status400BadRequest);
+        if (request.NewPassword == _accountProvisioningOptions.DefaultStaffPassword)
+            return ServiceResult<object>.Failure("Mật khẩu mới không được trùng với mật khẩu mặc định.", StatusCodes.Status400BadRequest);
+        if (_passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.NewPassword) != PasswordVerificationResult.Failed)
+            return ServiceResult<object>.Failure("Mật khẩu mới phải khác mật khẩu hiện tại.", StatusCodes.Status400BadRequest);
+        var wasFirstPasswordChange = user.MustChangePassword;
+        if (wasFirstPasswordChange)
+        {
+            var otpResult = await _firstPasswordOtpService.ValidateAsync(userId, request.OtpCode, cancellationToken);
+            if (!otpResult.Succeeded)
+                return ServiceResult<object>.Failure(otpResult.Error!, otpResult.StatusCode);
+        }
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
         user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
         user.MustChangePassword = false;
         user.UpdatedAt = DateTime.Now;
+        if (user.Role.RoleName == RoleNames.Admin)
+        {
+            _db.AuditLogs.Add(new AuditLog
+            {
+                UserId = user.UserId, Action = AuditActions.AdminPasswordChanged,
+                EntityName = AuditEntityNames.User, EntityId = user.UserId,
+                NewData = JsonSerializer.Serialize(new { PasswordChanged = true }),
+                Timestamp = DateTime.Now, Notes = "Quản trị viên đã thay đổi mật khẩu tài khoản."
+            });
+        }
+        else if (wasFirstPasswordChange)
+        {
+            _db.AuditLogs.Add(new AuditLog
+            {
+                UserId = user.UserId, Action = AuditActions.FirstPasswordChanged,
+                EntityName = AuditEntityNames.User, EntityId = user.UserId,
+                OldData = JsonSerializer.Serialize(new { MustChangePassword = true }),
+                NewData = JsonSerializer.Serialize(new { MustChangePassword = false }),
+                Timestamp = DateTime.Now,
+                Notes = $"Nhân viên {user.Employee?.FullName ?? user.Email} đã hoàn tất đổi mật khẩu lần đầu."
+            });
+        }
         await _db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        if (wasFirstPasswordChange && user.Role.RoleName != RoleNames.Admin)
+        {
+            try
+            {
+                var adminUserId = await _notifications.FindActiveAdminUserIdAsync(cancellationToken);
+                if (adminUserId.HasValue && await _notifications.AddAsync(adminUserId.Value, user.UserId,
+                    NotificationTypeCodes.FirstPasswordChanged, "Nhân viên đã đổi mật khẩu",
+                    $"{user.Employee?.EmployeeCode} - {user.Employee?.FullName ?? user.Email} đã hoàn tất đổi mật khẩu lần đầu.",
+                    AuditEntityNames.User, user.UserId, cancellationToken))
+                {
+                    await _db.SaveChangesAsync(cancellationToken);
+                }
+                else if (!adminUserId.HasValue)
+                {
+                    _logger.LogWarning(
+                        "Không tìm thấy tài khoản Admin đang hoạt động để nhận thông báo đổi mật khẩu lần đầu của UserId {UserId}.",
+                        user.UserId);
+                }
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                _logger.LogWarning(exception, "Không thể tạo thông báo đổi mật khẩu lần đầu cho UserId {UserId}.", user.UserId);
+            }
+        }
         return ServiceResult<object>.Success(new { message = "Đổi mật khẩu thành công." });
     }
     private readonly ApplicationDbContext _db;
@@ -33,19 +95,31 @@ public sealed partial class AuthService : IAuthService
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IStatusService _statusService;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly INotificationService _notifications;
+    private readonly ILogger<AuthService> _logger;
+    private readonly AccountProvisioningOptions _accountProvisioningOptions;
+    private readonly IFirstPasswordOtpService _firstPasswordOtpService;
 
     public AuthService(
         ApplicationDbContext db,
         IPasswordHasher<User> passwordHasher,
         IJwtTokenService jwtTokenService,
         IStatusService statusService,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        INotificationService notifications,
+        IFirstPasswordOtpService firstPasswordOtpService,
+        IOptions<AccountProvisioningOptions> accountProvisioningOptions,
+        ILogger<AuthService> logger)
     {
         _db = db;
         _passwordHasher = passwordHasher;
         _jwtTokenService = jwtTokenService;
         _statusService = statusService;
         _httpClientFactory = httpClientFactory;
+        _notifications = notifications;
+        _firstPasswordOtpService = firstPasswordOtpService;
+        _accountProvisioningOptions = accountProvisioningOptions.Value;
+        _logger = logger;
     }
 
  #if false
@@ -56,7 +130,7 @@ public sealed partial class AuthService : IAuthService
         var email = request.Email.Trim().ToLowerInvariant();
         var phone = PhoneNumberHelper.Normalize(request.PhoneNumber);
 
-        if (!StrongPasswordRegex().IsMatch(request.Password))
+        if (!PasswordPolicy.IsValid(request.Password))
         {
             return ServiceResult<AuthResponse>.Failure(
                 "Mật khẩu phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.",
@@ -353,6 +427,4 @@ public sealed partial class AuthService : IAuthService
         [property: JsonPropertyName("email")] string? Email,
         [property: JsonPropertyName("email_verified")] bool? EmailVerified);
 
-    [GeneratedRegex(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,100}$")]
-    private static partial Regex StrongPasswordRegex();
 }

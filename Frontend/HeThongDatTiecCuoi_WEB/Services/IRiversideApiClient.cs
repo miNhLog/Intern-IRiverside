@@ -8,10 +8,30 @@ using HeThongDatTiecCuoi_WEB.Models.AdminMenu;
 using HeThongDatTiecCuoi_WEB.Models.AdminReport;
 using HeThongDatTiecCuoi_WEB.Models.AdminBooking;
 using HeThongDatTiecCuoi_WEB.Models.Recommendation;
+using HeThongDatTiecCuoi_WEB.Models.RoleChangeRequest;
+using HeThongDatTiecCuoi_WEB.Models.Notification;
+using HeThongDatTiecCuoi_WEB.Models.Home;
+using HeThongDatTiecCuoi_WEB.Models.ManagerHr;
 using Microsoft.AspNetCore.Mvc;
 
 public interface IRiversideApiClient
 {
+    Task<ApiCallResult<ManagerHrPageViewModel>> GetManagerHrAsync(string accessToken,string? search,string? role,string? status,string? assignmentStatus,int page,int pageSize,CancellationToken cancellationToken);
+    Task<ApiCallResult<ManagerHrActionViewModel>> AssignManagerHallsAsync(int employeeId,AssignHallsViewModel model,string accessToken,CancellationToken cancellationToken);
+    Task<ApiCallResult<ManagerHrActionViewModel>> EndManagerHallAssignmentAsync(int assignmentId,string accessToken,CancellationToken cancellationToken);
+    Task<ApiCallResult<ManagerDashboardViewModel>> GetManagerDashboardAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<NotificationViewModel>>> GetRecentNotificationsAsync(string accessToken, int limit, CancellationToken cancellationToken);
+    Task<ApiCallResult<NotificationCountViewModel>> GetUnreadNotificationCountAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<NotificationPageViewModel>> GetNotificationsAsync(string accessToken, int page, int pageSize, string? readStatus, CancellationToken cancellationToken);
+    Task<ApiCallResult<NotificationUpdateViewModel>> MarkNotificationReadAsync(string accessToken, int id, CancellationToken cancellationToken);
+    Task<ApiCallResult<NotificationUpdateViewModel>> MarkAllNotificationsReadAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<RoleChangeCandidateViewModel>>> GetRoleChangeCandidatesAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<RoleChangeRequestViewModel>>> GetManagerRoleChangeRequestsAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<RoleChangeRequestViewModel>> CreateRoleChangeRequestAsync(CreateRoleChangeRequestViewModel model, string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<AdminRoleChangeRequestViewModel>>> GetAdminRoleChangeRequestsAsync(string? status, string? keyword, string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<ActionResponseDto>> ApproveRoleChangeRequestAsync(int id, string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<ActionResponseDto>> RejectRoleChangeRequestAsync(int id, RejectRoleChangeRequestViewModel model, string accessToken, CancellationToken cancellationToken);
+
     // Auth
     Task<ApiCallResult<AuthResponseDto>> LoginAsync(
         LoginViewModel model,
@@ -22,6 +42,7 @@ public interface IRiversideApiClient
         bool rememberMe,
         CancellationToken cancellationToken);
     Task<ApiCallResult<MessageResponseDto>> ChangePasswordAsync(ChangePasswordViewModel model, string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<FirstPasswordOtpResponseDto>> SendFirstPasswordOtpAsync(string accessToken, CancellationToken cancellationToken);
 
     Task<ApiCallResult<MessageResponseDto>> ForgotPasswordAsync(
         ForgotPasswordViewModel model,
@@ -114,6 +135,23 @@ public interface IRiversideApiClient
         string? keyword,
         int? roleId,
         string? status,
+        bool? mustChangePassword,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<SystemDashboardViewModel>> GetSystemDashboardAsync(
+        string accessToken,
+        DateTime? fromDate,
+        DateTime? toDate,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<AuditLogPageViewModel>> GetAuditLogsAsync(
+        string accessToken,
+        int page,
+        int pageSize,
+        string? action,
+        DateTime? fromDate,
+        DateTime? toDate,
+        string? keyword,
         CancellationToken cancellationToken);
 
     Task<ApiCallResult<List<RoleDto>>> GetRolesAsync(
@@ -128,6 +166,12 @@ public interface IRiversideApiClient
     Task<ApiCallResult<AccountActionResponse>> UpdateEmployeeAccountAsync(
         int userId,
         UpdateEmployeeAccountRequest model,
+        string accessToken,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<AccountActionResponse>> UpdateAdministratorAccountAsync(
+        int userId,
+        UpdateAdministratorAccountRequest model,
         string accessToken,
         CancellationToken cancellationToken);
 
