@@ -19,8 +19,8 @@
 .input-with-icon { position: relative; }
 .input-with-icon .material-symbols-outlined { position: absolute; top: 50%; left: 13px; color: #a28638; font-size: 18px; transform: translateY(-50%); pointer-events: none; }
 .input-with-icon input { padding-left: 40px; }
-.hall-filter-button { display: inline-flex; min-width: 164px; height: 46px; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 5px; padding-inline: 22px; background: #bd9840; color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 5px 12px rgba(126,94,20,.16); transition: background .2s, transform .2s; }
-.hall-filter-button:hover { background: #a9842f; transform: translateY(-1px); }
+.hall-filter-button { display: inline-flex; min-width: 164px; height: 46px; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 5px; padding-inline: 22px; background: #bd9840; color: #162839; font-size: 13px; font-weight: 600; box-shadow: 0 5px 12px rgba(126,94,20,.16); transition: background .2s, transform .2s; }
+.hall-filter-button:hover { background: #d4af37; transform: translateY(-1px); }
 .hall-filter-button .material-symbols-outlined { font-size: 19px; }
 .hall-list-toolbar { display: flex; min-height: 84px; align-items: center; justify-content: space-between; gap: 20px; }
 .hall-list-toolbar > p { color: #3e3a35; font-size: 14px; }
@@ -44,14 +44,14 @@
 .public-hall-detail:hover .material-symbols-outlined { transform: translateX(4px); }
 .hall-pagination { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 42px; }
 .hall-pagination a { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #ded8cd; border-radius: 5px; background: #fff; color: #4c4842; font-size: 13px; transition: background .2s, border-color .2s, color .2s; }
-.hall-pagination a:hover:not(.disabled), .hall-pagination a.active { border-color: #b68f31; background: #b68f31; color: #fff; }
+.hall-pagination a:hover:not(.disabled), .hall-pagination a.active { border-color: #b68f31; background: #b68f31; color: #162839; }
 .hall-pagination a.disabled { opacity: .4; pointer-events: none; }
 .hall-pagination .material-symbols-outlined { font-size: 18px; }
 .hall-empty-state { display: flex; min-height: 340px; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #e9e0d2; border-radius: 8px; padding: 40px 20px; background: #fff; text-align: center; }
 .hall-empty-state > .material-symbols-outlined { color: #ba963e; font-size: 46px; }
 .hall-empty-state h2 { margin-top: 12px; color: #292520; font: 600 25px/1.35 "Playfair Display", Georgia, serif; }
 .hall-empty-state p { margin-top: 7px; color: #6c665e; font-size: 14px; }
-.hall-empty-state a { margin-top: 18px; border-radius: 5px; padding: 10px 19px; background: #b68f31; color: #fff; font-size: 13px; font-weight: 600; }
+.hall-empty-state a { margin-top: 18px; border-radius: 5px; padding: 10px 19px; background: #b68f31; color: #162839; font-size: 13px; font-weight: 600; }
 
 @media (max-width: 1023px) {
     .hall-filter { grid-template-columns: repeat(2, minmax(0, 1fr)); }

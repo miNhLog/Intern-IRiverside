@@ -2,12 +2,12 @@
 @model HeThongDatTiecCuoi_WEB.Models.Menus.MenuDetailViewModel
 @{
     var hasMenu = !Model.IsNotFound && string.IsNullOrWhiteSpace(Model.ErrorMessage);
-    ViewData["Title"] = hasMenu ? Model.MenuName : "Không tìm thấy thực đơn";
+    ViewData["Title"] = hasMenu ? Model.MenuName : Model.IsNotFound ? "Không tìm thấy thực đơn" : "Thông tin thực đơn tạm thời không khả dụng";
     ViewData["PublicActivePage"] = "menus";
     var vi = CultureInfo.GetCultureInfo("vi-VN");
     var placeholderImage = Url.Content("~/images/menus/menu-banquet.png");
     var description = string.IsNullOrWhiteSpace(Model.Description)
-        ? "Thực đơn được Riverside Palace lựa chọn cho ngày trọng đại của bạn."
+        ? "Mô tả thực đơn chưa được cung cấp."
         : Model.Description;
 }
 
@@ -21,12 +21,12 @@
 
 <div class="home-page menu-detail-page">
     <partial name="_PublicHeader" />
-    <main>
+    <main id="main-content" tabindex="-1">
         @if (!hasMenu)
         {
             <section class="menu-detail-feedback">
                 <div class="home-container">
-                    <div class="menu-detail-feedback-card">
+                    <div class="menu-detail-feedback-card" role="@(Model.IsNotFound ? null : "alert")">
                         <span class="material-symbols-outlined" aria-hidden="true">@(Model.IsNotFound ? "search_off" : "error")</span>
                         <span class="menu-detail-label">RIVERSIDE PALACE</span>
                         <h1>@(Model.IsNotFound ? "Không tìm thấy thực đơn." : "Không thể tải thông tin thực đơn")</h1>
@@ -50,7 +50,7 @@
 
             <nav class="menu-detail-breadcrumb" aria-label="Đường dẫn trang">
                 <div class="home-container">
-                    <a asp-controller="Home" asp-action="Index"><span class="material-symbols-outlined" aria-hidden="true">home</span> Trang chủ</a>
+                    <a asp-controller="Home" asp-action="Index" asp-route-publicSite="true"><span class="material-symbols-outlined" aria-hidden="true">home</span> Trang chủ</a>
                     <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
                     <a asp-controller="Menus" asp-action="Index">Thực đơn</a>
                     <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
@@ -72,10 +72,7 @@
                                 <div><span class="material-symbols-outlined" aria-hidden="true">restaurant</span><strong>@Model.DishCount món</strong></div>
                                 <div><span class="material-symbols-outlined" aria-hidden="true">payments</span><strong>@Model.PricePerTable.ToString("N0", vi) VNĐ</strong><small>/ bàn</small></div>
                             </div>
-                            <div class="menu-detail-actions">
-                                <button class="menu-detail-primary" type="button" data-toast-message="Chức năng chọn thực đơn đang được phát triển."><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span> Chọn thực đơn này</button>
-                                <button class="menu-detail-secondary" type="button" data-toast-message="Chức năng tư vấn đang được phát triển."><span class="material-symbols-outlined" aria-hidden="true">support_agent</span> Tư vấn ngay</button>
-                            </div>
+                            <a class="menu-detail-primary" asp-controller="Menus" asp-action="Index"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Quay lại danh sách thực đơn</a>
                         </div>
                     </div>
 
@@ -120,30 +117,7 @@
                         }
                     </section>
 
-                    <section class="menu-amenities" aria-labelledby="menu-amenities-title">
-                        <div class="menu-section-heading">
-                            <span class="menu-detail-label">TRẢI NGHIỆM TRỌN VẸN</span>
-                            <h2 id="menu-amenities-title">Tiện ích tại Riverside Palace</h2>
-                        </div>
-                        <div class="menu-amenity-grid">
-                            <div><span class="material-symbols-outlined" aria-hidden="true">speaker</span><span>Âm thanh<br />hiện đại</span></div>
-                            <div><span class="material-symbols-outlined" aria-hidden="true">lightbulb</span><span>Ánh sáng<br />chuyên nghiệp</span></div>
-                            <div><span class="material-symbols-outlined" aria-hidden="true">ac_unit</span><span>Điều hòa<br />không khí</span></div>
-                            <div><span class="material-symbols-outlined" aria-hidden="true">meeting_room</span><span>Không gian<br />đón khách</span></div>
-                            <div><span class="material-symbols-outlined" aria-hidden="true">local_parking</span><span>Bãi đỗ xe<br />thuận tiện</span></div>
-                            <div><span class="material-symbols-outlined" aria-hidden="true">support_agent</span><span>Đội ngũ<br />hỗ trợ</span></div>
-                        </div>
-                    </section>
-
-                    <section class="menu-detail-cta" aria-labelledby="menu-cta-title">
-                        <img src="@placeholderImage" alt="" aria-hidden="true" />
-                        <div class="menu-detail-cta-shade" aria-hidden="true"></div>
-                        <div class="menu-detail-cta-copy">
-                            <h2 id="menu-cta-title">Để lại thông tin, chúng tôi sẽ tư vấn cho bạn</h2>
-                            <p>Nhận tư vấn miễn phí để lựa chọn thực đơn phù hợp cho ngày trọng đại.</p>
-                        </div>
-                        <button type="button" data-toast-message="Chức năng tư vấn đang được phát triển."><span class="material-symbols-outlined" aria-hidden="true">chat_bubble</span> Tư vấn ngay</button>
-                    </section>
+                    <div class="menu-detail-cta"><a asp-controller="Halls" asp-action="Index">Khám phá sảnh tiệc <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a></div>
                 </div>
             </section>
         }
@@ -153,5 +127,6 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/public-site.js" asp-append-version="true"></script>
     <script src="~/js/hall-list.js" asp-append-version="true"></script>
 }

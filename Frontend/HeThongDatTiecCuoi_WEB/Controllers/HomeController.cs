@@ -35,7 +35,8 @@ public sealed class HomeController : Controller
         {
             FeaturedHalls = result.Succeeded && result.Value is not null
                 ? result.Value
-                : []
+                : [],
+            FeaturedHallsUnavailable = !result.Succeeded
         });
     }
 

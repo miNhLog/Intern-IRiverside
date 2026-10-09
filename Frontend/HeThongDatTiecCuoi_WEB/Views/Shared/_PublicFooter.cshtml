@@ -1,6 +1,29 @@
-<footer class="home-footer"><div class="home-container"><div class="footer-grid">
-    <div class="footer-brand"><a class="brand" asp-controller="Home" asp-action="Index"><span class="brand-mark" aria-hidden="true">✧</span><span class="brand-name">Riverside Palace</span></a><p>Trung tâm Hội nghị Tiệc cưới đẳng cấp ven sông Bến Vân Đồn, mang phong cách kiến trúc châu Âu tinh tế và dịch vụ yến tiệc thượng hạng.</p><div class="social-links"><a href="#" data-coming-soon aria-label="Facebook"><span class="material-symbols-outlined" aria-hidden="true">public</span></a><a href="#" data-coming-soon aria-label="Instagram"><span class="material-symbols-outlined" aria-hidden="true">photo_camera</span></a><a href="#" data-coming-soon aria-label="YouTube"><span class="material-symbols-outlined" aria-hidden="true">smart_display</span></a><a href="mailto:event@riversidepalace.vn" aria-label="Email"><span class="material-symbols-outlined" aria-hidden="true">mail</span></a></div></div>
-    <div><h3>Liên Hệ</h3><ul class="contact-list"><li><span class="material-symbols-outlined" aria-hidden="true">location_on</span> 360D Bến Vân Đồn, Phường 1, Quận 4, TP. Hồ Chí Minh</li><li><span class="material-symbols-outlined" aria-hidden="true">call</span> (028) 6256 8888 · 0933 777 838</li><li><span class="material-symbols-outlined" aria-hidden="true">mail</span> event@riversidepalace.vn</li><li><span class="material-symbols-outlined" aria-hidden="true">schedule</span> 08:00 - 21:30 (Thứ 2 - Chủ Nhật)</li></ul></div>
-    <div><h3>Dịch Vụ</h3><ul class="footer-links"><li><a asp-controller="Halls" asp-action="Index">Hội trường &amp; Sảnh tiệc cưới</a></li><li><a asp-controller="Menus" asp-action="Index">Ẩm thực yến tiệc Fusion</a></li><li><a href="#" data-coming-soon>Gói chủ đề Concept cưới độc bản</a></li><li><a href="#" data-coming-soon>Hội nghị &amp; Sự kiện doanh nghiệp</a></li><li><a href="#" data-coming-soon>Nghi thức lễ gia tiên truyền thống</a></li></ul></div>
-    <div><h3>Nhận Ưu Đãi Đặc Quyền</h3><p>Đăng ký nhận cẩm nang cưới mùa mới và các gợi ý thiết kế tiệc cưới.</p><div class="newsletter"><input type="email" aria-label="Email nhận ưu đãi" placeholder="Email của bạn..." /><button type="button" data-coming-soon>Gửi</button></div></div>
-</div><div class="footer-bottom"><span>© @DateTime.Now.Year Riverside Palace Convention Center. All rights reserved.</span><div><a href="#" data-coming-soon>Chính sách bảo mật</a><a href="#" data-coming-soon>Điều khoản sử dụng</a><a href="#" data-coming-soon>Sơ đồ địa điểm</a></div></div></div></footer>
+<footer class="home-footer">
+    <div class="home-container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a class="brand" asp-controller="Home" asp-action="Index" asp-route-publicSite="true">
+                    <span class="brand-mark" aria-hidden="true">✧</span><span class="brand-name">Riverside Palace</span>
+                </a>
+                <p>Khám phá không gian tiệc và thực đơn công khai của Riverside Palace.</p>
+            </div>
+            <div>
+                <h2>Khám phá</h2>
+                <ul class="footer-links">
+                    <li><a asp-controller="Home" asp-action="Index" asp-route-publicSite="true" asp-fragment="introduction">Giới thiệu</a></li>
+                    <li><a asp-controller="Halls" asp-action="Index">Sảnh tiệc</a></li>
+                    <li><a asp-controller="Menus" asp-action="Index">Thực đơn</a></li>
+                </ul>
+            </div>
+            <div id="contact">
+                <h2>Liên hệ</h2>
+                <p>Thông tin liên hệ chính thức chưa được xác minh để hiển thị tại đây.</p>
+            </div>
+            <div>
+                <h2>Dành cho nhân viên</h2>
+                <ul class="footer-links"><li><a asp-controller="Auth" asp-action="Login">Đăng nhập nhân viên</a></li></ul>
+            </div>
+        </div>
+        <div class="footer-bottom"><span>© @DateTime.Now.Year Riverside Palace</span></div>
+    </div>
+</footer>

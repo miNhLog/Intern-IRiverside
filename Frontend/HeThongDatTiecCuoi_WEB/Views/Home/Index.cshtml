@@ -16,46 +16,57 @@
 
 <div class="home-page">
     <partial name="_PublicHeader" />
-
-    <main>
+    <main id="main-content" tabindex="-1">
         <section class="hero" aria-labelledby="hero-title">
             <div class="hero-image" aria-hidden="true"></div>
             <div class="home-container hero-inner">
                 <div class="hero-copy">
-                    <span class="eyebrow hero-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">hotel_class</span> Biểu tượng tiệc cưới vương giả ven sông Sài Gòn</span>
-                    <h1 id="hero-title">Khởi Đầu Trọn Vẹn Cho <em>Ngày Hạnh Phúc</em></h1>
-                    <p>Không gian tiệc cưới hoàng gia đẳng cấp bên bờ sông Sài Gòn, tôn vinh khoảnh khắc tình yêu vĩnh cửu của đôi lứa với công nghệ tư vấn thông minh tiên phong.</p>
-                    <div class="hero-actions"><a class="button button-gold" href="#booking-inquiry">Nhận gợi ý tiệc cưới trong 1 phút <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a><button class="button button-glass" type="button" data-open-ai><span class="material-symbols-outlined" aria-hidden="true">neurology</span> Trò chuyện cùng AI Assistant</button></div>
-                </div>
-                <div class="search-panel" id="booking-inquiry">
-                    <div class="search-grid">
-                        <div class="search-field"><label for="eventDate"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span> Ngày tổ chức</label><input id="eventDate" type="date" /></div>
-                        <div class="search-field"><label for="guestRange"><span class="material-symbols-outlined" aria-hidden="true">group</span> Số lượng khách</label><select id="guestRange"><option value="under-200">Dưới 200 khách</option><option value="200-400">200 - 400 khách (20 - 40 bàn)</option><option value="400-700" selected>400 - 700 khách (40 - 70 bàn)</option><option value="700-1000">700 - 1.000 khách (70 - 100 bàn)</option><option value="over-1000">Trên 1.000 khách</option></select></div>
-                        <div class="search-field"><label for="budgetRange"><span class="material-symbols-outlined" aria-hidden="true">monetization_on</span> Ngân sách tổng dự kiến</label><select id="budgetRange"><option value="under-100">Dưới 100 triệu VNĐ</option><option value="100-200">100 - 200 triệu VNĐ</option><option value="200-300" selected>200 - 300 triệu VNĐ</option><option value="300-500">300 - 500 triệu VNĐ</option><option value="over-500">Trên 500 triệu VNĐ</option></select></div>
-                        <button class="button search-button" type="button" data-search><span class="material-symbols-outlined" aria-hidden="true">search</span> Tìm kiếm sảnh</button>
+                    <span class="eyebrow hero-eyebrow">Riverside Palace</span>
+                    <h1 id="hero-title">Một khởi đầu đẹp cho <em>ngày trọng đại</em></h1>
+                    <p>Khám phá không gian sảnh tiệc và thực đơn công khai để tìm hiểu những lựa chọn tại Riverside Palace.</p>
+                    <div class="hero-actions">
+                        <a class="button button-gold" asp-controller="Halls" asp-action="Index">Khám phá sảnh tiệc <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+                        <a class="button button-glass" asp-controller="Menus" asp-action="Index">Khám phá thực đơn <span class="material-symbols-outlined" aria-hidden="true">restaurant_menu</span></a>
                     </div>
                 </div>
+                <a class="hero-scroll-link" href="#introduction"><span aria-hidden="true">↓</span> Khám phá Riverside Palace</a>
             </div>
         </section>
 
-        <section class="innovation-section" aria-labelledby="innovation-title">
-            <div class="home-container">
-                <div class="section-heading centered"><span class="eyebrow">Đột Phá Kỷ Nguyên Số</span><h2 id="innovation-title">Trải Nghiệm Công Nghệ Tiệc Cưới Đỉnh Cao</h2><span class="gold-rule" aria-hidden="true"></span><p>Tiên phong ứng dụng công nghệ vào tổ chức và quản lý sự kiện hạnh phúc, hướng tới trải nghiệm thuận tiện và chuẩn mực thượng lưu.</p></div>
-                <div class="feature-grid">
-                    <article class="feature-card"><span class="feature-icon material-symbols-outlined" aria-hidden="true">smart_toy</span><span class="eyebrow">Tự Động Hóa 24/7</span><h3>Trợ lý AI tư vấn 24/7</h3><p>Giao diện tư vấn giúp quý khách hình dung cách lựa chọn sảnh, thực đơn và ngân sách cho ngày trọng đại.</p><button class="feature-action" type="button" data-open-ai>Khám phá tính năng <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>
-                    <article class="feature-card"><span class="feature-icon material-symbols-outlined" aria-hidden="true">auto_awesome</span><span class="eyebrow">Tối Ưu Ngân Sách</span><h3>Hệ thống gợi ý Top 3 combo tối ưu</h3><p>Khám phá ý tưởng kết hợp sảnh tiệc, thực đơn và trang trí theo phong cách riêng của từng cặp đôi.</p><button class="feature-action" type="button" data-coming-soon>Xem 3 gói đề xuất <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>
-                    <article class="feature-card"><span class="feature-icon material-symbols-outlined" aria-hidden="true">verified_user</span><span class="eyebrow">An Tâm Tuyệt Đối</span><h3>Minh bạch tiến độ &amp; Hợp đồng</h3><p>Theo dõi thông tin tiệc cưới và các giai đoạn chuẩn bị trong một không gian quản lý thuận tiện.</p><button class="feature-action" type="button" data-coming-soon>Tìm hiểu quy trình <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>
+        <section class="introduction-section" id="introduction" aria-labelledby="introduction-title">
+            <div class="home-container introduction-layout">
+                <div class="introduction-mark" aria-hidden="true">R<span>·</span>P</div>
+                <div class="introduction-copy">
+                    <span class="eyebrow">Riverside Palace</span>
+                    <h2 id="introduction-title">Không gian để bắt đầu hành trình khám phá</h2>
+                    <p>Tìm hiểu các sảnh tiệc và thực đơn đang được giới thiệu công khai. Mỗi danh mục mở ra thông tin thực tế để bạn tham khảo theo nhu cầu của mình.</p>
+                    <a class="text-link" asp-controller="Halls" asp-action="Index">Xem các sảnh tiệc <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
                 </div>
-                <div class="ai-preview"><div><span class="ai-preview-badge"><span aria-hidden="true"></span> Trợ Lý Tiệc Cưới Thông Minh</span><h3>Sẵn sàng nhận kịch bản tiệc cưới chỉ sau 3 câu hỏi?</h3><p>Khám phá giao diện tư vấn tiệc cưới của Riverside Palace. Tính năng AI đang được phát triển.</p></div><button class="button button-navy" type="button" data-open-ai><span class="material-symbols-outlined" aria-hidden="true">psychology</span> Khởi động AI Concierge</button></div>
             </div>
         </section>
 
         <section class="halls-section" id="danh-sach-sanh" aria-labelledby="halls-title">
             <div class="home-container">
-                <div class="halls-heading"><div class="section-heading"><span class="eyebrow">Không Gian Tiệc Đẳng Cấp</span><h2 id="halls-title">Kiệt Tác Sảnh Tiệc Hoàng Gia</h2><span class="gold-rule" aria-hidden="true"></span><p>Lấy cảm hứng từ những dòng sông huyền thoại của châu Âu, mỗi đại sảnh tại Riverside Palace là một tuyệt tác kiến trúc nguy nga, tráng lệ.</p></div><div class="hall-controls" aria-label="Điều hướng sảnh"><button type="button" aria-label="Xem sảnh trước" data-hall-prev><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button><button type="button" aria-label="Xem sảnh kế" data-hall-next><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button></div></div>
-                @if (Model.FeaturedHalls.Count == 0)
+                <div class="halls-heading">
+                    <div class="section-heading">
+                        <span class="eyebrow">Không gian tiệc</span>
+                        <h2 id="halls-title">Khám phá sảnh tiệc</h2>
+                        <span class="gold-rule" aria-hidden="true"></span>
+                        <p>Tìm hiểu thông tin sức chứa, giá thuê và mô tả của các sảnh đang được giới thiệu.</p>
+                    </div>
+                    <a class="text-link all-halls-link" asp-controller="Halls" asp-action="Index">Tất cả sảnh <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+                </div>
+                @if (Model.FeaturedHallsUnavailable)
                 {
-                    <div class="empty-halls">Hiện chưa có thông tin sảnh nổi bật.</div>
+                    <div class="home-feedback" role="alert">
+                        <span class="material-symbols-outlined" aria-hidden="true">error</span>
+                        <div><h3>Chưa thể tải thông tin sảnh</h3><p>Vui lòng thử lại sau hoặc xem danh sách sảnh.</p></div>
+                        <a class="button button-navy" asp-controller="Halls" asp-action="Index">Mở danh sách sảnh</a>
+                    </div>
+                }
+                else if (Model.FeaturedHalls.Count == 0)
+                {
+                    <div class="empty-halls">Hiện chưa có sảnh nổi bật để hiển thị. Bạn có thể xem danh sách sảnh.</div>
                 }
                 else
                 {
@@ -67,23 +78,56 @@
                                 : $"Tối đa {hall.MaximumCapacity.ToString("N0", vi)} khách";
                             var image = string.IsNullOrWhiteSpace(hall.ImageUrl) ? placeholderImage : hall.ImageUrl;
                             <article class="hall-card">
-                                <div class="hall-image-wrap"><img src="@image" alt="Không gian @hall.HallName" loading="lazy" data-fallback="@placeholderImage" /><span class="capacity-badge"><span class="material-symbols-outlined" aria-hidden="true">groups</span> Sức chứa: @capacity</span><span class="hall-image-tag">@hall.HallCode</span></div>
-                                <div class="hall-content"><div class="hall-title-row"><h3>@hall.HallName</h3><span class="hall-status"><span class="material-symbols-outlined" aria-hidden="true">star</span> @hall.StatusName</span></div><p class="hall-description">@(string.IsNullOrWhiteSpace(hall.Description) ? "Không gian tiệc cưới sang trọng tại Riverside Palace." : hall.Description)</p><div class="hall-specs"><span class="spec-label">Thông tin sảnh:</span><span><span class="material-symbols-outlined" aria-hidden="true">groups</span> @capacity</span><span><span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span> Mã sảnh: @hall.HallCode</span></div><div class="hall-bottom"><div><span class="price-label">Giá thuê sảnh</span><strong>@hall.RentalPrice.ToString("N0", vi) VNĐ</strong></div><a class="button hall-detail" asp-controller="Halls" asp-action="Details" asp-route-hallId="@hall.HallId">Xem chi tiết <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a></div></div>
+                                <a class="hall-image-wrap" asp-controller="Halls" asp-action="Details" asp-route-hallId="@hall.HallId" aria-label="Xem chi tiết sảnh @hall.HallName">
+                                    <img src="@image" alt="Không gian @hall.HallName" loading="lazy" data-fallback="@placeholderImage" />
+                                    <span class="capacity-badge"><span class="material-symbols-outlined" aria-hidden="true">groups</span> @capacity</span>
+                                </a>
+                                <div class="hall-content">
+                                    <h3>@hall.HallName</h3>
+                                    <p class="hall-description">@(string.IsNullOrWhiteSpace(hall.Description) ? "Xem thông tin chi tiết của sảnh tại Riverside Palace." : hall.Description)</p>
+                                    <div class="hall-bottom">
+                                        <div><span class="price-label">Giá thuê sảnh</span><strong>@hall.RentalPrice.ToString("N0", vi) VNĐ</strong></div>
+                                        <a class="button hall-detail" asp-controller="Halls" asp-action="Details" asp-route-hallId="@hall.HallId">Chi tiết <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
+                                    </div>
+                                </div>
                             </article>
                         }
                     </div>
                 }
-                <div class="stats-grid" aria-label="Dịch vụ Riverside Palace"><div><strong>Không Gian</strong><span>Kiến trúc tiệc cưới sang trọng</span></div><div><strong>Sảnh Tiệc</strong><span>Lựa chọn theo quy mô sự kiện</span></div><div><strong>Ẩm Thực</strong><span>Ý tưởng thực đơn đa dạng</span></div><div><strong>Đồng Hành</strong><span>Tư vấn cho ngày trọng đại</span></div></div>
+                <div class="section-end-link"><a class="button button-outline" asp-controller="Halls" asp-action="Index">Xem tất cả sảnh tiệc</a></div>
+            </div>
+        </section>
+
+        <section class="cuisine-section" aria-labelledby="cuisine-title">
+            <div class="home-container cuisine-layout">
+                <div class="cuisine-image-wrap"><img src="~/images/menus/menu-banquet.png" alt="Minh họa thực đơn tiệc" loading="lazy" /></div>
+                <div class="cuisine-copy">
+                    <span class="eyebrow">Ẩm thực</span>
+                    <h2 id="cuisine-title">Tìm hiểu các thực đơn</h2>
+                    <p>Xem danh mục thực đơn và thông tin món ăn, số lượng món cùng mức giá được công khai.</p>
+                    <a class="button button-navy" asp-controller="Menus" asp-action="Index">Mở danh mục thực đơn <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+                </div>
+            </div>
+        </section>
+
+        <section class="journey-section" id="journey" aria-labelledby="journey-title">
+            <div class="home-container">
+                <div class="section-heading centered">
+                    <span class="eyebrow">Khám phá theo cách của bạn</span>
+                    <h2 id="journey-title">Bắt đầu từ điều bạn muốn biết</h2>
+                    <span class="gold-rule" aria-hidden="true"></span>
+                </div>
+                <div class="journey-grid">
+                    <a href="#introduction"><span>01</span><h3>Tìm hiểu</h3><p>Khám phá thông tin Riverside Palace.</p></a>
+                    <a asp-controller="Halls" asp-action="Index"><span>02</span><h3>Sảnh tiệc</h3><p>Xem sức chứa, giá và mô tả sảnh.</p></a>
+                    <a asp-controller="Menus" asp-action="Index"><span>03</span><h3>Thực đơn</h3><p>Khám phá danh mục món ăn.</p></a>
+                </div>
             </div>
         </section>
     </main>
-
     <partial name="_PublicFooter" />
-
-    <div class="ai-modal" id="aiAssistantModal" aria-hidden="true"><div class="ai-modal-backdrop" data-close-ai></div><section class="ai-dialog" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle" tabindex="-1"><header class="ai-dialog-header"><span class="ai-dialog-icon material-symbols-outlined" aria-hidden="true">neurology</span><div><h2 id="aiModalTitle">Riverside AI Assistant</h2><span>Tư vấn viên thông minh 24/7</span></div><button class="ai-close" type="button" data-close-ai aria-label="Đóng cửa sổ tư vấn"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></header><div class="ai-messages" id="aiMessages" role="log" aria-live="polite"><div class="chat-row assistant"><span class="chat-avatar" aria-hidden="true">AI</span><p>Xin chào! Tôi là trợ lý tư vấn của Riverside Palace. Tính năng tư vấn AI hiện đang được phát triển.</p></div></div><div class="quick-prompts"><button type="button" data-quick-prompt="Tôi muốn tìm hiểu về sảnh tiệc">Tìm hiểu sảnh tiệc</button><button type="button" data-quick-prompt="Tôi cần tư vấn thực đơn cưới">Tư vấn thực đơn</button><button type="button" data-quick-prompt="Tôi muốn lên kế hoạch tiệc cưới">Lên kế hoạch cưới</button></div><form class="ai-form" id="aiChatForm"><input id="aiChatInput" type="text" aria-label="Nhập tin nhắn cho Riverside AI Assistant" placeholder="Nhập câu hỏi của bạn..." autocomplete="off" /><button type="submit" aria-label="Gửi tin nhắn"><span class="material-symbols-outlined" aria-hidden="true">send</span></button></form></section></div>
-    <div class="home-toast" role="status" aria-live="polite" hidden></div>
 </div>
 
 @section Scripts {
-    <script src="~/js/home.js" asp-append-version="true"></script>
+    <script src="~/js/public-site.js" asp-append-version="true"></script>
 }
