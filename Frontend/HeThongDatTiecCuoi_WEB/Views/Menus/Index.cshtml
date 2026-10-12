@@ -17,19 +17,19 @@
 
 <div class="home-page menu-list-page">
     <partial name="_PublicHeader" />
-    <main>
+    <main id="main-content" tabindex="-1">
         <section class="menu-list-hero" aria-labelledby="menu-list-title">
             <div class="menu-list-hero-image" aria-hidden="true"></div>
             <div class="home-container menu-list-hero-content">
                 <span class="menu-list-eyebrow">THỰC ĐƠN</span>
                 <h1 id="menu-list-title">Tinh hoa ẩm thực<br />cho tiệc cưới trọn vẹn</h1>
-                <p>Sự kết hợp tinh tế giữa hương vị truyền thống và phong cách ẩm thực hiện đại, mang đến trải nghiệm ẩm thực hoàn hảo cho ngày trọng đại của bạn.</p>
+                    <p>Tìm hiểu các thực đơn đang được giới thiệu cùng những thông tin món ăn và giá được công khai.</p>
             </div>
         </section>
 
         <nav class="menu-breadcrumb" aria-label="Đường dẫn trang">
             <div class="home-container">
-                <a asp-controller="Home" asp-action="Index"><span class="material-symbols-outlined" aria-hidden="true">home</span> Trang chủ</a>
+                <a asp-controller="Home" asp-action="Index" asp-route-publicSite="true"><span class="material-symbols-outlined" aria-hidden="true">home</span> Trang chủ</a>
                 <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
                 <span aria-current="page">Thực đơn</span>
             </div>
@@ -62,20 +62,23 @@
                     </button>
                 </form>
 
-                <div class="menu-list-toolbar">
-                    <p>Có <strong>@Model.TotalItems</strong> thực đơn phù hợp</p>
-                    <form method="get" asp-controller="Menus" asp-action="Index" data-sort-form>
-                        <input type="hidden" name="keyword" value="@Model.Keyword" />
-                        <input type="hidden" name="priceRange" value="@Model.PriceRange" />
-                        <label for="sort">Sắp xếp theo</label>
-                        <select id="sort" name="sort">
-                            <option value="name-asc" selected="@(Model.Sort == "name-asc")">Tên A - Z</option>
-                            <option value="price-asc" selected="@(Model.Sort == "price-asc")">Giá thấp → cao</option>
-                            <option value="price-desc" selected="@(Model.Sort == "price-desc")">Giá cao → thấp</option>
-                            <option value="dish-count-desc" selected="@(Model.Sort == "dish-count-desc")">Nhiều món → ít món</option>
-                        </select>
-                    </form>
-                </div>
+                @if (string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                {
+                    <div class="menu-list-toolbar">
+                        <p>Có <strong>@Model.TotalItems</strong> thực đơn phù hợp</p>
+                        <form method="get" asp-controller="Menus" asp-action="Index" data-sort-form>
+                            <input type="hidden" name="keyword" value="@Model.Keyword" />
+                            <input type="hidden" name="priceRange" value="@Model.PriceRange" />
+                            <label for="sort">Sắp xếp theo</label>
+                            <select id="sort" name="sort">
+                                <option value="name-asc" selected="@(Model.Sort == "name-asc")">Tên A - Z</option>
+                                <option value="price-asc" selected="@(Model.Sort == "price-asc")">Giá thấp → cao</option>
+                                <option value="price-desc" selected="@(Model.Sort == "price-desc")">Giá cao → thấp</option>
+                                <option value="dish-count-desc" selected="@(Model.Sort == "dish-count-desc")">Nhiều món → ít món</option>
+                            </select>
+                        </form>
+                    </div>
+                }
 
                 @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
                 {
@@ -101,17 +104,17 @@
                         @foreach (var menu in Model.Menus)
                         {
                             <article class="public-menu-card">
-                                <a class="public-menu-image" href="/menus/@menu.MenuId" aria-label="Xem thực đơn @menu.MenuName">
+                                <a class="public-menu-image" asp-controller="Menus" asp-action="Details" asp-route-menuId="@menu.MenuId" aria-label="Xem thực đơn @menu.MenuName">
                                     <img src="@placeholderImage" alt="@menu.MenuName" loading="lazy" data-fallback="@placeholderImage" />
                                 </a>
                                 <div class="public-menu-content">
                                     <h2>@menu.MenuName</h2>
-                                    <p class="public-menu-description">@(string.IsNullOrWhiteSpace(menu.Description) ? "Khám phá thực đơn được Riverside Palace lựa chọn cho ngày trọng đại." : menu.Description)</p>
+                                    <p class="public-menu-description">@(string.IsNullOrWhiteSpace(menu.Description) ? "Thông tin mô tả thực đơn chưa được cung cấp." : menu.Description)</p>
                                     <div class="public-menu-meta">
                                         <span><span class="material-symbols-outlined" aria-hidden="true">restaurant</span> @menu.DishCount món</span>
                                         <span class="public-menu-price"><strong>@menu.PricePerTable.ToString("N0", vi) VNĐ</strong><small>/ bàn</small></span>
                                     </div>
-                                    <a class="public-menu-detail" href="/menus/@menu.MenuId">
+                                    <a class="public-menu-detail" asp-controller="Menus" asp-action="Details" asp-route-menuId="@menu.MenuId">
                                         Xem thực đơn <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                                     </a>
                                 </div>
@@ -139,5 +142,6 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/public-site.js" asp-append-version="true"></script>
     <script src="~/js/hall-list.js" asp-append-version="true"></script>
 }
