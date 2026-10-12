@@ -34,16 +34,19 @@
 
             @if (TempData["Success"] is string successMessage)
             {
-                <div class="alert-success">@successMessage</div>
+                <div class="auth-alert auth-alert-success" role="status"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><div><strong>Thành công</strong><p>@successMessage</p></div></div>
             }
             @if (TempData["Error"] is string errorMessage)
             {
-                <div class="alert-error">@errorMessage</div>
+                <div class="auth-alert auth-alert-error" role="alert"><span class="material-symbols-outlined" aria-hidden="true">error</span><div><strong>Không thể đăng nhập</strong><p>@errorMessage</p></div></div>
             }
 
             <form asp-action="Login" asp-controller="Auth" method="post" novalidate>
                 <input asp-for="ReturnUrl" type="hidden" />
-                <div asp-validation-summary="ModelOnly" class="alert-error"></div>
+                @if (ViewData.ModelState.TryGetValue(string.Empty, out var loginErrors) && loginErrors.Errors.Count > 0)
+                {
+                    <div class="auth-alert auth-alert-error auth-alert-single" role="alert"><span class="material-symbols-outlined" aria-hidden="true">error</span><span>@loginErrors.Errors[0].ErrorMessage</span></div>
+                }
 
                 <div class="field">
                     <label asp-for="Identifier">EMAIL HOẶC SỐ ĐIỆN THOẠI <i>*</i></label>

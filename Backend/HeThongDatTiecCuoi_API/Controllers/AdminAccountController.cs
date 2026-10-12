@@ -411,7 +411,8 @@ public sealed class AdminAccountController : ControllerBase
         [FromBody] CreateEmployeeAccountRequest request,
         CancellationToken cancellationToken)
     {
-        var email = request.Email.Trim().ToLowerInvariant();
+        if (!EmailAddressHelper.TryNormalize(request.Email, out var email, out var emailError))
+            return BadRequest(new { message = emailError });
         var fullName = request.FullName.Trim();
         var phoneNumber = PhoneNumberHelper.Normalize(request.PhoneNumber);
 
@@ -569,7 +570,8 @@ public sealed class AdminAccountController : ControllerBase
         [FromBody] UpdateEmployeeAccountRequest request,
         CancellationToken cancellationToken)
     {
-        var email = request.Email.Trim().ToLowerInvariant();
+        if (!EmailAddressHelper.TryNormalize(request.Email, out var email, out var emailError))
+            return BadRequest(new { message = emailError });
         var fullName = request.FullName.Trim();
         var phoneNumber = PhoneNumberHelper.Normalize(request.PhoneNumber);
 
@@ -770,11 +772,8 @@ public sealed class AdminAccountController : ControllerBase
             return BadRequest(new { message = "Chỉ có thể chỉnh sửa tài khoản quản trị đang đăng nhập." });
         }
 
-        var email = request.Email.Trim().ToLowerInvariant();
-        if (string.IsNullOrWhiteSpace(email) || email.Length > 255)
-        {
-            return BadRequest(new { message = "Email quản trị không hợp lệ." });
-        }
+        if (!EmailAddressHelper.TryNormalize(request.Email, out var email, out var emailError))
+            return BadRequest(new { message = emailError });
 
         var user = await _context.Users
             .Include(account => account.Role)

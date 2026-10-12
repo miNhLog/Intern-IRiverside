@@ -1,4 +1,3 @@
-using HeThongDatTiecCuoi_WEB.Constants;
 using HeThongDatTiecCuoi_WEB.Models.Menus;
 using HeThongDatTiecCuoi_WEB.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -26,16 +25,6 @@ public sealed class MenusController : Controller
         int page = 1,
         CancellationToken cancellationToken = default)
     {
-        if (User.IsInRole(RoleNames.Admin))
-        {
-            return RedirectToAction("Index", "AdminMenu");
-        }
-
-        if (User.IsInRole(RoleNames.Coordinator))
-        {
-            return RedirectToAction("Dashboard", "Home");
-        }
-
         page = Math.Max(1, page);
         sort = string.IsNullOrWhiteSpace(sort) ? "name-asc" : sort;
 
@@ -81,16 +70,6 @@ public sealed class MenusController : Controller
         int menuId,
         CancellationToken cancellationToken)
     {
-        if (User.IsInRole(RoleNames.Admin))
-        {
-            return RedirectToAction("Index", "AdminMenu");
-        }
-
-        if (User.IsInRole(RoleNames.Coordinator))
-        {
-            return RedirectToAction("Dashboard", "Home");
-        }
-
         var result = await _apiClient.GetPublicMenuDetailAsync(menuId, cancellationToken);
         if (!result.Succeeded || result.Value is null)
         {

@@ -23,10 +23,11 @@ public sealed class AuthController : Controller
         _configuration = configuration;
     }
 
-    [HttpGet("dang-nhap")]
+    [HttpGet("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login(string? returnUrl = null)
     {
+        returnUrl = GetSafeReturnUrl(returnUrl);
         var hasApiToken = !string.IsNullOrWhiteSpace(Request.Cookies[ApiTokenCookie]);
 
         // CHỈ chuyển hướng vào trong khi CẢ HAI cookie rp_auth VÀ rp_api_token đều còn hợp lệ
@@ -60,7 +61,7 @@ public sealed class AuthController : Controller
         return View(new LoginViewModel { ReturnUrl = returnUrl });
     }
 
-    [HttpPost("dang-nhap")]
+    [HttpPost("login")]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model, CancellationToken cancellationToken)
@@ -79,9 +80,10 @@ public sealed class AuthController : Controller
 
         await SignInAsync(result.Value, model.RememberMe);
         if (result.Value.User.MustChangePassword) return RedirectToAction(nameof(ChangePassword));
-        if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+        var safeReturnUrl = GetSafeReturnUrl(model.ReturnUrl);
+        if (safeReturnUrl is not null)
         {
-            return LocalRedirect(model.ReturnUrl);
+            return LocalRedirect(safeReturnUrl);
         }
 
         return RedirectForRole(result.Value.User.RoleName);
@@ -96,6 +98,9 @@ public sealed class AuthController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model, CancellationToken cancellationToken)
     {
+        var requiresOtp = bool.TryParse(User.FindFirstValue(MustChangePasswordClaim), out var mustChange) && mustChange;
+        if (requiresOtp && (string.IsNullOrWhiteSpace(model.OtpCode) || model.OtpCode.Length != 6 || !model.OtpCode.All(char.IsDigit)))
+            ModelState.AddModelError(nameof(model.OtpCode), "Vui lòng nhập mã OTP gồm 6 chữ số.");
         if (!ModelState.IsValid) return View(model);
 
         var token = Request.Cookies[ApiTokenCookie];
@@ -103,8 +108,26 @@ public sealed class AuthController : Controller
         var result = await _apiClient.ChangePasswordAsync(model, token, cancellationToken);
         if (!result.Succeeded) { ModelState.AddModelError(string.Empty, result.Error ?? "Không thể đổi mật khẩu."); return View(model); }
         await UpdateMustChangePasswordClaimAsync(false);
-        TempData["Success"] = result.Value?.Message ?? "Đổi mật khẩu thành công.";
+        TempData["PasswordChangeSuccess"] = result.Value?.Message ?? "Đổi mật khẩu thành công.";
         return RedirectForRole(User.FindFirstValue(ClaimTypes.Role));
+    }
+
+    [HttpPost("doi-mat-khau/gui-otp")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendFirstPasswordOtp(CancellationToken cancellationToken)
+    {
+        var token = Request.Cookies[ApiTokenCookie];
+        if (string.IsNullOrWhiteSpace(token))
+            return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn." });
+
+        var result = await _apiClient.SendFirstPasswordOtpAsync(token, cancellationToken);
+        return Json(new
+        {
+            success = result.Succeeded,
+            message = result.Succeeded ? result.Value?.Message : result.Error,
+            cooldownSeconds = result.Value?.CooldownSeconds ?? 60
+        });
     }
 
     [HttpGet("auth/google")]
@@ -201,6 +224,10 @@ public sealed class AuthController : Controller
             return View(model);
         }
 
+        // The password belongs to the account identified by the reset token,
+        // which may not be the account currently authenticated in this browser.
+        // Always require a fresh login with the newly set password.
+        await ClearLocalSessionAsync();
         TempData["Success"] = result.Value?.Message ?? "Đặt lại mật khẩu thành công.";
         return RedirectToAction(nameof(Login));
     }
@@ -210,9 +237,46 @@ public sealed class AuthController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
+        TempData.Remove("PasswordChangeSuccess");
+        await ClearLocalSessionAsync();
+        return RedirectToAction(nameof(Login));
+    }
+
+    [HttpGet("dang-xuat")]
+    [AllowAnonymous]
+    public IActionResult LogoutPage()
+    {
+        // Logout deliberately remains POST-only. If an old ReturnUrl or browser
+        // history reaches this address with GET, recover to a useful page instead
+        // of returning HTTP 405.
+        return User.Identity?.IsAuthenticated == true
+            ? RedirectForRole(User.FindFirstValue(ClaimTypes.Role))
+            : RedirectToAction(nameof(Login));
+    }
+
+    private async Task ClearLocalSessionAsync()
+    {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         Response.Cookies.Delete(ApiTokenCookie);
-        return RedirectToAction(nameof(Login));
+    }
+
+    private string? GetSafeReturnUrl(string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl) || !Url.IsLocalUrl(returnUrl))
+        {
+            return null;
+        }
+
+        var path = returnUrl.Split('?', '#')[0];
+        if (path.Equals("/login", StringComparison.OrdinalIgnoreCase) ||
+            path.Equals("/dang-xuat", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/auth/reset-password", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/auth/forgot-password", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return returnUrl;
     }
 
     private IActionResult RedirectForRole(string? roleName)

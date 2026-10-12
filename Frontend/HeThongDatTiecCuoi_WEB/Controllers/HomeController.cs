@@ -8,6 +8,7 @@ namespace HeThongDatTiecCuoi_WEB.Controllers;
 
 public sealed class HomeController : Controller
 {
+    private const string ApiTokenCookie = "rp_api_token";
     private readonly IRiversideApiClient _apiClient;
 
     public HomeController(IRiversideApiClient apiClient)
@@ -41,7 +42,7 @@ public sealed class HomeController : Controller
 
 
     [Authorize]
-    public IActionResult Dashboard()
+    public async Task<IActionResult> Dashboard(CancellationToken cancellationToken)
     {
         // Admin truy cập trực tiếp /Home/Dashboard
         // được đưa về trang tổng quan hệ thống.
@@ -50,13 +51,33 @@ public sealed class HomeController : Controller
             return RedirectToAction("Dashboard", "AdminAccount");
         }
 
-        return View();
+        if (!User.IsInRole(RoleNames.Manager))
+        {
+            return View(new ManagerDashboardViewModel());
+        }
+
+        if (!Request.Cookies.TryGetValue(ApiTokenCookie, out var accessToken) ||
+            string.IsNullOrWhiteSpace(accessToken))
+        {
+            return RedirectToAction("Login", "Auth");
+        }
+
+        var result = await _apiClient.GetManagerDashboardAsync(accessToken, cancellationToken);
+        if (result.Succeeded && result.Value is not null)
+        {
+            return View(result.Value);
+        }
+
+        return View(new ManagerDashboardViewModel
+        {
+            ErrorMessage = result.Error ?? "Không thể tải dữ liệu tổng quan từ hệ thống."
+        });
     }
 
     [Authorize(Roles = RoleNames.Manager)]
     public IActionResult HallManagerAssignments()
     {
-        return View();
+        return RedirectToAction("Index", "ManagerHr");
     }
 
     [Authorize(Roles = RoleNames.HallManager)]

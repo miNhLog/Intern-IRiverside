@@ -13,6 +13,8 @@ public static class AuditActions
     public const string RoleChangeRejected = "ROLE_CHANGE_REJECTED";
     public const string FirstPasswordChanged = "FIRST_PASSWORD_CHANGED";
     public const string AdminPasswordChanged = "ADMIN_PASSWORD_CHANGED";
+    public const string HallManagerAssigned = "HALL_MANAGER_ASSIGNED";
+    public const string HallManagerAssignmentEnded = "HALL_MANAGER_ASSIGNMENT_ENDED";
 
     public static readonly string[] AdminVisibleActions =
     [
@@ -46,4 +48,5 @@ public static class AuditEntityNames
 {
     public const string User = "User";
     public const string RoleChangeRequest = "RoleChangeRequest";
+    public const string HallManagerAssignment = "HallManagerAssignment";
 }
