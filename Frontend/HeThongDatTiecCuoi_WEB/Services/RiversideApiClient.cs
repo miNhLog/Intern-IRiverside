@@ -4,6 +4,7 @@ using HeThongDatTiecCuoi_WEB.Models.Auth;
 using HeThongDatTiecCuoi_WEB.Models.Common;
 using HeThongDatTiecCuoi_WEB.Models.Halls;
 using HeThongDatTiecCuoi_WEB.Models.Menus;
+using HeThongDatTiecCuoi_WEB.Models.DecorPackages;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -242,6 +243,71 @@ public sealed class RiversideApiClient : IRiversideApiClient
         {
             return ApiCallResult<PublicMenuDetailDto>.Failure(
                 "API trả về dữ liệu chi tiết thực đơn không hợp lệ.");
+        }
+    }
+
+    public async Task<ApiCallResult<PublicDecorPackageListResponse>> GetPublicDecorPackagesAsync(
+        string? keyword,
+        string? sort,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var query = new List<string>
+        {
+            $"page={Math.Max(1, page)}",
+            $"pageSize={Math.Clamp(pageSize, 1, 20)}"
+        };
+
+        AddQueryParameter(query, "keyword", keyword);
+        AddQueryParameter(query, "sort", sort);
+
+        try
+        {
+            var result = await SendAsync<PublicDecorPackageListResponse>(
+                HttpMethod.Get,
+                $"api/decor-packages/public?{string.Join('&', query)}",
+                null,
+                null,
+                cancellationToken);
+
+            if (result.Value is not null)
+            {
+                foreach (var package in result.Value.Items)
+                    package.ImageUrl = ResolvePublicImageUrl(package.ImageUrl);
+            }
+
+            return result;
+        }
+        catch (JsonException)
+        {
+            return ApiCallResult<PublicDecorPackageListResponse>.Failure(
+                "API trả về dữ liệu gói trang trí không hợp lệ.");
+        }
+    }
+
+    public async Task<ApiCallResult<PublicDecorPackageDto>> GetPublicDecorPackageAsync(
+        int decorationPackageId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await SendAsync<PublicDecorPackageDto>(
+                HttpMethod.Get,
+                $"api/decor-packages/public/{decorationPackageId}",
+                null,
+                null,
+                cancellationToken);
+
+            if (result.Value is not null)
+                result.Value.ImageUrl = ResolvePublicImageUrl(result.Value.ImageUrl);
+
+            return result;
+        }
+        catch (JsonException)
+        {
+            return ApiCallResult<PublicDecorPackageDto>.Failure(
+                "API trả về dữ liệu chi tiết gói trang trí không hợp lệ.");
         }
     }
 
