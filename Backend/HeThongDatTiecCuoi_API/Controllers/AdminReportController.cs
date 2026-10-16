@@ -29,6 +29,7 @@ public class AdminReportController : ControllerBase
             .Include(b => b.Customer)
             .Include(b => b.HallSchedule)
                 .ThenInclude(hs => hs!.Hall)
+            .Include(b => b.Status)
             .AsNoTracking()
             .Where(b => b.BookedAt.Year == year &&
                 b.Status.StatusGroup == StatusGroups.Booking &&

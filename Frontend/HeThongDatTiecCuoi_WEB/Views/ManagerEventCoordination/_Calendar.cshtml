@@ -1,0 +1,32 @@
+@model HeThongDatTiecCuoi_WEB.Models.ManagerEventCoordination.EventCoordinationCalendarViewModel
+@{
+    var days = Enumerable.Range(0, 7).Select(i => Model.FromDate.Date.AddDays(i)).ToList();
+    var culture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+}
+@if (Model.Items.Count == 0)
+{
+    <div class="calendar-empty"><i class="fa-regular fa-calendar-xmark"></i><strong>Không có tiệc trong tuần này.</strong></div>
+}
+else
+{
+    <div class="week-grid">
+        @foreach (var day in days)
+        {
+            <section class="day-column @(day == DateTime.Today ? "today" : "")">
+                <header><span>@day.ToString("ddd", culture)</span><strong>@day.ToString("dd/MM")</strong></header>
+                @foreach (var shift in new[] { "Ca trưa", "Ca tối" })
+                {
+                    var events = Model.Items.Where(x => x.EventDate.Date == day && x.Shift == shift).ToList();
+                    <div class="shift-slot"><h4>@shift</h4>
+                    @foreach (var item in events)
+                    {
+                        <button type="button" class="calendar-event @item.CoordinationState.ToLowerInvariant() @item.BookingStatusCode.ToLowerInvariant()" data-booking-id="@item.BookingId">
+                            <strong>@item.BookingCode</strong><span>@item.HallName</span><span>@item.CustomerName</span><small>@(item.CoordinatorName ?? "Chưa có điều phối")</small><em>@item.BookingStatusName</em>
+                        </button>
+                    }
+                    </div>
+                }
+            </section>
+        }
+    </div>
+}

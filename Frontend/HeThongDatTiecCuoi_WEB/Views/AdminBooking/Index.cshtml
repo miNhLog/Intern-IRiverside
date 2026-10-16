@@ -1,7 +1,8 @@
 ﻿@model HeThongDatTiecCuoi_WEB.Models.AdminBooking.BookingListResponseViewModel
 @{
-    ViewData["Title"] = "Quản Lý Đặt Tiệc & Hợp Đồng";
+    ViewData["Title"] = "Quản Lý Đặt Tiệc";
     Layout = "_AdminLayout";
+    var isManager = User.IsInRole(HeThongDatTiecCuoi_WEB.Constants.RoleNames.Manager);
 }
 
 <!-- Font dùng chung được nạp bởi _AdminLayout. -->
@@ -121,33 +122,29 @@
 </div>
 
 <!-- CONTAINER CHÍNH: Căn chỉnh padding và căn giữa đồng bộ với các trang khác -->
-<div class="booking-page-wrapper p-6 lg:p-8 space-y-6 w-full max-w-[1600px] mx-auto">
+<div class="booking-page-wrapper p-6 lg:p-8 space-y-6 w-full max-w-[1600px] mx-auto" data-can-manage-contracts="@isManager.ToString().ToLowerInvariant()">
 
     <!-- ================= 1. HEADER TRANG ================= -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="manager-section-header flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-500 mb-1">
                 <span>Quản trị hệ thống</span>
                 <i class="fa-solid fa-chevron-right text-[9px] text-slate-400"></i>
-                <span class="text-[#B89758] font-semibold">Hợp Đồng &amp; Đặt Tiệc</span>
+                <span class="text-[#B89758] font-semibold">Đặt tiệc</span>
             </nav>
             <h2 class="font-serif text-2xl font-bold text-slate-900 tracking-tight">
-                Quản Lý Đặt Tiệc Cưới &amp; Hợp Đồng Đặt Cọc
+                Quản lý đặt tiệc cưới
             </h2>
+            <p>Theo dõi và quản lý toàn bộ đơn đặt tiệc cưới.</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5">
-            <div class="flex items-center bg-slate-50 rounded-lg px-3 py-1.5 border border-slate-200 text-xs shadow-2xs">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                <span class="text-slate-600 font-medium">CSDL thời gian thực • Niên độ 2026</span>
-            </div>
-
             <button type="button" onclick="exportBookingsExcel()" class="flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 focus-ring min-h-[40px] shadow-2xs cursor-pointer">
                 <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i>
                 <span>Xuất Excel</span>
             </button>
 
-            <button type="button" onclick="openCreateBookingModal()" class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white rounded-lg text-xs font-bold transition-all shadow-sm min-h-[40px] cursor-pointer">
+            <button type="button" onclick="openCreateBookingModal()" class="admin-create-button flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white rounded-lg text-xs font-bold transition-all shadow-sm min-h-[40px] cursor-pointer">
                 <i class="fa-solid fa-plus text-xs"></i>
                 <span>Tạo Đơn Đặt Tiệc Mới</span>
             </button>
@@ -162,27 +159,27 @@
                 <span>Tất cả</span>
                 <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-bold" id="countTotal">@Model.TotalCount</span>
             </button>
-            <button type="button" onclick="filterByStatus(event, 'Chờ xác nhận')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-700 shrink-0 text-xs flex items-center gap-1.5">
+            <button type="button" onclick="filterByStatus(event, 'PENDING')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-700 shrink-0 text-xs flex items-center gap-1.5">
                 <i class="fa-regular fa-clock text-[10px]"></i>
                 <span>Chờ xác nhận</span>
                 <span class="px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 font-bold" id="countPending">@Model.PendingConfirmationCount</span>
             </button>
-            <button type="button" onclick="filterByStatus(event, 'Đã xác nhận')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 shrink-0 text-xs flex items-center gap-1.5">
+            <button type="button" onclick="filterByStatus(event, 'CONFIRMED')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 shrink-0 text-xs flex items-center gap-1.5">
                 <i class="fa-solid fa-check-double text-[10px]"></i>
                 <span>Đã xác nhận</span>
                 <span class="px-1.5 py-0.5 rounded text-[10px] bg-indigo-100 text-indigo-700 font-bold" id="countConfirmed">@Model.ConfirmedCount</span>
             </button>
-            <button type="button" onclick="filterByStatus(event, 'Đã cọc')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-amber-50 hover:text-amber-700 shrink-0 text-xs flex items-center gap-1.5">
-                <i class="fa-solid fa-hand-holding-dollar text-[10px]"></i>
-                <span>Đã cọc</span>
+            <button type="button" onclick="filterByStatus(event, 'PREPARING')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-amber-50 hover:text-amber-700 shrink-0 text-xs flex items-center gap-1.5">
+                <i class="fa-solid fa-list-check text-[10px]"></i>
+                <span>Đang chuẩn bị</span>
                 <span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800 font-bold" id="countDeposited">@Model.DepositedCount</span>
             </button>
-            <button type="button" onclick="filterByStatus(event, 'Hoàn tất')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 shrink-0 text-xs flex items-center gap-1.5">
+            <button type="button" onclick="filterByStatus(event, 'COMPLETED')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 shrink-0 text-xs flex items-center gap-1.5">
                 <i class="fa-solid fa-circle-check text-[10px]"></i>
                 <span>Hoàn tất</span>
                 <span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-700 font-bold" id="countCompleted">@Model.CompletedCount</span>
             </button>
-            <button type="button" onclick="filterByStatus(event, 'Đã hủy')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-rose-50 hover:text-rose-700 shrink-0 text-xs flex items-center gap-1.5">
+            <button type="button" onclick="filterByStatus(event, 'CANCELLED')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-rose-50 hover:text-rose-700 shrink-0 text-xs flex items-center gap-1.5">
                 <i class="fa-solid fa-ban text-[10px]"></i>
                 <span>Đã hủy</span>
                 <span class="px-1.5 py-0.5 rounded text-[10px] bg-rose-100 text-rose-700 font-bold" id="countCancelled">@Model.CancelledCount</span>
@@ -310,10 +307,10 @@
                                             <i class="fa-solid fa-circle-check text-[9px]"></i> Hoàn tất
                                         </span>
                                     }
-                                    else if (b.Status == "Đã cọc")
+                                    else if (b.StatusCode == "PREPARING")
                                     {
                                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
-                                            <i class="fa-solid fa-hand-holding-dollar text-[9px]"></i> Đã cọc
+                                            <i class="fa-solid fa-list-check text-[9px]"></i> Đang chuẩn bị
                                         </span>
                                     }
                                     else if (b.Status == "Đã xác nhận")
@@ -337,22 +334,24 @@
                                 </td>
                                 <td class="py-3.5 px-4 text-center">
                                     <div class="inline-flex items-center gap-1.5">
-                                        <button type="button" onclick="viewBookingDetail(@b.BookingId)" class="h-[32px] w-[32px] rounded-lg bg-slate-100 hover:bg-[#B89758]/15 text-[#8C6D32] hover:text-[#B89758] transition-colors flex items-center justify-center" title="Xem hợp đồng chi tiết">
-                                            <i class="fa-solid fa-file-contract text-sm"></i>
+                                        <button type="button" onclick="viewBookingDetail(@b.BookingId)" class="h-[32px] w-[32px] rounded-lg bg-slate-100 hover:bg-[#B89758]/15 text-[#8C6D32] hover:text-[#B89758] transition-colors flex items-center justify-center" title="Xem chi tiết booking">
+                                            <i class="fa-regular fa-eye text-sm"></i>
                                         </button>
-                                        @if (b.Status == "Chờ xác nhận")
+                                        @if (isManager && b.HasContract)
                                         {
-                                            <button type="button" onclick="quickUpdateStatus(@b.BookingId, 'Đã xác nhận')" class="h-[32px] w-[32px] rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center justify-center" title="Xác nhận đơn tiệc">
+                                            <a href="/quan-ly/hop-dong-thanh-toan?contractId=@b.ContractId" class="h-[32px] px-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors flex items-center justify-center gap-1 text-[10px] font-bold" title="Xem hợp đồng @b.ContractCode"><i class="fa-solid fa-file-contract"></i>@b.ContractCode</a>
+                                        }
+                                        else if (isManager && b.StatusCode == "CONFIRMED")
+                                        {
+                                            <a href="/quan-ly/hop-dong-thanh-toan?bookingId=@b.BookingId&amp;openCreate=true" class="h-[32px] px-2.5 rounded-lg bg-[#B89758]/15 hover:bg-[#B89758]/25 text-[#8C6D32] transition-colors flex items-center justify-center gap-1 text-[10px] font-bold" title="Tạo hợp đồng"><i class="fa-solid fa-file-circle-plus"></i>Tạo HĐ</a>
+                                        }
+                                        @if (b.StatusCode == "PENDING")
+                                        {
+                                            <button type="button" onclick="quickUpdateStatus(@b.BookingId, 'CONFIRMED')" class="h-[32px] w-[32px] rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center justify-center" title="Xác nhận đơn tiệc">
                                                 <i class="fa-solid fa-check text-sm"></i>
                                             </button>
                                         }
-                                        else if (b.Status == "Đã xác nhận")
-                                        {
-                                            <button type="button" onclick="quickDepositModal(@b.BookingId, @b.EstimatedTotal)" class="h-[32px] w-[32px] rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-colors flex items-center justify-center" title="Xác nhận đặt cọc">
-                                                <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
-                                            </button>
-                                        }
-                                        @if (b.Status != "Đã hủy" && b.Status != "Hoàn tất")
+                                        @if (b.StatusCode != "CANCELLED" && b.StatusCode != "COMPLETED")
                                         {
                                             <button type="button" onclick="cancelBookingPrompt(@b.BookingId)" class="h-[32px] w-[32px] rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 transition-colors flex items-center justify-center" title="Hủy đơn tiệc">
                                                 <i class="fa-solid fa-ban text-sm"></i>
@@ -404,7 +403,7 @@
                         <span>Hồ Sơ Đặt Tiệc:</span>
                         <span id="mdBookingCode" class="font-mono text-[#8C6D32]">DT-XXXX</span>
                     </h3>
-                    <p class="text-[11px] text-slate-500">Chi tiết dịch vụ, thực đơn &amp; tiến độ đặt cọc</p>
+                    <p class="text-[11px] text-slate-500">Chi tiết dịch vụ, thực đơn và liên kết hợp đồng</p>
                 </div>
             </div>
             <button type="button" onclick="closeDetailModal()" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 rounded-lg transition-colors">
@@ -499,22 +498,13 @@
                 </div>
             </div>
 
-            <!-- Khung đặt cọc gợi ý -->
+            <!-- Liên kết nghiệp vụ hợp đồng; thanh toán không được ghi nhận thủ công tại Booking. -->
             <div class="bg-gradient-to-br from-[#FAF8F5] to-[#F5EFE3] border border-[#E5D5B8] p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <div>
                     <span class="font-bold text-slate-800 flex items-center gap-1.5">
-                        <i class="fa-solid fa-coins text-[#B89758]"></i> Chính Sách Đặt Cọc Tiệc Cưới Riverside Palace:
+                        <i class="fa-solid fa-file-contract text-[#B89758]"></i> Hợp đồng liên quan
                     </span>
-                    <div class="mt-2 space-y-1 text-[11px]">
-                        <p class="flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 rounded-full bg-[#B89758]"></span>
-                            Đợt 1 (Giữ sảnh): <strong>20%</strong> (<span id="mdDeposit20" class="text-[#8C6D32] font-bold">---</span>)
-                        </p>
-                        <p class="flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                            Đợt 2 (Chốt thực đơn trước 15 ngày): <strong>50%</strong> (<span id="mdDeposit50" class="text-slate-700 font-bold">---</span>)
-                        </p>
-                    </div>
+                    <p class="mt-2 text-[11px] text-slate-600">Booking đã xác nhận có thể tạo một hợp đồng. Các khoản thanh toán chỉ được theo dõi tại chức năng Hợp đồng &amp; Thanh toán.</p>
                 </div>
                 <div id="mdActionBtnGroup" class="shrink-0">
                     <!-- Nút thao tác theo trạng thái -->
@@ -565,12 +555,16 @@
                 </h4>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Mã Khách Hàng (CustomerId) <span class="text-rose-500">*</span></label>
-                        <input type="number" id="newCustomerId" required min="1" value="1" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
+                        <label class="block font-semibold text-slate-700 mb-1">Họ và tên <span class="text-rose-500">*</span></label>
+                        <input type="text" id="newCustomerName" required maxlength="150" placeholder="Nguyễn Văn An" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
                     </div>
                     <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Số điện thoại liên hệ</label>
-                        <input type="tel" placeholder="0901 234 567" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
+                        <label class="block font-semibold text-slate-700 mb-1">Số điện thoại <span class="text-rose-500">*</span></label>
+                        <input type="tel" id="newPhoneNumber" required maxlength="20" placeholder="0901234567" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block font-semibold text-slate-700 mb-1">Email</label>
+                        <input type="email" id="newEmail" maxlength="255" placeholder="khachhang@example.com" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
                     </div>
                 </div>
             </div>
@@ -584,20 +578,17 @@
                     <div class="sm:col-span-2">
                         <label class="block font-semibold text-slate-700 mb-1">Đại Sảnh Tổ Chức <span class="text-rose-500">*</span></label>
                         <select id="newHallId" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758] cursor-pointer">
-                            <option value="1">Sảnh Amur (Max 580 bàn)</option>
-                            <option value="2">Sảnh Elbe (Max 360 bàn)</option>
-                            <option value="3">Sảnh Danube (Max 540 bàn)</option>
-                            <option value="4">Sảnh Seine (Max 650 bàn)</option>
-                            <option value="5">Sảnh Thames (Max 580 bàn)</option>
-                            <option value="6">Sảnh Volga (Max 580 bàn)</option>
-                            <option value="7">Sảnh Green Riverside (Max 300 bàn)</option>
-                            <option value="8">Sảnh Nile (Max 650 bàn)</option>
-                            <option value="9">Sảnh Grand Ballroom (Max 2000 bàn)</option>
+                            <option value="">Chọn ngày để tải sảnh còn trống</option>
                         </select>
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Ngày Tổ Chức Tiệc <span class="text-rose-500">*</span></label>
-                        <input type="date" id="newEventDate" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
+                        <div class="relative">
+                            <input type="text" id="newEventDateFormatted" readonly aria-hidden="true" class="w-full px-3 py-2 pr-10 bg-white border border-slate-200 rounded-lg text-slate-800 pointer-events-none">
+                            <i class="fa-regular fa-calendar absolute right-3 top-1/2 -translate-y-1/2 text-slate-700 pointer-events-none"></i>
+                            <input type="date" id="newEventDate" lang="vi-VN" required aria-label="Ngày tổ chức tiệc" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        </div>
+                        <small id="newEventDateDisplay" class="block mt-1 text-slate-500">Định dạng: ngày/tháng/năm</small>
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Ca Tổ Chức <span class="text-rose-500">*</span></label>
@@ -608,13 +599,27 @@
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Số Lượng Bàn Tiệc <span class="text-rose-500">*</span></label>
-                        <input type="number" id="newTableCount" required min="5" max="300" value="25" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
+                        <input type="number" id="newTableCount" required min="1" max="300" value="25" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
                     </div>
                     <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Số Lượng Khách Dự Kiến</label>
-                        <input type="number" id="newGuestCount" min="50" max="3000" value="250" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
+                        <label class="block font-semibold text-slate-700 mb-1">Bàn dự phòng</label>
+                        <input type="number" id="newSpareTableCount" required min="0" max="50" value="2" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758]">
                     </div>
                 </div>
+            </div>
+
+            <div class="bg-slate-50/60 rounded-xl p-4 border border-slate-200/70">
+                <h4 class="font-bold text-xs text-slate-700 uppercase tracking-wider mb-3"><i class="fa-solid fa-utensils text-[#B89758]"></i> Thực đơn &amp; trang trí</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div><label class="block font-semibold text-slate-700 mb-1">Thực đơn</label><select id="newMenuId" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg"><option value="">Chưa chọn thực đơn</option></select></div>
+                    <div><label class="block font-semibold text-slate-700 mb-1">Gói trang trí</label><select id="newDecorationPackageId" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg"><option value="">Chưa chọn trang trí</option></select></div>
+                    <div class="sm:col-span-2"><label class="block font-semibold text-slate-700 mb-1">Phong cách mong muốn</label><input id="newDesiredStyle" maxlength="150" placeholder="Sang trọng, tối giản, rustic..." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg"></div>
+                </div>
+            </div>
+
+            <div class="bg-slate-50/60 rounded-xl p-4 border border-slate-200/70">
+                <h4 class="font-bold text-xs text-slate-700 uppercase tracking-wider mb-3"><i class="fa-solid fa-bell-concierge text-[#B89758]"></i> Dịch vụ đi kèm</h4>
+                <div id="newServices" class="grid grid-cols-1 sm:grid-cols-2 gap-2"><span class="text-slate-400">Đang tải dịch vụ...</span></div>
             </div>
 
             <!-- Section 3: Ghi chú -->
@@ -623,6 +628,7 @@
                     <i class="fa-solid fa-pen-to-square text-[#B89758]"></i> Ghi Chú Đặc Biệt
                 </h4>
                 <textarea id="newSpecialRequests" rows="3" placeholder="Ghi chú hoa trang trí, thời gian đón khách, yêu cầu đặc biệt..." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#B89758] focus:ring-1 focus:ring-[#B89758] resize-none"></textarea>
+                <div class="mt-3 rounded-lg bg-white border border-[#E5D5B8] p-3 flex justify-between"><span class="font-semibold text-slate-600">Tổng dự toán</span><strong id="newEstimatedTotal" class="text-[#8C6D32]">0 ₫</strong></div>
             </div>
 
         </form>
@@ -631,9 +637,9 @@
             <button type="button" onclick="closeCreateBookingModal()" class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-lg font-semibold border border-slate-200 cursor-pointer transition-colors">
                 Hủy bỏ
             </button>
-            <button type="submit" form="createBookingForm" class="px-5 py-2 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white rounded-lg font-bold shadow-sm cursor-pointer transition-all flex items-center gap-2">
-                <i class="fa-solid fa-check text-xs"></i>
-                Lưu &amp; Tạo Hợp Đồng
+            <button type="submit" id="createBookingSubmit" form="createBookingForm" class="min-h-[40px] px-4 bg-[#102B43] hover:bg-[#0B2034] text-white rounded-[9px] font-semibold shadow-[0_6px_16px_rgba(16,43,67,0.16)] cursor-pointer transition-all inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                <i class="fa-solid fa-floppy-disk text-xs"></i>
+                Lưu đơn đặt tiệc
             </button>
         </footer>
     </div>
@@ -652,13 +658,16 @@
         };
 
         let selectedBookingId = null;
+        let createBookingOptions = null;
         let currentBookings = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items ?? new List<HeThongDatTiecCuoi_WEB.Models.AdminBooking.BookingSummaryViewModel>()));
+        const canManageContracts = document.querySelector('.booking-page-wrapper')?.dataset.canManageContracts === 'true';
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Đặt mặc định ngày tạo tiệc mới là 30 ngày tới
-            const defaultDate = new Date();
-            defaultDate.setDate(defaultDate.getDate() + 30);
-            document.getElementById('newEventDate').value = defaultDate.toISOString().split('T')[0];
+            setMinimumBookingDate();
+            document.getElementById('newEventDate').addEventListener('change', loadCreateBookingOptions);
+            document.getElementById('newShift').addEventListener('change', renderAvailableHalls);
+            ['newHallId','newMenuId','newDecorationPackageId','newTableCount','newSpareTableCount'].forEach(id =>
+                document.getElementById(id).addEventListener('change', updateCreateEstimate));
 
             // Thoát stacking context cho các Modal
             const detailModal = document.getElementById('bookingDetailModal');
@@ -686,6 +695,42 @@
 
             toast.classList.remove('translate-x-full');
             setTimeout(() => toast.classList.add('translate-x-full'), 3000);
+        }
+
+        function escapeHtml(value) {
+            const element = document.createElement('div');
+            element.textContent = value == null ? '' : String(value);
+            return element.innerHTML;
+        }
+
+        function formatNumber(value) {
+            const number = Number(value || 0);
+            return Number.isFinite(number) ? new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(number) : '0';
+        }
+
+        function toInputDate(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function minimumBookingDate() {
+            const now = new Date();
+            const lastDayNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0).getDate();
+            return new Date(now.getFullYear(), now.getMonth() + 1, Math.min(now.getDate(), lastDayNextMonth));
+        }
+
+        function displayVietnameseDate(value) {
+            if (!value) return '';
+            const [year, month, day] = value.split('-');
+            return `${day}/${month}/${year}`;
+        }
+
+        function setMinimumBookingDate() {
+            const input = document.getElementById('newEventDate');
+            const minimum = toInputDate(minimumBookingDate());
+            input.min = minimum;
+            input.value = minimum;
+            document.getElementById('newEventDateFormatted').value = displayVietnameseDate(minimum);
+            document.getElementById('newEventDateDisplay').textContent = `Ngày đã chọn: ${displayVietnameseDate(minimum)} (tối thiểu trước 1 tháng)`;
         }
 
         // ================= 1. XỬ LÝ LỌC & PHÂN TRANG =================
@@ -778,37 +823,47 @@
                 const tables = b.tableCount ?? b.TableCount ?? 0;
                 const total = Number(b.estimatedTotal ?? b.EstimatedTotal ?? 0).toLocaleString('vi-VN');
                 const status = b.status || b.Status;
+                const statusCode = b.statusCode || b.StatusCode || '';
+                const hasContract = b.hasContract ?? b.HasContract ?? false;
+                const contractId = b.contractId ?? b.ContractId;
+                const contractCode = b.contractCode || b.ContractCode || '';
                 const initial = custName ? custName.substring(0, 1).toUpperCase() : '?';
+                const safeCode = escapeHtml(code);
+                const safeCustomerName = escapeHtml(custName);
+                const safePhone = escapeHtml(phone);
+                const safeHall = escapeHtml(hall);
+                const safeShift = escapeHtml(shift);
+                const safeInitial = escapeHtml(initial);
+                const safeContractCode = escapeHtml(contractCode);
 
                 let badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-blue-50 text-blue-700 border border-blue-200"><i class="fa-regular fa-clock text-[9px]"></i> Chờ xác nhận</span>`;
-                if (status === 'Hoàn tất') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300"><i class="fa-solid fa-circle-check text-[9px]"></i> Hoàn tất</span>`;
-                else if (status === 'Đã cọc') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-300"><i class="fa-solid fa-hand-holding-dollar text-[9px]"></i> Đã cọc</span>`;
-                else if (status === 'Đã xác nhận') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"><i class="fa-solid fa-check-double text-[9px]"></i> Đã xác nhận</span>`;
-                else if (status === 'Đã hủy') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-rose-50 text-rose-700 border border-rose-200"><i class="fa-solid fa-ban text-[9px]"></i> Đã hủy</span>`;
+                if (statusCode === 'COMPLETED') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300"><i class="fa-solid fa-circle-check text-[9px]"></i> Hoàn tất</span>`;
+                else if (statusCode === 'PREPARING') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-300"><i class="fa-solid fa-list-check text-[9px]"></i> Đang chuẩn bị</span>`;
+                else if (statusCode === 'CONFIRMED') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"><i class="fa-solid fa-check-double text-[9px]"></i> Đã xác nhận</span>`;
+                else if (statusCode === 'CANCELLED') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-rose-50 text-rose-700 border border-rose-200"><i class="fa-solid fa-ban text-[9px]"></i> Đã hủy</span>`;
 
                 let shiftIcon = shift === 'Ca tối'
                     ? '<i class="fa-regular fa-moon text-indigo-500 mr-1"></i>'
                     : '<i class="fa-regular fa-sun text-amber-500 mr-1"></i>';
 
                 let actionBtns = `
-                    <button type="button" onclick="viewBookingDetail(${id})" class="h-[32px] w-[32px] rounded-lg bg-slate-100 hover:bg-[#B89758]/15 text-[#8C6D32] hover:text-[#B89758] transition-colors flex items-center justify-center" title="Xem hợp đồng chi tiết">
-                        <i class="fa-solid fa-file-contract text-sm"></i>
+                    <button type="button" onclick="viewBookingDetail(${id})" class="h-[32px] w-[32px] rounded-lg bg-slate-100 hover:bg-[#B89758]/15 text-[#8C6D32] hover:text-[#B89758] transition-colors flex items-center justify-center" title="Xem chi tiết booking">
+                        <i class="fa-regular fa-eye text-sm"></i>
                     </button>
                 `;
-                if (status === 'Chờ xác nhận') {
+                if (canManageContracts && hasContract) {
+                    actionBtns += `<a href="/quan-ly/hop-dong-thanh-toan?contractId=${Number(contractId)}" class="h-[32px] px-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors flex items-center justify-center gap-1 text-[10px] font-bold" title="Xem hợp đồng"><i class="fa-solid fa-file-contract"></i>${safeContractCode}</a>`;
+                } else if (canManageContracts && statusCode === 'CONFIRMED') {
+                    actionBtns += `<a href="/quan-ly/hop-dong-thanh-toan?bookingId=${id}&openCreate=true" class="h-[32px] px-2.5 rounded-lg bg-[#B89758]/15 hover:bg-[#B89758]/25 text-[#8C6D32] transition-colors flex items-center justify-center gap-1 text-[10px] font-bold" title="Tạo hợp đồng"><i class="fa-solid fa-file-circle-plus"></i>Tạo HĐ</a>`;
+                }
+                if (statusCode === 'PENDING') {
                     actionBtns += `
-                        <button type="button" onclick="quickUpdateStatus(${id}, 'Đã xác nhận')" class="h-[32px] w-[32px] rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center justify-center" title="Xác nhận đơn tiệc">
+                        <button type="button" onclick="quickUpdateStatus(${id}, 'CONFIRMED')" class="h-[32px] w-[32px] rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center justify-center" title="Xác nhận đơn tiệc">
                             <i class="fa-solid fa-check text-sm"></i>
                         </button>
                     `;
-                } else if (status === 'Đã xác nhận') {
-                    actionBtns += `
-                        <button type="button" onclick="quickDepositModal(${id}, ${b.estimatedTotal ?? b.EstimatedTotal ?? 0})" class="h-[32px] w-[32px] rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-colors flex items-center justify-center" title="Xác nhận đặt cọc">
-                            <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
-                        </button>
-                    `;
                 }
-                if (status !== 'Đã hủy' && status !== 'Hoàn tất') {
+                if (statusCode !== 'CANCELLED' && statusCode !== 'COMPLETED') {
                     actionBtns += `
                         <button type="button" onclick="cancelBookingPrompt(${id})" class="h-[32px] w-[32px] rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 transition-colors flex items-center justify-center" title="Hủy đơn tiệc">
                             <i class="fa-solid fa-ban text-sm"></i>
@@ -818,15 +873,15 @@
 
                 tbody.innerHTML += `
                     <tr class="booking-row">
-                        <td class="py-3.5 px-4 font-mono font-bold text-[#8C6D32]">${code}</td>
+                        <td class="py-3.5 px-4 font-mono font-bold text-[#8C6D32]">${safeCode}</td>
                         <td class="py-3.5 px-4">
                             <div class="flex items-center gap-2.5">
-                                <div class="customer-avatar">${initial}</div>
+                                <div class="customer-avatar">${safeInitial}</div>
                                 <div class="min-w-0">
-                                    <p class="font-bold text-slate-900 truncate">${custName}</p>
+                                    <p class="font-bold text-slate-900 truncate">${safeCustomerName}</p>
                                     <p class="text-[11px] text-slate-500 flex items-center gap-1">
                                         <i class="fa-solid fa-phone text-[9px]"></i>
-                                        ${phone}
+                                        ${safePhone}
                                     </p>
                                 </div>
                             </div>
@@ -834,10 +889,10 @@
                         <td class="py-3.5 px-4">
                             <p class="font-semibold text-slate-800 flex items-center gap-1.5">
                                 <i class="fa-solid fa-hotel text-[10px] text-[#B89758]"></i>
-                                ${hall}
+                                ${safeHall}
                             </p>
                             <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">
-                                ${shiftIcon}${shift}
+                                ${shiftIcon}${safeShift}
                             </span>
                         </td>
                         <td class="py-3.5 px-3 text-center font-medium text-slate-700">
@@ -943,20 +998,29 @@
                     document.getElementById('mdDecorSubtotal').innerText = `${Number(decorPrice).toLocaleString('vi-VN')} đ`;
                     document.getElementById('mdTotalAmount').innerText = `${Number(total).toLocaleString('vi-VN')} VNĐ`;
 
-                    document.getElementById('mdDeposit20').innerText = `${Number(total * 0.2).toLocaleString('vi-VN')} đ`;
-                    document.getElementById('mdDeposit50').innerText = `${Number(total * 0.5).toLocaleString('vi-VN')} đ`;
-
                     const status = b.status || b.Status;
+                    const statusCode = b.statusCode || b.StatusCode || '';
+                    const hasContract = b.hasContract ?? b.HasContract ?? false;
+                    const contractId = b.contractId ?? b.ContractId;
+                    const contractCode = b.contractCode || b.ContractCode || '';
                     document.getElementById('mdStatusBadge').innerText = status;
 
                     const btnGroup = document.getElementById('mdActionBtnGroup');
                     btnGroup.innerHTML = '';
-                    if (status === 'Chờ xác nhận') {
-                        btnGroup.innerHTML = `<button type="button" onclick="quickUpdateStatus(${id}, 'Đã xác nhận')" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-sm transition-colors flex items-center gap-2"><i class="fa-solid fa-check text-xs"></i>Duyệt Hợp Đồng</button>`;
-                    } else if (status === 'Đã xác nhận') {
-                        btnGroup.innerHTML = `<button type="button" onclick="quickDepositModal(${id}, ${total})" class="px-4 py-2.5 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] text-white rounded-lg font-bold shadow-sm transition-all flex items-center gap-2"><i class="fa-solid fa-hand-holding-dollar text-xs"></i>Thu Cọc 20%</button>`;
-                    } else if (status === 'Đã cọc') {
-                        btnGroup.innerHTML = `<button type="button" onclick="quickUpdateStatus(${id}, 'Hoàn tất')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-sm transition-colors flex items-center gap-2"><i class="fa-solid fa-circle-check text-xs"></i>Quyết Toán</button>`;
+                    if (canManageContracts && hasContract) {
+                        const link = document.createElement('a');
+                        link.href = `/quan-ly/hop-dong-thanh-toan?contractId=${contractId}`;
+                        link.className = 'px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-sm transition-colors flex items-center gap-2';
+                        link.textContent = `Xem hợp đồng ${contractCode}`;
+                        btnGroup.appendChild(link);
+                    } else if (canManageContracts && statusCode === 'CONFIRMED') {
+                        const link = document.createElement('a');
+                        link.href = `/quan-ly/hop-dong-thanh-toan?bookingId=${id}&openCreate=true`;
+                        link.className = 'px-4 py-2.5 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] text-white rounded-lg font-bold shadow-sm transition-all flex items-center gap-2';
+                        link.textContent = 'Tạo hợp đồng';
+                        btnGroup.appendChild(link);
+                    } else if (statusCode === 'PENDING') {
+                        btnGroup.innerHTML = `<button type="button" onclick="quickUpdateStatus(${id}, 'CONFIRMED')" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-sm transition-colors flex items-center gap-2"><i class="fa-solid fa-check text-xs"></i>Xác nhận Booking</button>`;
                     }
 
                     const modal = document.getElementById('bookingDetailModal');
@@ -975,15 +1039,16 @@
             modal.classList.remove('flex');
         }
 
-        // ================= 3. CẬP NHẬT TRẠNG THÁI / ĐẶT CỌC / HỦY =================
+        // ================= 3. CẬP NHẬT TRẠNG THÁI BOOKING / HỦY =================
         async function quickUpdateStatus(id, newStatus) {
-            if (!confirm(`Bạn có chắc muốn chuyển trạng thái đơn tiệc sang "${newStatus}"?`)) return;
+            const friendlyStatus = { CONFIRMED: 'Đã xác nhận', CANCELLED: 'Đã hủy', COMPLETED: 'Hoàn tất', PREPARING: 'Đang chuẩn bị' }[newStatus] || newStatus;
+            if (!confirm(`Bạn có chắc muốn chuyển trạng thái đơn tiệc sang "${friendlyStatus}"?`)) return;
 
             try {
                 const res = await fetch(`/AdminBooking/UpdateStatus/${id}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ newStatus: newStatus })
+                    body: JSON.stringify({ statusCode: newStatus })
                 });
                 const result = await res.json();
                 if (result.success) {
@@ -998,13 +1063,6 @@
             }
         }
 
-        function quickDepositModal(id, totalAmount) {
-            const deposit20 = totalAmount * 0.2;
-            if (confirm(`Xác nhận khách hàng đã nộp tiền cọc đợt 1 (20%): ${deposit20.toLocaleString('vi-VN')} đ?`)) {
-                quickUpdateStatus(id, 'Đã cọc');
-            }
-        }
-
         function cancelBookingPrompt(id) {
             const reason = prompt("Nhập lý do hủy tiệc cưới (lịch sảnh sẽ tự động giải phóng):", "Khách hàng đổi kế hoạch");
             if (reason === null) return;
@@ -1012,7 +1070,7 @@
             fetch(`/AdminBooking/UpdateStatus/${id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ newStatus: 'Đã hủy', cancellationReason: reason })
+                body: JSON.stringify({ statusCode: 'CANCELLED', cancellationReason: reason })
             })
             .then(res => res.json())
             .then(result => {
@@ -1027,10 +1085,64 @@
         }
 
         // ================= 4. TẠO MỚI ĐẶT TIỆC =================
-        function openCreateBookingModal() {
+        async function openCreateBookingModal() {
+            document.getElementById('createBookingForm').reset();
+            createBookingOptions = null;
+            setMinimumBookingDate();
+            document.getElementById('newEstimatedTotal').textContent = '0 ₫';
             const modal = document.getElementById('createBookingModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            await loadCreateBookingOptions();
+        }
+
+        async function loadCreateBookingOptions() {
+            const date = document.getElementById('newEventDate').value;
+            if (!date) return;
+            const minimum = toInputDate(minimumBookingDate());
+            if (date < minimum) {
+                document.getElementById('newEventDate').value = minimum;
+                document.getElementById('newEventDateFormatted').value = displayVietnameseDate(minimum);
+                showToast('Ngày không hợp lệ', `Ngày tổ chức phải từ ${displayVietnameseDate(minimum)} trở đi.`, false);
+                return loadCreateBookingOptions();
+            }
+            document.getElementById('newEventDateFormatted').value = displayVietnameseDate(date);
+            document.getElementById('newEventDateDisplay').textContent = `Ngày đã chọn: ${displayVietnameseDate(date)} (dd/MM/yyyy)`;
+            try {
+                const response = await fetch(`/AdminBooking/GetCreateOptions?eventDate=${encodeURIComponent(date)}`);
+                const result = await response.json();
+                if (!result.success) throw new Error(result.message);
+                createBookingOptions = result.data;
+                const menu = document.getElementById('newMenuId');
+                menu.innerHTML = '<option value="">Chưa chọn thực đơn</option>' + createBookingOptions.menus.map(x => `<option value="${x.menuId}" data-price="${x.pricePerTable}">${escapeHtml(x.menuName)} — ${formatNumber(x.pricePerTable)} ₫/bàn</option>`).join('');
+                const decor = document.getElementById('newDecorationPackageId');
+                decor.innerHTML = '<option value="">Chưa chọn trang trí</option>' + createBookingOptions.decorations.map(x => `<option value="${x.decorationPackageId}" data-price="${x.price}">${escapeHtml(x.packageName)} (${escapeHtml(x.style)}) — ${formatNumber(x.price)} ₫</option>`).join('');
+                document.getElementById('newServices').innerHTML = createBookingOptions.services.length
+                    ? createBookingOptions.services.map(x => `<label class="flex items-center gap-2 rounded-lg border bg-white p-2"><input type="checkbox" class="booking-service" value="${x.serviceId}" data-price="${x.price}"><span class="flex-1"><b>${escapeHtml(x.serviceName)}</b><small class="block text-slate-500">${formatNumber(x.price)} ₫</small></span><input type="number" class="service-quantity w-14 border rounded px-1 py-1" min="1" max="100" value="1" disabled></label>`).join('')
+                    : '<span class="text-slate-400">Không có dịch vụ đang hoạt động.</span>';
+                document.querySelectorAll('.booking-service').forEach(box => box.addEventListener('change', () => { box.closest('label').querySelector('.service-quantity').disabled = !box.checked; updateCreateEstimate(); }));
+                document.querySelectorAll('.service-quantity').forEach(input => input.addEventListener('input', updateCreateEstimate));
+                renderAvailableHalls(); updateCreateEstimate();
+            } catch (error) { showToast('Lỗi', error.message || 'Không thể tải lựa chọn booking.', false); }
+        }
+
+        function renderAvailableHalls() {
+            if (!createBookingOptions) return;
+            const shift = document.getElementById('newShift').value;
+            const select = document.getElementById('newHallId');
+            const current = select.value;
+            const halls = createBookingOptions.halls.filter(x => shift === 'Ca trưa' ? x.isNoonAvailable : x.isEveningAvailable);
+            select.innerHTML = '<option value="">Chọn sảnh còn trống</option>' + halls.map(x => `<option value="${x.hallId}" data-price="${x.rentalPrice}">${escapeHtml(x.hallName)} — ${x.minimumCapacity || 0}-${x.maximumCapacity} khách</option>`).join('');
+            if (halls.some(x => String(x.hallId) === current)) select.value = current;
+            updateCreateEstimate();
+        }
+
+        function updateCreateEstimate() {
+            const optionPrice = id => Number(document.getElementById(id).selectedOptions[0]?.dataset.price || 0);
+            const tables = Number(document.getElementById('newTableCount').value || 0) + Number(document.getElementById('newSpareTableCount').value || 0);
+            let total = optionPrice('newHallId') + optionPrice('newMenuId') * tables + optionPrice('newDecorationPackageId');
+            document.querySelectorAll('.booking-service:checked').forEach(box => total += Number(box.dataset.price) * Number(box.closest('label').querySelector('.service-quantity').value || 1));
+            document.getElementById('newEstimatedTotal').textContent = `${formatNumber(total)} ₫`;
         }
 
         function closeCreateBookingModal() {
@@ -1041,17 +1153,27 @@
 
         async function handleCreateBooking(e) {
             e.preventDefault();
+            const submitButton = document.getElementById('createBookingSubmit');
+            if (submitButton.disabled) return;
             const payload = {
-                customerId: parseInt(document.getElementById('newCustomerId').value),
+                customerName: document.getElementById('newCustomerName').value.trim(),
+                phoneNumber: document.getElementById('newPhoneNumber').value.trim(),
+                email: document.getElementById('newEmail').value.trim() || null,
                 hallId: parseInt(document.getElementById('newHallId').value),
                 eventDate: document.getElementById('newEventDate').value,
                 shift: document.getElementById('newShift').value,
                 tableCount: parseInt(document.getElementById('newTableCount').value),
-                guestCount: parseInt(document.getElementById('newGuestCount').value),
-                specialRequests: document.getElementById('newSpecialRequests').value
+                spareTableCount: parseInt(document.getElementById('newSpareTableCount').value),
+                menuId: parseInt(document.getElementById('newMenuId').value) || null,
+                decorationPackageId: parseInt(document.getElementById('newDecorationPackageId').value) || null,
+                desiredStyle: document.getElementById('newDesiredStyle').value.trim() || null,
+                specialRequests: document.getElementById('newSpecialRequests').value,
+                services: Array.from(document.querySelectorAll('.booking-service:checked')).map(box => ({ serviceId: Number(box.value), quantity: Number(box.closest('label').querySelector('.service-quantity').value || 1) }))
             };
 
             try {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo...';
                 const res = await fetch('/AdminBooking/Create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1062,12 +1184,16 @@
                 if (result.success) {
                     showToast('Thành công', result.message);
                     closeCreateBookingModal();
+                    document.getElementById('createBookingForm').reset();
                     executeFilter(1);
                 } else {
                     showToast('Thất bại', result.message, false);
                 }
             } catch (err) {
                 showToast('Lỗi', 'Không thể kết nối máy chủ.', false);
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fa-solid fa-floppy-disk text-xs"></i> Lưu đơn đặt tiệc';
             }
         }
 

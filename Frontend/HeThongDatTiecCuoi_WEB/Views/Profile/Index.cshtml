@@ -1,0 +1,64 @@
+@model HeThongDatTiecCuoi_WEB.Models.Profile.ProfilePageViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Hồ sơ cá nhân";
+    var profile = Model.Profile;
+    var initials = string.IsNullOrWhiteSpace(Model.FullName)
+        ? "RP"
+        : string.Concat(Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+}
+
+@section Styles { <link rel="stylesheet" href="~/css/profile.css" asp-append-version="true" /> }
+
+<main class="profile-page">
+    <header class="profile-page-header">
+        <div><nav class="breadcrumb" aria-label="Breadcrumb">Quản trị hệ thống <span>›</span> <strong>Hồ sơ cá nhân</strong></nav><h1>Hồ sơ cá nhân</h1><p>Quản lý thông tin cá nhân và bảo mật tài khoản của bạn.</p></div>
+    </header>
+
+    @if (TempData["ProfileSuccess"] is string success) { <div class="profile-toast success">@success</div> }
+    @if (TempData["ProfileError"] is string error) { <div class="profile-toast error">@error</div> }
+
+    <div class="profile-grid">
+        <aside class="profile-summary">
+            <div class="profile-avatar">@initials</div>
+            <h2>@(string.IsNullOrWhiteSpace(Model.FullName) ? profile.Email : Model.FullName)</h2>
+            <p>@profile.RoleName</p>
+            <dl>
+                <div><dt>Mã nhân viên</dt><dd>@(profile.EmployeeCode ?? string.Empty)</dd></div>
+                <div><dt>Trạng thái</dt><dd>@profile.AccountStatus</dd></div>
+                <div><dt>Ngày tạo</dt><dd>@(profile.CreatedAt == DateTime.MinValue ? "—" : profile.CreatedAt.ToString("dd/MM/yyyy"))</dd></div>
+            </dl>
+        </aside>
+
+        <div class="profile-content">
+            <section class="profile-card">
+                <div class="profile-card-heading"><div><h2>Thông tin cá nhân</h2><p>Bạn chỉ có thể thay đổi họ tên và số điện thoại.</p></div></div>
+                <form asp-controller="Profile" asp-action="Update" method="post">
+                    <div asp-validation-summary="ModelOnly" class="profile-error"></div>
+                    <div class="profile-form-grid">
+                        <label><span>Họ và tên</span><input asp-for="FullName" autocomplete="name" /><small asp-validation-for="FullName"></small></label>
+                        <label><span>Số điện thoại</span><input asp-for="PhoneNumber" autocomplete="tel" /><small asp-validation-for="PhoneNumber"></small></label>
+                        <label><span>Email</span><input asp-for="Email" type="email" autocomplete="email" /><small asp-validation-for="Email"></small></label>
+                        <label><span>Vai trò</span><input value="@profile.RoleName" readonly /></label>
+                    </div>
+                    <button class="profile-primary" type="submit">Lưu thay đổi</button>
+                </form>
+            </section>
+
+            <section class="profile-card">
+                <div class="profile-card-heading"><div><h2>Bảo mật tài khoản</h2><p>Đổi mật khẩu sẽ đăng xuất các phiên đang hoạt động.</p></div></div>
+                <form asp-controller="Profile" asp-action="ChangePassword" method="post" class="profile-password-form">
+                    <div class="profile-form-grid">
+                        <label><span>Mật khẩu hiện tại</span><div class="profile-password-input"><input name="CurrentPassword" type="password" autocomplete="current-password" required /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu"><i class="fa-solid fa-eye" aria-hidden="true"></i></button></div></label>
+                        <span></span>
+                        <label><span>Mật khẩu mới</span><div class="profile-password-input"><input name="NewPassword" type="password" autocomplete="new-password" required /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu"><i class="fa-solid fa-eye" aria-hidden="true"></i></button></div></label>
+                        <label><span>Xác nhận mật khẩu</span><div class="profile-password-input"><input name="ConfirmPassword" type="password" autocomplete="new-password" required /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu"><i class="fa-solid fa-eye" aria-hidden="true"></i></button></div></label>
+                    </div>
+                    <button class="profile-secondary" type="submit">Đổi mật khẩu</button>
+                </form>
+            </section>
+        </div>
+    </div>
+</main>
+
+@section Scripts { <script src="~/js/profile.js" asp-append-version="true"></script> }

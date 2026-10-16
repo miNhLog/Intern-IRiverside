@@ -1,0 +1,38 @@
+@model HeThongDatTiecCuoi_WEB.Models.ManagerEventCoordination.EventCoordinationDetailViewModel
+@using System.Globalization
+@{
+    string CoordinationLabel(string state) => state switch { "ASSIGNED" => "Đã phân công", "CONFLICT" => "Xung đột lịch", "NOT_APPLICABLE" => "Không áp dụng", _ => "Chưa có điều phối" };
+    string Money(decimal? value) => value.HasValue ? value.Value.ToString("N0", CultureInfo.GetCultureInfo("vi-VN")) + " ₫" : "Chưa có thông tin";
+}
+<header class="drawer-header">
+    <button type="button" class="drawer-close" data-close-drawer aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    <span>Chi tiết tiệc</span><div class="drawer-title"><h2>@Model.BookingCode</h2><span class="event-badge booking @Model.BookingStatusCode.ToLowerInvariant()">@Model.BookingStatusName</span></div>
+    <p><i class="fa-regular fa-calendar"></i> @Model.EventDate.ToString("dd/MM/yyyy") <b>·</b> @Model.Shift</p><p><i class="fa-solid fa-location-dot"></i> @Model.HallName</p>
+</header>
+<div class="drawer-tabs" role="tablist">
+    <button type="button" class="active" data-drawer-tab="overview">Tổng quan</button><button type="button" data-drawer-tab="content">Nội dung tiệc</button><button type="button" data-drawer-tab="coordination">Điều phối</button><button type="button" data-drawer-tab="history">Lịch sử thay đổi lịch</button><button type="button" data-drawer-tab="incidents">Sự cố</button>
+</div>
+<div class="drawer-body">
+    <section class="drawer-panel active" data-drawer-panel="overview">
+        <article class="detail-card"><h3><i class="fa-regular fa-clipboard"></i> Thông tin chung</h3><dl class="detail-grid"><div><dt>Mã tiệc</dt><dd>@Model.BookingCode</dd></div><div><dt>Trạng thái</dt><dd>@Model.BookingStatusName</dd></div><div><dt>Ngày &amp; ca</dt><dd>@Model.EventDate.ToString("dd/MM/yyyy") · @Model.Shift</dd></div><div><dt>Sảnh</dt><dd>@Model.HallName</dd></div><div><dt>Khách hàng</dt><dd>@Model.CustomerName</dd></div><div><dt>Số điện thoại</dt><dd>@Model.CustomerPhone</dd></div><div><dt>Email</dt><dd>@(Model.CustomerEmail ?? "Chưa có thông tin")</dd></div><div><dt>Số khách</dt><dd>@Model.GuestCount khách</dd></div><div><dt>Quản lý sảnh</dt><dd>@(Model.HallManagerName ?? "Chưa bổ nhiệm")</dd></div><div><dt>Điều phối viên</dt><dd>@(Model.CoordinatorName ?? "Chưa có điều phối viên")</dd></div><div><dt>Tình trạng điều phối</dt><dd><span class="event-badge coordination @Model.CoordinationState.ToLowerInvariant()">@CoordinationLabel(Model.CoordinationState)</span></dd></div><div><dt>Ngày phân công</dt><dd>@(Model.AssignedAt?.ToString("dd/MM/yyyy HH:mm") ?? "-")</dd></div></dl></article>
+        <article class="detail-card"><h3><i class="fa-solid fa-chart-line"></i> Tình trạng vận hành</h3><div class="operation-grid"><div><span>Trạng thái tiệc</span><strong>@Model.BookingStatusName</strong></div><div><span>Điều phối</span><strong>@CoordinationLabel(Model.CoordinationState)</strong></div><div><span>Sự cố đang mở</span><strong>@Model.OpenIncidentCount</strong></div><div><span>Lần thay đổi lịch</span><strong>@Model.ScheduleChangeCount</strong></div></div></article>
+    </section>
+    <section class="drawer-panel" data-drawer-panel="content">
+        <article class="detail-card"><h3>Thực đơn &amp; trang trí</h3><dl class="detail-grid"><div><dt>Thực đơn</dt><dd>@(Model.MenuName ?? "Chưa có thông tin")</dd></div><div><dt>Giá thực đơn chốt</dt><dd>@Money(Model.FinalMenuPrice)</dd></div><div><dt>Gói trang trí</dt><dd>@(Model.DecorationName ?? "Chưa có thông tin")</dd></div><div><dt>Giá trang trí chốt</dt><dd>@Money(Model.FinalDecorationPrice)</dd></div><div><dt>Giá sảnh chốt</dt><dd>@Money(Model.FinalHallPrice)</dd></div><div><dt>Tổng tiền dự kiến</dt><dd>@Money(Model.EstimatedTotal)</dd></div></dl></article>
+        <article class="detail-card"><h3>Dịch vụ đi kèm</h3>@if (Model.Services.Count == 0) { <p class="drawer-empty">Chưa có thông tin.</p> } else { <ul class="service-list">@foreach (var service in Model.Services) { <li><span><strong>@service.ServiceName</strong><small>Số lượng: @service.Quantity</small></span><b>@Money(service.FinalUnitPrice)</b></li> }</ul> }</article>
+        <article class="detail-card"><h3>Yêu cầu đặc biệt</h3><p>@(string.IsNullOrWhiteSpace(Model.SpecialRequests) ? "Chưa có thông tin." : Model.SpecialRequests)</p></article>
+    </section>
+    <section class="drawer-panel" data-drawer-panel="coordination">
+        @if (Model.HasConflict) { <div class="drawer-warning"><i class="fa-solid fa-triangle-exclamation"></i> Điều phối viên này đang được phân công cho nhiều tiệc trong cùng ngày và ca tổ chức.</div> }
+        @if (Model.Assignments.Count == 0) { <div class="drawer-empty tall"><i class="fa-solid fa-user-clock"></i><strong>Tiệc chưa được phân công Điều phối viên.</strong></div> }
+        @foreach (var assignment in Model.Assignments) { <article class="timeline-card"><header><strong>@assignment.CoordinatorName</strong><span class="event-badge coordination @assignment.StatusCode.ToLowerInvariant()">@assignment.StatusName</span></header><dl><div><dt>Mã nhân viên</dt><dd>@assignment.CoordinatorCode</dd></div><div><dt>Thời điểm phân công</dt><dd>@assignment.AssignedAt.ToString("dd/MM/yyyy HH:mm")</dd></div><div><dt>Quản lý sảnh phân công</dt><dd>@assignment.AssignedByName</dd></div></dl></article> }
+    </section>
+    <section class="drawer-panel" data-drawer-panel="history">
+        @if (Model.ScheduleChanges.Count == 0) { <div class="drawer-empty tall"><i class="fa-regular fa-calendar-xmark"></i><strong>Tiệc chưa có lịch sử thay đổi lịch.</strong></div> }
+        @foreach (var change in Model.ScheduleChanges) { <article class="timeline-card"><header><strong>@change.RequestedAt.ToString("dd/MM/yyyy HH:mm")</strong><span>@change.StatusName</span></header><p><b>Từ:</b> @change.OldHallName · @change.OldDate.ToString("dd/MM/yyyy") · @change.OldShift</p><p><b>Đến:</b> @change.NewHallName · @change.NewDate.ToString("dd/MM/yyyy") · @change.NewShift</p><p><b>Lý do:</b> @(change.Reason ?? "Không ghi nhận")</p>@if (change.ProcessedAt.HasValue) { <small>Xử lý lúc @change.ProcessedAt.Value.ToString("dd/MM/yyyy HH:mm")</small> }</article> }
+    </section>
+    <section class="drawer-panel" data-drawer-panel="incidents">
+        @if (Model.Incidents.Count == 0) { <div class="drawer-empty tall"><i class="fa-solid fa-shield-halved"></i><strong>Tiệc chưa ghi nhận sự cố.</strong></div> }
+        @foreach (var incident in Model.Incidents) { <article class="timeline-card incident"><header><strong>@incident.IncidentType</strong><span class="severity @incident.Severity.ToLowerInvariant().Replace(" ", "-")">@incident.Severity</span></header><p>@incident.Description</p><dl><div><dt>Trạng thái</dt><dd>@incident.StatusName</dd></div><div><dt>Người báo</dt><dd>@(incident.ReportedByName ?? "Không ghi nhận")</dd></div><div><dt>Phát sinh</dt><dd>@incident.OccurredAt.ToString("dd/MM/yyyy HH:mm")</dd></div></dl>@if (!string.IsNullOrWhiteSpace(incident.Resolution)) { <p><b>Hướng xử lý:</b> @incident.Resolution</p> }@if (incident.ResolvedAt.HasValue) { <small>Hoàn tất @incident.ResolvedAt.Value.ToString("dd/MM/yyyy HH:mm")</small> }</article> }
+    </section>
+</div>

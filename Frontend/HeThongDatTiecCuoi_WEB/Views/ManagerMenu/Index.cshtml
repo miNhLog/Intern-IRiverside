@@ -1,0 +1,70 @@
+@using System.Globalization
+@using HeThongDatTiecCuoi_WEB.Constants.StatusCodes
+@model HeThongDatTiecCuoi_WEB.Models.ManagerMenu.ManagerMenuPageViewModel
+@{ Layout = "_AdminLayout"; ViewData["Title"] = "Quản lý thực đơn"; var vi = CultureInfo.GetCultureInfo("vi-VN"); }
+@section Styles { <link rel="stylesheet" href="~/css/manager-menu.css" asp-append-version="true" /> }
+
+<section class="mm-page" data-detail-url="/quan-ly/thuc-don" data-dishes-url="@Url.Action("AvailableDishes")">
+    @Html.AntiForgeryToken()
+    <header class="mm-header manager-section-header">
+        <div><div class="mm-breadcrumb breadcrumb">Quản trị hệ thống <i class="fa-solid fa-chevron-right"></i> <strong>Thực đơn</strong></div><h1>Quản lý thực đơn</h1><p>Quản lý các thực đơn và danh sách món ăn trong từng thực đơn.</p></div>
+        <button class="mm-btn gold admin-create-button" type="button" data-modal-open="createModal"><i class="fa-solid fa-plus"></i> Thêm thực đơn</button>
+    </header>
+
+    @if (TempData["Success"] is string success) { <div class="mm-alert success">@success</div> }
+    @if (TempData["Error"] is string error) { <div class="mm-alert error">@error</div> }
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage)) { <div class="mm-alert error">@Model.ErrorMessage</div> }
+
+    <div class="mm-kpis">
+        <article><span class="icon gold"><i class="fa-regular fa-rectangle-list"></i></span><div><small>Tổng thực đơn</small><strong>@Model.TotalMenus</strong></div></article>
+        <article><span class="icon green"><i class="fa-regular fa-circle-check"></i></span><div><small>Đang áp dụng</small><strong>@Model.ActiveMenus</strong></div></article>
+        <article><span class="icon orange"><i class="fa-regular fa-circle-pause"></i></span><div><small>Tạm ngưng</small><strong>@Model.InactiveMenus</strong></div></article>
+        <article><span class="icon gold"><i class="fa-solid fa-coins"></i></span><div><small>Giá trung bình / bàn</small><strong>@Model.AveragePricePerTable.ToString("N0", vi) đ</strong></div></article>
+    </div>
+
+    <form method="get" class="mm-filters">
+        <label><i class="fa-solid fa-magnifying-glass"></i><input name="keyword" value="@Model.Keyword" placeholder="Tìm theo mã hoặc tên thực đơn..." /></label>
+        <select name="status" onchange="this.form.submit()"><option value="">Tất cả trạng thái</option><option value="ACTIVE" selected="@(Model.Status == "ACTIVE" ? "selected" : null)">Đang áp dụng</option><option value="INACTIVE" selected="@(Model.Status == "INACTIVE" ? "selected" : null)">Tạm ngưng</option></select>
+        <button class="mm-btn navy" type="submit">Tìm kiếm</button>
+    </form>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="mm-empty"><i class="fa-solid fa-book-open"></i><h2>@(string.IsNullOrWhiteSpace(Model.Keyword) && string.IsNullOrWhiteSpace(Model.Status) ? "Chưa có thực đơn." : "Không tìm thấy thực đơn phù hợp.")</h2><button class="mm-btn gold admin-create-button" type="button" data-modal-open="createModal">Thêm thực đơn</button></div>
+    }
+    else
+    {
+        <div class="mm-list">
+        @for (var rowStart = 0; rowStart < Model.Items.Count; rowStart += 2)
+        {
+            <div class="mm-row">
+            @foreach (var menu in Model.Items.Skip(rowStart).Take(2))
+            {
+                <article class="mm-card" data-menu-id="@menu.MenuId" data-code="@menu.MenuCode" data-name="@menu.MenuName" data-description="@menu.Description" data-price="@menu.PricePerTable" data-status="@menu.Status" data-count="@menu.DishCount" data-in-use="@menu.IsInUse.ToString().ToLowerInvariant()">
+                    <div class="mm-card-icon"><i class="fa-solid fa-book-open"></i></div>
+                    <div class="mm-card-main"><span class="mm-code">@menu.MenuCode</span><h2>@menu.MenuName</h2><div class="mm-meta"><span><i class="fa-solid fa-bowl-food"></i> @menu.DishCount món</span><span><i class="fa-solid fa-coins"></i> @menu.PricePerTable.ToString("N0", vi) đ / bàn</span></div></div>
+                    <div class="mm-card-actions"><span class="mm-badge @(menu.Status == MenuStatusCodes.Active ? "active" : "inactive")">@(menu.Status == MenuStatusCodes.Active ? "Đang áp dụng" : "Tạm ngưng")</span><button type="button" class="mm-detail-btn" data-detail-toggle>Xem chi tiết</button><details><summary aria-label="Thao tác"><i class="fa-solid fa-ellipsis-vertical"></i></summary><div><button type="button" data-edit>Chỉnh sửa</button><form method="post" action="@Url.Action("Status", new { menuId = menu.MenuId })">@Html.AntiForgeryToken()<input type="hidden" name="status" value="@(menu.Status == MenuStatusCodes.Active ? MenuStatusCodes.Inactive : MenuStatusCodes.Active)" /><button type="submit">@(menu.Status == MenuStatusCodes.Active ? "Chuyển sang Tạm ngưng" : "Áp dụng lại")</button></form></div></details></div>
+                </article>
+            }
+            <div class="mm-detail-slot" hidden></div>
+            </div>
+        }
+        </div>
+    }
+
+    @if (Model.TotalItems > 0)
+    {
+        var first = (Model.Page - 1) * Model.PageSize + 1; var last = Math.Min(Model.Page * Model.PageSize, Model.TotalItems);
+        <footer class="mm-pagination"><span>Hiển thị @first - @last trong tổng số @Model.TotalItems thực đơn</span><nav>
+            <a class="@(Model.Page <= 1 ? "disabled" : "")" href="@Url.Action("Index", new { keyword=Model.Keyword, status=Model.Status, page=Model.Page-1 })">‹</a>
+            @for (var p = Math.Max(1, Model.Page - 2); p <= Math.Min(Model.TotalPages, Model.Page + 2); p++) { <a class="@(p == Model.Page ? "current" : "")" href="@Url.Action("Index", new { keyword=Model.Keyword, status=Model.Status, page=p })">@p</a> }
+            <a class="@(Model.Page >= Model.TotalPages ? "disabled" : "")" href="@Url.Action("Index", new { keyword=Model.Keyword, status=Model.Status, page=Model.Page+1 })">›</a>
+        </nav></footer>
+    }
+</section>
+
+<div class="mm-modal" id="createModal" hidden><form method="post" action="@Url.Action("Create")" class="mm-modal-box">@Html.AntiForgeryToken()<header><h2>Thêm thực đơn</h2><button type="button" data-modal-close>×</button></header><label>Tên thực đơn *<input name="MenuName" maxlength="200" required /></label><label>Giá / bàn *<input name="PricePerTable" type="number" min="0" required /></label><label>Mô tả<textarea name="Description" maxlength="1000" rows="4"></textarea></label><footer><button type="button" class="mm-btn light" data-modal-close>Hủy</button><button class="mm-btn gold" type="submit">Thêm thực đơn</button></footer></form></div>
+<div class="mm-modal" id="editModal" hidden><form method="post" action="@Url.Action("Update")" class="mm-modal-box">@Html.AntiForgeryToken()<input type="hidden" name="MenuId" /><header><h2>Chỉnh sửa thực đơn</h2><button type="button" data-modal-close>×</button></header><label>Mã thực đơn<input name="MenuCode" disabled /></label><label>Tên thực đơn *<input name="MenuName" maxlength="200" required /></label><label>Giá / bàn *<input name="PricePerTable" type="number" min="0" required /></label><label>Mô tả<textarea name="Description" maxlength="1000" rows="4"></textarea></label><footer><button type="button" class="mm-btn light" data-modal-close>Hủy</button><button class="mm-btn gold" type="submit">Lưu thay đổi</button></footer></form></div>
+<div class="mm-modal" id="dishModal" hidden><form class="mm-modal-box wide" id="dishForm">@Html.AntiForgeryToken()<input type="hidden" name="MenuId" /><header><div><h2>Thêm món vào thực đơn</h2><p>Chỉ hiển thị món đang phục vụ và chưa có trong thực đơn.</p></div><button type="button" data-modal-close>×</button></header><div class="mm-dish-filters"><input type="search" id="dishSearch" placeholder="Tìm món ăn..." /><select id="dishCategory"><option value="">Tất cả danh mục</option><option>Món khai vị</option><option>Món súp</option><option>Món chính</option><option>Món tráng miệng</option></select></div><div id="availableDishes" class="mm-dish-picker"></div><footer><span id="dishSelectedCount">Đã chọn 0 món</span><button type="button" class="mm-btn light" data-modal-close>Hủy</button><button class="mm-btn gold" type="submit">Thêm vào thực đơn</button></footer></form></div>
+
+@section Scripts { <script src="~/js/manager-menu.js" asp-append-version="true"></script> }

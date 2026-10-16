@@ -158,6 +158,55 @@
 .manager-page-header-actions small i { margin-right: 4px; color: #a77b28; }
 .manager-page-header-actions a { display: inline-flex; align-items: center; gap: 7px; color: #9b722d; font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
 .manager-page-header-actions a:hover { color: #755316; text-decoration: underline; }
+
+/* Tiêu đề dùng chung cho toàn bộ chức năng của Quản lý. */
+.manager-section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 22px;
+}
+.manager-section-header .breadcrumb,
+.manager-section-header nav[aria-label="Breadcrumb"] {
+    margin: 0 0 7px !important;
+    color: #637186 !important;
+    font-family: "Be Vietnam Pro", sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1.45 !important;
+}
+.manager-section-header .breadcrumb span,
+.manager-section-header nav[aria-label="Breadcrumb"] i {
+    color: #a3acb8 !important;
+}
+.manager-section-header .breadcrumb strong,
+.manager-section-header nav[aria-label="Breadcrumb"] > :last-child {
+    color: #a77b28 !important;
+    font-weight: 600 !important;
+}
+.manager-section-header h1,
+.manager-section-header h2 {
+    margin: 0 !important;
+    color: #142033 !important;
+    font-family: "Be Vietnam Pro", sans-serif !important;
+    font-size: 26px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+}
+.manager-section-header h1 > i,
+.manager-section-header h2 > i {
+    display: none;
+}
+.manager-section-header p {
+    margin: 5px 0 0 !important;
+    color: #728096 !important;
+    font-family: "Be Vietnam Pro", sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    line-height: 1.5 !important;
+}
 .manager-data-alert { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding: 13px 15px; border: 1px solid #f0b7b3; border-radius: 10px; color: #9f2d27; background: #fff4f3; font-size: 13px; }
 .manager-kpi-card { transition: transform .16s ease, box-shadow .16s ease; }
 .manager-kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(15, 23, 42, .07); }
@@ -222,6 +271,36 @@
 .assignment-actions { display: flex; align-items: end; justify-content: end; }
 .assignment-form :disabled { cursor: not-allowed; opacity: .78; }
 
+/* Nút tạo mới dùng chung trên các màn hình quản trị. */
+.admin-create-button {
+    min-height: 40px !important;
+    box-sizing: border-box;
+    padding: 0 16px !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    color: #fff !important;
+    background: #102b43 !important;
+    box-shadow: 0 6px 16px rgba(16, 43, 67, .16) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: background-color .18s !important;
+}
+.admin-create-button:hover {
+    color: #fff !important;
+    background: #0b2034 !important;
+}
+.admin-create-button:focus-visible {
+    outline: 3px solid rgba(16, 43, 67, .22);
+    outline-offset: 2px;
+}
+
 /* Khu vực vận hành của Quản lý sảnh: chỉ xem và điều phối trong phạm vi được giao. */
 .hall-schedule-table-wrap { overflow-x: auto; background: #fff; border: 1px solid #e2e5e9; border-radius: 12px; box-shadow: 0 3px 14px rgba(0, 0, 0, .04); }
 .hall-schedule-table { width: 100%; min-width: 620px; border-collapse: collapse; }
@@ -248,6 +327,12 @@
 
 @media (max-width: 1100px) { .manager-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .manager-operational-grid { grid-template-columns: 1fr; } .assignment-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .assignment-note { grid-column: span 2; } .coordinator-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .manager-overview-page { padding: 0 18px 28px; } .manager-page-header { align-items: stretch; flex-direction: column; padding: 18px 0; } .manager-page-header h1 { font-size: 24px; } .manager-page-header-actions { align-items: flex-start; } .manager-kpi-grid, .manager-overview-grid, .assignment-form, .coordinator-kpi-grid, .coordinator-detail-grid, .manager-recent-grid { grid-template-columns: 1fr; } .manager-booking-item:nth-child(odd) { border-right: 0; } .assignment-note { grid-column: auto; } .assignment-hero { align-items: stretch; flex-direction: column; } .assignment-hero .btn-add { width: 100%; } }
+
+@media (max-width: 760px) {
+    .manager-section-header { align-items: stretch; flex-direction: column; gap: 14px; }
+    .manager-section-header h1,
+    .manager-section-header h2 { font-size: 24px !important; }
+}
 
 @media (max-width: 760px) {
     .backoffice-topbar { min-height: 60px; gap: 12px; padding: 0 16px; }

@@ -45,6 +45,7 @@ public sealed class PublicHallDetailDto
     public decimal RentalPrice { get; set; }
     public string? Description { get; set; }
     public string? ImageUrl { get; set; }
+    public List<string> ImageUrls { get; set; } = [];
     public string Status { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
 }
@@ -59,6 +60,7 @@ public sealed class HallDetailViewModel
     public decimal RentalPrice { get; init; }
     public string? Description { get; init; }
     public string? ImageUrl { get; init; }
+    public IReadOnlyList<string> ImageUrls { get; init; } = [];
     public string Status { get; init; } = string.Empty;
     public string StatusName { get; init; } = string.Empty;
     public bool IsNotFound { get; init; }

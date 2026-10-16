@@ -1,0 +1,174 @@
+/*
+ * Riverside Palace back-office page heading system.
+ * Loaded after every module stylesheet so legacy page spacing cannot offset headings.
+ */
+.backoffice-app {
+    --rp-page-inline: 32px;
+    --rp-page-top: 22px;
+    --rp-page-bottom: 44px;
+    --rp-heading-gap: 22px;
+}
+
+/* Pages whose heading lives inside the page wrapper. */
+.backoffice-app #adminMainContent > :is(
+    .manager-overview-page,
+    .admin-dashboard-page,
+    .account-management-page,
+    .audit-page,
+    .role-change-page,
+    .contract-payment-page,
+    .md-page,
+    .mm-page,
+    .hr-page,
+    .event-page,
+    .notifications-page,
+    .profile-page,
+    .booking-page-wrapper,
+    .policy-page,
+    .bi-page-wrapper
+) {
+    padding-top: var(--rp-page-top) !important;
+    padding-right: var(--rp-page-inline) !important;
+    padding-bottom: var(--rp-page-bottom) !important;
+    padding-left: var(--rp-page-inline) !important;
+}
+
+.backoffice-app #adminMainContent :is(
+    .manager-page-header,
+    .dashboard-page-header,
+    .account-management-header,
+    .audit-page-header,
+    .role-change-header,
+    .cp-page-head,
+    .md-header,
+    .mm-header,
+    .hr-header,
+    .event-header,
+    .profile-page-header,
+    .notifications-page > header,
+    .booking-page-wrapper > .manager-section-header,
+    .policy-page > .manager-section-header,
+    .bi-page-wrapper > .manager-section-header
+) {
+    min-height: 0 !important;
+    margin: 0 0 var(--rp-heading-gap) !important;
+    padding: 0 !important;
+}
+
+/* Pages with a legacy header outside their content wrapper. */
+.backoffice-app #adminMainContent > .top-header {
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: var(--rp-page-top) var(--rp-page-inline) 0 !important;
+    border: 0 !important;
+    background: var(--rp-bg) !important;
+}
+.backoffice-app #adminMainContent > .top-header + .content {
+    padding: var(--rp-heading-gap) var(--rp-page-inline) var(--rp-page-bottom) !important;
+}
+
+/* Legacy sticky title wrappers should not look like a card around the page heading. */
+.backoffice-app #adminMainContent .backoffice-function-header-shell {
+    position: static !important;
+    margin: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.backoffice-app #adminMainContent .backoffice-function-header-shell > .manager-section-header {
+    margin: 0 0 var(--rp-heading-gap) !important;
+    padding: var(--rp-page-top) var(--rp-page-inline) 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+}
+
+/* Decor/service catalog follows the same centered workspace as other modules. */
+.backoffice-app #adminMainContent > .decor-page-wrapper {
+    min-height: calc(100vh - 76px) !important;
+    box-sizing: border-box;
+    display: block !important;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: var(--rp-page-top) var(--rp-page-inline) var(--rp-page-bottom) !important;
+    background: var(--rp-bg);
+}
+.backoffice-app #adminMainContent .decor-page-wrapper .backoffice-function-header-shell > .manager-section-header {
+    margin-bottom: var(--rp-heading-gap) !important;
+    padding: 0 !important;
+}
+.backoffice-app #adminMainContent .decor-page-wrapper .backoffice-function-header-shell > div:last-child {
+    margin: 0 0 var(--rp-heading-gap);
+    padding: 0 20px !important;
+    border: 1px solid var(--rp-border);
+    border-radius: var(--rp-radius-lg);
+    background: #fff !important;
+    box-shadow: var(--rp-shadow-sm);
+}
+.backoffice-app #adminMainContent .decor-page-wrapper > .backoffice-function-header-shell + div {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* One typography rhythm for every functional heading. */
+.backoffice-app #adminMainContent :is(
+    .manager-page-header,
+    .dashboard-page-header,
+    .account-management-header,
+    .audit-page-header,
+    .role-change-header,
+    .cp-page-head,
+    .md-header,
+    .mm-header,
+    .hr-header,
+    .event-header,
+    .profile-page-header,
+    .notifications-page > header,
+    .manager-section-header
+) :is(h1,h2) {
+    margin: 0 !important;
+    color: var(--rp-text) !important;
+    font-size: clamp(28px,2.15vw,32px) !important;
+    font-weight: 800 !important;
+    letter-spacing: -.025em !important;
+    line-height: 1.2 !important;
+    text-transform: none !important;
+}
+.backoffice-app #adminMainContent :is(
+    .manager-page-header,
+    .dashboard-page-header,
+    .account-management-header,
+    .audit-page-header,
+    .role-change-header,
+    .cp-page-head,
+    .md-header,
+    .mm-header,
+    .hr-header,
+    .event-header,
+    .profile-page-header,
+    .notifications-page > header,
+    .manager-section-header
+) p {
+    margin: 7px 0 0 !important;
+    color: var(--rp-text-muted) !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    line-height: 1.55 !important;
+}
+
+@media (max-width: 850px) {
+    .backoffice-app { --rp-page-inline: 18px; --rp-page-top: 18px; --rp-page-bottom: 32px; --rp-heading-gap: 18px; }
+}
+
+@media (max-width: 680px) {
+    .backoffice-app #adminMainContent :is(
+        .manager-page-header,.dashboard-page-header,.account-management-header,.audit-page-header,
+        .role-change-header,.cp-page-head,.md-header,.mm-header,.hr-header,.event-header,
+        .profile-page-header,.notifications-page > header,.manager-section-header
+    ) {
+        align-items: stretch !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+    }
+}

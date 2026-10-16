@@ -11,6 +11,9 @@ public sealed class MyBookingDto
     public DateTime EventDate { get; set; }
     public string Shift { get; set; } = string.Empty;
     public int GuestCount { get; set; }
+    // LỖI D: list cũ /MyBookings hiện 0 bàn vì thiếu 2 field FE đang bind.
+    public int TableCount { get; set; }
+    public string Status { get; set; } = string.Empty;
     public string? MenuName { get; set; }
     public decimal? FinalMenuPrice { get; set; }
     public string? DecorName { get; set; }

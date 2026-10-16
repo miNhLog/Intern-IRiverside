@@ -1,0 +1,90 @@
+@model HeThongDatTiecCuoi_WEB.Models.ManagerEventCoordination.ManagerEventCoordinationPageViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Tiệc & Điều phối";
+    string CoordinationLabel(string state) => state switch { "ASSIGNED" => "Đã phân công", "CONFLICT" => "Xung đột lịch", "NOT_APPLICABLE" => "Không áp dụng", _ => "Chưa có điều phối" };
+}
+@section Styles { <link rel="stylesheet" href="~/css/manager-event-coordination.css" asp-append-version="true" /> }
+
+<main class="event-page" data-event-page>
+    <header class="event-header">
+        <nav class="event-breadcrumb breadcrumb" aria-label="Breadcrumb">Quản trị hệ thống <i class="fa-solid fa-chevron-right" aria-hidden="true"></i> <strong>Tiệc &amp; Điều phối</strong></nav>
+        <h1>Tiệc &amp; Điều phối</h1>
+        <p>Theo dõi tình trạng các tiệc cưới và điều phối nhân sự trên toàn hệ thống</p>
+    </header>
+
+    <div class="event-tabs" role="tablist" aria-label="Chế độ xem">
+        <button type="button" class="active" role="tab" aria-selected="true" data-main-tab="list">Danh sách tiệc</button>
+        <button type="button" role="tab" aria-selected="false" data-main-tab="calendar">Lịch điều phối</button>
+    </div>
+
+    <section class="event-panel active" data-main-panel="list">
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage)) { <div class="event-alert"><i class="fa-solid fa-circle-exclamation"></i> @Model.ErrorMessage</div> }
+        <div class="event-kpis">
+            <article><span class="kpi-icon gold"><i class="fa-regular fa-calendar"></i></span><div><small>Tiệc sắp diễn ra</small><strong>@Model.Data.Kpi.UpcomingCount</strong><em>Trong 7 ngày tới</em></div></article>
+            <article><span class="kpi-icon red"><i class="fa-solid fa-user-xmark"></i></span><div><small>Chưa có điều phối</small><strong>@Model.Data.Kpi.UnassignedCount</strong><em>Cần được phân công</em></div></article>
+            <article><span class="kpi-icon blue"><i class="fa-solid fa-gears"></i></span><div><small>Đang chuẩn bị</small><strong>@Model.Data.Kpi.PreparingCount</strong><em>Tiệc đang triển khai</em></div></article>
+            <article><span class="kpi-icon purple"><i class="fa-solid fa-triangle-exclamation"></i></span><div><small>Có sự cố cần chú ý</small><strong>@Model.Data.Kpi.IncidentAttentionCount</strong><em>Tiệc có sự cố đang mở</em></div></article>
+        </div>
+
+        <form method="get" class="event-filters">
+            <label class="event-search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="search" value="@Model.Search" placeholder="Tìm theo mã tiệc, khách hàng, sảnh..." /></label>
+            <label><span>Trạng thái tiệc</span><select name="bookingStatus"><option value="">Tất cả</option>@foreach (var option in Model.Data.BookingStatuses) { <option value="@option.Value" selected="@(Model.BookingStatus == option.Value)">@option.Label</option> }</select></label>
+            <label><span>Tình trạng điều phối</span><select name="coordinationStatus"><option value="">Tất cả</option><option value="ASSIGNED" selected="@(Model.CoordinationStatus == "ASSIGNED")">Đã phân công</option><option value="UNASSIGNED" selected="@(Model.CoordinationStatus == "UNASSIGNED")">Chưa có điều phối</option><option value="CONFLICT" selected="@(Model.CoordinationStatus == "CONFLICT")">Có xung đột</option></select></label>
+            <label><span>Từ ngày</span><input type="date" name="fromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" /></label>
+            <label><span>Đến ngày</span><input type="date" name="toDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" /></label>
+            <button type="submit" class="filter-submit"><i class="fa-solid fa-filter"></i> Tìm kiếm</button>
+            <a asp-action="Index" class="filter-reset" title="Đặt lại bộ lọc" aria-label="Đặt lại bộ lọc"><i class="fa-solid fa-rotate-left"></i></a>
+        </form>
+
+        <div class="event-table-wrap">
+            <table class="event-table">
+                <thead><tr><th>Mã tiệc</th><th>Ngày &amp; Ca</th><th>Sảnh</th><th>Khách hàng</th><th>Trạng thái tiệc</th><th>Quản lý sảnh</th><th>Điều phối viên</th><th>Tình trạng điều phối</th><th>Thao tác</th></tr></thead>
+                <tbody>
+                @if (Model.Data.Items.Count == 0)
+                {
+                    <tr><td colspan="9" class="event-empty"><i class="fa-regular fa-calendar-xmark"></i><strong>Không tìm thấy tiệc phù hợp với bộ lọc.</strong></td></tr>
+                }
+                @foreach (var item in Model.Data.Items)
+                {
+                    <tr>
+                        <td><strong class="booking-code">@item.BookingCode</strong></td>
+                        <td><strong>@item.EventDate.ToString("dd/MM/yyyy")</strong><small>@item.Shift</small></td>
+                        <td>@item.HallName</td><td>@item.CustomerName</td>
+                        <td><span class="event-badge booking @item.BookingStatusCode.ToLowerInvariant()">@item.BookingStatusName</span></td>
+                        <td>@(item.HallManagerName ?? "Chưa bổ nhiệm")</td>
+                        <td>@(item.CoordinatorName ?? "-")</td>
+                        <td><span class="event-badge coordination @item.CoordinationState.ToLowerInvariant()">@CoordinationLabel(item.CoordinationState)</span></td>
+                        <td><button type="button" class="view-event" data-booking-id="@item.BookingId" aria-label="Xem chi tiết @item.BookingCode" title="Xem chi tiết"><i class="fa-regular fa-eye"></i></button></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <footer class="event-list-footer">
+            <span>Hiển thị @Model.Data.Items.Count trên @Model.Data.TotalItems tiệc</span>
+            @if (Model.Data.TotalPages > 1)
+            {
+                <nav class="event-pagination" aria-label="Phân trang">
+                    @for (var p = 1; p <= Model.Data.TotalPages; p++)
+                    {
+                        <a class="@(p == Model.Data.Page ? "active" : "")" asp-route-page="@p" asp-route-search="@Model.Search" asp-route-bookingStatus="@Model.BookingStatus" asp-route-coordinationStatus="@Model.CoordinationStatus" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">@p</a>
+                    }
+                </nav>
+            }
+        </footer>
+    </section>
+
+    <section class="event-panel" data-main-panel="calendar">
+        <div class="calendar-toolbar">
+            <div class="week-navigation"><button type="button" data-week="previous" aria-label="Tuần trước"><i class="fa-solid fa-chevron-left"></i></button><button type="button" data-week="today">Hôm nay</button><button type="button" data-week="next" aria-label="Tuần sau"><i class="fa-solid fa-chevron-right"></i></button><strong id="weekLabel"></strong></div>
+            <div class="calendar-filters"><select id="calendarHall"><option value="">Tất cả sảnh</option>@foreach (var option in Model.Data.Halls) { <option value="@option.Value">@option.Label</option> }</select><select id="calendarCoordinator"><option value="">Tất cả điều phối viên</option>@foreach (var option in Model.Data.Coordinators) { <option value="@option.Value">@option.Label</option> }</select><label class="conflict-toggle"><input type="checkbox" id="calendarConflicts" /> Chỉ hiển thị xung đột</label></div>
+        </div>
+        <div id="calendarContent" class="calendar-content"><div class="event-loading"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải lịch...</div></div>
+    </section>
+</main>
+
+<div class="event-drawer-overlay" id="eventDrawerOverlay" hidden></div>
+<aside class="event-drawer" id="eventDrawer" aria-hidden="true" aria-label="Chi tiết tiệc"><div id="eventDrawerContent"><div class="drawer-loading"><i class="fa-solid fa-spinner fa-spin"></i><span>Đang tải chi tiết...</span></div></div></aside>
+
+@section Scripts { <script src="~/js/manager-event-coordination.js" asp-append-version="true"></script> }

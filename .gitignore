@@ -361,3 +361,25 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Python cache & venv
+__pycache__/
+*.py[cod]
+.venv/
+env/
+venv/
+*.log
+# Word documents & temp files
+*.docx
+*.doc
+~$*.docx
+*_Backup.docx
+
+# AI & Vector DB Cache
+**/__pycache__/
+AI_Service/data/chroma_db/
+*.pyc
+.venv/
+# Word & Temp
+*.docx
+~$*.docx

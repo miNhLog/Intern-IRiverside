@@ -1,6 +1,10 @@
 using HeThongDatTiecCuoi_WEB.Controllers;
 using HeThongDatTiecCuoi_WEB.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Localization;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Globalization;
 
 const string externalCookieScheme = "External";
 
@@ -39,6 +43,34 @@ builder.Services
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.SlidingExpiration = true;
         options.ExpireTimeSpan = TimeSpan.FromHours(1);
+        options.Events.OnValidatePrincipal = async context =>
+        {
+            var accessToken = context.Request.Cookies["rp_api_token"];
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                context.RejectPrincipal();
+                return;
+            }
+
+            try
+            {
+                var client = context.HttpContext.RequestServices
+                    .GetRequiredService<IHttpClientFactory>()
+                    .CreateClient("RiversideApi");
+                using var request = new HttpRequestMessage(HttpMethod.Get, "api/auth/me");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                using var response = await client.SendAsync(request, context.HttpContext.RequestAborted);
+                if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    context.RejectPrincipal();
+                    context.Response.Cookies.Delete("rp_api_token");
+                }
+            }
+            catch (HttpRequestException)
+            {
+                // A temporary API outage must not destroy an otherwise valid local session.
+            }
+        };
     })
     .AddCookie(externalCookieScheme, options =>
     {
@@ -60,6 +92,13 @@ builder.Services
         options.SaveTokens = true;
     });
 builder.Services.AddAuthorization();
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var vietnameseCulture = CultureInfo.GetCultureInfo("vi-VN");
+    options.DefaultRequestCulture = new RequestCulture(vietnameseCulture);
+    options.SupportedCultures = [vietnameseCulture];
+    options.SupportedUICultures = [vietnameseCulture];
+});
 
 var app = builder.Build();
 
@@ -71,6 +110,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseRequestLocalization();
 app.UseRouting();
 app.UseAuthentication();
 

@@ -24,7 +24,9 @@ public sealed class JwtTokenService : IJwtTokenService
             ? now.AddDays(_options.RememberMeDays)
             : now.AddMinutes(_options.AccessTokenMinutes);
 
-        var displayName = user.Customer?.FullName ?? user.Employee?.FullName ?? user.Email;
+        // Tài khoản nội bộ có thể từng phát sinh hồ sơ khách hàng khi thử đặt tiệc.
+        // Luôn ưu tiên hồ sơ nhân viên để claim tên không bị đổi thành tên người đặt tiệc.
+        var displayName = user.Employee?.FullName ?? user.Customer?.FullName ?? user.Email;
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
@@ -33,7 +35,8 @@ public sealed class JwtTokenService : IJwtTokenService
             new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new(ClaimTypes.Name, displayName),
             new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, user.Role.RoleName)
+            new(ClaimTypes.Role, user.Role.RoleName),
+            new("session_version", (user.UpdatedAt?.ToUniversalTime().Ticks ?? 0).ToString())
         };
 
         var credentials = new SigningCredentials(

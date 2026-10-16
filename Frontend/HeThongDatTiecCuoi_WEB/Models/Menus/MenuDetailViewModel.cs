@@ -17,8 +17,19 @@ public sealed class PublicMenuDishDto
     public string DishCode { get; set; } = string.Empty;
     public string DishName { get; set; } = string.Empty;
     public string? Category { get; set; }
+    public decimal Price { get; set; }
     public string? ImageUrl { get; set; }
     public int SortOrder { get; set; }
+}
+
+public sealed class PublicDishDto
+{
+    public int DishId { get; set; }
+    public string DishCode { get; set; } = string.Empty;
+    public string DishName { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public string? ImageUrl { get; set; }
 }
 
 public sealed class MenuDetailViewModel

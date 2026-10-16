@@ -1,0 +1,238 @@
+.backoffice-app {
+    --admin-sidebar-expanded: 278px;
+    --admin-sidebar-collapsed: 68px;
+    --rp-navy-950: #0b1220;
+    --rp-navy-900: #0f172a;
+    --rp-navy-800: #17233a;
+    --rp-gold-700: #765619;
+    --rp-gold-600: #9a7127;
+    --rp-gold-500: #c6a15b;
+    --rp-gold-100: #fbf3df;
+    --rp-bg: #f8fafc;
+    --rp-surface: #ffffff;
+    --rp-surface-muted: #f7f9fb;
+    --rp-border: #e8edf2;
+    --rp-text: #162033;
+    --rp-text-muted: #64748b;
+    --rp-success: #147057;
+    --rp-success-bg: #e8f7f1;
+    --rp-warning: #8a6411;
+    --rp-warning-bg: #fff5d9;
+    --rp-danger: #a83332;
+    --rp-danger-bg: #fff0ee;
+    --rp-info: #285f9d;
+    --rp-info-bg: #eaf2fd;
+    --rp-radius-sm: 12px;
+    --rp-radius-md: 16px;
+    --rp-radius-lg: 20px;
+    --rp-radius-xl: 24px;
+    --rp-shadow-sm: 0 4px 16px rgba(15,23,42,.04);
+    --rp-shadow-md: 0 14px 36px rgba(15,23,42,.09);
+    --rp-transition: 280ms cubic-bezier(.4,0,.2,1);
+    margin: 0;
+    color: var(--rp-text);
+    background: var(--rp-bg);
+    font-family: "Plus Jakarta Sans", "Be Vietnam Pro", Arial, sans-serif;
+}
+
+.backoffice-app #adminMainContent,
+.backoffice-app #adminMainContent :is(p,span,strong,small,label,td,th,button,input,select,textarea,a,li,h1,h2,h3,h4,h5,h6,.font-serif) {
+    font-family: "Plus Jakarta Sans", "Be Vietnam Pro", Arial, sans-serif !important;
+}
+.backoffice-app .main-content { background: var(--rp-bg); }
+
+/* Shared navigation shell */
+.backoffice-app .admin-sidebar {
+    color:#b7c1cf; background:var(--rp-navy-900); border-right:1px solid rgba(255,255,255,.06);
+    box-shadow:12px 0 35px rgba(15,23,42,.08); transition:width var(--rp-transition),transform var(--rp-transition);
+}
+.backoffice-app .sidebar-header { min-height:84px; justify-content:flex-start; padding:12px 16px; background:var(--rp-navy-950); }
+.backoffice-app .sidebar-brand { flex-direction:row; gap:12px; text-align:left; }
+.backoffice-app .sidebar-brand .brand-icon { width:40px;height:40px;flex-basis:40px;border-radius:12px;color:#f3d796;background:rgba(198,161,91,.12);font-size:19px; }
+.backoffice-app .sidebar-brand .brand-text { text-align:left; }
+.backoffice-app .sidebar-brand .brand-text strong { color:#f1d99f;font-family:inherit;font-size:13px;font-weight:800;letter-spacing:.09em; }
+.backoffice-app .sidebar-brand .brand-text small { display:block;margin-top:5px;color:#8f9aab;font-size:8px;letter-spacing:.08em; }
+.backoffice-app .sidebar-brand .brand-text small::before,.backoffice-app .sidebar-brand .brand-text small::after { display:none; }
+.backoffice-app .sidebar-content { padding:18px 10px 22px; }
+.backoffice-app .sidebar-section + .sidebar-section { margin-top:22px; }
+.backoffice-app .sidebar-section-title { margin:0 12px 8px;color:#718096;font-size:10px;letter-spacing:.12em; }
+.backoffice-app .sidebar-menu { padding:0; }
+.backoffice-app .sidebar-item {
+    min-height:46px;gap:12px;margin:3px 0;padding:11px 13px;border:1px solid transparent;border-radius:13px;
+    color:#aeb8c8;font-size:13px;font-weight:600;transition:color var(--rp-transition),background var(--rp-transition),transform var(--rp-transition);
+}
+.backoffice-app .sidebar-item:hover,.backoffice-app .sidebar-item:focus-visible { color:#f8fafc;background:rgba(255,255,255,.055);transform:translateX(2px); }
+.backoffice-app .sidebar-item.active { color:#fff7e5;border-color:rgba(198,161,91,.2);background:linear-gradient(90deg,rgba(198,161,91,.18),rgba(198,161,91,.07));box-shadow:inset 3px 0 0 var(--rp-gold-500); }
+.backoffice-app .sidebar-icon { color:#8794a8;font-size:16px; }
+.backoffice-app .sidebar-item.active .sidebar-icon { color:#e2be70; }
+.backoffice-app .sidebar-footer { min-height:62px;padding:8px 12px;background:var(--rp-navy-950); }
+.backoffice-app .sidebar-footer-action { min-height:44px;padding:9px 11px;border-radius:12px;font-size:12px; }
+
+/* Shared top bar */
+.backoffice-app .backoffice-topbar { min-height:76px;padding:0 30px;border-bottom:1px solid #f1f5f9;background:rgba(255,255,255,.96);box-shadow:none; }
+.backoffice-app .topbar-search { width:min(390px,38vw);height:46px;border:1px solid transparent;border-radius:15px;background:#f8fafc;transition:border-color var(--rp-transition),box-shadow var(--rp-transition),background var(--rp-transition); }
+.backoffice-app .topbar-search:focus-within { border-color:rgba(154,113,39,.55);background:#fff;box-shadow:0 0 0 4px rgba(198,161,91,.12); }
+.backoffice-app .topbar-search input { height:100%;padding:0;border:0;border-radius:0;background:transparent;font-size:14px; }
+.backoffice-app #adminMainContent .topbar-search input:focus,.backoffice-app #adminMainContent .topbar-search input:focus-visible { border:0;outline:0;box-shadow:none; }
+.backoffice-app .topbar-notification { width:42px;height:42px;border:1px solid var(--rp-border);border-radius:13px;background:#fff; }
+.backoffice-app .topbar-notification:hover { color:var(--rp-gold-700);background:var(--rp-gold-100); }
+.backoffice-app .topbar-user { padding:5px 7px;border-radius:14px;transition:background var(--rp-transition); }
+.backoffice-app .topbar-user:hover { background:#f8fafc; }
+.backoffice-app .topbar-avatar { width:42px;height:42px;flex-basis:42px;border-radius:13px;background:linear-gradient(145deg,#d3b16a,#9a7127); }
+.backoffice-app :is(.user-dropdown,.notification-panel,.topbar-search-results) { border-color:var(--rp-border);border-radius:var(--rp-radius-md);box-shadow:var(--rp-shadow-md); }
+
+/* Workspace and page headers */
+.backoffice-app #adminMainContent > :is(.account-content,.account-management-page,.admin-dashboard-page,.audit-page,.food-page,.role-change-page,.contract-payment-page,.md-page,.mm-page,.hr-page,.event-page,.notifications-page,.profile-page,.hall-management-page,.booking-page-wrapper,.decor-page-wrapper,.policy-page,.bi-page-wrapper,.coordinator-page,.coordinator-detail-page,.coordination-page,.assignment-page) {
+    min-height:calc(100vh - 76px);box-sizing:border-box;padding:30px 32px 44px;background:var(--rp-bg);color:var(--rp-text);
+}
+.backoffice-app :is(.account-management-header,.dashboard-page-header,.account-page-header,.audit-page-header,.food-header,.role-change-header,.cp-page-head,.md-header,.mm-header,.hr-header,.event-header,.notifications-page>header,.profile-page-header,.manager-section-header) h1,
+.backoffice-app #adminMainContent .top-header + :is(section,div) h1 {
+    color:var(--rp-text) !important;font-size:clamp(28px,2.2vw,32px) !important;font-weight:800 !important;letter-spacing:-.02em !important;line-height:1.2 !important;
+}
+.backoffice-app :is(.account-management-header,.dashboard-page-header,.account-page-header,.audit-page-header,.food-header,.role-change-header,.cp-page-head,.md-header,.mm-header,.hr-header,.event-header,.profile-page-header) p { color:var(--rp-text-muted);font-size:13px;line-height:1.55; }
+.backoffice-app :is(.breadcrumb,.md-breadcrumb,.mm-breadcrumb,.role-change-breadcrumb,.audit-page-header .breadcrumb) { color:var(--rp-gold-700) !important;font-size:11px !important;font-weight:700 !important;letter-spacing:.04em; }
+.backoffice-app #adminMainContent :is(.breadcrumb,nav[aria-label="Breadcrumb"]) {
+    min-height:20px;display:flex;align-items:center;gap:9px;margin:0 0 8px !important;
+    color:#69778b !important;font-size:12px !important;font-weight:600 !important;letter-spacing:0 !important;line-height:1.45 !important;text-transform:none !important;
+}
+.backoffice-app #adminMainContent :is(.breadcrumb,nav[aria-label="Breadcrumb"]) > i,
+.backoffice-app #adminMainContent .breadcrumb > span { color:#a2acb9 !important;font-size:9px !important; }
+.backoffice-app #adminMainContent :is(.breadcrumb,nav[aria-label="Breadcrumb"]) > strong,
+.backoffice-app #adminMainContent nav[aria-label="Breadcrumb"] > :last-child:not(i) { color:var(--rp-gold-700) !important;font-size:12px !important;font-weight:700 !important; }
+.backoffice-app #adminMainContent :is(.breadcrumb,nav[aria-label="Breadcrumb"]) > .breadcrumb-root {
+    color:#69778b !important;font-size:12px !important;font-weight:600 !important;letter-spacing:0 !important;
+}
+.backoffice-app #adminMainContent :is(.breadcrumb,nav[aria-label="Breadcrumb"]) > .breadcrumb-current {
+    color:var(--rp-gold-700) !important;font-size:12px !important;font-weight:700 !important;letter-spacing:0 !important;
+}
+
+/* Shared cards and KPI */
+.backoffice-app :is(.summary-card,.dashboard-stat-card,.system-summary-card,.audit-summary-card,.food-stat-card,.cp-kpi,.md-kpis article,.mm-kpis article,.hr-kpis article,.event-kpis article,.manager-kpi-card,.coordinator-kpi-card) {
+    min-height:124px;box-sizing:border-box;padding:20px;border:1px solid var(--rp-border);border-radius:22px;background:#fff;box-shadow:var(--rp-shadow-sm);transition:transform var(--rp-transition),box-shadow var(--rp-transition),border-color var(--rp-transition);
+}
+.backoffice-app :is(.summary-card,.dashboard-stat-card,.system-summary-card,.audit-summary-card,.food-stat-card,.cp-kpi,.md-kpis article,.mm-kpis article,.hr-kpis article,.event-kpis article,.coordinator-kpi-card):hover { transform:translateY(-2px);border-color:#dfe5eb;box-shadow:0 12px 28px rgba(15,23,42,.07); }
+.backoffice-app :is(.summary-card,.system-summary-card,.audit-summary-card,.food-stat-card,.cp-kpi,.md-kpis article,.mm-kpis article,.hr-kpis article,.ec-kpi) :is(small,.summary-label,.stat-label) { color:#6b778a;font-size:10px !important;font-weight:800;letter-spacing:.08em;text-transform:uppercase; }
+.backoffice-app :is(.summary-card,.system-summary-card,.audit-summary-card,.food-stat-card,.cp-kpi,.md-kpis article,.mm-kpis article,.hr-kpis article,.ec-kpi) :is(strong,b,.summary-value,.stat-value) { color:#111b2e;font-size:27px !important;font-weight:800;letter-spacing:-.025em; }
+.backoffice-app :is(.summary-icon,.dashboard-stat-icon,.system-summary-icon,.audit-summary-icon,.food-stat-icon,.cp-kpi-icon,.md-kpis article>i,.mm-kpis .icon,.hr-kpis article>span,.event-kpis .kpi-icon,.coordinator-kpi-icon) { width:44px;height:44px;flex:0 0 44px;border-radius:13px !important;color:var(--rp-gold-700) !important;background:var(--rp-gold-100) !important; }
+
+/* Surfaces */
+.backoffice-app :is(.account-panel,.system-admin-panel,.employee-account-panel,.dashboard-panel,.audit-card,.food-card,.cp-card,.md-card,.md-detail,.mm-card,.mm-detail-slot,.hr-workspace,.event-panel,.role-change-card,.profile-summary,.profile-card,.notification-page-list,.manager-panel,.assignment-form,.assignment-empty-state,.hall-schedule-card) {
+    border:1px solid var(--rp-border);border-radius:var(--rp-radius-lg);background:var(--rp-surface);box-shadow:var(--rp-shadow-sm);
+}
+.backoffice-app :is(.md-card,.mm-card) { transition:transform var(--rp-transition),box-shadow var(--rp-transition),border-color var(--rp-transition); }
+.backoffice-app :is(.md-card,.mm-card):hover { transform:translateY(-2px);box-shadow:var(--rp-shadow-md); }
+
+/* Inputs and filter toolbars */
+.backoffice-app :is(.account-toolbar,.employee-account-toolbar,.audit-toolbar,.admin-role-filters,.food-filter-bar,.cp-toolbar,.md-filters,.mm-filters,.hr-filters,.event-filters,.calendar-filters,.notification-filters,.filter-bar) { gap:12px;border-color:var(--rp-border); }
+.backoffice-app #adminMainContent :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea) {
+    box-sizing:border-box;border:1px solid #dce3ea;border-radius:13px;color:var(--rp-text);background:#fff;font-size:13px;transition:border-color var(--rp-transition),box-shadow var(--rp-transition),background var(--rp-transition);
+}
+.backoffice-app #adminMainContent :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select) { min-height:44px; }
+.backoffice-app #adminMainContent textarea { padding:12px 13px;line-height:1.55; }
+.backoffice-app #adminMainContent :is(input,select,textarea):focus-visible { border-color:var(--rp-gold-500);outline:0;box-shadow:0 0 0 4px rgba(198,161,91,.13); }
+.backoffice-app #adminMainContent label { color:#46546a;font-size:12px;font-weight:700; }
+.backoffice-app #adminMainContent :is(input,select,textarea):disabled { cursor:not-allowed;color:#8b96a6;background:#f1f4f7;opacity:.75; }
+
+/* Composite controls own the border and radius; their inner text control stays flat. */
+.backoffice-app #adminMainContent :is(.topbar-search,.account-search,.employee-search,.employee-filter,.profile-password-input) {
+    overflow:hidden;border:1px solid #dce3ea;border-radius:13px;background:#fff;
+    transition:border-color var(--rp-transition),box-shadow var(--rp-transition),background var(--rp-transition);
+}
+.backoffice-app #adminMainContent :is(.topbar-search,.account-search,.employee-search,.employee-filter,.profile-password-input):focus-within {
+    border-color:var(--rp-gold-500);box-shadow:0 0 0 4px rgba(198,161,91,.13);
+}
+.backoffice-app #adminMainContent :is(.topbar-search,.account-search,.employee-search,.employee-filter,.profile-password-input) > :is(input,select),
+.backoffice-app #adminMainContent .profile-password-input > input {
+    height:100% !important;min-height:0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;outline:0 !important;
+}
+.backoffice-app #adminMainContent :is(.topbar-search,.account-search,.employee-search,.employee-filter,.profile-password-input) > :is(input,select):focus,
+.backoffice-app #adminMainContent :is(.topbar-search,.account-search,.employee-search,.employee-filter,.profile-password-input) > :is(input,select):focus-visible {
+    border:0 !important;border-radius:0 !important;outline:0 !important;box-shadow:none !important;
+}
+.backoffice-app #adminMainContent .employee-filter > span { border-right:1px solid var(--rp-border);background:#fbfcfd; }
+
+/* Explicit legacy resets for composite search/filter controls. */
+.backoffice-app #adminMainContent .topbar-search > input,
+.backoffice-app #adminMainContent .employee-search > input,
+.backoffice-app #adminMainContent .employee-filter > select,
+.backoffice-app #adminMainContent .account-search > input,
+.backoffice-app #adminMainContent .profile-password-input > input {
+    border:0 !important;border-radius:0 !important;outline:0 !important;background:transparent !important;box-shadow:none !important;
+}
+
+/* Buttons */
+.backoffice-app #adminMainContent :is(.btn-primary,.primary-button,.account-primary-button,.food-primary-button,.cp-primary,.md-btn.gold,.mm-btn.gold,.role-submit,.profile-primary,.hr-primary,.ec-primary,.btn-add,.btn-modal-save,.approve-confirm) {
+    min-height:42px;padding:0 16px;border:1px solid #c7a258;border-radius:13px;color:#261d0c;background:linear-gradient(135deg,#e4c67f,#c69d4e);box-shadow:0 5px 14px rgba(154,113,39,.12);font-size:13px;font-weight:800;transition:transform var(--rp-transition),box-shadow var(--rp-transition),background var(--rp-transition);
+}
+.backoffice-app #adminMainContent :is(.btn-primary,.primary-button,.account-primary-button,.food-primary-button,.cp-primary,.md-btn.gold,.mm-btn.gold,.role-submit,.profile-primary,.hr-primary,.ec-primary,.btn-add,.btn-modal-save,.approve-confirm):hover { color:#201809;background:linear-gradient(135deg,#edd28e,#cfa958);transform:translateY(-1px);box-shadow:0 9px 20px rgba(154,113,39,.17); }
+.backoffice-app #adminMainContent :is(.btn-secondary,.cp-secondary,.md-btn.light,.mm-btn.light,.profile-secondary,.btn-modal-cancel) { min-height:42px;padding:0 15px;border:1px solid #d9e0e8;border-radius:13px;color:#24364b;background:#fff;font-size:13px;font-weight:700; }
+.backoffice-app #adminMainContent :is(.cp-icon-btn,.row-actions,.account-action-button,.drawer-close,.modal-close,.account-modal-close) { width:40px;height:40px;min-width:40px;min-height:40px;padding:0;border:1px solid var(--rp-border);border-radius:12px;background:#fff; }
+.backoffice-app #adminMainContent button:disabled { cursor:not-allowed;opacity:.5;transform:none;box-shadow:none; }
+
+/* Tables */
+.backoffice-app #adminMainContent :is(table,.employee-account-table,.dashboard-table,.audit-table,.food-table,.cp-table,.mm-table,.hr-table,.event-table,.role-history-table,.admin-role-table,.manager-data-table,.hall-schedule-table) { border-collapse:collapse;color:#425168;font-size:13px; }
+.backoffice-app #adminMainContent :is(table,.employee-account-table,.dashboard-table,.audit-table,.food-table,.cp-table,.mm-table,.hr-table,.event-table,.role-history-table,.admin-role-table,.manager-data-table,.hall-schedule-table) th { padding:13px 16px;border-bottom:1px solid var(--rp-border);color:#66758a;background:#f8fafc;font-size:10px;font-weight:800;letter-spacing:.065em;text-transform:uppercase; }
+.backoffice-app #adminMainContent :is(table,.employee-account-table,.dashboard-table,.audit-table,.food-table,.cp-table,.mm-table,.hr-table,.event-table,.role-history-table,.admin-role-table,.manager-data-table,.hall-schedule-table) td { padding:15px 16px;border-bottom:1px solid #f0f3f6;font-size:13px;vertical-align:middle; }
+.backoffice-app #adminMainContent :is(table,.employee-account-table,.dashboard-table,.audit-table,.food-table,.cp-table,.mm-table,.hr-table,.event-table,.role-history-table,.admin-role-table,.manager-data-table,.hall-schedule-table) tbody tr { transition:background var(--rp-transition); }
+.backoffice-app #adminMainContent :is(table,.employee-account-table,.dashboard-table,.audit-table,.food-table,.cp-table,.mm-table,.hr-table,.event-table,.role-history-table,.admin-role-table,.manager-data-table,.hall-schedule-table) tbody tr:hover { background:#fffdf8; }
+.backoffice-app :is(.employee-account-table-wrap,.dashboard-table-wrap,.audit-table-wrap,.food-table-wrap,.cp-table-wrap,.mm-table-wrap,.hr-table-scroll,.event-table-wrap,.role-table-wrap,.manager-table-wrap,.hall-schedule-table-wrap) { overflow-x:auto; }
+
+/* Badges */
+.backoffice-app #adminMainContent :is(.status-badge,.role-badge,.account-pill,.request-pill,.assignment-pill,.cp-badge,.md-status,.mm-badge,.manager-status,.audit-badge,.food-status) { padding:6px 10px;border-radius:999px;font-size:11px;font-weight:700; }
+.backoffice-app #adminMainContent :is(.status-active,.active,.success,.approved,.completed)[class*="badge"],
+.backoffice-app #adminMainContent :is(.account-pill.active,.request-pill.approved,.assignment-pill.active,.cp-badge.active,.cp-badge.success,.md-status.active,.mm-badge.active) { color:var(--rp-success);background:var(--rp-success-bg); }
+.backoffice-app #adminMainContent :is(.status-pending,.pending,.warning)[class*="badge"],.backoffice-app #adminMainContent .cp-badge.pending { color:var(--rp-warning);background:var(--rp-warning-bg); }
+.backoffice-app #adminMainContent :is(.status-rejected,.inactive,.cancelled,.failed,.danger)[class*="badge"],
+.backoffice-app #adminMainContent :is(.account-pill.locked,.request-pill.rejected,.cp-badge.cancelled,.cp-badge.failed,.md-status.inactive,.mm-badge.inactive) { color:var(--rp-danger);background:var(--rp-danger-bg); }
+
+/* Tabs and pagination */
+.backoffice-app #adminMainContent :is(.cp-tabs,.cp-drawer-tabs,.hr-tabs,.event-tabs,.drawer-tabs) { border-bottom-color:var(--rp-border); }
+.backoffice-app #adminMainContent :is(.cp-tab,.cp-drawer-tabs button,.hr-tabs button,.event-tabs button,.drawer-tabs button) { min-height:46px;color:var(--rp-text-muted);font-size:13px;font-weight:700; }
+.backoffice-app #adminMainContent :is(.cp-tab.active,.cp-drawer-tabs button.active,.hr-tabs button.active,.event-tabs button.active,.drawer-tabs button.active) { color:var(--rp-text);border-color:var(--rp-gold-500); }
+.backoffice-app #adminMainContent :is(.account-pagination,.audit-pagination,.food-pagination,.cp-pages,.mm-pagination nav,.hr-pagination,.event-pagination,.notification-pagination) :is(a,button) { width:36px;height:36px;border:1px solid #dce3ea;border-radius:10px;color:#435168;background:#fff; }
+.backoffice-app #adminMainContent :is(.account-pagination,.audit-pagination,.food-pagination,.cp-pages,.mm-pagination nav,.hr-pagination,.event-pagination,.notification-pagination) :is(.active,.current) { color:#fff;border-color:var(--rp-navy-800);background:var(--rp-navy-800); }
+
+/* Modal, drawer, dialog */
+.backoffice-app :is(.account-modal-overlay,.role-action-modal,.cp-modal,.mm-modal,.md-modal-wrap,.hr-modal-wrap,.event-modal,.event-drawer-overlay) { background:rgba(11,18,32,.58);backdrop-filter:blur(3px); }
+.backoffice-app :is(.account-modal,.cp-modal-card,.mm-modal-box,.md-modal,.hr-modal,.ec-modal) { border:1px solid rgba(232,237,242,.95);border-radius:24px;background:#fff;box-shadow:0 28px 70px rgba(15,23,42,.24); }
+.backoffice-app :is(.account-modal-header,.cp-modal-head,.mm-modal-box header,.md-modal header,.ec-modal header) { border-bottom-color:var(--rp-border); }
+.backoffice-app :is(.account-modal-actions,.cp-modal-actions,.mm-modal-box footer,.md-modal footer,.ec-modal footer) { border-top-color:var(--rp-border); }
+.backoffice-app :is(.cp-drawer,.employee-drawer,.event-drawer) { border-left:1px solid var(--rp-border);background:var(--rp-bg);box-shadow:-18px 0 45px rgba(15,23,42,.16);transition:transform var(--rp-transition); }
+.backoffice-app :is(.cp-drawer-head,.ec-drawer-head,.cp-drawer-actions) { background:#fff;border-color:var(--rp-border); }
+.backoffice-app :is(.cp-detail-card,.drawer-section,.ec-detail-card) { border-color:var(--rp-border);border-radius:var(--rp-radius-md);background:#fff; }
+
+/* Notifications, alerts, empty and toast states */
+.backoffice-app .notification-panel { width:min(410px,calc(100vw - 30px));border-radius:20px; }
+.backoffice-app :is(.notification-recent-item,.notification-page-item) { padding:16px;border-bottom-color:#f0f3f6; }
+.backoffice-app :is(.notification-recent-item.unread,.notification-page-item.unread) { background:#fffaf0; }
+.backoffice-app :is(.manager-empty,.manager-compact-empty,.history-empty,.cp-empty,.mm-empty,.md-detail-empty,.notification-page-empty,.account-empty-state,.audit-empty-state) { color:#7b8798; }
+.backoffice-app :is(.manager-empty,.manager-compact-empty,.history-empty,.cp-empty,.mm-empty,.md-detail-empty,.notification-page-empty,.account-empty-state,.audit-empty-state) > i { color:var(--rp-gold-500); }
+.backoffice-app #adminMainContent :is(.alert-success,.role-alert.success,.md-alert.success,.mm-alert.success) { color:var(--rp-success);border:1px solid #bfe8d9;border-radius:14px;background:var(--rp-success-bg); }
+.backoffice-app #adminMainContent :is(.alert-error,.role-alert.error,.md-alert.error,.mm-alert.error,.cp-error-banner,.manager-data-alert) { color:var(--rp-danger);border:1px solid #f1c6c2;border-radius:14px;background:var(--rp-danger-bg); }
+.backoffice-app :is(.sidebar-toast,.profile-toast,.cp-toast,.md-toast,.mm-toast,.hr-toast) { border-radius:14px;box-shadow:var(--rp-shadow-md);font-size:12px; }
+
+/* Charts and schedule surfaces */
+.backoffice-app #adminMainContent :is(.chart-card,.bi-chart-card,[class*="chart-card"],.calendar-card,.calendar-content,.schedule-card,.week-grid) { border:1px solid var(--rp-border);border-radius:var(--rp-radius-xl);background:#fff;box-shadow:var(--rp-shadow-sm); }
+.backoffice-app .calendar-event { border-radius:12px;box-shadow:none; }
+.backoffice-app .day-column.today { background:#fffaf0; }
+
+@media (max-width:1180px) {
+    .backoffice-app #adminMainContent > :is(.account-content,.account-management-page,.admin-dashboard-page,.audit-page,.food-page,.role-change-page,.contract-payment-page,.md-page,.mm-page,.hr-page,.event-page,.notifications-page,.profile-page) { padding-inline:24px; }
+}
+@media (max-width:850px) {
+    .backoffice-app .admin-sidebar,
+    html.sidebar-is-collapsed .backoffice-app .admin-sidebar { width:min(278px,calc(100vw - 44px));max-width:278px; }
+    .backoffice-app .backoffice-topbar { min-height:68px;padding:0 16px 0 64px; }
+    .backoffice-app .topbar-search { width:min(310px,43vw); }
+    .backoffice-app #adminMainContent > :is(.account-content,.account-management-page,.admin-dashboard-page,.audit-page,.food-page,.role-change-page,.contract-payment-page,.md-page,.mm-page,.hr-page,.event-page,.notifications-page,.profile-page) { min-height:calc(100vh - 68px);padding:24px 18px 34px; }
+    .backoffice-app :is(.cp-drawer,.employee-drawer,.event-drawer) { width:min(100vw,560px); }
+}
+@media (max-width:680px) {
+    .backoffice-app :is(.account-management-header,.dashboard-page-header,.account-page-header,.audit-page-header,.food-header,.role-change-header,.cp-page-head,.md-header,.mm-header,.hr-header,.event-header,.notifications-page>header) { align-items:flex-start;flex-direction:column;gap:14px; }
+    .backoffice-app :is(.account-modal,.cp-modal-card,.mm-modal-box,.md-modal,.hr-modal,.ec-modal) { width:calc(100vw - 24px);max-height:calc(100dvh - 24px);border-radius:20px; }
+    .backoffice-app :is(.cp-drawer,.employee-drawer,.event-drawer) { width:100vw;max-width:none; }
+}
+@media (prefers-reduced-motion:reduce) {
+    .backoffice-app * { scroll-behavior:auto !important; }
+    .backoffice-app :is(.sidebar-item,.summary-card,.cp-kpi,.md-card,.mm-card,.cp-drawer,.employee-drawer,.event-drawer) { transition:none !important; }
+}

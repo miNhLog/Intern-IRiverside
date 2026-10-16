@@ -155,24 +155,20 @@
 <div class="bi-page-wrapper p-6 lg:p-8 space-y-6 w-full max-w-[1600px] mx-auto">
 
     <!-- ================= 1. HEADER TRANG ================= -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="manager-section-header flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-500 mb-1">
                 <span>Quản trị hệ thống</span>
                 <i class="fa-solid fa-chevron-right text-[9px] text-slate-400"></i>
-                <span class="text-[#B89758] font-semibold">Báo Cáo Doanh Thu &amp; BI</span>
+                <span class="text-[#B89758] font-semibold">Báo cáo doanh thu &amp; BI</span>
             </nav>
             <h2 class="font-serif text-2xl font-bold text-slate-900 tracking-tight">
-                Phân Tích Doanh Thu &amp; Hiệu Suất Kinh Doanh (BI)
+                Phân tích doanh thu &amp; hiệu suất kinh doanh (BI)
             </h2>
+            <p>Theo dõi doanh thu và hiệu suất kinh doanh theo kỳ báo cáo.</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5">
-            <div class="flex items-center bg-slate-50 rounded-lg px-3 py-1.5 border border-slate-200 text-xs shadow-2xs">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                <span class="text-slate-600 font-medium">CSDL thời gian thực • Niên độ @Model.Year</span>
-            </div>
-
             <button onclick="exportReportExcel()" class="flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 focus-ring min-h-[40px] shadow-2xs">
                 <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i>
                 <span>Xuất Báo Cáo Excel</span>
@@ -210,10 +206,6 @@
             </button>
         </div>
 
-        <div class="flex items-center gap-2 text-xs text-slate-500">
-            <span class="inline-block w-2 h-2 rounded-full bg-[#B89758]"></span>
-            <span>Nguồn CSDL: <strong>dbo.DatTiec</strong> &amp; <strong>dbo.SanhTiec</strong></span>
-        </div>
     </section>
 
     <!-- ================= 3. BỘ THẺ KPI ================= -->
@@ -477,12 +469,6 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3 text-[11px]">
-                    <div class="hidden md:flex items-center gap-1.5 text-slate-500">
-                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span>Dữ liệu trực tiếp từ CSDL</span>
-                    </div>
-                </div>
             </div>
         </header>
 
@@ -497,7 +483,7 @@
                         <div class="w-12 h-12 rounded-full border-4 border-[#FAF8F5]"></div>
                         <div class="w-12 h-12 rounded-full border-4 border-t-[#B89758] border-r-transparent border-b-transparent border-l-transparent animate-spin absolute top-0 left-0"></div>
                     </div>
-                    <span class="text-xs font-semibold text-slate-700">Đang trích xuất ma trận CSDL...</span>
+                    <span class="text-xs font-semibold text-slate-700">Đang tải lịch sảnh...</span>
                     <span class="text-[10px] text-slate-400">Vui lòng chờ trong giây lát</span>
                 </div>
             </div>
@@ -733,7 +719,7 @@
                     updateStructureLegend(data.revenueStructures || data.RevenueStructures);
 
                     const quarterText = quarter == 0 ? 'Toàn bộ 4 Quý' : `Quý ${quarter}`;
-                    showBiToast('Thành công', `Đã đồng bộ số liệu CSDL: Năm ${year} – ${quarterText}`);
+                    showBiToast('Thành công', `Đã cập nhật báo cáo: Năm ${year} – ${quarterText}`);
                 } else {
                     showBiToast('Thông báo', result.message || 'Không có dữ liệu cho kỳ này.');
                 }

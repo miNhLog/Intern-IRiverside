@@ -67,6 +67,16 @@
 .input-wrap > .material-symbols-outlined { flex: none; color: #8e99aa; font-size: 20px; }
 .input-wrap input { min-width: 0; width: 100%; border: 0; outline: 0; color: #242932; background: transparent; font: 14px Arial, sans-serif; }
 .input-wrap input::placeholder { color: #a9b2bf; }
+.input-wrap input:-webkit-autofill,
+.input-wrap input:-webkit-autofill:hover,
+.input-wrap input:-webkit-autofill:focus,
+.input-wrap input:-webkit-autofill:active {
+    -webkit-text-fill-color: #242932;
+    -webkit-box-shadow: 0 0 0 1000px #fff inset;
+    box-shadow: 0 0 0 1000px #fff inset;
+    caret-color: #242932;
+    transition: background-color 9999s ease-out 0s;
+}
 .toggle-password { flex: none; display: grid; place-items: center; border: 0; padding: 6px; color: #98a3b2; background: transparent; cursor: pointer; }
 .toggle-password .material-symbols-outlined { font-size: 20px; }
 .toggle-password:hover { color: #b38912; }
@@ -95,6 +105,27 @@
 .terms { margin: -1px 0 20px; }
 .terms a, .switch-page a { color: #c99508; }
 .muted-link { color: #c99508; font: 13px Arial, sans-serif; cursor: help; }
+.auth-link-button { padding: 0; border: 0; background: transparent; cursor: pointer; }
+.password-reset-flow h3 { margin: 0 0 8px; color: #242932; text-align: center; font-size: 25px; }
+.password-reset-description { margin: 0 0 22px; color: #7c8797; text-align: center; font: 13px/1.55 Arial, sans-serif; }
+.password-reset-steps { display: flex; align-items: center; justify-content: center; margin: 0 0 24px; }
+.password-reset-steps span { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid #ddd5c1; border-radius: 50%; color: #8d96a3; background: #fff; font: 700 12px Arial, sans-serif; }
+.password-reset-steps span.is-active, .password-reset-steps span.is-complete { border-color: #c99a19; color: #fff; background: #c99a19; }
+.password-reset-steps i { width: 48px; height: 1px; background: #ddd5c1; }
+.password-reset-secondary { width: 100%; border: 0; background: transparent; color: #a77925; cursor: pointer; font: 700 12px Arial, sans-serif; }
+.password-reset-secondary { margin-top: 13px; }
+.password-reset-secondary:disabled { color: #9aa3af; cursor: not-allowed; }
+.password-reset-back { width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 20px; border: 1px solid #d8c99f; border-radius: 10px; color: #9a701e; background: #fffdf8; cursor: pointer; font: 700 13px Arial, sans-serif; transition: border-color .2s, background .2s, box-shadow .2s; }
+.password-reset-back:hover { border-color: #c69a35; background: #fff9e9; box-shadow: 0 4px 12px rgba(154,112,30,.1); }
+.password-reset-back .material-symbols-outlined { font-size: 17px; }
+.otp-code-input input { text-align: center; letter-spacing: .45em; font-size: 18px; font-weight: 700; }
+.auth-toast-region { position: fixed; z-index: 10000; top: 22px; right: 22px; width: min(390px, calc(100vw - 32px)); display: grid; gap: 10px; pointer-events: none; }
+.auth-toast { display: flex; align-items: flex-start; gap: 11px; padding: 14px 16px; border: 1px solid; border-radius: 12px; box-shadow: 0 14px 35px rgba(31,41,55,.18); background: #fff; font: 13px/1.5 Arial, sans-serif; pointer-events: auto; animation: auth-toast-in .22s ease-out; }
+.auth-toast .material-symbols-outlined { flex: none; font-size: 21px; }
+.auth-toast-success { border-color: #9fd5ba; color: #176445; background: #f0fbf5; }
+.auth-toast-error { border-color: #edaaa4; color: #982a23; background: #fff4f3; }
+.auth-toast.is-leaving { opacity: 0; transform: translateX(18px); transition: opacity .2s, transform .2s; }
+@keyframes auth-toast-in { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
 .primary-button { width: 100%; height: 52px; border: 0; border-radius: 10px; color: #171717; background: linear-gradient(90deg, #e4bb29, #c99402); box-shadow: 0 9px 24px rgba(201,148,3,.2); cursor: pointer; font: 700 15px Arial, sans-serif; }
 .primary-button .material-symbols-outlined { margin-left: 9px; font-size: 20px; vertical-align: middle; }
 .divider { display: flex; align-items: center; gap: 18px; margin: 24px 0 18px; color: #8993a0; font: 11px Arial, sans-serif; }
@@ -155,4 +186,5 @@
     .auth-card footer span { display: none; }
     .auth-card footer { line-height: 1.7; }
     .first-password-page { padding: 28px 16px; }.first-password-card { padding: 24px 20px; }.first-password-brand strong { font-size: 18px; }.first-password-heading { align-items: flex-start; justify-content: flex-start; }.first-password-heading h1 { padding-top: 8px; font-size: 23px; }.first-password-subtitle { text-align: left; }.otp-control { grid-template-columns: 1fr; }.otp-send-button { min-height: 42px; }
+    .auth-toast-region { top: 14px; right: 16px; }
 }

@@ -1,7 +1,7 @@
 @model HeThongDatTiecCuoi_WEB.Models.Notification.NotificationPageViewModel
 @{ Layout="_AdminLayout"; ViewData["Title"]="Thông báo"; }
 @section Styles { <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" /> }
-<main class="notifications-page"><nav>Thông báo</nav><header><div><h1>Thông báo</h1><p>Theo dõi các cập nhật và yêu cầu liên quan đến tài khoản của bạn.</p></div>@if(Model.UnreadCount>0){<button type="button" id="pageMarkAllRead">Đánh dấu tất cả đã đọc</button>}</header>
+<main class="notifications-page"><nav class="breadcrumb" aria-label="Breadcrumb">Quản trị hệ thống <span>›</span> <strong>Thông báo</strong></nav><header><div><h1>Thông báo</h1><p>Theo dõi các cập nhật và yêu cầu liên quan đến tài khoản của bạn.</p></div>@if(Model.UnreadCount>0){<button type="button" id="pageMarkAllRead">Đánh dấu tất cả đã đọc</button>}</header>
 <div class="notification-filters"><a asp-action="Index" class="@(string.IsNullOrWhiteSpace(Model.ReadStatus)?"active":"")">Tất cả</a><a asp-action="Index" asp-route-readStatus="UNREAD" class="@(Model.ReadStatus=="UNREAD"?"active":"")">Chưa đọc</a><a asp-action="Index" asp-route-readStatus="READ" class="@(Model.ReadStatus=="READ"?"active":"")">Đã đọc</a></div>
 @if(Model.ErrorMessage is not null){<div class="role-alert error">@Model.ErrorMessage</div>}
 <section class="notification-page-list">

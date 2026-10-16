@@ -8,6 +8,7 @@ public sealed class MenuDishViewModel
     public string DishName { get; set; } = string.Empty;
     public string? Category { get; set; }
     public string? ImageUrl { get; set; }
+    public decimal Price { get; set; }
     public string Status { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
     public int SortOrder { get; set; }

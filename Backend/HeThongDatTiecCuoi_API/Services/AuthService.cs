@@ -409,8 +409,8 @@ public sealed partial class AuthService : IAuthService
     private static CurrentUserResponse ToCurrentUser(User user) => new(
         user.UserId,
         user.Email,
-        user.Customer?.FullName ?? user.Employee?.FullName ?? user.Email,
-        user.Customer?.PhoneNumber ?? user.Employee?.PhoneNumber,
+        user.Employee?.FullName ?? user.Customer?.FullName ?? user.Email,
+        user.Employee?.PhoneNumber ?? user.Customer?.PhoneNumber,
         user.Role.RoleName,
         user.Status.StatusCode,
         user.MustChangePassword);

@@ -45,7 +45,7 @@
             <h1>Quản lý tài khoản</h1>
             <p>Quản lý tài khoản nội bộ và trạng thái truy cập hệ thống</p>
         </div>
-        <button type="button" class="account-create-button" id="openAddAccountModal">
+        <button type="button" class="account-create-button admin-create-button" id="openAddAccountModal">
             <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
             Cấp tài khoản
         </button>
@@ -131,7 +131,7 @@
                 <p>Hiện chưa có tài khoản nào phù hợp với bộ lọc.</p>
                 @if (!hasFilters)
                 {
-                    <button type="button" class="account-create-button" data-open-create><i class="fa-solid fa-user-plus" aria-hidden="true"></i>Cấp tài khoản</button>
+                    <button type="button" class="account-create-button admin-create-button" data-open-create><i class="fa-solid fa-user-plus" aria-hidden="true"></i>Cấp tài khoản</button>
                 }
             </div>
         }

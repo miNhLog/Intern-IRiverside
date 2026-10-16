@@ -1,0 +1,58 @@
+.vi-date-field {
+    position: relative;
+    display: inline-grid;
+    width: 100%;
+    min-width: 0;
+}
+
+.vi-date-field > .vi-date-display {
+    grid-area: 1 / 1;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.vi-date-field > input[type="date"] {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    opacity: 0 !important;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.vi-date-field > input[type="date"]:disabled {
+    cursor: default;
+    pointer-events: none;
+}
+
+.vi-date-field::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 15px;
+    height: 14px;
+    border: 2px solid #334155;
+    border-radius: 2px;
+    box-sizing: border-box;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.vi-date-field::before {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: calc(50% - 3px);
+    width: 15px;
+    border-top: 2px solid #334155;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.vi-date-field:has(input[type="date"]:disabled)::after {
+    opacity: .45;
+}

@@ -13,6 +13,7 @@ public sealed class EmployeeCodeGenerator : IEmployeeCodeGenerator
     {
         var prefix = roleName switch
         {
+            RoleNames.Admin => "AD",
             RoleNames.Manager => "QL",
             RoleNames.HallManager => "QLS",
             RoleNames.Coordinator => "DP",
@@ -25,6 +26,7 @@ public sealed class EmployeeCodeGenerator : IEmployeeCodeGenerator
         var highestNumber = codes.Select(code => code[prefix.Length..])
             .Select(value => int.TryParse(value, out var number) ? number : 0)
             .DefaultIfEmpty().Max();
-        return $"{prefix}{highestNumber + 1:D3}";
+        var digits = roleName == RoleNames.Admin ? 4 : 3;
+        return $"{prefix}{(highestNumber + 1).ToString($"D{digits}")}";
     }
 }

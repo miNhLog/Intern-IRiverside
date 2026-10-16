@@ -1,0 +1,136 @@
+@model HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment.ManagerContractPaymentPageViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Hợp đồng & Thanh toán";
+    Layout = "_AdminLayout";
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+    string Money(decimal value) => $"{value.ToString("N0", vi)} đ";
+    string Badge(string code) => code.ToUpperInvariant() switch
+    {
+        "ACTIVE" => "active",
+        "COMPLETED" => "completed",
+        "CANCELLED" => "cancelled",
+        _ => "draft"
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/manager-contract-payment.css" asp-append-version="true" />
+    <style>
+        .cp-breadcrumb { display: flex; align-items: center; gap: 8px; margin: 0 0 5px; color: #64748b; font-size: 12px; font-weight: 500; }
+        .cp-breadcrumb i { color: #94a3b8; font-size: 9px; }
+        .cp-breadcrumb strong { color: #b89758; font-weight: 600; }
+    </style>
+}
+
+<div class="contract-payment-page" data-page-root data-initial-booking-id="@Context.Request.Query["bookingId"]" data-initial-contract-id="@Context.Request.Query["contractId"]" data-open-create="@Context.Request.Query["openCreate"]">
+    <form id="cpAntiforgery" hidden>@Html.AntiForgeryToken()</form>
+
+    <header class="cp-page-head manager-section-header">
+        <div>
+            <nav class="cp-breadcrumb breadcrumb" aria-label="Breadcrumb">
+                <span class="breadcrumb-root">Quản trị hệ thống</span>
+                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                <strong>Hợp đồng &amp; Thanh toán</strong>
+            </nav>
+            <h1>Hợp đồng &amp; thanh toán</h1>
+            <p>Quản lý hợp đồng và theo dõi các khoản thanh toán của khách hàng.</p>
+        </div>
+        <button type="button" class="cp-primary admin-create-button" id="openCreateContract"><i class="fa-solid fa-plus"></i>Tạo hợp đồng</button>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(ViewBag.ErrorMessage as string))
+    {
+        <div class="cp-error-banner">@ViewBag.ErrorMessage</div>
+    }
+
+    <section class="cp-kpis" aria-label="Tổng quan hợp đồng">
+        <article class="cp-kpi"><span class="cp-kpi-icon"><i class="fa-regular fa-file-lines"></i></span><div><span>Tổng hợp đồng</span><strong id="kpiTotal">@Model.Contracts.Statistics.TotalContracts</strong></div></article>
+        <article class="cp-kpi"><span class="cp-kpi-icon"><i class="fa-regular fa-circle-check"></i></span><div><span>Hợp đồng đang hiệu lực</span><strong id="kpiActive">@Model.Contracts.Statistics.ActiveContracts</strong></div></article>
+        <article class="cp-kpi"><span class="cp-kpi-icon"><i class="fa-regular fa-clock"></i></span><div><span>Chờ thanh toán</span><strong id="kpiAwaiting">@Model.Contracts.Statistics.AwaitingPaymentContracts</strong></div></article>
+        <article class="cp-kpi"><span class="cp-kpi-icon"><i class="fa-solid fa-chart-column"></i></span><div><span>Doanh thu đã thu</span><strong id="kpiRevenue">@Money(Model.Contracts.Statistics.TotalCollectedRevenue)</strong></div></article>
+    </section>
+
+    <section class="cp-card">
+        <nav class="cp-tabs" aria-label="Hợp đồng và thanh toán">
+            <button type="button" class="cp-tab active" data-main-tab="contracts"><i class="fa-regular fa-file-lines"></i> Hợp đồng</button>
+            <button type="button" class="cp-tab" data-main-tab="payments"><i class="fa-solid fa-coins"></i> Thanh toán</button>
+        </nav>
+
+        <div id="contractTab">
+            <div class="cp-toolbar">
+                <label class="cp-field"><i class="fa-solid fa-magnifying-glass"></i><input class="cp-input" id="contractKeyword" placeholder="Mã hợp đồng, booking, khách hàng, SĐT..." /></label>
+                <select class="cp-select" id="contractStatus" aria-label="Trạng thái hợp đồng"><option value="ALL">Tất cả trạng thái</option><option value="DRAFT">Bản nháp</option><option value="ACTIVE">Có hiệu lực</option><option value="COMPLETED">Hoàn tất</option><option value="CANCELLED">Đã hủy</option></select>
+                <input class="cp-input" id="contractFromDate" type="date" aria-label="Từ ngày" />
+                <input class="cp-input" id="contractToDate" type="date" aria-label="Đến ngày" />
+            </div>
+            <div class="cp-table-wrap">
+                <table class="cp-table">
+                    <thead><tr><th>Mã hợp đồng</th><th>Khách hàng</th><th>Mã booking</th><th>Ngày tạo</th><th style="text-align:right">Tổng giá trị</th><th>Trạng thái</th><th>Tiến độ thanh toán</th><th>Thao tác</th></tr></thead>
+                    <tbody id="contractRows">
+                    @if (Model.Contracts.Items.Count == 0)
+                    {
+                        <tr><td colspan="8" class="cp-empty">Chưa có hợp đồng phù hợp.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model.Contracts.Items)
+                        {
+                            var width = Math.Clamp(item.PaymentPercentage, 0m, 100m);
+                            <tr data-contract-id="@item.ContractId">
+                                <td><span class="cp-code">@item.ContractCode</span></td>
+                                <td class="cp-customer"><strong>@item.CustomerName</strong><small>@item.CustomerPhone</small></td>
+                                <td><span class="cp-code">@item.BookingCode</span></td>
+                                <td>@item.CreatedDate.ToString("dd/MM/yyyy")</td>
+                                <td class="cp-money">@Money(item.TotalValue)</td>
+                                <td><span class="cp-badge @Badge(item.StatusCode)">@item.StatusName</span></td>
+                                <td><div class="cp-progress"><div class="cp-progress-track"><div class="cp-progress-bar" style="width:@width.ToString(CultureInfo.InvariantCulture)%"></div></div><div class="cp-progress-meta"><span>Đã thu @Money(item.PaidAmount)</span><b>@item.PaymentPercentage.ToString("0.#")%</b></div>@if(item.HasPaymentInconsistency){<div class="cp-warning">Thanh toán vượt giá trị</div>}</div></td>
+                                <td><button type="button" class="cp-icon-btn" data-view-contract="@item.ContractId" title="Xem chi tiết"><i class="fa-regular fa-eye"></i></button></td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <footer class="cp-pagination"><span id="contractPageInfo">Trang @Math.Max(1, Model.Contracts.Page) / @Math.Max(1, Model.Contracts.TotalPages) · @Model.Contracts.TotalItems hợp đồng</span><div class="cp-pages" id="contractPages"></div></footer>
+        </div>
+
+        <div id="paymentTab" class="cp-hidden">
+            <div class="cp-toolbar" style="grid-template-columns:minmax(230px,1.6fr) repeat(4,minmax(130px,.65fr))">
+                <label class="cp-field"><i class="fa-solid fa-magnifying-glass"></i><input class="cp-input" id="paymentKeyword" placeholder="Giao dịch, hợp đồng, booking, khách hàng..." /></label>
+                <select class="cp-select" id="paymentType"><option value="ALL">Tất cả loại</option><option>Đặt cọc</option><option>Thanh toán đợt</option><option>Quyết toán</option></select>
+                <select class="cp-select" id="paymentStatus"><option value="ALL">Tất cả trạng thái</option><option value="PENDING">Chờ xử lý</option><option value="SUCCESS">Thành công</option><option value="FAILED">Thất bại</option><option value="CANCELLED">Đã hủy</option></select>
+                <input class="cp-input" id="paymentFromDate" type="date" aria-label="Từ ngày" />
+                <input class="cp-input" id="paymentToDate" type="date" aria-label="Đến ngày" />
+            </div>
+            <div class="cp-table-wrap"><table class="cp-table"><thead><tr><th>Mã giao dịch</th><th>Mã hợp đồng</th><th>Booking</th><th>Khách hàng</th><th>Loại thanh toán</th><th style="text-align:right">Số tiền</th><th>Ngày thanh toán</th><th>Phương thức</th><th>Trạng thái</th></tr></thead><tbody id="paymentRows"><tr><td colspan="9" class="cp-empty">Chọn tab Thanh toán để tải dữ liệu.</td></tr></tbody></table></div>
+            <footer class="cp-pagination"><span id="paymentPageInfo">Payment chỉ hiển thị và không thể chỉnh sửa.</span><div class="cp-pages" id="paymentPages"></div></footer>
+        </div>
+    </section>
+</div>
+
+<div class="cp-overlay" id="drawerOverlay"></div>
+<aside class="cp-drawer" id="contractDrawer" aria-label="Chi tiết hợp đồng">
+    <header class="cp-drawer-head"><div class="cp-drawer-title"><div><h2 id="drawerCode">Hợp đồng</h2><small id="drawerMeta"></small></div><span id="drawerStatus"></span></div><button type="button" class="cp-drawer-close" id="closeDrawer" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button></header>
+    <nav class="cp-drawer-tabs"><button type="button" class="active" data-drawer-tab="general">Thông tin hợp đồng</button><button type="button" data-drawer-tab="booking">Booking liên quan</button><button type="button" data-drawer-tab="payments">Thanh toán</button><button type="button" data-drawer-tab="history">Lịch sử</button></nav>
+    <div class="cp-drawer-body"><div id="drawerLoading" class="cp-empty">Đang tải...</div><section id="drawerGeneral"></section><section id="drawerBooking" class="cp-hidden"></section><section id="drawerPayments" class="cp-hidden"></section><section id="drawerHistory" class="cp-hidden"></section></div>
+    <footer class="cp-drawer-actions" id="drawerActions"></footer>
+</aside>
+
+<div class="cp-modal" id="createModal" role="dialog" aria-modal="true" aria-labelledby="createModalTitle">
+    <div class="cp-modal-card"><header class="cp-modal-head"><h2 id="createModalTitle">Tạo hợp đồng bản nháp</h2><button type="button" class="cp-drawer-close" data-close-modal="createModal"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="cp-modal-body">
+            <div class="cp-form-group"><label for="eligibleKeyword">Chọn booking đã xác nhận</label><input class="cp-input" id="eligibleKeyword" placeholder="Tìm mã booking, khách hàng hoặc SĐT" /></div>
+            <div class="cp-booking-picker" id="eligibleBookings"><div class="cp-empty">Đang tải booking đủ điều kiện...</div></div>
+            <div class="cp-booking-summary cp-hidden" id="selectedBookingSummary"></div>
+            <div class="cp-form-grid" style="margin-top:14px"><div class="cp-form-group full"><label for="createTotalValue">Tổng giá trị (đ)</label><input class="cp-input" id="createTotalValue" type="number" min="0" step="1000" /></div><div class="cp-form-group full"><label for="createContent">Nội dung hợp đồng</label><textarea class="cp-textarea" id="createContent"></textarea></div><div class="cp-form-group full"><label for="createTerms">Điều khoản thanh toán</label><textarea class="cp-textarea" id="createTerms"></textarea></div></div>
+        </div><footer class="cp-modal-actions"><button type="button" class="cp-secondary" data-close-modal="createModal">Hủy</button><button type="button" class="cp-primary" id="saveDraft">Lưu bản nháp</button></footer></div>
+</div>
+
+<div class="cp-modal" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle"><div class="cp-modal-card"><header class="cp-modal-head"><h2 id="editModalTitle">Sửa hợp đồng bản nháp</h2><button type="button" class="cp-drawer-close" data-close-modal="editModal"><i class="fa-solid fa-xmark"></i></button></header><div class="cp-modal-body"><div class="cp-form-group"><label for="editTotalValue">Tổng giá trị (đ)</label><input class="cp-input" id="editTotalValue" type="number" min="0" step="1000" /></div><div class="cp-form-group"><label for="editContent">Nội dung hợp đồng</label><textarea class="cp-textarea" id="editContent"></textarea></div><div class="cp-form-group"><label for="editTerms">Điều khoản thanh toán</label><textarea class="cp-textarea" id="editTerms"></textarea></div></div><footer class="cp-modal-actions"><button type="button" class="cp-secondary" data-close-modal="editModal">Hủy</button><button type="button" class="cp-primary" id="saveEdit">Lưu thay đổi</button></footer></div></div>
+
+<div class="cp-modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle"><div class="cp-modal-card small"><header class="cp-modal-head"><h2 id="confirmTitle">Xác nhận</h2><button type="button" class="cp-drawer-close" data-close-modal="confirmModal"><i class="fa-solid fa-xmark"></i></button></header><div class="cp-modal-body"><p id="confirmMessage" style="margin:0;font-size:12px;line-height:1.65;color:#42516a"></p></div><footer class="cp-modal-actions"><button type="button" class="cp-secondary" data-close-modal="confirmModal">Hủy</button><button type="button" class="cp-primary" id="confirmAction">Xác nhận</button></footer></div></div>
+
+<div class="cp-toast" id="cpToast" role="status" aria-live="polite"></div>
+
+@section Scripts { <script src="~/js/manager-contract-payment.js" asp-append-version="true"></script> }

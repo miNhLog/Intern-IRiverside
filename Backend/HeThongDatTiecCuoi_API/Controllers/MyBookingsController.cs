@@ -53,6 +53,9 @@ public sealed class MyBookingsController : ControllerBase
                 EventDate = item.HallSchedule.Date,
                 Shift = item.HallSchedule.Shift,
                 GuestCount = item.GuestCount,
+                // LỖI D: bổ sung để list cũ không hiện 0 bàn / trống trạng thái.
+                TableCount = (int)Math.Ceiling(item.GuestCount / 10m),
+                Status = item.Status.StatusName,
                 MenuName = item.Menu != null ? item.Menu.MenuName : null,
                 FinalMenuPrice = item.FinalMenuPrice,
                 DecorName = item.DecorationPackage != null ? item.DecorationPackage.TenGoi : null,
@@ -71,6 +74,9 @@ public sealed class MyBookingsController : ControllerBase
     [HttpPut("{id:int}/cancel")]
     public async Task<IActionResult> CancelBooking(int id, [FromQuery] string? cancellationReason)
     {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
         var booking = await _context.WeddingBookings
             .Include(item => item.Status)
             .Include(item => item.HallSchedule)
@@ -87,13 +93,24 @@ public sealed class MyBookingsController : ControllerBase
             ? "Hủy theo yêu cầu khách hàng"
             : cancellationReason.Trim();
 
+        // Giải phóng LichSanh về AVAILABLE theo BR03 trong cùng transaction.
+        // Bỏ qua nếu schedule null (default-available). Chỉ giữ BOOKED khi còn DatTiec hoạt động khác.
         var hasOtherActiveBooking = await _context.WeddingBookings.AnyAsync(item =>
             item.BookingId != booking.BookingId && item.HallScheduleId == booking.HallScheduleId &&
+            item.Status != null &&
+            item.Status.StatusGroup == StatusGroups.Booking &&
             BookingStatusCodes.OccupyingSchedule.Contains(item.Status.StatusCode));
-        if (!hasOtherActiveBooking)
+        if (!hasOtherActiveBooking && booking.HallSchedule is not null)
             booking.HallSchedule.StatusId = await _statusService.GetStatusIdAsync(StatusGroups.HallSchedule, HallScheduleStatusCodes.Available);
 
         await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
         return Ok(new { success = true, message = "Đã hủy đơn giữ chỗ tiệc cưới thành công." });
+        }
+        catch
+        {
+            try { await transaction.RollbackAsync(); } catch { }
+            throw;
+        }
     }
 }

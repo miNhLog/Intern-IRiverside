@@ -93,76 +93,23 @@
 <div class="decor-page-wrapper min-h-screen flex flex-col w-full relative">
 
     <!-- ================= KHỐI ĐIỀU HƯỚNG CỐ ĐỊNH (HEADER + TABS DÍNH CHUNG) ================= -->
-    <div class="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs w-full">
+    <div class="backoffice-function-header-shell sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs w-full">
 
         <!-- Top Title & Controls Header -->
-        <header class="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 border-b border-slate-100">
+        <header class="manager-section-header px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 border-b border-slate-100">
             <div class="min-w-0">
                 <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-500 mb-1 flex-wrap">
-                    <span>Quản trị hệ thống</span>
+                    <span class="breadcrumb-root">Quản trị hệ thống</span>
                     <i class="fa-solid fa-chevron-right text-[9px] text-slate-400"></i>
-                    <span id="breadcrumb-current-tab" class="text-[#B89758] font-semibold">Gói Decor Tiệc Cưới</span>
+                    <span id="breadcrumb-current-tab" class="breadcrumb-current text-[#B89758] font-semibold">Gói decor tiệc cưới</span>
                 </nav>
                 <h2 id="header-page-title" class="font-serif text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                    Quản Trị Danh Mục Gói Decor Tiệc Cưới
+                    Quản lý gói decor tiệc cưới
                 </h2>
+                <p>Quản lý các gói trang trí và dịch vụ đi kèm cho tiệc cưới.</p>
             </div>
 
             <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
-                <!-- Notification Bell -->
-                <div class="relative" id="notification-wrapper">
-                    <button id="btn-notification" onclick="toggleNotificationDropdown()" class="p-2.5 text-slate-500 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 relative focus-ring min-h-[42px] min-w-[42px] flex items-center justify-center transition-colors shadow-2xs" aria-label="Thông báo hệ thống">
-                        <i class="fa-regular fa-bell text-sm"></i>
-                        <span id="notif-badge" class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-                    </button>
-
-                    <!-- Dropdown: fixed positioning on mobile, absolute on desktop -->
-                    <div id="notification-dropdown" class="hidden fixed sm:absolute top-20 sm:top-auto right-3 left-3 sm:right-0 sm:left-auto sm:mt-2 sm:w-96 sm:max-w-[384px] bg-white rounded-xl shadow-2xl border border-[#E5D5B8] overflow-hidden" style="z-index: 9999;">
-                        <div class="bg-[#FAF8F5] px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-bell text-[#B89758] text-xs"></i>
-                                <span class="font-bold text-xs text-slate-800">Thông báo hệ thống</span>
-                            </div>
-                            <button onclick="markAllNotificationsRead()" class="text-[11px] text-[#8C6D32] hover:underline font-medium">Đã đọc tất cả</button>
-                        </div>
-                        <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto custom-scrollbar text-xs">
-                            <div class="p-3.5 hover:bg-[#FAF8F5] transition-colors flex gap-3 cursor-pointer">
-                                <div class="w-8 h-8 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <i class="fa-solid fa-check text-xs"></i>
-                                </div>
-                                <div class="space-y-0.5 flex-1 min-w-0">
-                                    <p class="font-semibold text-slate-800">Gói Decor DC-ROY-07 đã kích hoạt</p>
-                                    <p class="text-slate-500 text-[11px] leading-relaxed">Gói "Hoàng Kim Dạ Yến" đã được phê duyệt và niêm yết công khai.</p>
-                                    <span class="text-[10px] text-slate-400 block pt-1">5 phút trước</span>
-                                </div>
-                            </div>
-                            <div class="p-3.5 hover:bg-[#FAF8F5] transition-colors flex gap-3 cursor-pointer">
-                                <div class="w-8 h-8 rounded-full bg-amber-50 border border-amber-200 text-[#8C6D32] flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <i class="fa-solid fa-pen text-xs"></i>
-                                </div>
-                                <div class="space-y-0.5 flex-1 min-w-0">
-                                    <p class="font-semibold text-slate-800">Cập nhật đơn giá Master Data</p>
-                                    <p class="text-slate-500 text-[11px] leading-relaxed">Đơn giá niêm yết của hệ thống Âm thanh JBL đã được cập nhật.</p>
-                                    <span class="text-[10px] text-slate-400 block pt-1">1 giờ trước</span>
-                                </div>
-                            </div>
-                            <div class="p-3.5 hover:bg-[#FAF8F5] transition-colors flex gap-3 cursor-pointer">
-                                <div class="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <i class="fa-solid fa-calendar-check text-xs"></i>
-                                </div>
-                                <div class="space-y-0.5 flex-1 min-w-0">
-                                    <p class="font-semibold text-slate-800">Khóa cọc sảnh Seine</p>
-                                    <p class="text-slate-500 text-[11px] leading-relaxed">Sảnh Seine (Ca tối, 25/12/2026) đã được cọc Đợt 1 thành công.</p>
-                                    <span class="text-[10px] text-slate-400 block pt-1">Hôm nay 09:30</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="p-2.5 bg-slate-50 border-t border-slate-100 text-center">
-                            <button onclick="toggleNotificationDropdown()" class="text-[11px] font-semibold text-slate-600 hover:text-slate-900">Đóng thông báo</button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Export Excel Button -->
                 <button onclick="exportDataExcel()" class="flex items-center gap-2 px-3 sm:px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 focus-ring min-h-[42px] shadow-2xs">
                     <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i>
@@ -235,7 +182,7 @@
             </div>
 
             <!-- Primary Action CTA Button -->
-            <button onclick="openCreateModal()" class="px-5 py-2.5 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all focus-ring min-h-[42px] w-full lg:w-auto lg:flex-shrink-0 cursor-pointer">
+            <button onclick="openCreateModal()" class="admin-create-button px-5 py-2.5 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all focus-ring min-h-[42px] w-full lg:w-auto lg:flex-shrink-0 cursor-pointer">
                 <i class="fa-solid fa-plus text-xs"></i>
                 <span id="btn-create-label">Thêm gói Decor</span>
             </button>
@@ -787,27 +734,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await loadCatalogData();
             switchMainTab('decor');
-
-            document.addEventListener('click', function(event) {
-                const wrapper = document.getElementById('notification-wrapper');
-                const dropdown = document.getElementById('notification-dropdown');
-                if (wrapper && !wrapper.contains(event.target)) {
-                    dropdown.classList.add('hidden');
-                }
-            });
         });
-
-        // 2. TÍNH NĂNG CHUÔNG THÔNG BÁO
-        function toggleNotificationDropdown() {
-            const dropdown = document.getElementById('notification-dropdown');
-            dropdown.classList.toggle('hidden');
-        }
-
-        function markAllNotificationsRead() {
-            const badge = document.getElementById('notif-badge');
-            if (badge) badge.classList.add('hidden');
-            alert('Tất cả thông báo đã được đánh dấu là Đã đọc.');
-        }
 
         // 3. CHUYỂN ĐỔI TAB
         function switchMainTab(tab) {
@@ -834,8 +761,8 @@
                 containerDecor.classList.remove('hidden');
                 containerService.classList.add('hidden');
 
-                breadcrumbTab.innerText = 'Gói Decor Tiệc Cưới';
-                headerTitle.innerText = 'Quản Trị Danh Mục Gói Decor Tiệc Cưới';
+                breadcrumbTab.innerText = 'Gói decor tiệc cưới';
+                headerTitle.innerText = 'Quản lý gói decor tiệc cưới';
                 btnCreateLabel.innerText = 'Thêm gói Decor';
                 inputSearch.placeholder = 'Tìm mã gói, tên chủ đề decor...';
                 labelCat.innerText = 'Phong cách:';
@@ -852,7 +779,7 @@
                 containerDecor.classList.add('hidden');
 
                 breadcrumbTab.innerText = 'Dịch vụ đi kèm';
-                headerTitle.innerText = 'Quản Trị Danh Mục Dịch Vụ Đi Kèm';
+                headerTitle.innerText = 'Quản lý dịch vụ đi kèm';
                 btnCreateLabel.innerText = 'Thêm dịch vụ mới';
                 inputSearch.placeholder = 'Tìm mã DV, tên dịch vụ, nhân sự...';
                 labelCat.innerText = 'Loại dịch vụ:';

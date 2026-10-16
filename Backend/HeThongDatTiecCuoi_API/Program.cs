@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Threading.RateLimiting;
 using HeThongDatTiecCuoi_API.Data;
@@ -12,10 +13,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+QuestPDF.Settings.License = LicenseType.Community;
+
+// Cố định InvariantCulture cho toàn bộ thread để RangeAttribute(typeof(decimal), ...)
+// và decimal parsing không phụ thuộc culture Windows (vi-VN dùng dấu phẩy thập phân).
+var invariantCulture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentCulture = invariantCulture;
+CultureInfo.DefaultThreadCurrentUICulture = invariantCulture;
 
 builder.Services.AddControllers();
+builder.Services.AddMemoryCache();
 builder.Services.AddProblemDetails();
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -47,6 +57,8 @@ builder.Services.Configure<DevelopmentAccountsOptions>(
     builder.Configuration.GetSection(DevelopmentAccountsOptions.SectionName));
 builder.Services.Configure<SmtpOptions>(
     builder.Configuration.GetSection(SmtpOptions.SectionName));
+builder.Services.Configure<MailSettings>(
+    builder.Configuration.GetSection(MailSettings.SectionName));
 builder.Services.Configure<PasswordResetOptions>(
     builder.Configuration.GetSection(PasswordResetOptions.SectionName));
 builder.Services
@@ -75,6 +87,31 @@ builder.Services
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30)
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var userIdValue = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var versionValue = context.Principal?.FindFirst("session_version")?.Value;
+                if (!int.TryParse(userIdValue, out var userId) ||
+                    !long.TryParse(versionValue, out var tokenVersion))
+                {
+                    context.Fail("Phiên đăng nhập không hợp lệ.");
+                    return;
+                }
+
+                var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                var updatedAt = await db.Users.AsNoTracking()
+                    .Where(user => user.UserId == userId)
+                    .Select(user => user.UpdatedAt)
+                    .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
+                var currentVersion = updatedAt?.ToUniversalTime().Ticks ?? 0L;
+                if (currentVersion != tokenVersion)
+                {
+                    context.Fail("Phiên đăng nhập đã bị thu hồi.");
+                }
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -83,13 +120,29 @@ builder.Services.AddScoped<IPasswordHasher<FirstPasswordOtp>, PasswordHasher<Fir
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IStatusService, StatusService>();
+builder.Services.AddSingleton<IPaymentPolicyProvider, PaymentPolicyProvider>();
+builder.Services.AddScoped<IContractTemplateProvider, ContractTemplateProvider>();
+builder.Services.AddScoped<IContractCodeGenerator, ContractCodeGenerator>();
+builder.Services.AddScoped<IContractPdfGenerator, ContractPdfGenerator>();
 builder.Services.AddScoped<IEmployeeCodeGenerator, EmployeeCodeGenerator>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IFirstPasswordOtpService, FirstPasswordOtpService>();
 builder.Services.AddScoped<DevelopmentAuthSeeder>();
+builder.Services.AddScoped<IAiChatService, AiChatService>();
 builder.Services.AddHttpClient();
+builder.Services
+    .AddOptions<AiServiceOptions>()
+    .Bind(builder.Configuration.GetSection(AiServiceOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddHttpClient("AiService", (provider, client) =>
+{
+    var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<AiServiceOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+});
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
@@ -164,3 +217,5 @@ app.UseStaticFiles();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program;

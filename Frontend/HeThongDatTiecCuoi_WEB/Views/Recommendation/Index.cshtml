@@ -2,250 +2,156 @@
 @{
     ViewData["Title"] = "Gợi ý gói tiệc cưới Top 3 tối ưu - Riverside Palace";
     ViewData["PublicActivePage"] = "recommendation";
+    var hallPlaceholder = Url.Content("~/images/home/hall-placeholder.jpg");
 }
 
 @section Styles {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Plus+Jakarta+Sans:wght@300..800&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
-
+    <link rel="stylesheet" href="~/css/recommendation.css" asp-append-version="true" />
     <style>
-        .recom-main-wrapper {
-            background-color: #FAF8F5;
-            padding: 50px 20px 80px 20px;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            color: #1E293B;
-        }
-
-        .recom-box-limit {
-            max-width: 1140px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 32px;
-        }
-
-        .recom-card {
-            background: #FFFFFF;
-            border-radius: 20px;
-            border: 1px solid #E2E8F0;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        .recom-gold-card {
-            background: linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%);
-            border: 2px solid #B89758;
-            box-shadow: 0 18px 30px -8px rgba(184, 151, 88, 0.22);
-            position: relative;
-        }
-
-        .recom-form-control {
-            width: 100%;
-            padding: 12px 16px;
-            background-color: #FAF8F5;
-            border: 1px solid #E2E8F0;
-            border-radius: 12px;
-            color: #1E293B;
-            font-size: 13px;
-            box-sizing: border-box;
-            outline: none;
-            transition: all 0.2s;
-        }
-
-            .recom-form-control:focus {
-                border-color: #B89758;
-                background-color: #FFFFFF;
-            }
-
-        .recom-btn-gold {
-            background-color: #B89758;
-            color: #FFFFFF;
-            font-weight: 700;
-            border-radius: 12px;
-            padding: 14px 28px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-            .recom-btn-gold:hover {
-                background-color: #8C6D32;
-            }
-
-        .recom-btn-dark {
-            background-color: #1E293B;
-            color: #FFFFFF;
-            font-weight: 700;
-            border-radius: 12px;
-            padding: 12px 20px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-            .recom-btn-dark:hover {
-                background-color: #0F172A;
-            }
-
-        .recom-slot-free {
-            background-color: #ECFDF5;
-            border: 1.5px solid #10B981;
-            color: #065F46;
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 12px;
-            text-align: center;
-            transition: all 0.2s;
-        }
-
-            .recom-slot-free:hover {
-                background-color: #10B981;
-                color: #FFFFFF;
-                transform: translateY(-2px);
-            }
-
-        .recom-slot-locked {
-            background-color: #F1F5F9;
-            border: 1.5px solid #CBD5E1;
-            color: #94A3B8;
-            cursor: not-allowed;
-            padding: 10px;
-            border-radius: 12px;
-            text-align: center;
-            opacity: 0.7;
-        }
-
-        .recom-custom-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.65);
-            backdrop-filter: blur(4px);
-            z-index: 99999;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-
-        .recom-grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
-        }
-
-        .recom-grid-4 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-        }
+        .recom-budget-badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;}
+        .recom-budget-badge--success{color:#047857;background:#D1FAE5;border:1px solid #6EE7B7;}
+        .recom-budget-badge--warning{color:#92400E;background:#FEF3C7;border:1px solid #FCD34D;}
+        .recom-analysis--sub{color:#64748B;font-size:12px;}
+        .recom-explain-list{margin:10px 0 0 0;padding-left:18px;font-size:12.5px;color:#334155;display:grid;gap:4px;}
     </style>
 }
 
 <div class="home-page">
-    <!-- ĐỒNG BỘ 100% HEADER NHƯ TRANG CHỦ -->
     <partial name="_PublicHeader" />
 
     <main class="recom-main-wrapper">
-        <div class="recom-box-limit">
-
-            <!-- Banner giới thiệu -->
-            <div style="text-align: center; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 12px;">
-                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; font-size: 11px; font-weight: 700; background: rgba(184, 151, 88, 0.15); color: #8C6D32; border: 1px solid rgba(184, 151, 88, 0.3);">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Wedding Recommendation Engine
-                </span>
-                <h1 style="font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 700; color: #0F172A; margin: 0; line-height: 1.2;">
-                    Thiết Kế Đám Cưới Trong Mơ
-                </h1>
-                <p style="font-size: 14px; color: #64748B; margin: 0; line-height: 1.6;">
-                    Nhập kế hoạch dự toán ngân sách và ý tưởng của hai bạn. Thuật toán sẽ rà soát dữ liệu thực tế tại 9 đại sảnh, 24 set thực đơn và các concept decor để đề xuất <strong>Top 3 Gói Tiệc Tối Ưu Nhất</strong>.
-                </p>
+        <section class="hero recom-hero" aria-labelledby="recom-hero-title">
+            <div class="hero-image" aria-hidden="true"></div>
+            <div class="home-container hero-inner recom-hero-inner">
+                <div class="hero-copy">
+                    <span class="eyebrow hero-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span> Gợi ý thông minh &bull; Riverside Palace</span>
+                    <h1 id="recom-hero-title">Thiết Kế Đám Cưới Trong Mơ</h1>
+                    <p>Nhập kế hoạch dự toán ngân sách và ý tưởng của hai bạn. Hệ thống đề xuất <strong class="recom-hero-accent">Top 3 Gói Tiệc Tối Ưu Nhất</strong> theo ngân sách, sức chứa và phong cách.</p>
+                    <div class="hero-actions">
+                        <a class="button button-gold" href="#clientRecomForm">Bắt đầu gợi ý trong 1 phút <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+                        <button class="button button-glass" type="button" onclick="openShowtimeModal()"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span> Xem lịch &amp; ca trống thực tế</button>
+                    </div>
+                </div>
+                <div class="recom-hero-stats" aria-label="Điểm nổi bật gợi ý">
+                    <span class="recom-hero-stat"><span class="material-symbols-outlined" aria-hidden="true">apartment</span> 9 sảnh ven sông Sài Gòn</span>
+                    <span class="recom-hero-stat"><span class="material-symbols-outlined" aria-hidden="true">restaurant_menu</span> 24 set thực đơn chuẩn 10 khách/bàn</span>
+                    <span class="recom-hero-stat"><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span> Scoring Top 3 minh bạch theo ngân sách</span>
+                </div>
             </div>
+        </section>
 
-            <!-- Form khảo sát 5 nhóm tiêu chí -->
-            <form id="clientRecomForm" onsubmit="handleAnalyzeCombos(event)" class="recom-card" style="padding: 36px; display: flex; flex-direction: column; gap: 28px;">
-
-                <!-- Phần 1: Cặp đôi (Tự động điền) -->
+        <div class="recom-box-limit">
+            <form id="clientRecomForm" onsubmit="handleAnalyzeCombos(event)" class="recom-card recom-form">
                 <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; display: flex; align-items: center; gap: 8px;">
-                            <span style="width: 24px; height: 24px; border-radius: 999px; background: #B89758; color: #FFF; display: flex; align-items: center; justify-content: center; font-size: 12px;">1</span>
+                    <div class="recom-section-head">
+                        <h3 class="recom-section-title">
+                            <span class="recom-step-badge">1</span>
                             <span>Thông Tin Cặp Đôi</span>
                         </h3>
-                        <span style="font-size: 12px; color: #94A3B8; font-style: italic;">Có thể chỉnh sửa trực tiếp thông tin liên hệ</span>
+                        <span class="recom-hint-inline">Có thể chỉnh sửa trực tiếp thông tin liên hệ</span>
                     </div>
                     <div class="recom-grid-3">
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px;">Họ tên Cô dâu &amp; Chú rể *</label>
+                            <label class="recom-label" for="coupleName">Họ tên Cô dâu &amp; Chú rể *</label>
                             <input type="text" id="coupleName" required value="@Model.CoupleName" placeholder="VD: Trần Hoàng &amp; Mai Phương" class="recom-form-control">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px;">Số điện thoại liên hệ *</label>
+                            <label class="recom-label" for="phoneNumber">Số điện thoại liên hệ *</label>
                             <input type="tel" id="phoneNumber" required value="@Model.PhoneNumber" placeholder="09xxxxxxxx" class="recom-form-control">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px;">Email nhận bảng dự toán</label>
-                            <input type="email" id="email" value="@Model.Email" placeholder="wedding@gmail.com" class="recom-form-control">
+                            <label class="recom-label" for="email">Email nhận bảng dự toán *</label>
+                            <input type="email" id="email" required value="@Model.Email" placeholder="wedding@gmail.com" class="recom-form-control">
                         </div>
                     </div>
                 </div>
 
-                <hr style="border: none; border-top: 1px solid #F1F5F9; margin: 0;">
+                <hr class="recom-divider">
 
-                <!-- Phần 2: Thời gian & Ràng buộc số bàn -->
                 <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-                        <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; display: flex; align-items: center; gap: 8px;">
-                            <span style="width: 24px; height: 24px; border-radius: 999px; background: #B89758; color: #FFF; display: flex; align-items: center; justify-content: center; font-size: 12px;">2</span>
+                    <div class="recom-section-head">
+                        <h3 class="recom-section-title">
+                            <span class="recom-step-badge">2</span>
                             <span>Thời Gian Tổ Chức &amp; Quy Mô Bàn Tiệc</span>
                         </h3>
-                        <button type="button" onclick="openShowtimeModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 700; color: #8C6D32; background: rgba(184, 151, 88, 0.15); border: 1px solid rgba(184, 151, 88, 0.3); cursor: pointer;">
-                            <i class="fa-solid fa-calendar-check"></i>
+                        <button type="button" onclick="openShowtimeModal()" class="recom-btn-ghost">
+                            <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
                             <span>Xem Lịch &amp; Ca Trống Thực Tế</span>
                         </button>
                     </div>
 
-                    <div class="recom-grid-4">
+                    <div class="recom-search-grid">
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px;">Ngày tổ chức dự kiến *</label>
+                            <label class="recom-label" for="eventDate">
+                                <span>Ngày tổ chức dự kiến *</span>
+                                <span class="recom-help-wrap">
+                                    <button type="button" id="dateHelpBtn" class="recom-help-btn" aria-label="Xem quy định thời gian đặt tiệc" aria-expanded="false" aria-controls="dateHelpPopover" onclick="toggleDateHelp(event)" title="Quy định thời gian đặt tiệc?">?</button>
+                                    <span id="dateHelpPopover" class="recom-popover" hidden>
+                                        <strong>Riverside Palace nhận đặt tiệc trước từ 30 ngày đến tối đa 1 năm (365 ngày).</strong><br />
+                                        Quy định này giúp nhà hàng có đủ thời gian chuẩn bị sảnh, thực đơn và dịch vụ chu đáo nhất cho hai bạn.<br />
+                                        Hai bạn vui lòng chọn ngày trong khoảng cho phép; để xem sảnh còn trống thực tế, bấm nút <em>“Xem Lịch &amp; Ca Trống Thực Tế”</em> ở phía trên nhé!
+                                    </span>
+                                </span>
+                            </label>
                             <input type="date" id="eventDate" required onchange="handleDateChanged()" class="recom-form-control">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px;">Buổi tiệc mong muốn *</label>
-                            <select id="shift" class="recom-form-control" style="cursor: pointer;">
+                            <label class="recom-label" for="shift">Buổi tiệc mong muốn *</label>
+                            <select id="shift" class="recom-form-control">
                                 <option value="Ca tối" selected>Buổi tối (17:30 – 21:30)</option>
                                 <option value="Ca trưa">Buổi trưa (10:30 – 14:00)</option>
                             </select>
                         </div>
                         <div>
-                            <label style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px;">
-                                <span>Bàn chính thức *</span>
-                                <span style="color: #B89758; font-weight: 700;">10 – 120 bàn</span>
+                            <label class="recom-label-row" for="guestCount">
+                                <span>Số lượng khách dự kiến *</span>
+                                <span class="recom-label-accent">150 – 1400 khách</span>
                             </label>
-                            <input type="number" id="officialTableCount" required min="10" max="120" value="25" onchange="validateTableCounts()" class="recom-form-control" style="font-weight: 700;">
+                            <input type="number" id="guestCount" required min="150" max="1400" step="10" value="@Model.GuestCount" placeholder="Ví dụ: 300 (150 – 1400 khách, 10 khách/bàn)" oninput="syncGuestToTables()" class="recom-form-control recom-form-control--strong">
+                            <input type="hidden" id="officialTableCount" value="30">
                         </div>
                         <div>
-                            <label style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+                            <label class="recom-label-row" for="spareTableCount">
                                 <span>Bàn dự phòng</span>
-                                <span style="color: #B89758; font-weight: 700;">1 – 10 bàn</span>
+                                <span class="recom-label-accent">0 – 10 bàn</span>
                             </label>
-                            <input type="number" id="spareTableCount" required min="1" max="10" value="2" onchange="validateTableCounts()" class="recom-form-control">
+                            <input type="number" id="spareTableCount" min="0" max="10" value="@Model.SpareTableCount" placeholder="Ví dụ: 2 (để trống = 0 bàn)" oninput="syncGuestToTables()" onchange="validateTableCounts()" class="recom-form-control">
                         </div>
                     </div>
+                    <div id="tableConvertHint" class="recom-convert-hint">Nhập số khách để tự động quy đổi số bàn (quy chuẩn 10 khách/bàn) + số bàn dự phòng.</div>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 16px;">
+                    <div class="recom-grid-2">
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px;">Tổng ngân sách dự trù (VNĐ) *</label>
-                            <input type="number" id="expectedBudget" required step="5000000" min="50000000" max="3000000000" value="250000000" class="recom-form-control" style="font-weight: 700;">
+                            <label class="recom-label" for="expectedBudget">
+                                <span>Tổng ngân sách dự trù (VNĐ) *</span>
+                                <span class="recom-help-wrap">
+                                    <button type="button" id="budgetHelpBtn" class="recom-help-btn" aria-label="Xem khoảng ngân sách hợp lệ" aria-expanded="false" aria-controls="budgetHelpPopover" onclick="toggleBudgetHelp(event)" title="Khoảng ngân sách hợp lệ?">?</button>
+                                    <span id="budgetHelpPopover" class="recom-popover" hidden>
+                                        <strong>Nhập ngân sách trong khoảng 100 triệu – 3 tỷ VNĐ.</strong><br />
+                                        Cách ước lượng theo catalog thật Riverside Palace:
+                                        <ul>
+                                            <li>Sảnh: <strong>20 – 80 triệu</strong> (Elbe 20tr &rarr; Grand Ballroom 80tr)</li>
+                                            <li>Menu: <strong>4,35 – 5,9 triệu/bàn</strong> (10 khách/bàn)</li>
+                                            <li>Decor: <strong>18 – 28 triệu</strong> + dịch vụ thêm 0 – 6 triệu</li>
+                                        </ul>
+                                        Công thức tối thiểu theo số bàn thực tế:<br />
+                                        <strong>Min &asymp; 38tr (sảnh rẻ nhất 20tr + decor rẻ nhất 18tr) + tổng số bàn &times; 4,35tr</strong><br />
+                                        Vd 15 bàn (150 khách): tối thiểu &asymp; <strong>103,3 triệu</strong> (20 + 15&times;4,35 + 18, chưa gồm dịch vụ).<br />
+                                        Vd 30 bàn: tối thiểu &asymp; <strong>168,5 triệu</strong> (20 + 30&times;4,35 + 18), tối đa &asymp; <strong>285 triệu</strong> (80 + 30&times;5,9 + 28, chưa gồm dịch vụ).<br />
+                                        Hệ thống chỉ gợi ý combo <strong>trong ngân sách hoặc vượt tối đa 5 – 10 triệu</strong>. Nếu ngân sách thấp hơn mức tối thiểu, hãy <em>tăng ngân sách</em> hoặc <em>giảm số khách</em>.
+                                    </span>
+                                </span>
+                            </label>
+                            <input type="text" inputmode="numeric" id="expectedBudget" required value="@Model.ExpectedBudget" placeholder="Ví dụ: 200.000.000 (tối thiểu 100 triệu – 3 tỷ VNĐ)" class="recom-form-control recom-form-control--strong" oninput="formatBudgetInput(this); updateBudgetMinHint()">
+                            <small id="budgetMinHint" class="recom-small-note">Ngân sách tối thiểu 100 triệu; với quy mô hiện tại cần khoảng -- để không vượt quá 10 triệu.</small>
                         </div>
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px;">Ưu tiên cân đối</label>
-                            <select id="budgetPriority" class="recom-form-control" style="cursor: pointer;">
+                            <label class="recom-label" for="budgetPriority">Ưu tiên cân đối</label>
+                            <select id="budgetPriority" class="recom-form-control">
                                 <option value="BALANCED" selected>Cân đối toàn diện (Ẩm thực ngon &amp; Không gian lộng lẫy)</option>
                                 <option value="PRIORITIZE_FOOD">Ưu tiên Ẩm thực (Nâng cấp thực đơn hải sản cao cấp)</option>
                                 <option value="PRIORITIZE_DECOR">Ưu tiên Không gian (Sảnh tiệc hoành tráng &amp; decor hoa tươi)</option>
@@ -254,18 +160,17 @@
                     </div>
                 </div>
 
-                <hr style="border: none; border-top: 1px solid #F1F5F9; margin: 0;">
+                <hr class="recom-divider">
 
-                <!-- Phần 3: Phong cách & Dịch vụ đi kèm -->
                 <div>
-                    <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-                        <span style="width: 24px; height: 24px; border-radius: 999px; background: #B89758; color: #FFF; display: flex; align-items: center; justify-content: center; font-size: 12px;">3</span>
+                    <h3 class="recom-section-title">
+                        <span class="recom-step-badge">3</span>
                         <span>Gu Thẩm Mỹ &amp; Dịch Vụ Cưới Trọn Gói</span>
                     </h3>
-                    <div class="recom-grid-3">
+                    <div class="recom-grid-3" style="margin-top:16px;">
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px;">Không gian yêu thích</label>
-                            <select id="preferredSpaceType" class="recom-form-control" style="cursor: pointer;">
+                            <label class="recom-label" for="preferredSpaceType">Không gian yêu thích</label>
+                            <select id="preferredSpaceType" class="recom-form-control">
                                 <option value="">-- Tùy chọn linh hoạt --</option>
                                 <option value="INDOOR_PILLARLESS">Đại sảnh vòm trần cao không cột (Grand Ballroom, Seine)</option>
                                 <option value="OUTDOOR_RIVER">Sân vườn ven sông thoáng đãng (Green Riverside)</option>
@@ -273,18 +178,18 @@
                             </select>
                         </div>
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px;">Concept Decor Hot Trend (TikTok)</label>
-                            <select id="desiredStyle" class="recom-form-control" style="cursor: pointer;">
-                                <option value="Hiện đại / lãng mạn" selected>🌊 Midnight Celestial Blue (Đêm Huyền Bí Sắc Xanh)</option>
-                                <option value="Hoàng gia">✨ Royal Versailles Gold (Hoàng Gia Versailles)</option>
-                                <option value="Sân vườn / lãng mạn">🌿 Botanical Garden Muse (Vườn Cổ Tích Rustic)</option>
-                                <option value="Cổ tích / lãng mạn">🌸 Fairy Princesscore (Công Chúa Ngọt Ngào)</option>
-                                <option value="Nhẹ nhàng">🕊️ Pure Minimalism (Trắng Pha Lê Tinh Giản)</option>
+                            <label class="recom-label" for="desiredStyle">Concept Decor Hot Trend</label>
+                            <select id="desiredStyle" class="recom-form-control">
+                                <option value="Hiện đại / lãng mạn" selected>Midnight Celestial Blue (Đêm Huyền Bí Sắc Xanh)</option>
+                                <option value="Hoàng gia">Royal Versailles Gold (Hoàng Gia Versailles)</option>
+                                <option value="Sân vườn / lãng mạn">Botanical Garden Muse (Vườn Cổ Tích Rustic)</option>
+                                <option value="Cổ tích / lãng mạn">Fairy Princesscore (Công Chúa Ngọt Ngào)</option>
+                                <option value="Nhẹ nhàng">Pure Minimalism (Trắng Pha Lê Tinh Giản)</option>
                             </select>
                         </div>
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px;">Phong vị ẩm thực chủ đạo</label>
-                            <select id="foodPreference" class="recom-form-control" style="cursor: pointer;">
+                            <label class="recom-label" for="foodPreference">Phong vị ẩm thực chủ đạo</label>
+                            <select id="foodPreference" class="recom-form-control">
                                 <option value="EUROPEAN_FUSION" selected>Á - Âu Đương đại (Bò Mỹ, Cá hồi, Mì vịt quay)</option>
                                 <option value="SEAFOOD_PREMIUM">Đặc sản Hải sản Cao cấp (Cua, Tôm càng, Cá tầm)</option>
                                 <option value="ASIAN_TRADITIONAL">Á Đông Tinh Hoa (Hương vị truyền thống)</option>
@@ -292,280 +197,347 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #F1F5F9;">
-                        <span style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 10px;">Dịch vụ trọn gói đề xuất:</span>
-                        <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px;">
-                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #334155;">
+                    <div class="recom-services">
+                        <span class="recom-services-title">Dịch vụ trọn gói đề xuất:</span>
+                        <div class="recom-services-list">
+                            <label>
                                 <input type="checkbox" name="services" value="DV001" checked>
-                                <span>MC Nghi Lễ Cưới (+5.000.000 đ)</span>
+                                <span>Thức uống trọn gói (+200.000 đ)</span>
                             </label>
-                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #334155;">
+                            <label>
                                 <input type="checkbox" name="services" value="DV002" checked>
-                                <span>Âm thanh &amp; Ánh sáng sân khấu (+12.000.000 đ)</span>
+                                <span>Đón khách tại tiền sảnh (+2.000.000 đ)</span>
                             </label>
-                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #334155;">
+                            <label>
+                                <input type="checkbox" name="services" value="DV003">
+                                <span>Lễ khai tiệc (+1.000.000 đ)</span>
+                            </label>
+                            <label>
                                 <input type="checkbox" name="services" value="DV004">
-                                <span>Vũ đoàn khai mạc tiệc (+7.000.000 đ)</span>
+                                <span>Chương trình giải trí (+800.000 đ)</span>
                             </label>
-                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #334155;">
+                            <label>
                                 <input type="checkbox" name="services" value="DV005">
-                                <span>Đội ngũ Lễ tân đón khách (+3.000.000 đ)</span>
+                                <span>Dịch vụ tiệc cưới khác (+2.000.000 đ)</span>
                             </label>
                         </div>
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: flex-end; padding-top: 10px; border-top: 1px solid #F1F5F9;">
+                <div class="recom-form-actions">
                     <button type="submit" id="btnSubmitRecom" class="recom-btn-gold">
-                        <i class="fa-solid fa-sparkles"></i>
+                        <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
                         <span>Tính Toán &amp; Trích Xuất Top 3 Combo</span>
                     </button>
                 </div>
             </form>
 
-            <!-- Trạng thái chờ -->
-            <div id="loadingState" style="display: none; padding: 60px 0; text-align: center;">
-                <div style="display: inline-block; width: 44px; height: 44px; border: 4px solid rgba(184, 151, 88, 0.2); border-top-color: #B89758; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                <p style="font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: #0F172A; margin-top: 16px;">Scoring Engine đang chấm điểm ma trận phương án...</p>
-                <p style="font-size: 13px; color: #64748B;">Đang đối soát lịch trống tại 9 sảnh, so khớp 24 set thực đơn và điểm tín nhiệm 5 sao từ CSDL.</p>
+            <div id="loadingState" class="recom-loading" role="status" aria-live="polite">
+                <div class="recom-spinner" aria-hidden="true"></div>
+                <p class="recom-loading-title">Scoring Engine đang chấm điểm ma trận phương án...</p>
+                <p class="recom-loading-sub">Đang đối soát lịch trống tại 9 sảnh, so khớp 24 set thực đơn và các đánh giá mới nhất.</p>
             </div>
 
-            <!-- Khu vực kết quả Top 3 Combo -->
-            <div id="resultsSection" style="display: none; flex-direction: column; gap: 24px;">
-                <div class="recom-card" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div id="resultsSection" class="recom-results">
+                <div class="recom-card recom-results-head">
                     <div>
-                        <h2 style="font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: #0F172A; margin: 0;">Gợi Ý Gói Tiệc Cưới Dành Riêng Cho Hai Bạn</h2>
-                        <p style="font-size: 12px; color: #64748B; margin: 4px 0 0 0;" id="resNotice">Đã phân tích hàng trăm phương án để chọn ra 3 lựa chọn xuất sắc nhất.</p>
+                        <h2 class="recom-results-title">Gợi Ý Gói Tiệc Cưới Dành Riêng Cho Hai Bạn</h2>
+                        <p class="recom-results-sub" id="resNotice">Đã phân tích hàng trăm phương án để chọn ra 3 lựa chọn xuất sắc nhất.</p>
                     </div>
-                    <button type="button" onclick="window.scrollTo({top: 150, behavior: 'smooth'})" style="padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; background: #F1F5F9; border: 1px solid #E2E8F0; color: #334155; cursor: pointer;">
-                        <i class="fa-solid fa-sliders" style="margin-right: 4px;"></i> Đổi tiêu chí
+                    <button type="button" onclick="window.scrollTo({top: 150, behavior: 'smooth'})" class="recom-btn-light">
+                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;vertical-align:-3px;">tune</span> Đổi tiêu chí
                     </button>
                 </div>
 
-                <div id="combosCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;"></div>
+                <div id="combosCardsContainer" class="recom-combo-grid"></div>
+
+                <div id="smartSuggestBox" class="recom-card" style="display:none;margin-top:16px;border:1px solid #F59E0B;background:#FFFBEB;border-radius:12px;padding:20px;" role="status" aria-live="polite">
+                    <h3 style="margin:0 0 8px 0;font-size:16px;">💡 Gợi ý thông minh từ Riverside Palace</h3>
+                    <p id="smartSuggestReason" class="recom-results-sub" style="margin:0 0 12px 0;"></p>
+                    <p id="smartSuggestBudget" style="margin:0 0 12px 0;font-weight:600;"></p>
+                    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;">
+                        <button type="button" id="smartSuggestApplyBtn" class="recom-btn-gold" onclick="applySuggestedBudget()">Tự động điều chỉnh ngân sách</button>
+                    </div>
+                    <div id="smartSuggestDates" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                </div>
             </div>
 
         </div>
     </main>
 
-    <!-- ĐỒNG BỘ 100% FOOTER NHƯ TRANG CHỦ -->
     <partial name="_PublicFooter" />
 </div>
 
-<!-- Modal 1: Chi tiết hạng mục từ DB -->
 <div id="itemDetailModal" class="recom-custom-modal">
-    <div style="background: #FFFFFF; border-radius: 24px; max-width: 520px; width: 100%; padding: 24px; position: relative; max-height: 90vh; overflow-y: auto; box-sizing: border-box;">
-        <button type="button" onclick="closeDetailModal()" style="position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; border: none; background: #F1F5F9; color: #64748B; cursor: pointer;">
-            <i class="fa-solid fa-xmark"></i>
+    <div class="recom-dialog recom-dialog--sm recom-dialog--pop" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
+        <button type="button" onclick="closeDetailModal()" class="recom-dialog-close" aria-label="Đóng chi tiết">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
         </button>
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-            <div id="modalIconBox" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(184, 151, 88, 0.15); color: #8C6D32; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                <i class="fa-solid fa-circle-info"></i>
+        <div class="recom-modal-head">
+            <div id="modalIconBox" class="recom-modal-icon">
+                <span class="material-symbols-outlined" aria-hidden="true">info</span>
             </div>
             <div>
-                <span id="modalSubTitle" style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #B89758; display: block;">Hạng Mục Tiệc Cưới</span>
-                <h3 id="modalTitle" style="font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: #0F172A; margin: 0;">Chi Tiết Hạng Mục</h3>
+                <span id="modalSubTitle" class="recom-modal-kicker">Hạng Mục Tiệc Cưới</span>
+                <h3 id="modalTitle" class="recom-modal-title">Chi Tiết Hạng Mục</h3>
             </div>
         </div>
-        <div style="background: #FAF8F5; padding: 12px 16px; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 16px;">
-            <span style="color: #64748B;">Đơn giá niêm yết:</span>
-            <span id="modalPriceVal" style="font-weight: 700; color: #0F172A; font-size: 15px;">-- đ</span>
+        <div class="recom-price-bar">
+            <span>Đơn giá niêm yết:</span>
+            <span id="modalPriceVal"><strong>-- đ</strong></span>
         </div>
-        <div style="font-size: 13px; color: #475569; display: flex; flex-direction: column; gap: 12px;">
+        <div class="recom-modal-body">
             <div>
-                <strong style="color: #0F172A; display: block; margin-bottom: 4px;">Mô tả từ cơ sở dữ liệu:</strong>
-                <p id="modalDescription" style="margin: 0; background: #F8FAFC; padding: 12px; border-radius: 10px; border: 1px solid #E2E8F0; line-height: 1.5;">Nội dung chi tiết...</p>
+                <strong>Mô tả:</strong>
+                <p id="modalDescription" class="recom-desc-box">Nội dung chi tiết...</p>
             </div>
-            <div id="modalDishesContainer" style="display: none;">
-                <strong style="color: #0F172A; display: block; margin-bottom: 4px;">Chi tiết thực đơn:</strong>
-                <div id="modalDishesText" style="background: #F8FAFC; padding: 12px; border-radius: 10px; border: 1px solid #E2E8F0; line-height: 1.5;"></div>
+            <div id="modalDishesContainer" hidden>
+                <strong>Chi tiết thực đơn:</strong>
+                <div id="modalDishesText" class="recom-desc-box"></div>
             </div>
-            <div style="padding: 10px 14px; border-radius: 10px; background: #FEF3C7; color: #92400E; font-size: 12px; border: 1px solid #FDE68A;">
-                <i class="fa-solid fa-circle-check" style="color: #10B981; margin-right: 4px;"></i>
-                <span id="modalNote">Dữ liệu được đồng bộ trực tiếp từ cơ sở dữ liệu Riverside Palace.</span>
+            <div class="recom-note-box">
+                <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                <span id="modalNote">Thông tin được cập nhật từ hệ thống Riverside Palace.</span>
             </div>
         </div>
-        <button type="button" onclick="closeDetailModal()" class="recom-btn-dark" style="width: 100%; margin-top: 20px; font-size: 13px;">
+        <button id="modalMenuCustomBtn" type="button" onclick="openMenuCustomizerFromDetail()" class="recom-btn-gold recom-btn-block" hidden>
+            <span class="material-symbols-outlined" aria-hidden="true">restaurant_menu</span> Xem thực đơn tiệc (tên món + giá, tùy chỉnh món)
+        </button>
+        <button type="button" onclick="closeDetailModal()" class="recom-btn-dark recom-btn-block">
             Đã Hiểu &amp; Đóng Lại
         </button>
     </div>
 </div>
 
-<!-- Modal 2: Xem lịch & ca trống từ DB -->
 <div id="showtimeModal" class="recom-custom-modal">
-    <div style="background: #FFFFFF; border-radius: 24px; max-width: 820px; width: 100%; padding: 28px; position: relative; max-height: 90vh; overflow-y: auto; box-sizing: border-box;">
-        <button type="button" onclick="closeShowtimeModal()" style="position: absolute; top: 20px; right: 20px; width: 32px; height: 32px; border-radius: 50%; border: none; background: #F1F5F9; color: #64748B; cursor: pointer;">
-            <i class="fa-solid fa-xmark"></i>
+    <div class="recom-dialog recom-dialog--lg recom-dialog--pop" role="dialog" aria-modal="true" aria-labelledby="showtimeTitle" tabindex="-1">
+        <button type="button" onclick="closeShowtimeModal()" class="recom-dialog-close" aria-label="Đóng lịch sảnh">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
         </button>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+        <div class="recom-showtime-head">
             <div>
-                <span style="font-size: 11px; font-weight: 700; color: #B89758; text-transform: uppercase;">Dữ Liệu Thời Gian Thực Từ CSDL</span>
-                <h3 style="font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: #0F172A; margin: 2px 0 0 0;">Tình Trạng Lịch Sảnh &amp; Ca Tổ Chức</h3>
-                <p style="font-size: 12px; color: #64748B; margin: 4px 0 0 0;">Hệ thống kiểm tra trực tiếp bảng <code>LichSanh</code> vào ngày hai bạn chọn.</p>
+                <span class="recom-modal-kicker">Lịch sảnh trực tiếp</span>
+                <h3 id="showtimeTitle" class="recom-modal-title" style="font-size:22px;">Tình Trạng Lịch Sảnh &amp; Ca Tổ Chức</h3>
+                <p class="recom-results-sub">Hệ thống kiểm tra trực tiếp bảng LichSanh vào ngày hai bạn chọn.</p>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px; background: #FAF8F5; padding: 8px 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-                <label style="font-size: 12px; font-weight: 600; color: #475569;">Xem ngày khác:</label>
-                <input type="date" id="modalDatePicker" onchange="loadHallAvailability(this.value)" style="font-size: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid #CBD5E1;">
+            <div class="recom-date-filter">
+                <label for="modalDatePicker">Xem ngày khác:</label>
+                <input type="date" id="modalDatePicker" onchange="loadHallAvailability(this.value)" class="recom-mini-input">
+                <small class="recom-filter-note">(Riverside Palace nhận đặt tiệc trước từ 30 ngày đến tối đa 1 năm)</small>
             </div>
         </div>
 
-        <div id="showtimeMatrixContainer" style="display: flex; flex-direction: column; gap: 12px;"></div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid #F1F5F9; font-size: 12px;">
-            <div style="display: flex; gap: 16px;">
-                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: #ECFDF5; border: 1.5px solid #10B981; display: inline-block;"></span> Ca còn trống (Bấm để chọn)</span>
-                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: #F1F5F9; border: 1.5px solid #CBD5E1; display: inline-block;"></span> Ca đã kín lịch</span>
+        <div class="recom-suggest-box">
+            <div class="recom-suggest-head">
+                <strong><span class="material-symbols-outlined" aria-hidden="true">lightbulb</span>Gợi ý các ngày gần nhất còn sảnh trống</strong>
+                <div class="recom-suggest-filters">
+                    <select id="availMonthFilter" onchange="onAvailFilterChanged()" class="recom-mini-select" aria-label="Lọc tháng"></select>
+                    <select id="availYearFilter" onchange="onAvailFilterChanged()" class="recom-mini-select" aria-label="Lọc năm"></select>
+                    <select id="availShiftFilter" onchange="onAvailFilterChanged()" class="recom-mini-select" aria-label="Lọc ca">
+                        <option value="">Tất cả ca</option>
+                        <option value="Ca trưa">Ca trưa</option>
+                        <option value="Ca tối">Ca tối</option>
+                    </select>
+                    <button type="button" onclick="shiftAvailWeek(-7)" title="Tuần trước" class="recom-btn-light">‹ Tuần trước</button>
+                    <button type="button" onclick="shiftAvailWeek(7)" title="Tuần sau" class="recom-btn-light">Tuần sau ›</button>
+                </div>
             </div>
-            <button type="button" onclick="closeShowtimeModal()" style="padding: 8px 16px; border-radius: 10px; background: #F1F5F9; border: none; font-weight: 600; color: #475569; cursor: pointer;">Đóng</button>
+            <div id="availableDatesBadges" class="recom-date-badges"></div>
+        </div>
+
+        <div id="showtimeMatrixContainer" class="recom-matrix"></div>
+
+        <div class="recom-legend">
+            <div class="recom-legend-keys">
+                <span><span class="recom-dot recom-dot--free"></span> Ca còn trống (Bấm để chọn)</span>
+                <span><span class="recom-dot recom-dot--locked"></span> Ca đã kín lịch</span>
+            </div>
+            <button type="button" onclick="closeShowtimeModal()" class="recom-btn-light">Đóng</button>
         </div>
     </div>
 </div>
 
-<!-- Modal 3: Xác nhận giữ chỗ -->
 <div id="bookingConfirmModal" class="recom-custom-modal">
-    <div style="background: #FFFFFF; border-radius: 24px; max-width: 440px; width: 100%; padding: 28px; position: relative; box-sizing: border-box; text-align: center;">
-        <button type="button" onclick="closeBookingModal()" style="position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; border: none; background: #F1F5F9; color: #64748B; cursor: pointer;">
-            <i class="fa-solid fa-xmark"></i>
+    <div class="recom-dialog recom-dialog--md recom-dialog--pop" role="dialog" aria-modal="true" aria-labelledby="bookingConfirmTitle" tabindex="-1">
+        <button type="button" onclick="closeBookingModal()" class="recom-dialog-close" aria-label="Đóng xác nhận giữ chỗ">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
         </button>
-        <div style="width: 50px; height: 50px; border-radius: 50%; background: #ECFDF5; color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px auto;">
-            <i class="fa-solid fa-heart"></i>
+        <div class="recom-success-icon" aria-hidden="true">
+            <span class="material-symbols-outlined">favorite</span>
         </div>
-        <h3 style="font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: #0F172A; margin: 0 0 6px 0;">Xác Nhận Giữ Chỗ Gói Tiệc</h3>
-        <p style="font-size: 12px; color: #64748B; margin: 0 0 16px 0;">Chuyên viên tư vấn sẽ liên hệ để xác nhận lịch hẹn và chuẩn bị hợp đồng.</p>
+        <h3 id="bookingConfirmTitle" class="recom-modal-title" style="text-align:center;">Xác Nhận Giữ Chỗ Gói Tiệc</h3>
+        <p class="recom-results-sub" style="text-align:center;margin-bottom:16px;">Chuyên viên tư vấn sẽ liên hệ để xác nhận lịch hẹn và chuẩn bị hợp đồng.</p>
 
-        <div style="background: #FAF8F5; border-radius: 16px; border: 1px solid #E2E8F0; padding: 14px; text-align: left; font-size: 12px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Cặp đôi:</span><strong id="bkCoupleName" style="color: #0F172A;">--</strong></div>
-            <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Số điện thoại:</span><strong id="bkPhone" style="color: #0F172A;">--</strong></div>
-            <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Sảnh tiệc:</span><strong id="bkHall" style="color: #B89758;">--</strong></div>
-            <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Thời gian:</span><strong id="bkDateShift" style="color: #0F172A;">--</strong></div>
-            <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Quy mô:</span><strong id="bkTables" style="color: #0F172A;">-- bàn</strong></div>
-            <div style="display: flex; justify-content: space-between; border-top: 1px solid #E2E8F0; padding-top: 8px;"><span style="color: #334155; font-weight: 700;">Dự toán ước tính:</span><strong id="bkTotal" style="font-family: 'Playfair Display', serif; color: #0F172A; font-size: 15px;">-- đ</strong></div>
+        <div class="recom-summary-box">
+            <div class="recom-summary-row"><span>Cặp đôi:</span><strong id="bkCoupleName">--</strong></div>
+            <div class="recom-summary-row"><span>Số điện thoại:</span><strong id="bkPhone">--</strong></div>
+            <div class="recom-summary-row"><span>Sảnh tiệc:</span><strong id="bkHall" style="color:#735c00;">--</strong></div>
+            <div class="recom-summary-row"><span>Thời gian:</span><strong id="bkDateShift">--</strong></div>
+            <div class="recom-summary-row"><span>Quy mô:</span><strong id="bkTables">-- bàn</strong></div>
+            <div class="recom-summary-row recom-summary-total"><span style="color:#334155;font-weight:700;">Dự toán ước tính:</span><strong id="bkTotal" style="font-family:'Playfair Display',serif;font-size:15px;">-- đ</strong></div>
         </div>
 
-        <button type="button" id="btnSubmitBooking" onclick="submitActualBooking()" class="recom-btn-gold" style="width: 100%; font-size: 13px; margin-bottom: 8px;">
-            <i class="fa-solid fa-check"></i> Gửi Thông Tin Đăng Ký Giữ Chỗ
+        <button type="button" id="btnSubmitBooking" onclick="submitActualBooking()" class="recom-btn-gold recom-btn-block">
+            <span class="material-symbols-outlined" aria-hidden="true">check</span> Gửi Thông Tin Đăng Ký Giữ Chỗ
         </button>
-        <button type="button" onclick="closeBookingModal()" style="width: 100%; padding: 10px; border-radius: 12px; background: #F1F5F9; border: none; font-weight: 600; color: #64748B; font-size: 13px; cursor: pointer;">
+        <button type="button" onclick="closeBookingModal()" class="recom-btn-light recom-btn-block">
             Xem Lại Gói Khác
         </button>
     </div>
 </div>
 
-<style>
-    @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-</style>
-
-<!-- ================= MODAL 4: THÔNG BÁO ĐẶT GIỮ CHỖ THÀNH CÔNG (CHUYÊN NGHIỆP) ================= -->
 <div id="bookingSuccessModal" class="recom-custom-modal">
-    <div style="background: #FFFFFF; border-radius: 28px; max-width: 480px; width: 100%; padding: 32px 28px; position: relative; box-sizing: border-box; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1.5px solid #F1ECE1; animation: modalPop 0.3s ease-out;">
-
-        <!-- Nút đóng góc phải -->
-        <button type="button" onclick="closeSuccessModal()" style="position: absolute; top: 18px; right: 18px; width: 32px; height: 32px; border-radius: 50%; border: none; background: #F8FAFC; color: #94A3B8; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
-            <i class="fa-solid fa-xmark"></i>
+    <div class="recom-dialog recom-dialog--md recom-dialog--pop" role="dialog" aria-modal="true" aria-labelledby="bookingSuccessTitle" tabindex="-1">
+        <button type="button" onclick="closeSuccessModal()" class="recom-dialog-close" aria-label="Đóng thông báo thành công">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
         </button>
+        <div class="recom-success-icon" aria-hidden="true">
+            <span class="material-symbols-outlined">crown</span>
+        </div>
+        <span class="recom-success-badge">Yêu Cầu Giữ Chỗ Đã Ghi Nhận</span>
+        <h3 id="bookingSuccessTitle" class="recom-modal-title" style="font-size:24px;">Chúc Mừng Hai Bạn!</h3>
+        <p class="recom-results-sub" style="text-align:center;margin-bottom:20px;">Riverside Palace rất hân hạnh được đồng hành và bảo lưu phương án tiệc cưới trong mơ cho hai bạn.</p>
 
-        <!-- Icon vương miện / huy hiệu thành công phong cách hoàng gia -->
-        <div style="width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #FAF4E8 0%, #F5E7CD 100%); border: 2px solid #D4AF37; color: #B89758; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px auto; box-shadow: 0 8px 20px -4px rgba(184, 151, 88, 0.3);">
-            <i class="fa-solid fa-crown"></i>
+        <div class="recom-summary-box">
+            <div class="recom-summary-row recom-summary-total"><span style="font-weight:600;">Mã đơn tiệc:</span><span id="succBookingCode" class="recom-code-chip">DT-ONLINE</span></div>
+            <div class="recom-summary-row"><span>Cặp đôi đại diện:</span><strong id="succCouple">--</strong></div>
+            <div class="recom-summary-row"><span>Sảnh tiệc bảo lưu:</span><strong id="succHall" style="color:#735c00;">--</strong></div>
+            <div class="recom-summary-row"><span>Thời gian tổ chức:</span><strong id="succDateTime">--</strong></div>
+            <div class="recom-summary-row"><span>Trạng thái:</span><span class="recom-status-pill">Chờ xác nhận</span></div>
         </div>
 
-        <span style="display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #B89758; background: rgba(184, 151, 88, 0.12); padding: 4px 12px; border-radius: 999px; margin-bottom: 8px;">
-            Yêu Cầu Giữ Chỗ Đã Ghi Nhận
-        </span>
-        <h3 style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #0F172A; margin: 0 0 8px 0;">
-            Chúc Mừng Hai Bạn!
-        </h3>
-        <p style="font-size: 13px; color: #64748B; margin: 0 0 20px 0; line-height: 1.5;">
-            Riverside Palace rất hân hạnh được đồng hành và bảo lưu phương án tiệc cưới trong mơ cho hai bạn.
-        </p>
-
-        <!-- Khung chi tiết mã đặt tiệc và thông số -->
-        <div style="background: linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%); border-radius: 18px; border: 1.5px solid #EAE2D2; padding: 18px; text-align: left; font-size: 12.5px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px dashed #E2D7C3;">
-                <span style="color: #64748B; font-weight: 600;">Mã đơn tiệc:</span>
-                <span id="succBookingCode" style="font-family: monospace; font-size: 14px; font-weight: 800; color: #B89758; background: #FFF9EE; border: 1px solid #EEDBB2; padding: 3px 8px; border-radius: 8px;">DT-ONLINE</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Cặp đôi đại diện:</span><strong id="succCouple" style="color: #0F172A;">--</strong></div>
-            <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Sảnh tiệc bảo lưu:</span><strong id="succHall" style="color: #B89758; font-weight: 700;">--</strong></div>
-            <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Thời gian tổ chức:</span><strong id="succDateTime" style="color: #0F172A;">--</strong></div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="color: #64748B;">Trạng thái:</span>
-                <span style="background: #ECFDF5; color: #059669; font-weight: 700; font-size: 11px; padding: 2px 10px; border-radius: 999px; border: 1px solid #A7F3D0;">
-                    ● Chờ xác nhận
-                </span>
-            </div>
+        <div class="recom-contact-note">
+            <span class="material-symbols-outlined" aria-hidden="true">call</span>
+            <span>Chuyên viên tư vấn Riverside Palace sẽ gọi trực tiếp đến số <strong id="succPhone">điện thoại</strong> trong vòng 30 phút để xác nhận lịch trải nghiệm thực tế.</span>
         </div>
 
-        <!-- Hộp nhắc nhở chuyên viên liên hệ -->
-        <div style="background: #F8FAFC; border-radius: 14px; border: 1px solid #E2E8F0; padding: 12px 14px; display: flex; align-items: center; gap: 10px; text-align: left; font-size: 12px; color: #475569; margin-bottom: 22px;">
-            <i class="fa-solid fa-phone-volume text-amber-600" style="font-size: 16px; color: #B89758; shrink-0;"></i>
-            <span>Chuyên viên tư vấn Riverside Palace sẽ gọi trực tiếp đến số <strong id="succPhone" style="color: #0F172A;">điện thoại</strong> trong vòng 30 phút để xác nhận lịch trải nghiệm thực tế.</span>
-        </div>
-
-        <!-- Các nút tác vụ -->
-        <div style="display: flex; gap: 10px;">
-            <a asp-controller="Home" asp-action="Index" style="flex: 1; padding: 12px 16px; border-radius: 12px; background: #F1F5F9; border: none; font-weight: 700; color: #475569; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                <i class="fa-solid fa-house" style="font-size: 11px;"></i> Về Trang Chủ
+        <div class="recom-duo-actions">
+            <a asp-controller="Home" asp-action="Index" class="recom-btn-light" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;">
+                <span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">home</span> Về Trang Chủ
             </a>
-            <button type="button" onclick="closeSuccessModal()" class="recom-btn-gold" style="flex: 1; padding: 12px 16px; font-size: 13px; border-radius: 12px; cursor: pointer;">
+            <button type="button" onclick="closeSuccessModal()" class="recom-btn-gold" style="flex:1;padding:12px 16px;font-size:13px;">
                 Tiếp Tục Khám Phá
             </button>
         </div>
     </div>
 </div>
-<style>
-    @@keyframes modalPop {
-        0% {
-            transform: scale(0.92);
-            opacity: 0;
-        }
 
-        100% {
-            transform: scale(1);
-            opacity: 1;
-        }
-    }
-</style>
-
-<!-- ================= MODAL CẢNH BÁO ĐƠN TIỆC ĐANG TỒN TẠI ================= -->
 <div id="duplicateBookingModal" class="recom-custom-modal">
-    <div style="background: #FFFFFF; border-radius: 28px; max-width: 480px; width: 100%; padding: 32px 28px; position: relative; box-sizing: border-box; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1.5px solid #FEE2E2; animation: modalPop 0.3s ease-out;">
-
-        <button type="button" onclick="closeDuplicateModal()" style="position: absolute; top: 18px; right: 18px; width: 32px; height: 32px; border-radius: 50%; border: none; background: #F8FAFC; color: #94A3B8; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-            <i class="fa-solid fa-xmark"></i>
+    <div class="recom-dialog recom-dialog--md recom-dialog--pop" role="dialog" aria-modal="true" aria-labelledby="duplicateTitle" tabindex="-1">
+        <button type="button" onclick="closeDuplicateModal()" class="recom-dialog-close" aria-label="Đóng cảnh báo">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
         </button>
-
-        <!-- Icon cảnh báo -->
-        <div style="width: 70px; height: 70px; border-radius: 50%; background: #FEF2F2; border: 2px solid #FCA5A5; color: #EF4444; display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 16px auto;">
-            <i class="fa-solid fa-triangle-exclamation"></i>
+        <div class="recom-alert-icon recom-alert-icon--error" aria-hidden="true">
+            <span class="material-symbols-outlined">warning</span>
         </div>
-
-        <span style="display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #DC2626; background: #FEE2E2; padding: 4px 12px; border-radius: 999px; margin-bottom: 8px;">
-            Đã Có Đơn Tiệc Đang Xử Lý
-        </span>
-        <h3 style="font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: #0F172A; margin: 0 0 10px 0;">
-            Hai Bạn Đang Có Đơn Giữ Chỗ
-        </h3>
-        <p id="duplicateNoticeMsg" style="font-size: 13px; color: #64748B; margin: 0 0 20px 0; line-height: 1.5; text-align: justify;">
+        <span class="recom-alert-badge" style="color:#DC2626;background:#FEE2E2;">Đã Có Đơn Tiệc Đang Xử Lý</span>
+        <h3 id="duplicateTitle" class="recom-alert-title">Hai Bạn Đang Có Đơn Giữ Chỗ</h3>
+        <p id="duplicateNoticeMsg" class="recom-alert-message" style="text-align:justify;">
             Để bảo đảm tính chuẩn xác của lịch sảnh, mỗi khách hàng chỉ giữ chỗ 01 phương án tiệc cưới tại một thời điểm.
         </p>
-
-        <!-- Nút thao tác -->
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <a asp-controller="MyBookings" asp-action="Index" style="padding: 13px 20px; border-radius: 12px; background: #B89758; color: #FFFFFF; font-weight: 700; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(184, 151, 88, 0.25);">
-                <i class="fa-solid fa-calendar-check"></i> Đi Đến Trang "Tiệc Của Tôi" Để Xem &amp; Hủy Đơn
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <a asp-controller="MyBookings" asp-action="Index" class="recom-btn-gold" style="text-decoration:none;padding:13px 20px;font-size:13px;">
+                <span class="material-symbols-outlined" aria-hidden="true">event_available</span> Đi Đến Trang "Tiệc Của Tôi" Để Xem &amp; Hủy Đơn
             </a>
-            <button type="button" onclick="closeDuplicateModal()" style="padding: 11px; border-radius: 12px; background: #F1F5F9; border: none; font-weight: 600; color: #64748B; font-size: 13px; cursor: pointer;">
+            <button type="button" onclick="closeDuplicateModal()" class="recom-btn-light">
                 Đóng Lại
             </button>
+        </div>
+    </div>
+</div>
+
+<div id="recomAlertModal" class="recom-custom-modal">
+    <div class="recom-dialog recom-dialog--md recom-dialog--pop" role="dialog" aria-modal="true" aria-labelledby="recomAlertTitle" tabindex="-1">
+        <button type="button" onclick="closeRecomAlert()" class="recom-dialog-close" aria-label="Đóng thông báo">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+        <div id="recomAlertIcon" class="recom-alert-icon recom-alert-icon--warning" aria-hidden="true">
+            <span id="recomAlertIconFa" class="material-symbols-outlined">notifications</span>
+        </div>
+        <span id="recomAlertBadge" class="recom-alert-badge" style="color:#92400E;background:#FEF3C7;">Thông báo từ Riverside Palace</span>
+        <h3 id="recomAlertTitle" class="recom-alert-title">Xin chào hai bạn!</h3>
+        <p id="recomAlertMessage" class="recom-alert-message">Nội dung thông báo.</p>
+        <button type="button" onclick="closeRecomAlert()" class="recom-btn-gold recom-btn-block">
+            <span class="material-symbols-outlined" aria-hidden="true">favorite</span> Đã hiểu, cảm ơn Riverside!
+        </button>
+    </div>
+</div>
+
+<div id="menuCustomModal" class="recom-custom-modal">
+    <div class="recom-dialog recom-dialog--xl recom-dialog--pop" role="dialog" aria-modal="true" aria-labelledby="menuCustomTitle" tabindex="-1">
+        <button type="button" onclick="closeMenuCustomModal()" class="recom-dialog-close" aria-label="Đóng tùy chỉnh thực đơn">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+        <div class="recom-modal-head" style="padding-right:40px;">
+            <div class="recom-modal-icon">
+                <span class="material-symbols-outlined" aria-hidden="true">restaurant_menu</span>
+            </div>
+            <div>
+                <span class="recom-modal-kicker">Tùy chỉnh thực đơn tiệc cưới</span>
+                <h3 id="menuCustomTitle" class="recom-modal-title">Thực đơn tiệc</h3>
+            </div>
+        </div>
+        <p id="menuCustomSubtitle" class="recom-results-sub" style="margin-bottom:14px;">Loại bỏ món chưa ưng ý, thêm món yêu thích từ thực đơn nhà hàng. Tổng tiền cập nhật trực tiếp.</p>
+        <div id="menuCustomLoading" class="recom-results-sub" style="padding:30px;text-align:center;">
+            <span class="material-symbols-outlined" aria-hidden="true" style="vertical-align:-4px;">progress_activity</span> Đang tải chi tiết món ăn từ nhà hàng...
+        </div>
+        <div id="menuCustomBody" hidden>
+            <div class="recom-menu-grid">
+                <div class="recom-menu-panel recom-menu-panel--current">
+                    <div class="recom-menu-panel-head">
+                        <strong><span class="material-symbols-outlined" aria-hidden="true">dinner_dining</span>Thực đơn hiện tại</strong>
+                        <span id="menuCustomCurrentCount" class="recom-count-chip">0 món</span>
+                    </div>
+                    <div id="menuCustomCurrentList" class="recom-dish-list"></div>
+                    <div class="recom-summary-box" style="margin:12px 0 0 0;">
+                        <div class="recom-summary-row recom-summary-row--head"><span>Giá theo bàn (chuẩn 10 khách/bàn)
+                            <span class="recom-help-wrap">
+                                <button type="button" id="menuPriceHelpBtn" class="recom-help-btn" aria-label="Giải thích 2 dòng giá thực đơn" aria-expanded="false" aria-controls="menuPriceHelpPopover" onclick="toggleMenuPriceHelp(event)" title="2 dòng giá này nghĩa là gì?">?</button>
+                                <span id="menuPriceHelpPopover" class="recom-popover" hidden>
+                                    <strong>Hai bạn hiểu 2 dòng giá thế này nhé:</strong><br />
+                                    • <strong>Giá gốc/bàn:</strong> giá niêm yết cố định của set menu gốc trong catalog (VD Menu A 4.500.000đ/bàn cho 10 khách), không đổi khi hai bạn tùy chỉnh.<br />
+                                    • <strong>Giá tùy chỉnh/bàn:</strong> tổng giá lẻ từng món đang có ở cột <em>"Thực đơn hiện tại"</em> cộng lại. Thêm 1 món thì tăng, xóa 1 món thì giảm.<br />
+                                    Tổng dự toán = <strong>sảnh + giá tùy chỉnh × số bàn + decor + dịch vụ</strong>.
+                                </span>
+                            </span></span></div>
+                        <div class="recom-summary-row"><span>Giá thực đơn gốc/bàn:</span><strong id="menuCustomOrigPrice">-- đ</strong></div>
+                        <div class="recom-summary-row"><span>Giá tùy chỉnh/bàn (tổng giá món):</span><strong id="menuCustomNewPrice" style="color:#735c00;">-- đ</strong></div>
+                        <div id="menuCustomTip" class="recom-menu-tip"></div>
+                    </div>
+                </div>
+                <div class="recom-menu-panel recom-menu-panel--all">
+                    <div class="recom-menu-panel-head">
+                        <strong><span class="material-symbols-outlined" aria-hidden="true">menu_book</span>Tất cả món nhà hàng</strong>
+                        <input id="menuCustomSearch" oninput="renderMenuCustomAllList()" placeholder="Tìm món (vd: tôm, bò, lẩu...)" class="recom-mini-input" style="min-width:180px;" aria-label="Tìm món" />
+                    </div>
+                    <div class="recom-cat-filter" id="menuCustomCategoryFilter">
+                        <button type="button" data-cat="" onclick="setMenuCustomCategory('')" class="recom-cat-btn is-active">Tất cả</button>
+                        <button type="button" data-cat="Món khai vị" onclick="setMenuCustomCategory('Món khai vị')" class="recom-cat-btn">Khai vị</button>
+                        <button type="button" data-cat="Món súp" onclick="setMenuCustomCategory('Món súp')" class="recom-cat-btn">Súp</button>
+                        <button type="button" data-cat="Món chính" onclick="setMenuCustomCategory('Món chính')" class="recom-cat-btn">Món chính</button>
+                        <button type="button" data-cat="Món tráng miệng" onclick="setMenuCustomCategory('Món tráng miệng')" class="recom-cat-btn">Tráng miệng</button>
+                    </div>
+                    <div id="menuCustomAllList" class="recom-dish-list"></div>
+                </div>
+            </div>
+            <div class="recom-menu-total">
+                <div>
+                    <small>Công thức: <strong>sảnh + menu mới × số bàn + decor + dịch vụ</strong></small>
+                    <div id="menuCustomFormulaDetail" class="recom-menu-formula"></div>
+                </div>
+                <div style="text-align:right;">
+                    <span class="recom-grand-label">Tổng dự toán mới</span>
+                    <strong id="menuCustomGrandTotal" class="recom-grand-value">-- đ</strong>
+                </div>
+            </div>
+            <div class="recom-modal-actions">
+                <button type="button" onclick="resetMenuCustom()" class="recom-btn-light" style="flex:1;min-width:160px;padding:12px;font-size:13px;">
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;vertical-align:-3px;">restart_alt</span> Khôi phục gốc
+                </button>
+                <button type="button" onclick="confirmMenuCustom()" class="recom-btn-gold" style="flex:2;min-width:200px;padding:12px;font-size:13px;">
+                    <span class="material-symbols-outlined" aria-hidden="true">check</span> Xác nhận &amp; cập nhật Top khuyến nghị
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -574,40 +546,358 @@
     <script>
         let currentPayload = null;
         let selectedComboToBook = null;
+        // State Top 3 + thực đơn tùy chỉnh (giữ trong JS, gửi kèm khi Đăng ký giữ chỗ).
+        let topCombosState = [];
+        let menuCustomState = null;
+        let menuCustomCategory = '';
+        const RECOM_HALL_PLACEHOLDER = '@hallPlaceholder';
+
+        // ---- A11y modal helpers: lock scroll + focus + class .open (giữ API display cũ) ----
+        function lockRecomScroll() { document.body.classList.add('recom-modal-open'); }
+        function unlockRecomScroll() {
+            if (!document.querySelector('.recom-custom-modal.open')) document.body.classList.remove('recom-modal-open');
+        }
+        function openRecomModal(id) {
+            const m = document.getElementById(id);
+            if (!m) return;
+            m.classList.add('open');
+            m.style.display = 'flex';
+            m.setAttribute('aria-hidden', 'false');
+            lockRecomScroll();
+            const dlg = m.querySelector('[role="dialog"]');
+            if (dlg) { try { dlg.focus({ preventScroll: true }); } catch (e) { try { dlg.focus(); } catch (ex) { } } }
+        }
+        function closeRecomModal(id) {
+            const m = document.getElementById(id);
+            if (!m) return;
+            m.classList.remove('open');
+            m.style.display = 'none';
+            m.setAttribute('aria-hidden', 'true');
+            unlockRecomScroll();
+        }
+        function isRecomModalOpen(id) {
+            const m = document.getElementById(id);
+            return !!m && m.classList.contains('open');
+        }
+
+        // Popup thông báo chuyên nghiệp thay thế alert() native.
+        function showRecomAlert(message, title, type) {
+            const modal = document.getElementById('recomAlertModal');
+            if (!modal) return;
+            const msgEl = document.getElementById('recomAlertMessage');
+            const titleEl = document.getElementById('recomAlertTitle');
+            const badgeEl = document.getElementById('recomAlertBadge');
+            const iconBox = document.getElementById('recomAlertIcon');
+            const iconFa = document.getElementById('recomAlertIconFa');
+            const kind = (type || 'warning').toLowerCase();
+            const cfg = {
+                warning: { t: 'Hai bạn lưu ý nhé!', b: 'Lưu ý nhỏ từ Riverside Palace', icon: 'warning', cls: 'recom-alert-icon--warning', bc: '#92400E', bb: '#FEF3C7' },
+                error: { t: 'Rất tiếc, chưa hoàn tất!', b: 'Thông báo từ Riverside Palace', icon: 'error', cls: 'recom-alert-icon--error', bc: '#DC2626', bb: '#FEE2E2' },
+                success: { t: 'Tuyệt vời, hai bạn ơi!', b: 'Tin vui từ Riverside Palace', icon: 'check_circle', cls: 'recom-alert-icon--success', bc: '#059669', bb: '#D1FAE5' },
+                info: { t: 'Riverside Palace xin chia sẻ', b: 'Thông tin hữu ích', icon: 'info', cls: 'recom-alert-icon--info', bc: '#2563EB', bb: '#DBEAFE' }
+            }[kind] || { t: 'Thông báo', b: 'Thông báo từ Riverside Palace', icon: 'notifications', cls: 'recom-alert-icon--warning', bc: '#92400E', bb: '#FEF3C7' };
+            if (msgEl) msgEl.innerText = message || '';
+            if (titleEl) titleEl.innerText = title || cfg.t;
+            if (badgeEl) { badgeEl.innerText = cfg.b; badgeEl.style.color = cfg.bc; badgeEl.style.background = cfg.bb; }
+            if (iconBox) iconBox.className = 'recom-alert-icon ' + cfg.cls;
+            if (iconFa) iconFa.textContent = cfg.icon;
+            openRecomModal('recomAlertModal');
+        }
+
+        function closeRecomAlert() { closeRecomModal('recomAlertModal'); }
+
+        function closeSuccessModal() { closeRecomModal('bookingSuccessModal'); }
+
+        // Format YYYY-MM-DD theo giờ địa phương (tránh lệch ngày khi dùng toISOString UTC).
+        function toLocalDateStr(d) {
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
+            const ev = document.getElementById('eventDate');
+            const pk = document.getElementById('modalDatePicker');
+            // Ràng buộc Riverside Palace: nhận đặt tiệc trước từ 30 ngày đến tối đa 365 ngày.
+            const today = new Date();
+            const minD = new Date(today); minD.setDate(minD.getDate() + 30);
+            const maxD = new Date(today); maxD.setDate(maxD.getDate() + 365);
+            const minStr = toLocalDateStr(minD);
+            const maxStr = toLocalDateStr(maxD);
+            if (ev) { ev.min = minStr; ev.max = maxStr; }
+            if (pk) { pk.min = minStr; pk.max = maxStr; }
             const d = new Date();
             d.setDate(d.getDate() + 60);
-            const dateStr = d.toISOString().split('T')[0];
-            document.getElementById('eventDate').value = dateStr;
-            document.getElementById('modalDatePicker').value = dateStr;
+            const dateStr = toLocalDateStr(d);
+            if (ev && !ev.value) ev.value = dateStr;
+            if (ev && (ev.value < minStr || ev.value > maxStr)) ev.value = dateStr;
+            if (pk) pk.value = ev ? ev.value : dateStr;
+            syncGuestToTables();
+            formatBudgetInput(document.getElementById('expectedBudget'));
+            try { updateBudgetMinHint(); } catch (e) { }
         });
 
         function handleDateChanged() {
-            const val = document.getElementById('eventDate').value;
-            document.getElementById('modalDatePicker').value = val;
+            const ev = document.getElementById('eventDate');
+            const pk = document.getElementById('modalDatePicker');
+            if (ev && pk) pk.value = ev.value || '';
+            if (!ev || !ev.value) return;
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const minD = new Date(today); minD.setDate(minD.getDate() + 30);
+            const maxD = new Date(today); maxD.setDate(maxD.getDate() + 365);
+            const val = new Date(ev.value + 'T00:00:00');
+            if (val < minD) {
+                showRecomAlert('Ngày tổ chức tiệc cưới cần cách hôm nay tối thiểu 30 ngày để Riverside Palace chuẩn bị chu đáo nhất. Hai bạn vui lòng chọn ngày xa hơn nhé!', 'Cần chọn ngày xa hơn một chút', 'warning');
+                ev.value = toLocalDateStr(minD);
+                if (pk) pk.value = ev.value;
+            } else if (val > maxD) {
+                showRecomAlert('Riverside Palace chỉ nhận giữ chỗ trước tối đa 365 ngày (1 năm). Hai bạn vui lòng chọn ngày gần hơn nhé!', 'Ngày chọn đang quá xa', 'warning');
+                ev.value = toLocalDateStr(maxD);
+                if (pk) pk.value = ev.value;
+            }
         }
 
-        function validateTableCounts() {
+        // Ràng buộc ngân sách: min tuyệt đối 100tr (chi phí tối thiểu ~103,3tr cho 150 khách:
+        // sảnh rẻ nhất Elbe 20tr + menu rẻ nhất 4,35tr/bàn × 15 bàn + decor rẻ nhất 18tr).
+        // Min động theo số bàn: 38tr (20tr sảnh + 18tr decor) + tổng bàn × 4,35tr (chưa gồm dịch vụ).
+        const MIN_BUDGET_ABSOLUTE = 100000000;
+        const MAX_BUDGET_ABSOLUTE = 3000000000;
+        const CHEAPEST_HALL_PRICE = 20000000;
+        const CHEAPEST_DECOR_PRICE = 18000000;
+        const CHEAPEST_MENU_PER_TABLE = 4350000;
+        const OVER_BUDGET_TOLERANCE_VND = 10000000;
+
+        function estimateMinBudget(totalTables) {
+            const t = Math.max(0, parseInt(totalTables) || 0);
+            return (CHEAPEST_HALL_PRICE + CHEAPEST_DECOR_PRICE) + t * CHEAPEST_MENU_PER_TABLE;
+        }
+
+        function fmtVnd(n) {
+            return Number(n || 0).toLocaleString('vi-VN') + ' đ';
+        }
+
+        function parseBudget(value) {
+            return Number(String(value || '').replace(/\D/g, '')) || 0;
+        }
+
+        function formatBudgetInput(input) {
+            if (!input) return;
+            const digits = String(input.value || '').replace(/\D/g, '');
+            input.value = digits ? Number(digits).toLocaleString('vi-VN') : '';
+        }
+
+        function updateBudgetMinHint() {
+            const hint = document.getElementById('budgetMinHint');
+            if (!hint) return;
+            const calc = syncGuestToTablesSilent();
+            const minForTables = estimateMinBudget(calc.total);
+            if (calc.total > 0) {
+                hint.innerText = `Với ${calc.total} bàn (${calc.guests} khách), chi phí tối thiểu khoảng ${fmtVnd(minForTables)} (chưa gồm dịch vụ). Gợi ý chỉ vượt tối đa 10 triệu — hãy nhập ngân sách ≥ ${fmtVnd(Math.max(MIN_BUDGET_ABSOLUTE, minForTables))}.`;
+            } else {
+                hint.innerText = 'Ngân sách tối thiểu 100 triệu; với quy mô hiện tại cần khoảng -- để không vượt quá 10 triệu.';
+            }
+        }
+
+        // Bản silent (không chạm DOM hint) để updateBudgetMinHint tránh đệ quy.
+        function syncGuestToTablesSilent() {
+            const gInput = document.getElementById('guestCount');
+            const spareInput = document.getElementById('spareTableCount');
+            const rawGuest = gInput ? String(gInput.value || '').trim() : '';
+            const rawSpare = spareInput ? String(spareInput.value || '').trim() : '';
+            let spare = parseInt(rawSpare === '' ? '0' : rawSpare) || 0;
+            if (spare < 0) spare = 0;
+            if (spare > 10) spare = 10;
+            if (rawGuest === '') return { guests: 0, official: 0, spare, total: spare };
+            let guests = parseInt(rawGuest) || 0;
+            if (guests > 1400) guests = 1400;
+            if (guests === 0) return { guests: 0, official: 0, spare, total: spare };
+            const official = Math.ceil(guests / 10);
+            return { guests, official, spare, total: official + spare };
+        }
+
+        // Quy đổi chuẩn 10 khách/bàn: OfficialTableCount = ceil(GuestCount/10), realtime hint.
+        function syncGuestToTables() {
+            const gInput = document.getElementById('guestCount');
             const offInput = document.getElementById('officialTableCount');
             const spareInput = document.getElementById('spareTableCount');
+            const hint = document.getElementById('tableConvertHint');
+            const rawGuest = gInput ? String(gInput.value || '').trim() : '';
+            const rawSpare = spareInput ? String(spareInput.value || '').trim() : '';
+            let spare = parseInt(rawSpare === '' ? '0' : rawSpare) || 0;
+            if (spare < 0) spare = 0;
+            if (spare > 10) { spare = 10; if (spareInput) spareInput.value = 10; }
+            if (rawGuest === '') {
+                if (offInput) offInput.value = 0;
+                if (hint) hint.innerText = 'Nhập số khách để tự động quy đổi số bàn (quy chuẩn 10 khách/bàn) + số bàn dự phòng.';
+                return { guests: 0, official: 0, spare, total: spare };
+            }
+            let guests = parseInt(rawGuest) || 0;
+            if (guests === 0) {
+                if (offInput) offInput.value = 0;
+                if (hint) hint.innerText = 'Nhập số khách để tự động quy đổi số bàn (quy chuẩn 10 khách/bàn) + số bàn dự phòng.';
+                return { guests: 0, official: 0, spare, total: spare };
+            }
+            if (guests > 1400) { guests = 1400; if (gInput) gInput.value = 1400; }
+            let official = Math.ceil(guests / 10);
+            if (offInput) offInput.value = official;
+            const total = official + spare;
+            if (hint) hint.innerText = `Quy đổi: ${official} bàn chính thức + ${spare} bàn dự phòng = Tổng ${total} bàn`;
+            try {
+                const bHint = document.getElementById('budgetMinHint');
+                if (bHint) {
+                    const minForTables = estimateMinBudget(total);
+                    bHint.innerText = `Với ${total} bàn (${guests} khách), chi phí tối thiểu khoảng ${fmtVnd(minForTables)} (chưa gồm dịch vụ). Gợi ý chỉ vượt tối đa 10 triệu — hãy nhập ngân sách ≥ ${fmtVnd(Math.max(MIN_BUDGET_ABSOLUTE, minForTables))}.`;
+                }
+            } catch (e) { }
+            return { guests, official, spare, total };
+        }
 
-            let off = parseInt(offInput.value) || 10;
-            let spare = parseInt(spareInput.value) || 1;
+        // Tooltip "?" ngân sách: click/hover để xem khoảng hợp lệ theo catalog thật.
+        function toggleBudgetHelp(e) {
+            if (e) e.stopPropagation();
+            closeHelpPopover('dateHelpPopover', 'dateHelpBtn');
+            toggleHelpPopover('budgetHelpPopover', 'budgetHelpBtn');
+        }
 
-            if (off < 10) off = 10;
-            if (off > 120) off = 120;
-            offInput.value = off;
+        // Tooltip "?" ngày tổ chức: cùng hành vi với tooltip ngân sách.
+        function toggleDateHelp(e) {
+            if (e) e.stopPropagation();
+            closeHelpPopover('budgetHelpPopover', 'budgetHelpBtn');
+            toggleHelpPopover('dateHelpPopover', 'dateHelpBtn');
+        }
 
-            const maxSpareAllowed = Math.min(10, Math.max(1, Math.round(off * 0.15)));
-            if (spare < 1) spare = 1;
-            if (spare > maxSpareAllowed) spare = maxSpareAllowed;
-            spareInput.value = spare;
+        // Tooltip "?" giải thích 2 dòng giá trong modal tùy chỉnh thực đơn (gộp 1 popover).
+        function toggleMenuPriceHelp(e) {
+            if (e) e.stopPropagation();
+            closeHelpPopover('budgetHelpPopover', 'budgetHelpBtn');
+            closeHelpPopover('dateHelpPopover', 'dateHelpBtn');
+            toggleHelpPopover('menuPriceHelpPopover', 'menuPriceHelpBtn');
+        }
+
+        function toggleHelpPopover(popId, btnId) {
+            const pop = document.getElementById(popId);
+            const btn = document.getElementById(btnId);
+            if (!pop) return;
+            const isHidden = pop.hasAttribute('hidden');
+            if (isHidden) {
+                pop.removeAttribute('hidden');
+                if (btn) btn.setAttribute('aria-expanded', 'true');
+            } else {
+                pop.setAttribute('hidden', '');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        function closeHelpPopover(popId, btnId) {
+            const pop = document.getElementById(popId);
+            const btn = document.getElementById(btnId);
+            if (pop && !pop.hasAttribute('hidden')) {
+                pop.setAttribute('hidden', '');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        function isHelpEventInside(ev, popId, btnId) {
+            const pop = document.getElementById(popId);
+            const btn = document.getElementById(btnId);
+            if (pop && pop.contains(ev.target)) return true;
+            if (btn && btn.contains(ev.target)) return true;
+            return false;
+        }
+
+        document.addEventListener('click', (ev) => {
+            if (isHelpEventInside(ev, 'budgetHelpPopover', 'budgetHelpBtn')) return;
+            if (isHelpEventInside(ev, 'dateHelpPopover', 'dateHelpBtn')) return;
+            if (isHelpEventInside(ev, 'menuPriceHelpPopover', 'menuPriceHelpBtn')) return;
+            closeHelpPopover('budgetHelpPopover', 'budgetHelpBtn');
+            closeHelpPopover('dateHelpPopover', 'dateHelpBtn');
+            closeHelpPopover('menuPriceHelpPopover', 'menuPriceHelpBtn');
+        });
+
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key !== 'Escape') return;
+            const budgetPop = document.getElementById('budgetHelpPopover');
+            const datePop = document.getElementById('dateHelpPopover');
+            const menuPricePop = document.getElementById('menuPriceHelpPopover');
+            let closed = false;
+            if (budgetPop && !budgetPop.hasAttribute('hidden')) {
+                closeHelpPopover('budgetHelpPopover', 'budgetHelpBtn');
+                closed = true;
+            }
+            if (datePop && !datePop.hasAttribute('hidden')) {
+                closeHelpPopover('dateHelpPopover', 'dateHelpBtn');
+                closed = true;
+            }
+            if (menuPricePop && !menuPricePop.hasAttribute('hidden')) {
+                closeHelpPopover('menuPriceHelpPopover', 'menuPriceHelpBtn');
+                closed = true;
+            }
+            if (closed) return;
+            // Esc đóng modal đang mở (ưu tiên modal mở sau cùng).
+            const ids = ['menuCustomModal', 'bookingConfirmModal', 'bookingSuccessModal', 'duplicateBookingModal', 'recomAlertModal', 'itemDetailModal', 'showtimeModal'];
+            for (const id of ids) {
+                if (isRecomModalOpen(id)) {
+                    closeRecomModal(id);
+                    if (id === 'menuCustomModal') menuCustomState = null;
+                    break;
+                }
+            }
+        });
+
+        // Đóng modal khi bấm backdrop.
+        ['itemDetailModal', 'showtimeModal', 'bookingConfirmModal', 'bookingSuccessModal', 'duplicateBookingModal', 'recomAlertModal', 'menuCustomModal'].forEach(id => {
+            document.addEventListener('click', (ev) => {
+                const m = document.getElementById(id);
+                if (m && m.classList.contains('open') && ev.target === m) {
+                    closeRecomModal(id);
+                    if (id === 'menuCustomModal') menuCustomState = null;
+                }
+            });
+        });
+
+        function validateTableCounts() {
+            syncGuestToTables();
         }
 
         async function handleAnalyzeCombos(e) {
             e.preventDefault();
             validateTableCounts();
+
+            // Validate ràng buộc 30–365 ngày trước khi gọi Backend.
+            const dateVal = document.getElementById('eventDate').value;
+            if (!dateVal) { showRecomAlert('Hai bạn vui lòng chọn ngày tổ chức dự kiến để Riverside Palace kiểm tra sảnh trống nhé!', 'Chưa chọn ngày tổ chức', 'info'); return; }
+            const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+            const minD = new Date(today0); minD.setDate(minD.getDate() + 30);
+            const maxD = new Date(today0); maxD.setDate(maxD.getDate() + 365);
+            const minStr = toLocalDateStr(minD);
+            const maxStr = toLocalDateStr(maxD);
+            if (dateVal < minStr) { showRecomAlert('Ngày tổ chức cần cách hôm nay tối thiểu 30 ngày để Riverside Palace chuẩn bị chu đáo nhất. Hai bạn vui lòng chọn ngày xa hơn nhé!', 'Cần chọn ngày xa hơn một chút', 'warning'); return; }
+            if (dateVal > maxStr) { showRecomAlert('Riverside Palace chỉ nhận giữ chỗ trước tối đa 365 ngày (1 năm). Hai bạn vui lòng chọn ngày gần hơn nhé!', 'Ngày chọn đang quá xa', 'warning'); return; }
+            // Validate thông tin liên hệ (tên/SĐT/email) trước khi gọi Backend để khỏi nhận
+            // lỗi ModelState chung chung "Dữ liệu khảo sát chưa hợp lệ".
+            const coupleVal = String(document.getElementById('coupleName').value || '').trim();
+            const phoneVal = String(document.getElementById('phoneNumber').value || '').trim();
+            const emailVal = String(document.getElementById('email').value || '').trim();
+            if (coupleVal.length < 2) { showRecomAlert('Hai bạn vui lòng nhập họ tên cô dâu & chú rể (hoặc người đại diện) để chuyên viên tiện xưng hô nhé!', 'Chưa nhập tên cặp đôi', 'info'); return; }
+            if (!/^0\d{9}$/.test(phoneVal)) { showRecomAlert('Số điện thoại liên hệ gồm 10 chữ số, bắt đầu bằng số 0 (VD: 0912345678) để chuyên viên gọi xác nhận giữ chỗ nhé!', 'Số điện thoại chưa đúng', 'warning'); return; }
+            if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]{2,}$/.test(emailVal)) { showRecomAlert('Hai bạn vui lòng nhập email hợp lệ để nhận bảng dự toán và xác nhận giữ chỗ nhé!', 'Email chưa hợp lệ', 'warning'); return; }
+            const calc = syncGuestToTables();
+            const guestRaw = String(document.getElementById('guestCount').value || '').trim();
+            if (!guestRaw) { showRecomAlert('Hai bạn vui lòng nhập số lượng khách dự kiến (150 – 1400 khách, chuẩn 10 khách/bàn) nhé!', 'Chưa nhập số khách', 'info'); return; }
+            const guestCount = parseInt(guestRaw) || calc.guests;
+            if (guestCount < 150 || guestCount > 1400) { showRecomAlert('Số lượng khách phù hợp từ 150 đến 1400 khách (chuẩn 10 khách/bàn). Hai bạn vui lòng điều chỉnh lại nhé!', 'Số khách chưa phù hợp', 'warning'); return; }
+            // P0: chặn quy đổi vượt Grand Ballroom (~140 bàn) trước submit.
+            if ((calc.total || 0) > 140) { showRecomAlert('Quy mô ' + calc.total + ' bàn đã vượt quá sức chứa sảnh lớn nhất Grand Ballroom (tối đa 140 bàn / 1400 khách). Hai bạn vui lòng giảm số khách hoặc liên hệ Riverside Palace để tách ca tổ chức nhé!', 'Vượt sức chứa sảnh lớn nhất', 'warning'); return; }
+            const budgetRaw = String(document.getElementById('expectedBudget').value || '').trim();
+            if (!budgetRaw) { showRecomAlert('Hai bạn vui lòng nhập tổng ngân sách dự trù (tối thiểu 100 triệu – 3 tỷ VNĐ). Nhấn icon "?" cạnh ô ngân sách để xem khoảng hợp lệ nhé!', 'Chưa nhập ngân sách', 'info'); return; }
+            const budgetVal = parseBudget(budgetRaw);
+            if (isNaN(budgetVal)) { showRecomAlert('Ngân sách hai bạn nhập chưa hợp lệ. Vui lòng nhập số tiền bằng số (VNĐ) nhé!', 'Ngân sách chưa hợp lệ', 'warning'); return; }
+            if (budgetVal < MIN_BUDGET_ABSOLUTE || budgetVal > MAX_BUDGET_ABSOLUTE) { showRecomAlert('Ngân sách phù hợp từ 100 triệu (tối thiểu ~103,3 triệu cho 150 khách) đến 3 tỷ VNĐ. Nhấn icon "?" cạnh ô ngân sách để xem cách ước lượng (sảnh 20–80tr + menu 4,35–5,9tr/bàn + decor 18–28tr) nhé!', 'Ngân sách ngoài khoảng cho phép', 'warning'); return; }
+            // Ràng buộc động theo số bàn thực tế: Min = 38tr + tổng bàn × 4,35tr (chưa gồm dịch vụ).
+            const minForTables = estimateMinBudget(calc.total);
+            if (budgetVal < minForTables) {
+                showRecomAlert(`Với ${calc.total} bàn (${guestCount} khách), chi phí tối thiểu khoảng ${fmtVnd(minForTables)} (20tr sảnh Elbe + ${calc.total}×4,35tr menu + 18tr decor, chưa gồm dịch vụ).\nNgân sách ${fmtVnd(budgetVal)} sẽ khiến gợi ý vượt quá 10 triệu.\nHai bạn vui lòng tăng ngân sách lên tối thiểu ${fmtVnd(Math.max(MIN_BUDGET_ABSOLUTE, minForTables))} hoặc giảm số khách nhé!`, 'Ngân sách hơi thấp so với quy mô', 'warning');
+                try { updateBudgetMinHint(); } catch (e) { }
+                return;
+            }
 
             const btn = document.getElementById('btnSubmitRecom');
             const loading = document.getElementById('loadingState');
@@ -617,20 +907,23 @@
             btn.style.opacity = '0.6';
             loading.style.display = 'block';
             results.style.display = 'none';
+            results.classList.remove('open');
 
             const selectedServices = [];
             document.querySelectorAll('input[name="services"]:checked').forEach(cb => selectedServices.push(cb.value));
 
+            const rawShiftVal = document.getElementById('shift').value;
             currentPayload = {
                 coupleName: document.getElementById('coupleName').value.trim(),
                 phoneNumber: document.getElementById('phoneNumber').value.trim(),
                 email: document.getElementById('email').value.trim(),
-                eventDate: document.getElementById('eventDate').value,
-                shift: document.getElementById('shift').value,
-                officialTableCount: parseInt(document.getElementById('officialTableCount').value),
-                spareTableCount: parseInt(document.getElementById('spareTableCount').value) || 1,
-                guestCount: (parseInt(document.getElementById('officialTableCount').value) + (parseInt(document.getElementById('spareTableCount').value) || 1)) * 10,
-                expectedBudget: parseFloat(document.getElementById('expectedBudget').value),
+                eventDate: String(document.getElementById('eventDate').value || '').trim().slice(0, 10),
+                shift: (/trưa|trua/i.test(rawShiftVal || '') ? 'Ca trưa' : (/tối|toi/i.test(rawShiftVal || '') ? 'Ca tối' : String(rawShiftVal || '').trim())),
+                guestCount: guestCount,
+                officialTableCount: calc.official,
+                spareTableCount: calc.spare,
+                tableCount: calc.total,
+                expectedBudget: budgetVal,
                 budgetPriority: document.getElementById('budgetPriority').value,
                 preferredSpaceType: document.getElementById('preferredSpaceType').value || null,
                 desiredStyle: document.getElementById('desiredStyle').value || null,
@@ -655,296 +948,692 @@
                     results.style.display = 'flex';
                     results.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
-                    alert(result.message || 'Không tìm thấy gói tiệc khả dụng trong ngày và ca này. Hãy nhấn "Xem Lịch & Ca Trống" để chọn thời điểm phù hợp.');
+                    showRecomAlert(result.message || 'Chưa tìm thấy gói tiệc khả dụng trong ngày và ca này. Hai bạn hãy nhấn "Xem Lịch & Ca Trống" để chọn thời điểm phù hợp hơn nhé!', 'Chưa có gói phù hợp', 'info');
                 }
             } catch (err) {
                 btn.disabled = false;
                 btn.style.opacity = '1';
                 loading.style.display = 'none';
-                alert('Lỗi kết nối khi phân tích gói tiệc.');
+                showRecomAlert('Kết nối phân tích gói tiệc đang gián đoạn. Hai bạn vui lòng thử lại sau ít phút nhé!', 'Lỗi kết nối', 'error');
             }
         }
 
         function renderCombosResult(data, req) {
             document.getElementById('resNotice').innerText = data.algorithmNotice || data.AlgorithmNotice;
+            const combos = data.topCombos || data.TopCombos || data.top_3 || data.data || data.Data || [];
+            const count = data.count ?? data.Count ?? (Array.isArray(combos) ? combos.length : 0);
+            const suggestedNext = data.suggestedNext || data.SuggestedNext || null;
+            const box = document.getElementById('smartSuggestBox');
+            const cardsBox = document.getElementById('combosCardsContainer');
+            // P0 fallback 0 combo: ẩn card, hiện Smart Suggestion Box.
+            if (!combos || combos.length === 0 || count === 0) {
+                if (cardsBox) cardsBox.innerHTML = '';
+                renderSmartSuggestBox(suggestedNext, req);
+                if (box) box.style.display = 'block';
+                document.getElementById('resNotice').innerText = (data.algorithmNotice || data.AlgorithmNotice || 'Không có combo phù hợp trong ngân sách +10tr hoặc ngày đã kín sảnh.');
+                return;
+            }
+            if (box) box.style.display = 'none';
+            const totalTables = req.tableCount || ((req.officialTableCount || 0) + (req.spareTableCount || 0)) || Math.ceil((req.guestCount || 300) / 10);
+            // Lưu state Top 3 để tùy chỉnh thực đơn + giữ chỗ (customMenu giữ trong JS).
+            topCombosState = combos.map((c, idx) => {
+                const rank = c.rank ?? c.Rank ?? (idx + 1);
+                const fallbackTitles = ['Combo Hoàn Hảo (Top 1)', 'Combo Tiêu Chuẩn (Top 2)', 'Combo Sang Trọng (Top 3)'];
+                const fallbackBadges = ['LỰA CHỌN TỐI ƯU', 'CÂN BẰNG CHI PHÍ', 'TRẢI NGHIỆM ĐẲNG CẤP'];
+                const fallbackTypes = ['BALANCED', 'STANDARD', 'LUXURY'];
+                return {
+                    comboIndex: idx,
+                    rank,
+                    title: c.comboTitle || c.ComboTitle || c.comboName || c.ComboName || c.packageName || c.PackageName || c.combo_name || fallbackTitles[idx] || fallbackTitles[0],
+                    badge: c.comboBadge || c.ComboBadge || fallbackBadges[idx] || fallbackBadges[0],
+                    comboType: c.comboType || c.ComboType || c.combo_type || fallbackTypes[idx] || 'BALANCED',
+                    matchScore: c.overallMatchScore ?? c.OverallMatchScore ?? c.matchingScore ?? c.matching_score ?? 90,
+                    budgetScore: c.budgetMatchScore ?? c.BudgetMatchScore ?? 0,
+                    spaceScore: c.spaceFitScore ?? c.SpaceFitScore ?? 0,
+                    styleScore: c.styleThemeScore ?? c.StyleThemeScore ?? 0,
+                    ratingScore: c.ratingCredibilityScore ?? c.RatingCredibilityScore ?? 0,
+                    analysisText: c.budgetAnalysisText || c.BudgetAnalysisText || '',
+                    hallScheduleId: c.hallScheduleId ?? c.HallScheduleId ?? c.hall_schedule_id ?? 0,
+                    hallId: c.hallId ?? c.HallId ?? c.hall_id ?? 0,
+                    hallCode: c.hallCode || c.HallCode || '',
+                    hallName: c.hallName || c.HallName || c.hall_name || 'Sảnh Riverside',
+                    hallPriceNum: Number(c.hallRentalPrice ?? c.HallRentalPrice ?? c.hall_price ?? 0),
+                    hallDesc: c.hallDescription || c.HallDescription || '',
+                    hallMaxGuests: Number(c.capacity_max_guests ?? c.capacityMaxGuests ?? c.CapacityMaxGuests ?? c.hallCapacity ?? c.HallCapacity ?? 0) || 0,
+                    hallMinGuests: Number(c.capacity_min_guests ?? c.capacityMinGuests ?? c.CapacityMinGuests ?? 0) || 0,
+                    hallMaxTables: Number(c.capacity_max_tables ?? c.capacityMaxTables ?? c.CapacityMaxTables ?? 0) || 0,
+                    hallMinTables: Number(c.capacity_min_tables ?? c.capacityMinTables ?? c.CapacityMinTables ?? 0) || 0,
+                    hallImageUrl: c.hallImageUrl || c.HallImageUrl || c.hall_image_url || c.hallImage || c.HallImage || '',
+                    menuId: c.menuId ?? c.MenuId ?? c.menu_id ?? 0,
+                    menuName: c.menuName || c.MenuName || c.menu_name || 'Thực đơn Riverside',
+                    menuPriceNum: Number(c.menuPricePerTable ?? c.MenuPricePerTable ?? c.price_per_table ?? 0),
+                    menuDesc: c.menuDescription || c.MenuDescription || '',
+                    decorId: c.decorationPackageId ?? c.DecorationPackageId ?? c.decor_id ?? 0,
+                    decorName: c.decorationPackageName || c.DecorationPackageName || c.decor_name || 'Decor Riverside',
+                    decorPriceNum: Number(c.decorationPrice ?? c.DecorationPrice ?? c.decor_price ?? 0),
+                    decorStyle: c.decorationStyle || c.DecorationStyle || c.decor_style || '',
+                    decorDesc: c.decorationDescription || c.DecorationDescription || '',
+                    services: c.includedServices || c.IncludedServices || [],
+                    servicesTotalNum: Number(c.servicesTotalPrice ?? c.ServicesTotalPrice ?? 0),
+                    totalCostNum: Number(c.totalEstimatedCost ?? c.TotalEstimatedCost ?? c.total_estimated_cost ?? 0),
+                    budgetDiffNum: Number(c.budgetDifference ?? c.BudgetDifference ?? 0),
+                    explanations: c.explanations || c.Explanations || c.explanation_arguments || c.RecommendationReasons || c.recommendationReasons || [],
+                    totalTables,
+                    customMenu: null
+                };
+            });
+            // Chuẩn hóa sức chứa còn thiếu (fallback quy đổi 1 bàn = 10 khách).
+            topCombosState.forEach(s => {
+                if (!s.hallMaxTables && s.hallMaxGuests) s.hallMaxTables = Math.floor(s.hallMaxGuests / 10);
+                if (!s.hallMinTables && s.hallMinGuests) s.hallMinTables = Math.floor(s.hallMinGuests / 10);
+            });
+            renderComboCards(req);
+        }
+
+        function getComboDisplay(s) {
+            const menuName = s.customMenu ? s.customMenu.customName : s.menuName;
+            const menuPriceNum = s.customMenu ? s.customMenu.customPricePerTable : s.menuPriceNum;
+            const menuTotal = menuPriceNum * s.totalTables;
+            const totalCost = s.hallPriceNum + menuTotal + s.decorPriceNum + (s.servicesTotalNum || 0);
+            return { menuName, menuPriceNum, menuTotal, totalCost };
+        }
+
+        // Chuẩn hóa đường dẫn ảnh sảnh Backend trả về (relative "images/..." hoặc
+        // "/images/...") thành URL tuyệt đối dùng được trong <img>.
+        function resolveHallImg(raw) {
+            const s = String(raw || '').trim();
+            if (s === '') return RECOM_HALL_PLACEHOLDER;
+            if (/^https?:\/\//i.test(s) || s.startsWith('data:')) return s;
+            return s.startsWith('/') ? s : '/' + s;
+        }
+
+        // Phương án C — Card minimal kiểu hall-card Home + Progressive disclosure.
+        // Chỉ hiện: ảnh sảnh 280px + capacity-badge + title + tổng tiền + 2 CTA.
+        // Chi tiết sảnh/menu/decor/điểm số giấu trong <details> Chi tiết (Xem breakdown).
+        function renderComboCards(req) {
             const container = document.getElementById('combosCardsContainer');
+            if (!container) return;
             container.innerHTML = '';
+            const r = req || currentPayload || {};
+            const officialT = r.officialTableCount ?? 0;
+            const spareT = r.spareTableCount ?? 0;
+            const esc = (x) => String(x ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const escHtml = (x) => String(x ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-            const combos = data.topCombos || data.TopCombos || [];
-            const totalTables = req.officialTableCount + req.spareTableCount;
+            topCombosState.forEach((s, idx) => {
+                const isBest = s.comboType === 'BALANCED' || s.rank === 1;
+                const d = getComboDisplay(s);
+                const totalCost = d.totalCost.toLocaleString('vi-VN');
+                // P0 NFR04: nhãn ngân sách đúng — không hiển thị "Trong ngân sách" xanh khi vượt budget.
+                const expected = Number((r && r.expectedBudget) || (currentPayload && currentPayload.expectedBudget) || 0);
+                const diffVal = expected - d.totalCost;
+                const diffStr = Math.abs(diffVal).toLocaleString('vi-VN');
+                const budgetBadge = diffVal >= 0
+                    ? `<span class="recom-budget-badge recom-budget-badge--success">✓ Trong ngân sách (Tiết kiệm ${diffStr} đ)</span>`
+                    : `<span class="recom-budget-badge recom-budget-badge--warning">⚠ Vượt nhẹ ngân sách (+${diffStr} đ)</span>`;
+                // P0 NFR04: bullet list explanations gọn dưới bảng chi phí mỗi card.
+                const explainItems = Array.isArray(s.explanations) ? s.explanations.filter(x => String(x || '').trim() !== '') : [];
+                const explainHtml = explainItems.length > 0
+                    ? `<ul class="recom-explain-list">${explainItems.map(x => `<li>${escHtml(x)}</li>`).join('')}</ul>`
+                    : '';
+                const capMaxT = s.hallMaxTables > 0 ? s.hallMaxTables : (s.hallMaxGuests > 0 ? Math.floor(s.hallMaxGuests / 10) : (s.totalTables || 0));
+                const capMinT = s.hallMinTables > 0 ? s.hallMinTables : 0;
+                const capLabel = capMinT > 0 && capMaxT > 0
+                    ? `${capMinT} - ${capMaxT} bàn`
+                    : capMaxT > 0 ? `${capMaxT} bàn` : `${s.totalTables || 0} bàn`;
+                const imgSrc = resolveHallImg(s.hallImageUrl);
+                const customFlag = s.customMenu
+                    ? `<span class="recom-custom-flag"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:12px;vertical-align:-2px;">auto_fix_high</span> ĐÃ TÙY CHỈNH • ${s.customMenu.items.length} món</span>`
+                    : '';
+                const hallPrice = s.hallPriceNum.toLocaleString('vi-VN');
+                const menuPriceStr = d.menuPriceNum.toLocaleString('vi-VN');
+                const menuTotalCalc = d.menuTotal.toLocaleString('vi-VN');
 
-            combos.forEach(c => {
-                const isBest = (c.comboType || c.ComboType) === 'BALANCED';
-                const cardClass = isBest ? 'recom-gold-card' : 'recom-card';
-
-                const matchScore = c.overallMatchScore ?? c.OverallMatchScore ?? 90;
-                const title = c.comboTitle || c.ComboTitle;
-                const badge = c.comboBadge || c.ComboBadge;
-                const totalCost = Number(c.totalEstimatedCost ?? c.TotalEstimatedCost ?? 0).toLocaleString('vi-VN');
-                const analysisText = c.budgetAnalysisText || c.BudgetAnalysisText || '';
-
-                const hallName = c.hallName || c.HallName;
-                const hallPrice = Number(c.hallRentalPrice ?? c.HallRentalPrice ?? 0).toLocaleString('vi-VN');
-                const hallCap = c.hallCapacity ?? c.HallCapacity ?? 0;
-                const hallDesc = (c.hallDescription || c.HallDescription || '').replace(/'/g, "\\'");
-
-                const menuName = c.menuName || c.MenuName;
-                const menuPriceNum = Number(c.menuPricePerTable ?? c.MenuPricePerTable ?? 0);
-                const menuPriceStr = menuPriceNum.toLocaleString('vi-VN');
-                const menuTotalCalc = (menuPriceNum * totalTables).toLocaleString('vi-VN');
-                const menuDesc = (c.menuDescription || c.MenuDescription || '').replace(/'/g, "\\'");
-
-                const decorName = c.decorationPackageName || c.DecorationPackageName;
-                const decorPrice = Number(c.decorationPrice ?? c.DecorationPrice ?? 0).toLocaleString('vi-VN');
-                const decorStyle = c.decorationStyle || c.DecorationStyle;
-                const decorDesc = (c.decorationDescription || c.DecorationDescription || '').replace(/'/g, "\\'");
-
-                const services = c.includedServices || c.IncludedServices || [];
-                let servicesListHtml = '';
-                services.forEach(s => {
-                    servicesListHtml += `
-                        <div onclick="showServiceDetail('${(s.serviceName || s.ServiceName).replace(/'/g, "\\'")}', '${Number(s.price || s.Price).toLocaleString('vi-VN')} đ', '${(s.note || s.Note || 'Dịch vụ trọn gói Riverside').replace(/'/g, "\\'")}')" style="padding: 10px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-                            <span><i class="fa-solid fa-check" style="color: #10B981; margin-right: 6px;"></i>${s.serviceName || s.ServiceName}</span>
-                            <span style="color: #64748B; font-weight: 600;">${Number(s.price || s.Price).toLocaleString('vi-VN')} đ <i class="fa-solid fa-chevron-right" style="font-size: 9px; margin-left: 4px;"></i></span>
-                        </div>
-                    `;
+                let servicesHtml = '';
+                (s.services || []).forEach(sv => {
+                    const svName = sv.serviceName || sv.ServiceName || 'Dịch vụ';
+                    const svPrice = Number(sv.price ?? sv.Price ?? 0).toLocaleString('vi-VN');
+                    servicesHtml += `<div class="recom-break-row" onclick="showServiceDetail('${esc(svName)}', '${svPrice} đ', '${esc(sv.note || sv.Note || 'Dịch vụ trọn gói Riverside')}')" role="button" tabindex="0"><div class="recom-break-top"><span><span class="material-symbols-outlined" aria-hidden="true">check</span>${escHtml(svName)}</span><span>${svPrice} đ</span></div></div>`;
                 });
 
-                container.innerHTML += `
-                    <div class="${cardClass}" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
-                        ${isBest ? `
-                            <div style="position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: #B89758; color: #FFF; padding: 4px 16px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; box-shadow: 0 4px 10px rgba(184, 151, 88, 0.3);">
-                                <i class="fa-solid fa-crown"></i> Lựa Chọn Đề Xuất Số 1
-                            </div>
-                        ` : ''}
-
-                        <div style="display: flex; flex-direction: column; gap: 16px; ${isBest ? 'padding-top: 10px;' : ''}">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; background: ${isBest ? '#B89758' : '#F1F5F9'}; color: ${isBest ? '#FFF' : '#475569'};">
-                                        ${badge}
-                                    </span>
-                                    <h4 style="font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: #0F172A; margin: 6px 0 0 0;">${title}</h4>
-                                </div>
-                                <div style="text-align: right;">
-                                    <span style="font-size: 10px; color: #94A3B8; font-weight: 600; display: block;">Tương Thích</span>
-                                    <span style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: #B89758;">${matchScore}%</span>
-                                </div>
-                            </div>
-
-                            <!-- 4 Thang điểm Explainable AI -->
-                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: #F8FAFC; padding: 10px; border-radius: 14px; border: 1px solid #E2E8F0; text-align: center; font-size: 10px;">
-                                <div><span style="color: #94A3B8; display: block;">Ngân sách</span><strong style="color: #1E293B;">${c.budgetMatchScore ?? c.BudgetMatchScore}%</strong></div>
-                                <div><span style="color: #94A3B8; display: block;">Sức chứa</span><strong style="color: #1E293B;">${c.spaceFitScore ?? c.SpaceFitScore}%</strong></div>
-                                <div><span style="color: #94A3B8; display: block;">Phong cách</span><strong style="color: #1E293B;">${c.styleThemeScore ?? c.StyleThemeScore}%</strong></div>
-                                <div><span style="color: #94A3B8; display: block;">Hài lòng</span><strong style="color: #1E293B;">${c.ratingCredibilityScore ?? c.RatingCredibilityScore}%</strong></div>
-                            </div>
-
-                            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12px;">
-                                <div onclick="showDetailModal('HALL', '${hallName}', '${hallPrice} đ', '${hallDesc}', ${hallCap})" style="padding: 12px; background: #FFFFFF; border-radius: 14px; border: 1px solid #E2E8F0; cursor: pointer;">
-                                    <div style="display: flex; justify-content: space-between; font-weight: 700; color: #1E293B;">
-                                        <span><i class="fa-solid fa-archway" style="color: #B89758; margin-right: 6px;"></i>${hallName}</span>
-                                        <span>${hallPrice} đ</span>
-                                    </div>
-                                    <span style="font-size: 11px; color: #64748B; display: block; margin-top: 3px;">Sức chứa: ${hallCap} bàn • Nhấn để xem chi tiết <i class="fa-solid fa-circle-question" style="color: #94A3B8;"></i></span>
-                                </div>
-
-                                <div onclick="showDetailModal('MENU', '${menuName}', '${menuPriceStr} đ/bàn', '${menuDesc}', ${totalTables})" style="padding: 12px; background: #FFFFFF; border-radius: 14px; border: 1px solid #E2E8F0; cursor: pointer;">
-                                    <div style="display: flex; justify-content: space-between; font-weight: 700; color: #1E293B;">
-                                        <span><i class="fa-solid fa-utensils" style="color: #B89758; margin-right: 6px;"></i>${menuName}</span>
-                                        <span>${menuPriceStr} đ/bàn</span>
-                                    </div>
-                                    <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #F1F5F9; display: flex; justify-content: space-between; font-size: 11px; font-weight: 600;">
-                                        <span style="color: #64748B;">${totalTables} bàn (${req.officialTableCount} chính + ${req.spareTableCount} sơ cua):</span>
-                                        <span style="color: #B89758; font-weight: 700;">${menuTotalCalc} đ</span>
-                                    </div>
-                                </div>
-
-                                <div onclick="showDetailModal('DECOR', '${decorName}', '${decorPrice} đ', '${decorDesc}', '${decorStyle}')" style="padding: 12px; background: #FFFFFF; border-radius: 14px; border: 1px solid #E2E8F0; cursor: pointer;">
-                                    <div style="display: flex; justify-content: space-between; font-weight: 700; color: #1E293B;">
-                                        <span><i class="fa-solid fa-wand-magic-sparkles" style="color: #B89758; margin-right: 6px;"></i>${decorName}</span>
-                                        <span>${decorPrice} đ</span>
-                                    </div>
-                                    <span style="font-size: 11px; color: #64748B; display: block; margin-top: 3px;">Tone chủ đạo: ${decorStyle} • Nhấn xem chi tiết <i class="fa-solid fa-circle-question" style="color: #94A3B8;"></i></span>
-                                </div>
-
-                                ${servicesListHtml}
-                            </div>
-                        </div>
-
-                        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #E2E8F0;">
-                            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
-                                <span style="font-size: 12px; color: #64748B;">Dự toán trọn gói:</span>
-                                <span style="font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: #0F172A;">${totalCost} đ</span>
-                            </div>
-                            <p style="font-size: 11px; color: #10B981; font-weight: 700; margin: 0 0 14px 0;">${analysisText}</p>
-
-                            <button type="button" onclick="openBookingConfirmModal(${c.hallId ?? c.HallId}, '${hallName}', ${c.menuId ?? c.MenuId}, ${c.decorationPackageId ?? c.DecorationPackageId}, '${totalCost}')" class="${isBest ? 'recom-btn-gold' : 'recom-btn-dark'}" style="width: 100%; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                <span>Đăng Ký Giữ Chỗ Gói Này</span>
-                                <i class="fa-solid fa-arrow-right"></i>
-                            </button>
-                        </div>
+                const article = document.createElement('article');
+                article.className = 'recom-hall-card' + (isBest ? ' is-top1' : '');
+                article.innerHTML = `
+                    <div class="recom-hall-image-wrap">
+                        <img src="${esc(imgSrc)}" alt="Không gian ${esc(s.hallName)}" loading="lazy" onerror="this.onerror=null;this.src='${RECOM_HALL_PLACEHOLDER}';" />
+                        <span class="recom-cap-badge"><span class="material-symbols-outlined" aria-hidden="true">groups</span> Sức chứa: ${capLabel}</span>
+                        <span class="recom-rank-tag">Top ${s.rank} • ${escHtml(s.hallCode || s.hallName)}</span>
+                        ${isBest ? `<span class="recom-top1-ribbon"><span class="material-symbols-outlined" aria-hidden="true">crown</span> Đề xuất số 1</span>` : ''}
                     </div>
-                `;
+                    <div class="recom-hall-content">
+                        <div><span class="recom-combo-badge">${escHtml(s.badge)}</span>${customFlag}</div>
+                        <div class="recom-hall-title-row">
+                            <h3>${escHtml(s.hallName)}</h3>
+                            <span class="recom-match"><span class="material-symbols-outlined" aria-hidden="true">star</span> <strong>${s.matchScore}%</strong></span>
+                        </div>
+                        <div class="recom-total-row">
+                            <div><span class="recom-price-label">Dự toán trọn gói</span><strong id="comboTotal-${idx}">${totalCost} đ</strong></div>
+                        </div>
+                        <p class="recom-analysis">${budgetBadge}</p>
+                        <p class="recom-analysis recom-analysis--sub">${escHtml(s.analysisText)}</p>
+                        ${explainHtml}
+                        <div class="recom-cta-row">
+                            <button type="button" class="recom-btn-outline" onclick="openMenuCustomizer(${idx})" title="Xem và tùy chỉnh món ăn"><span class="material-symbols-outlined" aria-hidden="true">restaurant_menu</span> Xem thực đơn</button>
+                            <button type="button" class="${isBest ? 'recom-btn-gold' : 'recom-btn-dark'}" onclick="openBookingConfirmModal(${idx})"><span>Giữ chỗ</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
+                        </div>
+                        <details class="recom-breakdown">
+                            <summary><span>Chi tiết <span style="font-weight:400;">(${escHtml(s.title)})</span></span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span></summary>
+                            <div class="recom-breakdown-body">
+                                <div class="recom-score-strip" aria-label="Điểm thành phần">
+                                    <div><span>Ngân sách</span><strong>${s.budgetScore}%</strong></div>
+                                    <div><span>Sức chứa</span><strong>${s.spaceScore}%</strong></div>
+                                    <div><span>Phong cách</span><strong>${s.styleScore}%</strong></div>
+                                    <div><span>Hài lòng</span><strong>${s.ratingScore}%</strong></div>
+                                </div>
+                                <div class="recom-break-row" onclick="showDetailModal('HALL', '${esc(s.hallName)}', '${hallPrice} đ', '${esc(s.hallDesc)}', '${s.hallMinTables}|${s.hallMaxTables}|${s.hallMaxGuests}')" role="button" tabindex="0">
+                                    <div class="recom-break-top"><span><span class="material-symbols-outlined" aria-hidden="true">apartment</span>${escHtml(s.hallName)}</span><span>${hallPrice} đ</span></div>
+                                    <span class="recom-break-sub">${capLabel}${s.hallMaxGuests ? ` (${s.hallMaxGuests} khách)` : ''} • Nhấn xem chi tiết</span>
+                                </div>
+                                <div class="recom-break-row${s.customMenu ? ' is-custom' : ''}" onclick="showDetailModal('MENU', ${idx}, '${esc(d.menuName)}', '${menuPriceStr} đ/bàn', '${esc(s.menuDesc)}', ${s.totalTables})" role="button" tabindex="0">
+                                    <div class="recom-break-top"><span><span class="material-symbols-outlined" aria-hidden="true">restaurant_menu</span><span id="comboMenuName-${idx}">${escHtml(d.menuName)}</span></span><span id="comboMenuPrice-${idx}">${menuPriceStr} đ/bàn</span></div>
+                                    <div class="recom-break-top" style="font-size:12px;"><span style="color:#64748B;font-weight:600;">${s.totalTables} bàn (${officialT} chính + ${spareT} sơ cua):</span><span id="comboMenuTotal-${idx}" style="color:#735c00;">${menuTotalCalc} đ</span></div>
+                                    <span class="recom-break-sub accent">Nhấn để xem chi tiết &amp; tùy chỉnh thực đơn</span>
+                                </div>
+                                <div class="recom-break-row" onclick="showDetailModal('DECOR', '${esc(s.decorName)}', '${s.decorPriceNum.toLocaleString('vi-VN')} đ', '${esc(s.decorDesc)}', '${esc(s.decorStyle)}')" role="button" tabindex="0">
+                                    <div class="recom-break-top"><span><span class="material-symbols-outlined" aria-hidden="true">palette</span>${escHtml(s.decorName)}</span><span>${s.decorPriceNum.toLocaleString('vi-VN')} đ</span></div>
+                                    <span class="recom-break-sub">Tone: ${escHtml(s.decorStyle)} • Nhấn xem chi tiết</span>
+                                </div>
+                                ${servicesHtml}
+                            </div>
+                        </details>
+                    </div>`;
+                container.appendChild(article);
             });
         }
 
-        function showDetailModal(type, title, price, desc, extra) {
+        // P0 fallback 0 combo: Smart Suggestion Box — lý do + 1-click điều chỉnh ngân sách + 3 badge ngày.
+        let smartSuggestState = null;
+        function renderSmartSuggestBox(suggestedNext, req) {
+            const reasonEl = document.getElementById('smartSuggestReason');
+            const budgetEl = document.getElementById('smartSuggestBudget');
+            const datesBox = document.getElementById('smartSuggestDates');
+            const applyBtn = document.getElementById('smartSuggestApplyBtn');
+            smartSuggestState = suggestedNext || null;
+            const minBudget = Number((suggestedNext && (suggestedNext.minRequiredBudget ?? suggestedNext.MinRequiredBudget)) || 0);
+            const reason = (suggestedNext && (suggestedNext.reason || suggestedNext.Reason)) || 'Ngân sách thấp hơn tối thiểu hoặc ngày đã kín sảnh phù hợp.';
+            const dates = (suggestedNext && (suggestedNext.suggestedDates || suggestedNext.SuggestedDates)) || [];
+            if (reasonEl) reasonEl.innerText = reason;
+            if (budgetEl) budgetEl.innerText = minBudget > 0 ? `Ngân sách tối thiểu gợi ý: ${minBudget.toLocaleString('vi-VN')} đ` : '';
+            if (applyBtn) {
+                applyBtn.innerText = minBudget > 0 ? `Tự động điều chỉnh ngân sách lên ${minBudget.toLocaleString('vi-VN')} đ` : 'Tự động điều chỉnh ngân sách';
+                applyBtn.disabled = !(minBudget > 0);
+                applyBtn.style.opacity = minBudget > 0 ? '1' : '0.6';
+            }
+            if (datesBox) {
+                datesBox.innerHTML = '';
+                (Array.isArray(dates) ? dates.slice(0, 3) : []).forEach(item => {
+                    const dd = item.date || item.Date || '';
+                    const sh = item.shift || item.Shift || '';
+                    const halls = item.availableHalls || item.AvailableHalls || [];
+                    if (!dd) return;
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'recom-date-badge';
+                    b.title = (Array.isArray(halls) && halls.length ? 'Sảnh trống: ' + halls.join(', ') : 'Bấm để đổi ngày và tìm lại');
+                    b.textContent = `${dd}${sh ? ' • ' + sh : ''}`;
+                    b.onclick = function () { applySuggestedDate(dd, sh); };
+                    datesBox.appendChild(b);
+                });
+                if (datesBox.children.length === 0) {
+                    datesBox.innerHTML = '<span class="recom-results-sub">Chưa tìm được ngày thay thế trong 60 ngày tới — hai bạn thử đổi ca hoặc giảm số bàn nhé!</span>';
+                }
+            }
+        }
+
+        function applySuggestedBudget() {
+            if (!smartSuggestState) return;
+            const minBudget = Number(smartSuggestState.minRequiredBudget ?? smartSuggestState.MinRequiredBudget ?? 0);
+            if (!(minBudget > 0)) return;
+            const budgetInput = document.getElementById('expectedBudget');
+            if (budgetInput) { budgetInput.value = Math.ceil(minBudget); formatBudgetInput(budgetInput); try { updateBudgetMinHint(); } catch (e) { } }
+            handleAnalyzeCombos(new Event('submit'));
+        }
+
+        function applySuggestedDate(dateStr, shift) {
+            if (!dateStr) return;
+            const dateInput = document.getElementById('eventDate');
+            const shiftInput = document.getElementById('shift');
+            if (dateInput) dateInput.value = String(dateStr).slice(0, 10);
+            if (shift && shiftInput) {
+                if (/trưa|trua/i.test(shift)) shiftInput.value = 'Ca trưa';
+                else if (/tối|toi/i.test(shift)) shiftInput.value = 'Ca tối';
+            }
+            if (typeof handleDateChanged === 'function') { try { handleDateChanged(); } catch (e) { } }
+            if (typeof loadHallAvailability === 'function') { try { loadHallAvailability(dateInput ? dateInput.value : dateStr); } catch (e) { } }
+            handleAnalyzeCombos(new Event('submit'));
+        }
+
+        let detailModalComboIndex = null;
+
+        function openMenuCustomizerFromDetail() {
+            closeDetailModal();
+            if (detailModalComboIndex !== null && detailModalComboIndex !== undefined) {
+                openMenuCustomizer(detailModalComboIndex);
+            }
+        }
+
+        function showDetailModal(type, a, b, c, d) {
             const modal = document.getElementById('itemDetailModal');
             const iconBox = document.getElementById('modalIconBox');
             const dishesBox = document.getElementById('modalDishesContainer');
+            const menuBtn = document.getElementById('modalMenuCustomBtn');
+            if (menuBtn) menuBtn.hidden = true;
+            detailModalComboIndex = null;
+
+            // MENU có 2 dạng gọi: cũ ('MENU', title, price, desc, tables) và mới ('MENU', comboIndex, title, price, desc, tables).
+            let title, price, desc, extra, comboIndex = null;
+            if (type === 'MENU' && typeof a === 'number') {
+                comboIndex = a; title = b; price = c; desc = d; extra = arguments[5];
+            } else {
+                title = a; price = b; desc = c; extra = d;
+            }
 
             document.getElementById('modalTitle').innerText = title;
-            document.getElementById('modalPriceVal').innerText = price;
+            const priceEl = document.getElementById('modalPriceVal');
+            if (priceEl) priceEl.innerHTML = `<strong>${String(price || '--')}</strong>`;
             document.getElementById('modalDescription').innerText = desc || 'Thông tin chi tiết dịch vụ tại Riverside Palace.';
-            dishesBox.style.display = 'none';
+            if (dishesBox) dishesBox.hidden = true;
 
             if (type === 'HALL') {
                 document.getElementById('modalSubTitle').innerText = 'Không Gian Đại Sảnh';
-                iconBox.innerHTML = '<i class="fa-solid fa-archway"></i>';
-                document.getElementById('modalNote').innerText = `Sức chứa tối đa: ${extra} bàn. Giá thuê sảnh là chi phí cố định cho ca tổ chức.`;
+                if (iconBox) iconBox.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">apartment</span>';
+                const parts = String(extra || '').split('|');
+                const minT = parseInt(parts[0]) || 0;
+                const maxT = parseInt(parts[1]) || parseInt(extra) || 0;
+                const maxG = parseInt(parts[2]) || (maxT * 10);
+                document.getElementById('modalNote').innerText = maxT <= 0
+                    ? 'Giá thuê sảnh là chi phí cố định cho ca tổ chức. Hai bạn hãy hỏi chuyên viên về sức chứa chi tiết của sảnh này nhé!'
+                    : minT > 0
+                    ? `Sức chứa: ${minT} - ${maxT} bàn (tối đa ${maxG} khách). Giá thuê sảnh là chi phí cố định cho ca tổ chức.`
+                    : `Sức chứa tối đa: ${maxT} bàn (${maxG} khách). Giá thuê sảnh là chi phí cố định cho ca tổ chức.`;
             } else if (type === 'MENU') {
                 document.getElementById('modalSubTitle').innerText = 'Ẩm Thực Tiệc Cưới';
-                iconBox.innerHTML = '<i class="fa-solid fa-utensils"></i>';
-                dishesBox.style.display = 'block';
+                if (iconBox) iconBox.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">restaurant_menu</span>';
+                if (dishesBox) dishesBox.hidden = false;
                 document.getElementById('modalDishesText').innerText = desc;
-                document.getElementById('modalNote').innerText = `Đơn giá áp dụng cho mâm tròn 10 khách. Đã tính cho ${extra} bàn tiệc.`;
+                document.getElementById('modalNote').innerText = `Đơn giá áp dụng cho mâm tròn 10 khách. Đã tính cho ${extra} bàn tiệc. Nhấn "Xem thực đơn tiệc" để xem từng món + giá và tùy chỉnh theo sở thích.`;
+                if (comboIndex !== null && menuBtn) {
+                    detailModalComboIndex = comboIndex;
+                    menuBtn.hidden = false;
+                }
             } else if (type === 'DECOR') {
                 document.getElementById('modalSubTitle').innerText = 'Concept Trang Trí';
-                iconBox.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i>';
+                if (iconBox) iconBox.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">palette</span>';
                 document.getElementById('modalNote').innerText = `Tone màu phong cách: ${extra}. Concept trang trí bao gồm cổng hoa, backdrop và bàn gallery.`;
             }
 
-            modal.style.display = 'flex';
+            openRecomModal('itemDetailModal');
         }
 
         function showServiceDetail(name, price, note) {
-            const modal = document.getElementById('itemDetailModal');
             document.getElementById('modalSubTitle').innerText = 'Dịch Vụ Tiệc Cưới';
-            document.getElementById('modalIconBox').innerHTML = '<i class="fa-solid fa-bell-concierge"></i>';
+            const iconBox = document.getElementById('modalIconBox');
+            if (iconBox) iconBox.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">concierge</span>';
             document.getElementById('modalTitle').innerText = name;
-            document.getElementById('modalPriceVal').innerText = price;
+            const priceEl = document.getElementById('modalPriceVal');
+            if (priceEl) priceEl.innerHTML = `<strong>${String(price || '--')}</strong>`;
             document.getElementById('modalDescription').innerText = note;
-            document.getElementById('modalDishesContainer').style.display = 'none';
+            document.getElementById('modalDishesContainer').hidden = true;
+            const menuBtn = document.getElementById('modalMenuCustomBtn');
+            if (menuBtn) menuBtn.hidden = true;
             document.getElementById('modalNote').innerText = 'Dịch vụ được phục vụ bởi đội ngũ chuyên nghiệp của Riverside Palace.';
-            modal.style.display = 'flex';
+            openRecomModal('itemDetailModal');
         }
 
-        function closeDetailModal() {
-            document.getElementById('itemDetailModal').style.display = 'none';
+        function closeDetailModal() { closeRecomModal('itemDetailModal'); }
+
+        let availAllDates = [];
+        let availWindowStart = null;
+
+        function initAvailFilters(baseDateStr) {
+            const monthSel = document.getElementById('availMonthFilter');
+            const yearSel = document.getElementById('availYearFilter');
+            if (!monthSel || !yearSel) return;
+            if (monthSel.options.length === 0) {
+                for (let m = 1; m <= 12; m++) {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.text = 'Tháng ' + m;
+                    monthSel.appendChild(opt);
+                }
+            }
+            if (yearSel.options.length === 0) {
+                const curY = new Date().getFullYear();
+                for (let y = curY; y <= curY + 2; y++) {
+                    const opt = document.createElement('option');
+                    opt.value = y;
+                    opt.text = 'Năm ' + y;
+                    yearSel.appendChild(opt);
+                }
+            }
+            let base = baseDateStr ? new Date(baseDateStr) : new Date();
+            if (isNaN(base.getTime())) base = new Date();
+            monthSel.value = base.getMonth() + 1;
+            yearSel.value = base.getFullYear();
+        }
+
+        function onAvailFilterChanged() {
+            const monthSel = document.getElementById('availMonthFilter');
+            const yearSel = document.getElementById('availYearFilter');
+            if (!monthSel || !yearSel) return;
+            const m = parseInt(monthSel.value) || (new Date().getMonth() + 1);
+            const y = parseInt(yearSel.value) || new Date().getFullYear();
+            const first = new Date(y, m - 1, 1);
+            availWindowStart = first;
+            const fromStr = toLocalDateStr(first);
+            const last = new Date(y, m, 0);
+            const toStr = toLocalDateStr(last);
+            loadAvailableDates(fromStr, toStr);
+        }
+
+        function shiftAvailWeek(deltaDays) {
+            if (!availWindowStart || isNaN(availWindowStart.getTime())) availWindowStart = new Date();
+            availWindowStart = new Date(availWindowStart.getTime() + (deltaDays || 0) * 86400000);
+            const fromStr = toLocalDateStr(availWindowStart);
+            const toDate = new Date(availWindowStart.getTime() + 60 * 86400000);
+            const toStr = toLocalDateStr(toDate);
+            initAvailFilters(fromStr);
+            loadAvailableDates(fromStr, toStr);
         }
 
         async function openShowtimeModal() {
-            const modal = document.getElementById('showtimeModal');
-            const currentDate = document.getElementById('eventDate').value;
-            document.getElementById('modalDatePicker').value = currentDate;
-            modal.style.display = 'flex';
+            const currentDateEl = document.getElementById('eventDate');
+            const currentDate = currentDateEl ? currentDateEl.value : '';
+            const picker = document.getElementById('modalDatePicker');
+            if (picker) picker.value = currentDate || '';
+            openRecomModal('showtimeModal');
+            initAvailFilters(currentDate);
+            availWindowStart = currentDate ? new Date(currentDate) : new Date();
+            if (availWindowStart && isNaN(availWindowStart.getTime())) availWindowStart = new Date();
+            const fromD = availWindowStart || new Date();
+            const toD = new Date(fromD.getTime() + 60 * 86400000);
+            await loadAvailableDates(toLocalDateStr(fromD), toLocalDateStr(toD));
             await loadHallAvailability(currentDate);
+        }
+
+        async function loadAvailableDates(fromStr, toStr) {
+            const badgeBox = document.getElementById('availableDatesBadges');
+            const shiftSel = document.getElementById('availShiftFilter');
+            const shiftVal = shiftSel ? (shiftSel.value || '') : '';
+            if (badgeBox) badgeBox.innerHTML = '<span class="recom-results-sub">Đang gợi ý ngày trống...</span>';
+            try {
+                let url = '/Recommendation/GetAvailableDates?';
+                const params = [];
+                if (fromStr) params.push('from=' + encodeURIComponent(fromStr));
+                if (toStr) params.push('to=' + encodeURIComponent(toStr));
+                if (shiftVal) params.push('shift=' + encodeURIComponent(shiftVal));
+                url += params.join('&');
+                const res = await fetch(url);
+                if (!res || !res.ok) {
+                    availAllDates = [];
+                    renderAvailableDateBadges();
+                    return;
+                }
+                const json = await res.json();
+                const list = json ? (json.data || json.Data || []) : [];
+                availAllDates = Array.isArray(list) ? list : [];
+                renderAvailableDateBadges();
+            } catch (e) {
+                availAllDates = [];
+                renderAvailableDateBadges();
+            }
+        }
+
+        function renderAvailableDateBadges() {
+            const badgeBox = document.getElementById('availableDatesBadges');
+            if (!badgeBox) return;
+            badgeBox.innerHTML = '';
+            if (!availAllDates || availAllDates.length === 0) {
+                badgeBox.innerHTML = '<div class="recom-empty-note">Không tìm thấy ngày trống trong khoảng đã chọn. Vui lòng chọn tháng/năm khác hoặc bấm Tuần trước/Tuần sau.</div>';
+                return;
+            }
+            const monthSel = document.getElementById('availMonthFilter');
+            const yearSel = document.getElementById('availYearFilter');
+            const m = monthSel ? parseInt(monthSel.value) : NaN;
+            const y = yearSel ? parseInt(yearSel.value) : NaN;
+            const filtered = availAllDates.filter(item => {
+                if (!item) return false;
+                const d = item.date || item.Date || '';
+                if (!d) return false;
+                if (!isNaN(m) && !isNaN(y)) {
+                    const parts = d.split('-');
+                    if (parts.length === 3 && (parseInt(parts[1]) !== m || parseInt(parts[0]) !== y)) return false;
+                }
+                return true;
+            });
+            if (filtered.length === 0) {
+                badgeBox.innerHTML = '<div class="recom-empty-note">Không tìm thấy ngày trống trong tháng đã chọn. Vui lòng chọn tháng/năm khác hoặc bấm Tuần trước/Tuần sau.</div>';
+                return;
+            }
+            filtered.slice(0, 30).forEach(item => {
+                if (!item) return;
+                const d = item.date || item.Date || '';
+                const s = item.shift || item.Shift || '';
+                const c = item.availableHallCount ?? item.AvailableHallCount ?? 0;
+                if (!d) return;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'recom-date-badge';
+                btn.title = 'Bấm để xem chi tiết sảnh ngày ' + d + (s ? ' (' + s + ')' : '');
+                btn.textContent = d + (s ? ' • ' + s : '') + ' (' + c + ' sảnh)';
+                btn.onclick = function () {
+                    const picker = document.getElementById('modalDatePicker');
+                    if (picker) picker.value = d;
+                    loadHallAvailability(d);
+                };
+                badgeBox.appendChild(btn);
+            });
         }
 
         async function loadHallAvailability(dateStr) {
             const container = document.getElementById('showtimeMatrixContainer');
-            container.innerHTML = '<div style="padding: 24px; text-align: center; color: #94A3B8;"><i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 8px;"></i>Đang kiểm tra bảng LichSanh trong CSDL...</div>';
+            if (!container) return;
+            if (!dateStr) {
+                container.innerHTML = '<div class="recom-empty-note">Vui lòng chọn ngày để xem chi tiết sảnh trống.</div>';
+                return;
+            }
+            // Validate ràng buộc 30–365 ngày (định dạng YYYY-MM-DD so sánh chuỗi an toàn).
+            const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+            const minD = new Date(today0); minD.setDate(minD.getDate() + 30);
+            const maxD = new Date(today0); maxD.setDate(maxD.getDate() + 365);
+            const toStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            const minStr = toStr(minD);
+            const maxStr = toStr(maxD);
+            if (dateStr < minStr) {
+                container.innerHTML = '<div class="recom-empty-note">Ngày tổ chức tiệc cưới phải cách ngày hiện tại tối thiểu 30 ngày. Vui lòng chọn ngày xa hơn để Riverside Palace có thời gian chuẩn bị tốt nhất.</div>';
+                return;
+            }
+            if (dateStr > maxStr) {
+                container.innerHTML = '<div class="recom-empty-note">Hệ thống chỉ nhận đăng ký giữ chỗ trước tối đa 365 ngày (1 năm). Vui lòng chọn ngày gần hơn.</div>';
+                return;
+            }
+            container.innerHTML = '<div class="recom-results-sub" style="padding:24px;text-align:center;">Đang kiểm tra lịch sảnh...</div>';
 
             try {
                 const res = await fetch(`/Recommendation/GetHallAvailability?date=${encodeURIComponent(dateStr)}`);
-                if (!res.ok) {
-                    container.innerHTML = `<div style="padding: 24px; text-align: center; color: #EF4444;">Lỗi máy chủ (${res.status}). Vui lòng kiểm tra lại.</div>`;
+                if (!res || !res.ok) {
+                    const code = res ? res.status : '???';
+                    container.innerHTML = `<div class="recom-empty-note">Lỗi máy chủ (${code}). Vui lòng kiểm tra lại.</div>`;
                     return;
                 }
                 const json = await res.json();
-                if (json.success && json.data && json.data.halls) {
-                    renderRealShowtimeMatrix(json.data.halls, dateStr);
+                const halls = json && json.data ? (json.data.halls || json.data.Halls || json.data) : null;
+                if (json && json.success && Array.isArray(halls)) {
+                    renderRealShowtimeMatrix(halls, dateStr);
+                } else if (json && json.success && json.data && Array.isArray(json.data)) {
+                    renderRealShowtimeMatrix(json.data, dateStr);
                 } else {
-                    container.innerHTML = `<div style="padding: 24px; text-align: center; color: #EF4444;">${json.message || 'Không thể tải dữ liệu lịch sảnh.'}</div>`;
+                    const msg = (json && json.message) || 'Không thể tải dữ liệu lịch sảnh.';
+                    container.innerHTML = `<div class="recom-empty-note">${msg}</div>`;
                 }
             } catch (e) {
-                container.innerHTML = `<div style="padding: 24px; text-align: center; color: #EF4444;">Lỗi kết nối máy chủ.</div>`;
+                container.innerHTML = `<div class="recom-empty-note">Lỗi kết nối máy chủ.</div>`;
             }
         }
 
         function renderRealShowtimeMatrix(halls, dateStr) {
             const container = document.getElementById('showtimeMatrixContainer');
+            if (!container) return;
             container.innerHTML = '';
+            if (!halls || halls.length === 0) {
+                container.innerHTML = '<div class="recom-empty-note">Ngày này chưa có lịch sảnh trống. Vui lòng bấm badge ngày gợi ý phía trên hoặc chọn khoảng khác.</div>';
+                return;
+            }
 
-            halls.forEach(h => {
-                const noonBtn = h.isNoonAvailable
-                    ? `<button type="button" onclick="selectShowtimeSlot('${dateStr}', 'Ca trưa')" class="recom-slot-free"><span style="display: block; font-weight: 700;">Ca Trưa (10:30 – 14:00)</span><span style="font-size: 10px;">🟢 Còn trống (Bấm để chọn)</span></button>`
-                    : `<button type="button" disabled class="recom-slot-locked"><span style="display: block; font-weight: 700;">Ca Trưa (10:30 – 14:00)</span><span style="font-size: 10px;">🔴 Đã kín lịch</span></button>`;
+            (halls || []).forEach(h => {
+                if (!h) return;
+                const hallName = h.hallName || h.HallName || 'Sảnh tiệc';
+                // Chuẩn hóa khách vs bàn (1 bàn = 10 khách): capacity lưu SỐ KHÁCH.
+                const capGuests = Number(h.capacity_max_guests ?? h.capacityMaxGuests ?? h.CapacityMaxGuests ?? h.capacity ?? h.Capacity ?? 0) || 0;
+                const capMinGuests = Number(h.capacity_min_guests ?? h.capacityMinGuests ?? h.CapacityMinGuests ?? 0) || 0;
+                const capMaxTables = Number(h.capacity_max_tables ?? h.capacityMaxTables ?? h.CapacityMaxTables ?? 0) || Math.floor(capGuests / 10);
+                const capMinTables = Number(h.capacity_min_tables ?? h.capacityMinTables ?? h.CapacityMinTables ?? 0) || Math.floor(capMinGuests / 10);
+                const capLabel = capMinTables > 0 ? `${capMinTables} - ${capMaxTables} bàn (${capGuests} khách)` : `${capMaxTables} bàn (${capGuests} khách)`;
+                const price = Number(h.rentalPrice ?? h.RentalPrice ?? 0);
+                const priceStr = isNaN(price) ? '0' : price.toLocaleString('vi-VN');
+                const noonFree = h.isNoonAvailable ?? h.IsNoonAvailable ?? false;
+                const eveFree = h.isEveningAvailable ?? h.IsEveningAvailable ?? false;
+                const safeDate = (dateStr || '').replace(/'/g, '');
+                const noonBtn = noonFree
+                    ? `<button type="button" onclick="selectShowtimeSlot('${safeDate}', 'Ca trưa')" class="recom-slot-free"><span class="recom-slot-title">Ca Trưa (10:30 – 14:00)</span><span class="recom-slot-sub"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Còn trống (Bấm để chọn)</span></button>`
+                    : `<button type="button" disabled class="recom-slot-locked"><span class="recom-slot-title">Ca Trưa (10:30 – 14:00)</span><span class="recom-slot-sub"><span class="material-symbols-outlined" aria-hidden="true">cancel</span> Đã kín lịch</span></button>`;
 
-                const eveBtn = h.isEveningAvailable
-                    ? `<button type="button" onclick="selectShowtimeSlot('${dateStr}', 'Ca tối')" class="recom-slot-free"><span style="display: block; font-weight: 700;">Ca Tối (17:30 – 21:30)</span><span style="font-size: 10px;">🟢 Còn trống (Bấm để chọn)</span></button>`
-                    : `<button type="button" disabled class="recom-slot-locked"><span style="display: block; font-weight: 700;">Ca Tối (17:30 – 21:30)</span><span style="font-size: 10px;">🔴 Đã kín lịch</span></button>`;
+                const eveBtn = eveFree
+                    ? `<button type="button" onclick="selectShowtimeSlot('${safeDate}', 'Ca tối')" class="recom-slot-free"><span class="recom-slot-title">Ca Tối (17:30 – 21:30)</span><span class="recom-slot-sub"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Còn trống (Bấm để chọn)</span></button>`
+                    : `<button type="button" disabled class="recom-slot-locked"><span class="recom-slot-title">Ca Tối (17:30 – 21:30)</span><span class="recom-slot-sub"><span class="material-symbols-outlined" aria-hidden="true">cancel</span> Đã kín lịch</span></button>`;
 
-                container.innerHTML += `
-                    <div style="background: #FAF8F5; padding: 14px; border-radius: 16px; border: 1px solid #E2E8F0;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <strong style="color: #0F172A; font-size: 14px; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-archway" style="color: #B89758;"></i> Sảnh ${h.hallName}
-                            </strong>
-                            <span style="font-size: 11px; color: #64748B;">Sức chứa: ${h.capacity} bàn • Giá: ${Number(h.rentalPrice).toLocaleString('vi-VN')} đ</span>
+                const card = document.createElement('div');
+                card.className = 'recom-matrix-card';
+                card.innerHTML = `
+                        <div class="recom-matrix-head">
+                            <strong><span class="material-symbols-outlined" aria-hidden="true">apartment</span> Sảnh ${hallName}</strong>
+                            <span>Sức chứa: ${capLabel} • Giá: ${priceStr} đ</span>
                         </div>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
-                            ${noonBtn}
-                            ${eveBtn}
-                        </div>
-                    </div>
-                `;
+                        <div class="recom-matrix-slots">${noonBtn}${eveBtn}</div>`;
+                container.appendChild(card);
             });
         }
 
         function selectShowtimeSlot(dateStr, shift) {
-            document.getElementById('eventDate').value = dateStr;
-            document.getElementById('shift').value = shift;
+            if (!dateStr || !shift) return;
+            const dateInput = document.getElementById('eventDate');
+            const shiftInput = document.getElementById('shift');
+            const picker = document.getElementById('modalDatePicker');
+            if (dateInput) dateInput.value = dateStr;
+            if (shiftInput) shiftInput.value = shift;
+            if (picker) picker.value = dateStr;
+            if (typeof handleDateChanged === 'function') { try { handleDateChanged(); } catch (e) { } }
             closeShowtimeModal();
-            alert(`Đã chọn sảnh trống vào ngày: ${dateStr} (${shift})!\nHãy nhấn nút "Tính Toán & Trích Xuất Top 3 Combo" để cập nhật phương án.`);
+            showRecomAlert(`Đã chọn sảnh trống vào ngày ${dateStr} (${shift})! Hai bạn hãy nhấn nút "Tính Toán & Trích Xuất Top 3 Combo" để cập nhật phương án nhé!`, 'Đã chọn ngày & ca trống', 'success');
         }
 
-        function closeShowtimeModal() {
-            document.getElementById('showtimeModal').style.display = 'none';
+        function closeShowtimeModal() { closeRecomModal('showtimeModal'); }
+
+        function fmtVN(dateStr) {
+            if (!dateStr) return '';
+            const s = String(dateStr).trim().slice(0, 10);
+            const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+            return s;
         }
 
-        function openBookingConfirmModal(hallId, hallName, menuId, decorId, totalCostStr) {
+        function openBookingConfirmModal(comboIndex) {
+            const s = topCombosState[comboIndex];
+            if (!s || !currentPayload) {
+                showRecomAlert('Chưa có gói tiệc để giữ chỗ. Hai bạn hãy nhấn "Tính Toán & Trích Xuất Top 3 Combo" trước nhé!', 'Chưa có gói tiệc', 'info');
+                return;
+            }
+            const d = getComboDisplay(s);
+            const totalCostStr = d.totalCost.toLocaleString('vi-VN');
             selectedComboToBook = {
-                hallId: hallId,
-                hallName: hallName,
-                menuId: menuId,
-                decorId: decorId,
-                totalCostStr: totalCostStr
+                comboIndex,
+                hallScheduleId: s.hallScheduleId,
+                hallId: s.hallId,
+                hallName: s.hallName,
+                menuId: s.menuId,
+                decorId: s.decorId,
+                totalCostStr,
+                customMenu: s.customMenu ? JSON.parse(JSON.stringify(s.customMenu)) : null
             };
 
             document.getElementById('bkCoupleName').innerText = currentPayload.coupleName;
             document.getElementById('bkPhone').innerText = currentPayload.phoneNumber;
-            document.getElementById('bkHall').innerText = hallName;
-            document.getElementById('bkDateShift').innerText = `${currentPayload.shift}, ${currentPayload.eventDate}`;
-            document.getElementById('bkTables').innerText = `${currentPayload.officialTableCount + currentPayload.spareTableCount} bàn (${currentPayload.officialTableCount} chính + ${currentPayload.spareTableCount} sơ cua)`;
+            document.getElementById('bkHall').innerText = s.hallName;
+            document.getElementById('bkDateShift').innerText = `${fmtVN(currentPayload.eventDate)} · ${currentPayload.shift}`;
+            document.getElementById('bkTables').innerText = `${currentPayload.officialTableCount + currentPayload.spareTableCount} bàn (${currentPayload.officialTableCount} chính + ${currentPayload.spareTableCount} sơ cua)${s.customMenu ? ' • ' + s.customMenu.customName : ''}`;
             document.getElementById('bkTotal').innerText = `${totalCostStr} đ`;
 
-            document.getElementById('bookingConfirmModal').style.display = 'flex';
+            openRecomModal('bookingConfirmModal');
         }
 
-        function closeBookingModal() {
-            document.getElementById('bookingConfirmModal').style.display = 'none';
+        function closeBookingModal() { closeRecomModal('bookingConfirmModal'); }
+
+        // Chuẩn hóa ca về "Ca trưa"/"Ca tối" gọn gàng trước khi gửi Backend.
+        function normalizeShift(raw) {
+            const s = String(raw || '').trim();
+            if (/trưa|trua/i.test(s)) return 'Ca trưa';
+            if (/tối|toi/i.test(s)) return 'Ca tối';
+            return s;
         }
 
-               async function submitActualBooking() {
+        async function submitActualBooking() {
+            // Guard null để nút không kẹt disabled khi state mất (double-click/modal đóng sớm).
+            if (!currentPayload || !selectedComboToBook) {
+                showRecomAlert('Phiên giữ chỗ đã hết. Hai bạn vui lòng chọn lại gói tiệc và nhấn "Giữ chỗ" nhé!', 'Phiên giữ chỗ hết hạn', 'warning');
+                try { closeBookingModal(); } catch (e) { }
+                return;
+            }
             const btn = document.getElementById('btnSubmitBooking');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Đang kiểm tra & lưu đơn tiệc...';
+            btn.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">progress_activity</span> Đang kiểm tra & lưu đơn tiệc...';
 
+            // Đảm bảo GuestCount không bao giờ 0: lấy từ form, fallback TableCount*10.
+            const totalT = (currentPayload.tableCount || (currentPayload.officialTableCount + currentPayload.spareTableCount)) || 0;
+            let gCount = currentPayload.guestCount || 0;
+            if (gCount <= 0 && totalT > 0) gCount = totalT * 10;
+            if (gCount <= 0) gCount = 300;
+            // eventDate chuẩn YYYY-MM-DD (cắt phần giờ nếu có); shift chuẩn hóa gọn;
+            // hallScheduleId giữ 0 khi chưa có lịch để Backend auto-init, không gửi nhầm hallId.
+            const eventDateStr = String(currentPayload.eventDate || '').trim().slice(0, 10);
+            const shiftStr = normalizeShift(currentPayload.shift);
+            const scheduleIdNum = parseInt(selectedComboToBook.hallScheduleId, 10) || 0;
+            const hallIdNum = parseInt(selectedComboToBook.hallId, 10) || 0;
+            const custom = selectedComboToBook.customMenu || null;
+            let specialReq = `Đăng ký từ AI Recommendation: Ngân sách dự kiến ${currentPayload.expectedBudget.toLocaleString('vi-VN')} đ`;
+            if (custom) {
+                const itemsText = (custom.items || []).map(x => `${x.dishName} (${Number(x.price || 0).toLocaleString('vi-VN')} đ)`).join('; ');
+                specialReq += `; [${custom.customName}: ${Number(custom.customPricePerTable || 0).toLocaleString('vi-VN')} đ/bàn | ${itemsText}] (tùy chỉnh từ ${custom.originalName})`;
+            }
             const bookingPayload = {
                 customerName: currentPayload.coupleName,
                 phoneNumber: currentPayload.phoneNumber,
                 email: currentPayload.email,
-                eventDate: currentPayload.eventDate,
-                shift: currentPayload.shift,
-                hallId: selectedComboToBook.hallId,
+                eventDate: eventDateStr,
+                shift: shiftStr,
+                hallScheduleId: scheduleIdNum,
+                hallId: hallIdNum,
                 menuId: selectedComboToBook.menuId,
                 decorationPackageId: selectedComboToBook.decorId,
-                tableCount: currentPayload.officialTableCount + currentPayload.spareTableCount,
+                guestCount: gCount,
+                tableCount: totalT,
+                spareTableCount: currentPayload.spareTableCount || 0,
                 expectedBudget: currentPayload.expectedBudget,
                 desiredStyle: currentPayload.desiredStyle,
-                specialRequests: `Đăng ký từ AI Recommendation: Ngân sách dự kiến ${currentPayload.expectedBudget.toLocaleString('vi-VN')} đ`
+                specialRequests: specialReq,
+                customMenuName: custom ? custom.customName : null,
+                customMenuPricePerTable: custom ? custom.customPricePerTable : null,
+                customMenuItems: custom ? (custom.items || []).map(x => `${x.dishName} (${Number(x.price || 0).toLocaleString('vi-VN')} đ)`) : null,
+                serviceCodes: Array.isArray(currentPayload.selectedServiceCodes) ? currentPayload.selectedServiceCodes : []
             };
 
             try {
@@ -956,7 +1645,7 @@
                 const result = await res.json();
 
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Gửi Thông Tin Đăng Ký Giữ Chỗ';
+                btn.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">check</span> Gửi Thông Tin Đăng Ký Giữ Chỗ';
                 closeBookingModal();
 
                 if (result.success) {
@@ -964,29 +1653,256 @@
                     document.getElementById('succBookingCode').innerText = result.bookingCode || 'DT-ONLINE';
                     document.getElementById('succCouple').innerText = currentPayload.coupleName;
                     document.getElementById('succHall').innerText = selectedComboToBook.hallName;
-                    document.getElementById('succDateTime').innerText = `${currentPayload.shift}, ${currentPayload.eventDate}`;
+                    document.getElementById('succDateTime').innerText = `${fmtVN(currentPayload.eventDate)} · ${currentPayload.shift}`;
                     document.getElementById('succPhone').innerText = currentPayload.phoneNumber;
 
-                    document.getElementById('bookingSuccessModal').style.display = 'flex';
+                    openRecomModal('bookingSuccessModal');
                 } else {
                     // Nếu khách hàng đã có đơn tiệc đang hoạt động
                     if (result.message && (result.message.includes("đã có đơn tiệc") || result.message.includes("giữ chỗ 01 phương án"))) {
                         document.getElementById('duplicateNoticeMsg').innerText = result.message;
-                        document.getElementById('duplicateBookingModal').style.display = 'flex';
+                        openRecomModal('duplicateBookingModal');
                     } else {
-                        alert(result.message || 'Chưa thể lưu đơn đặt tiệc lúc này.');
+                        showRecomAlert(result.message || 'Chưa thể lưu đơn đặt tiệc lúc này. Hai bạn vui lòng thử lại sau ít phút nhé!', 'Chưa lưu được đơn tiệc', 'error');
                     }
                 }
             } catch (e) {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Gửi Thông Tin Đăng Ký Giữ Chỗ';
+                btn.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">check</span> Gửi Thông Tin Đăng Ký Giữ Chỗ';
                 closeBookingModal();
-                alert('Lỗi kết nối khi gửi thông tin giữ chỗ.');
+                showRecomAlert('Kết nối gửi giữ chỗ đang gián đoạn. Hai bạn vui lòng kiểm tra mạng và thử lại nhé!', 'Lỗi kết nối', 'error');
             }
         }
 
-        function closeDuplicateModal() {
-            document.getElementById('duplicateBookingModal').style.display = 'none';
+        // ============ TÙY CHỈNH THỰC ĐƠN TRONG TOP 3 ============
+        async function openMenuCustomizer(comboIndex) {
+            const s = topCombosState[comboIndex];
+            if (!s) return;
+            menuCustomCategory = '';
+            const searchInput = document.getElementById('menuCustomSearch');
+            if (searchInput) searchInput.value = '';
+            document.querySelectorAll('#menuCustomCategoryFilter .recom-cat-btn').forEach(b => {
+                b.classList.toggle('is-active', (b.getAttribute('data-cat') || '') === '');
+            });
+            openRecomModal('menuCustomModal');
+            document.getElementById('menuCustomLoading').style.display = 'block';
+            document.getElementById('menuCustomBody').hidden = true;
+            document.getElementById('menuCustomTitle').innerText = s.customMenu ? s.customMenu.customName : s.menuName;
+            document.getElementById('menuCustomSubtitle').innerText = `Combo Top ${s.rank} • ${s.hallName} • ${s.totalTables} bàn (chuẩn 10 khách/bàn). Loại bỏ món chưa ưng ý, thêm món yêu thích — tổng tiền cập nhật trực tiếp.`;
+
+            try {
+                const [menuRes, dishRes] = await Promise.all([
+                    fetch(`/Recommendation/GetMenuDetail?menuId=${s.menuId}`).then(r => r.json()),
+                    fetch('/Recommendation/GetPublicDishes').then(r => r.json())
+                ]);
+                const menuData = menuRes && menuRes.success ? menuRes.data : null;
+                const allDishesRaw = dishRes && dishRes.success ? (dishRes.data || []) : [];
+                const currentDishes = menuData
+                    ? (menuData.dishes || menuData.Dishes || []).map(d => ({
+                        dishId: d.dishId ?? d.DishId ?? 0,
+                        dishName: d.dishName || d.DishName || 'Món ăn',
+                        category: d.category || d.Category || 'Món khác',
+                        price: Number(d.price ?? d.Price ?? 0)
+                    }))
+                    : [];
+                const allDishes = (allDishesRaw || []).map(d => ({
+                    dishId: d.dishId ?? d.DishId ?? 0,
+                    dishCode: d.dishCode || d.DishCode || '',
+                    dishName: d.dishName || d.DishName || 'Món ăn',
+                    category: d.category || d.Category || 'Món khác',
+                    price: Number(d.price ?? d.Price ?? 0)
+                }));
+                // Nếu đã custom trước đó thì giữ lựa chọn cũ, ngược lại dùng món gốc.
+                const initialItems = s.customMenu
+                    ? JSON.parse(JSON.stringify(s.customMenu.items))
+                    : JSON.parse(JSON.stringify(currentDishes));
+                const originalItems = JSON.parse(JSON.stringify(currentDishes.length > 0 ? currentDishes : initialItems));
+                menuCustomState = {
+                    comboIndex,
+                    originalName: s.menuName,
+                    originalPricePerTable: s.menuPriceNum,
+                    originalItems,
+                    items: initialItems,
+                    allDishes
+                };
+                document.getElementById('menuCustomLoading').style.display = 'none';
+                document.getElementById('menuCustomBody').hidden = false;
+                renderMenuCustomLists();
+            } catch (e) {
+                document.getElementById('menuCustomLoading').innerHTML = '<span style="color:#DC2626;">Không tải được món ăn. Vui lòng đóng lại và thử lại.</span>';
+            }
         }
+
+        function closeMenuCustomModal() {
+            closeRecomModal('menuCustomModal');
+            menuCustomState = null;
+        }
+
+        function setMenuCustomCategory(cat) {
+            menuCustomCategory = cat || '';
+            document.querySelectorAll('#menuCustomCategoryFilter .recom-cat-btn').forEach(b => {
+                const active = (b.getAttribute('data-cat') || '') === menuCustomCategory;
+                b.classList.toggle('is-active', active);
+            });
+            renderMenuCustomAllList();
+        }
+
+        function calcCustomPricePerTable() {
+            if (!menuCustomState) return 0;
+            return menuCustomState.items.reduce((sum, x) => sum + (Number(x.price) || 0), 0);
+        }
+
+        // Chuẩn thay món (1 đổi 1): số món tùy chỉnh không vượt quá số món gốc.
+        // Fallback khi originalItems rỗng: dùng items hiện tại hoặc mặc định 10.
+        function getMenuCustomMaxDishes() {
+            if (!menuCustomState) return 10;
+            const origLen = Array.isArray(menuCustomState.originalItems) ? menuCustomState.originalItems.length : 0;
+            if (origLen > 0) return origLen;
+            const curLen = Array.isArray(menuCustomState.items) ? menuCustomState.items.length : 0;
+            return curLen > 0 ? curLen : 10;
+        }
+
+        function escHtmlJs(x) {
+            return String(x || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function renderMenuCustomLists() {
+            if (!menuCustomState) return;
+            const s = topCombosState[menuCustomState.comboIndex];
+            const customPrice = calcCustomPricePerTable();
+            const maxDishes = getMenuCustomMaxDishes();
+            // Trái: món hiện tại.
+            const curBox = document.getElementById('menuCustomCurrentList');
+            document.getElementById('menuCustomCurrentCount').innerText = `${menuCustomState.items.length} / ${maxDishes} món`;
+            document.getElementById('menuCustomOrigPrice').innerText = `${Number(menuCustomState.originalPricePerTable || 0).toLocaleString('vi-VN')} đ`;
+            document.getElementById('menuCustomNewPrice').innerText = `${customPrice.toLocaleString('vi-VN')} đ`;
+            const tipEl = document.getElementById('menuCustomTip');
+            if (tipEl) tipEl.innerText = `Mẹo: thực đơn chuẩn ${maxDishes} món/bàn — hai bạn hãy thay món (xóa 1 + thêm 1) thay vì cộng dồn nhé! Tổng mới = ${customPrice.toLocaleString('vi-VN')} đ/bàn.`;
+            const subEl = document.getElementById('menuCustomSubtitle');
+            if (subEl && s) subEl.innerText = `Combo Top ${s.rank} • ${s.hallName} • ${s.totalTables} bàn (chuẩn 10 khách/bàn). Chuẩn ${maxDishes} món/bàn — hãy thay món (xóa 1 + thêm 1) thay vì cộng dồn. Tổng tiền cập nhật trực tiếp.`;
+            if (menuCustomState.items.length === 0) {
+                curBox.innerHTML = '<div class="recom-empty-note" style="text-align:center;">Chưa có món nào. Hãy thêm món từ danh sách bên phải.</div>';
+            } else {
+                curBox.innerHTML = menuCustomState.items.map((d, i) => `
+                    <div class="recom-dish-row recom-dish-row--current">
+                        <div style="min-width:0;">
+                            <div class="recom-dish-name">${i + 1}. ${escHtmlJs(d.dishName)}</div>
+                            <div class="recom-dish-meta">${escHtmlJs(d.category || '')} • ${Number(d.price || 0).toLocaleString('vi-VN')} đ</div>
+                        </div>
+                        <button type="button" onclick="removeMenuCustomDish(${i})" title="Loại bỏ món này" class="recom-dish-remove"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
+                    </div>
+                `).join('');
+            }
+            renderMenuCustomAllList();
+            // Tổng dự toán mới.
+            if (s) {
+                const grand = s.hallPriceNum + customPrice * s.totalTables + s.decorPriceNum + (s.servicesTotalNum || 0);
+                document.getElementById('menuCustomGrandTotal').innerText = `${grand.toLocaleString('vi-VN')} đ`;
+                document.getElementById('menuCustomFormulaDetail').innerText =
+                    `${s.hallPriceNum.toLocaleString('vi-VN')} + ${customPrice.toLocaleString('vi-VN')} × ${s.totalTables} bàn + ${s.decorPriceNum.toLocaleString('vi-VN')} + ${(s.servicesTotalNum || 0).toLocaleString('vi-VN')} (dịch vụ)`;
+            }
+        }
+
+        function renderMenuCustomAllList() {
+            if (!menuCustomState) return;
+            const box = document.getElementById('menuCustomAllList');
+            const kw = (document.getElementById('menuCustomSearch').value || '').trim().toLowerCase();
+            const selectedIds = new Set(menuCustomState.items.map(x => x.dishId));
+            const maxDishes = getMenuCustomMaxDishes();
+            const isFull = menuCustomState.items.length >= maxDishes;
+            const fullTitle = `Đã đủ ${maxDishes} món chuẩn — hãy xóa bớt 1 món để thêm món khác`;
+            const filtered = menuCustomState.allDishes.filter(d => {
+                if (menuCustomCategory && (d.category || '') !== menuCustomCategory) return false;
+                if (kw && !(d.dishName || '').toLowerCase().includes(kw)) return false;
+                return true;
+            });
+            if (filtered.length === 0) {
+                box.innerHTML = '<div class="recom-empty-note" style="text-align:center;">Không tìm thấy món phù hợp. Thử từ khóa hoặc nhóm món khác.</div>';
+                return;
+            }
+            box.innerHTML = filtered.slice(0, 120).map(d => {
+                const added = selectedIds.has(d.dishId);
+                const disabledAdd = !added && isFull;
+                return `
+                    <div class="recom-dish-row recom-dish-row--all">
+                        <div style="min-width:0;">
+                            <div class="recom-dish-name">${escHtmlJs(d.dishName)}</div>
+                            <div class="recom-dish-meta--muted">${escHtmlJs(d.category || '')} • <strong style="color:#0F172A;">${Number(d.price || 0).toLocaleString('vi-VN')} đ</strong></div>
+                        </div>
+                        ${added
+                            ? '<span class="recom-dish-added">Đã chọn</span>'
+                            : disabledAdd
+                            ? `<button type="button" class="recom-dish-add" disabled title="${fullTitle}"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:14px;">add</span> Thêm</button>`
+                            : `<button type="button" onclick="addMenuCustomDish(${d.dishId})" class="recom-dish-add"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:14px;">add</span> Thêm</button>`}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addMenuCustomDish(dishId) {
+            if (!menuCustomState) return;
+            if (menuCustomState.items.some(x => x.dishId === dishId)) return;
+            const maxDishes = getMenuCustomMaxDishes();
+            if (menuCustomState.items.length >= maxDishes) {
+                showRecomAlert(`Thực đơn chuẩn của Riverside Palace chỉ gồm ${maxDishes} món/bàn (đúng chuẩn tiệc cưới, không cộng dồn). Hai bạn vui lòng loại bỏ 1 món trước khi thêm món mới nhé!`, 'Đã đủ số món chuẩn', 'warning');
+                return;
+            }
+            const found = menuCustomState.allDishes.find(x => x.dishId === dishId);
+            if (!found) return;
+            menuCustomState.items.push(JSON.parse(JSON.stringify(found)));
+            renderMenuCustomLists();
+        }
+
+        function removeMenuCustomDish(index) {
+            if (!menuCustomState) return;
+            menuCustomState.items.splice(index, 1);
+            renderMenuCustomLists();
+        }
+
+        function resetMenuCustom() {
+            if (!menuCustomState) return;
+            menuCustomState.items = JSON.parse(JSON.stringify(menuCustomState.originalItems));
+            renderMenuCustomLists();
+        }
+
+        function confirmMenuCustom() {
+            if (!menuCustomState) return;
+            const s = topCombosState[menuCustomState.comboIndex];
+            if (!s) return;
+            if (menuCustomState.items.length === 0) {
+                showRecomAlert('Thực đơn tùy chỉnh cần ít nhất 1 món. Hai bạn vui lòng thêm món từ danh sách nhà hàng nhé!', 'Chưa có món nào', 'warning');
+                return;
+            }
+            const maxDishes = getMenuCustomMaxDishes();
+            if (menuCustomState.items.length > maxDishes) {
+                showRecomAlert(`Thực đơn chuẩn của Riverside Palace chỉ gồm ${maxDishes} món/bàn. Hai bạn vui lòng loại bỏ ${menuCustomState.items.length - maxDishes} món để giữ đúng chuẩn tiệc cưới nhé!`, 'Đã vượt số món chuẩn', 'warning');
+                return;
+            }
+            const customPrice = calcCustomPricePerTable();
+            const isSameAsOriginal = menuCustomState.items.length === menuCustomState.originalItems.length
+                && menuCustomState.items.every((x, i) => x.dishId === (menuCustomState.originalItems[i] || {}).dishId);
+            if (isSameAsOriginal) {
+                s.customMenu = null;
+            } else {
+                s.customMenu = {
+                    customName: `Thực đơn tùy chỉnh ${s.rank}`,
+                    originalName: menuCustomState.originalName,
+                    customPricePerTable: customPrice,
+                    items: JSON.parse(JSON.stringify(menuCustomState.items)),
+                    note: `Tùy chỉnh từ ${menuCustomState.originalName} (${menuCustomState.originalItems.length} món → ${menuCustomState.items.length} món)`
+                };
+            }
+            closeMenuCustomModal();
+            renderComboCards();
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (s.customMenu) {
+                const d = getComboDisplay(s);
+                showRecomAlert(`Đã cập nhật "${s.customMenu.customName}" với ${s.customMenu.items.length} món (${customPrice.toLocaleString('vi-VN')} đ/bàn).\nTổng dự toán mới: ${d.totalCost.toLocaleString('vi-VN')} đ.\nThông tin đã hiển thị khớp ngoài card Top ${s.rank} và sẽ gửi kèm khi Đăng ký giữ chỗ.`, 'Tùy chỉnh thực đơn thành công', 'success');
+            } else {
+                showRecomAlert('Đã khôi phục thực đơn gốc cho combo này.', 'Đã khôi phục gốc', 'info');
+            }
+        }
+
+        function closeDuplicateModal() { closeRecomModal('duplicateBookingModal'); }
     </script>
 }

@@ -41,6 +41,10 @@ public sealed class BookingSummaryDto
     public string StatusCode { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
     public DateTime BookedAt { get; set; }
+    public bool HasContract { get; set; }
+    public int? ContractId { get; set; }
+    public string? ContractCode { get; set; }
+    public string? ContractStatusCode { get; set; }
 }
 
 public sealed class BookingDetailDto
@@ -72,6 +76,10 @@ public sealed class BookingDetailDto
     public string? CancellationReason { get; set; }
     public DateTime BookedAt { get; set; }
     public List<BookingServiceDto> Services { get; set; } = [];
+    public bool HasContract { get; set; }
+    public int? ContractId { get; set; }
+    public string? ContractCode { get; set; }
+    public string? ContractStatusCode { get; set; }
 }
 
 public sealed class BookingServiceDto
@@ -85,13 +93,39 @@ public sealed class BookingServiceDto
 
 public sealed class CreateBookingRequestDto
 {
-    [Range(1, int.MaxValue)] public int CustomerId { get; set; }
-    [Range(1, int.MaxValue)] public int HallScheduleId { get; set; }
+    [Required, MaxLength(150)] public string CustomerName { get; set; } = string.Empty;
+    [Required, MaxLength(20)] public string PhoneNumber { get; set; } = string.Empty;
+    [EmailAddress, MaxLength(255)] public string? Email { get; set; }
+    [Range(1, int.MaxValue)] public int HallId { get; set; }
+    public DateTime EventDate { get; set; }
+    [Required] public string Shift { get; set; } = string.Empty;
     public int? MenuId { get; set; }
     public int? DecorationPackageId { get; set; }
-    [Range(1, int.MaxValue)] public int GuestCount { get; set; }
+    [Range(1, 300)] public int TableCount { get; set; }
+    [Range(0, 50)] public int SpareTableCount { get; set; }
+    [MaxLength(150)] public string? DesiredStyle { get; set; }
     public string? SpecialRequests { get; set; }
+    public List<CreateBookingServiceDto> Services { get; set; } = [];
 }
+
+public sealed class CreateBookingServiceDto
+{
+    [Range(1, int.MaxValue)] public int ServiceId { get; set; }
+    [Range(1, 100)] public int Quantity { get; set; } = 1;
+}
+
+public sealed class BookingCreateOptionsDto
+{
+    public string QueryDate { get; set; } = string.Empty;
+    public List<BookingHallOptionDto> Halls { get; set; } = [];
+    public List<BookingMenuOptionDto> Menus { get; set; } = [];
+    public List<BookingDecorOptionDto> Decorations { get; set; } = [];
+    public List<BookingServiceOptionDto> Services { get; set; } = [];
+}
+public sealed class BookingHallOptionDto { public int HallId { get; set; } public string HallName { get; set; } = string.Empty; public int MinimumCapacity { get; set; } public int MaximumCapacity { get; set; } public decimal RentalPrice { get; set; } public bool IsNoonAvailable { get; set; } public bool IsEveningAvailable { get; set; } }
+public sealed class BookingMenuOptionDto { public int MenuId { get; set; } public string MenuName { get; set; } = string.Empty; public decimal PricePerTable { get; set; } }
+public sealed class BookingDecorOptionDto { public int DecorationPackageId { get; set; } public string PackageName { get; set; } = string.Empty; public string Style { get; set; } = string.Empty; public decimal Price { get; set; } }
+public sealed class BookingServiceOptionDto { public int ServiceId { get; set; } public string ServiceName { get; set; } = string.Empty; public string? ServiceType { get; set; } public decimal Price { get; set; } }
 
 public sealed class UpdateBookingStatusRequestDto
 {

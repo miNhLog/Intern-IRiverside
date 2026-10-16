@@ -16,25 +16,147 @@ namespace HeThongDatTiecCuoi_API.Services;
 
 public sealed partial class PasswordResetService : IPasswordResetService
 {
+    private const string OtpPrefix = "OTP:";
+    private const string ResetGrantPrefix = "RESET:";
+    private const int OtpLifetimeMinutes = 5;
     private const string InvalidTokenMessage = "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.";
     private readonly ApplicationDbContext _context;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly IEmailService _emailService;
     private readonly PasswordResetOptions _options;
     private readonly AccountProvisioningOptions _accountProvisioningOptions;
+    private readonly byte[] _otpHashKey;
 
     public PasswordResetService(
         ApplicationDbContext context,
         IPasswordHasher<User> passwordHasher,
         IEmailService emailService,
         IOptions<PasswordResetOptions> options,
-        IOptions<AccountProvisioningOptions> accountProvisioningOptions)
+        IOptions<AccountProvisioningOptions> accountProvisioningOptions,
+        IOptions<JwtOptions> jwtOptions)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _emailService = emailService;
         _options = options.Value;
         _accountProvisioningOptions = accountProvisioningOptions.Value;
+        _otpHashKey = Encoding.UTF8.GetBytes(jwtOptions.Value.Key);
+    }
+
+    public async Task<bool> SendResetOtpForEmailAsync(
+        string email,
+        CancellationToken cancellationToken)
+    {
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var user = await _context.Users
+            .SingleOrDefaultAsync(
+                item => item.Email == normalizedEmail &&
+                        item.DataStatus.DataStatusCode == DataStatusCodes.Existing,
+                cancellationToken);
+
+        if (user is null)
+        {
+            return false;
+        }
+
+        var now = DateTime.UtcNow;
+        var cooldownStart = now.AddSeconds(-Math.Max(1, _options.CooldownSeconds));
+        if (await _context.PasswordResetTokens.AsNoTracking().AnyAsync(
+            item => item.UserId == user.UserId &&
+                    item.TokenHash.StartsWith(OtpPrefix) &&
+                    item.CreatedAt > cooldownStart,
+            cancellationToken))
+        {
+            return true;
+        }
+
+        await _context.PasswordResetTokens
+            .Where(item => item.UserId == user.UserId &&
+                           item.UsedAt == null &&
+                           item.TokenHash.StartsWith(OtpPrefix))
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(item => item.UsedAt, now),
+                cancellationToken);
+
+        var otpCode = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+        var otpToken = new PasswordResetToken
+        {
+            UserId = user.UserId,
+            TokenHash = OtpPrefix + HashOtp(user.UserId, otpCode),
+            CreatedAt = now,
+            ExpiresAt = now.AddMinutes(OtpLifetimeMinutes)
+        };
+        _context.PasswordResetTokens.Add(otpToken);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _emailService.SendPasswordResetOtpEmailAsync(
+                user.Email, otpCode, OtpLifetimeMinutes, cancellationToken);
+        }
+        catch
+        {
+            _context.PasswordResetTokens.Remove(otpToken);
+            await _context.SaveChangesAsync(CancellationToken.None);
+            throw;
+        }
+
+        return true;
+    }
+
+    public async Task<ServiceResult<object>> VerifyResetOtpAsync(
+        string email,
+        string otpCode,
+        CancellationToken cancellationToken)
+    {
+        const string invalidOtpMessage = "Mã OTP không hợp lệ hoặc đã hết hạn.";
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var user = await _context.Users
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                item => item.Email == normalizedEmail &&
+                        item.DataStatus.DataStatusCode == DataStatusCodes.Existing,
+                cancellationToken);
+
+        if (user is null)
+        {
+            return ServiceResult<object>.Failure(invalidOtpMessage, StatusCodes.Status400BadRequest);
+        }
+
+        var now = DateTime.UtcNow;
+        var otpHash = OtpPrefix + HashOtp(user.UserId, otpCode);
+        await using var transaction = await _context.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable, cancellationToken);
+        var otpToken = await _context.PasswordResetTokens.SingleOrDefaultAsync(
+            item => item.UserId == user.UserId &&
+                    item.TokenHash == otpHash &&
+                    item.UsedAt == null &&
+                    item.ExpiresAt > now,
+            cancellationToken);
+
+        if (otpToken is null)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ServiceResult<object>.Failure(invalidOtpMessage, StatusCodes.Status400BadRequest);
+        }
+
+        otpToken.UsedAt = now;
+        var rawResetToken = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
+        _context.PasswordResetTokens.Add(new PasswordResetToken
+        {
+            UserId = user.UserId,
+            TokenHash = ResetGrantPrefix + HashToken(rawResetToken),
+            CreatedAt = now,
+            ExpiresAt = now.AddMinutes(OtpLifetimeMinutes)
+        });
+        await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return ServiceResult<object>.Success(new
+        {
+            message = "Xác minh OTP thành công.",
+            resetToken = rawResetToken
+        });
     }
 
     public async Task<bool> SendResetLinkForEmailAsync(
@@ -139,7 +261,8 @@ public sealed partial class PasswordResetService : IPasswordResetService
         var resetToken = await _context.PasswordResetTokens
             .Include(item => item.User)
             .SingleOrDefaultAsync(
-                item => item.TokenHash == tokenHash &&
+                item => (item.TokenHash == ResetGrantPrefix + tokenHash ||
+                         item.TokenHash == tokenHash) &&
                         item.UsedAt == null &&
                         item.ExpiresAt > now,
                 cancellationToken);
@@ -229,6 +352,13 @@ public sealed partial class PasswordResetService : IPasswordResetService
     {
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
         return Convert.ToHexString(hash);
+    }
+
+    private string HashOtp(int userId, string otpCode)
+    {
+        using var hmac = new HMACSHA256(_otpHashKey);
+        return Convert.ToHexString(hmac.ComputeHash(
+            Encoding.UTF8.GetBytes($"{userId}:{otpCode}")));
     }
 
 }

@@ -35,6 +35,9 @@ public sealed class CreateDishForm
     [Required]
     public string Category { get; set; } = string.Empty;
 
+    [Range(0, double.MaxValue)]
+    public decimal Price { get; set; }
+
     public IFormFile? Image { get; set; }
 }
 
@@ -47,6 +50,9 @@ public sealed class UpdateDishForm
 
     [Required]
     public string Category { get; set; } = string.Empty;
+
+    [Range(0, double.MaxValue)]
+    public decimal Price { get; set; }
 
     public IFormFile? NewImage { get; set; }
 

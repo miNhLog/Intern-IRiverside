@@ -13,7 +13,7 @@ namespace HeThongDatTiecCuoi_API.Controllers;
 
 [ApiController]
 [Route("api/menus")]
-[Authorize(Roles = RoleNames.Admin + "," + RoleNames.Manager)]
+[Authorize(Roles = RoleNames.Manager)]
 public sealed class MenuController : ControllerBase
 {
     private static readonly string[] ValidStatuses =
@@ -189,6 +189,7 @@ public sealed class MenuController : ControllerBase
         var query = _context.Menus.AsNoTracking()
             .Where(menu =>
                 menu.DataStatus.DataStatusCode == DataStatusCodes.Existing &&
+                menu.MenuType == MenuTypes.Standard &&
                 menu.Status.StatusGroup == StatusGroups.Menu)
             .AsQueryable();
 
@@ -223,6 +224,75 @@ public sealed class MenuController : ControllerBase
             .ToListAsync(cancellationToken);
 
         return Ok(menus);
+    }
+
+    [HttpGet("management")]
+    public async Task<IActionResult> GetManagementMenus(
+        [FromQuery] string? keyword,
+        [FromQuery] string? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 6,
+        CancellationToken cancellationToken = default)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 20);
+        var normalizedStatus = status?.Trim().ToUpperInvariant();
+        if (!string.IsNullOrWhiteSpace(normalizedStatus) && !ValidStatuses.Contains(normalizedStatus))
+        {
+            return BadRequest(new { message = "Trạng thái thực đơn không hợp lệ." });
+        }
+
+        var allStandard = _context.Menus.AsNoTracking().Where(menu =>
+            menu.MenuType == MenuTypes.Standard &&
+            menu.DataStatus.DataStatusCode == DataStatusCodes.Existing &&
+            menu.Status.StatusGroup == StatusGroups.Menu);
+
+        var statistics = await allStandard.GroupBy(_ => 1).Select(group => new
+        {
+            Total = group.Count(),
+            Active = group.Count(menu => menu.Status.StatusCode == MenuStatusCodes.Active),
+            Inactive = group.Count(menu => menu.Status.StatusCode == MenuStatusCodes.Inactive),
+            Average = group.Average(menu => menu.PricePerTable)
+        }).SingleOrDefaultAsync(cancellationToken);
+
+        var filtered = allStandard;
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var term = keyword.Trim();
+            filtered = filtered.Where(menu => menu.MenuCode.Contains(term) || menu.MenuName.Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(normalizedStatus))
+        {
+            filtered = filtered.Where(menu => menu.Status.StatusCode == normalizedStatus);
+        }
+
+        var totalItems = await filtered.CountAsync(cancellationToken);
+        var items = await filtered.OrderBy(menu => menu.MenuCode)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(menu => new ManagerMenuListItemDto
+            {
+                MenuId = menu.MenuId,
+                MenuCode = menu.MenuCode,
+                MenuName = menu.MenuName,
+                Description = menu.Description,
+                PricePerTable = menu.PricePerTable,
+                Status = menu.Status.StatusCode,
+                DishCount = menu.MenuDishes.Count(menuDish => menuDish.DataStatus.DataStatusCode == DataStatusCodes.Existing),
+                IsInUse = _context.WeddingBookings.Any(booking => booking.MenuId == menu.MenuId)
+            }).ToListAsync(cancellationToken);
+
+        return Ok(new ManagerMenuListResponseDto
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = totalItems,
+            TotalPages = totalItems == 0 ? 0 : (int)Math.Ceiling(totalItems / (double)pageSize),
+            TotalMenus = statistics?.Total ?? 0,
+            ActiveMenus = statistics?.Active ?? 0,
+            InactiveMenus = statistics?.Inactive ?? 0,
+            AveragePricePerTable = statistics?.Average ?? 0
+        });
     }
 
     [HttpPost]
@@ -296,6 +366,7 @@ public sealed class MenuController : ControllerBase
             .Include(item => item.Status)
             .FirstOrDefaultAsync(item =>
                 item.MenuId == menuId &&
+                item.MenuType == MenuTypes.Standard &&
                 item.DataStatus.DataStatusCode == DataStatusCodes.Existing,
                 cancellationToken);
 
@@ -339,6 +410,7 @@ public sealed class MenuController : ControllerBase
             .Include(item => item.Status)
             .FirstOrDefaultAsync(item =>
                 item.MenuId == menuId &&
+                item.MenuType == MenuTypes.Standard &&
                 item.DataStatus.DataStatusCode == DataStatusCodes.Existing,
                 cancellationToken);
 
@@ -490,6 +562,59 @@ public sealed class MenuController : ControllerBase
         };
 
         return Created($"/api/menus/{menuId}/dishes/{dish.DishId}", response);
+    }
+
+    [HttpPost("{menuId:int}/dishes/batch")]
+    public async Task<IActionResult> BatchAddDishesToMenu(
+        int menuId,
+        [FromBody] BatchAddMenuDishesRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!await MenuExistsAsync(menuId, cancellationToken))
+            return NotFound(new { message = "Không tìm thấy thực đơn." });
+        if (await IsMenuInUseAsync(menuId, cancellationToken))
+            return Conflict(new { message = "Thực đơn đã được sử dụng trong đặt tiệc nên không thể thay đổi thành phần món." });
+        if (request.DishIds.Count == 0 || request.DishIds.Distinct().Count() != request.DishIds.Count)
+            return BadRequest(new { message = "Danh sách món ăn không hợp lệ." });
+
+        var dishes = await _context.Dishes.AsNoTracking()
+            .Where(dish => request.DishIds.Contains(dish.DishId) &&
+                dish.DataStatus.DataStatusCode == DataStatusCodes.Existing &&
+                dish.Status.StatusGroup == StatusGroups.Dish &&
+                dish.Status.StatusCode == DishStatusCodes.Active)
+            .Select(dish => dish.DishId).ToListAsync(cancellationToken);
+        if (dishes.Count != request.DishIds.Count)
+            return Conflict(new { message = "Tất cả món được chọn phải tồn tại và đang phục vụ." });
+
+        var existingDataStatus = await GetDataStatusAsync(DataStatusCodes.Existing, cancellationToken);
+        var relationships = await _context.MenuDishes
+            .Where(item => item.MenuId == menuId && request.DishIds.Contains(item.DishId))
+            .ToListAsync(cancellationToken);
+        if (relationships.Any(item => item.DataStatusId == existingDataStatus.DataStatusId))
+            return Conflict(new { message = "Một hoặc nhiều món đã tồn tại trong thực đơn." });
+
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var sortOrder = await _context.MenuDishes
+                .Where(item => item.MenuId == menuId && item.DataStatus.DataStatusCode == DataStatusCodes.Existing)
+                .Select(item => (int?)item.SortOrder).MaxAsync(cancellationToken) ?? 0;
+            foreach (var dishId in request.DishIds)
+            {
+                var relationship = relationships.SingleOrDefault(item => item.DishId == dishId) ?? new MenuDish { MenuId = menuId, DishId = dishId };
+                relationship.DataStatusId = existingDataStatus.DataStatusId;
+                relationship.SortOrder = ++sortOrder;
+                if (relationship.MenuDishId == 0) _context.MenuDishes.Add(relationship);
+            }
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return Ok(new { message = $"Đã thêm {request.DishIds.Count} món vào thực đơn." });
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     [HttpDelete("{menuId:int}/dishes/{dishId:int}")]
@@ -644,6 +769,7 @@ public sealed class MenuController : ControllerBase
             .AsNoTracking()
             .AnyAsync(menu =>
                 menu.MenuId == menuId &&
+                menu.MenuType == MenuTypes.Standard &&
                 menu.DataStatus.DataStatusCode == DataStatusCodes.Existing,
                 cancellationToken);
 

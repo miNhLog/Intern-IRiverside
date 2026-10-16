@@ -5,6 +5,7 @@ using HeThongDatTiecCuoi_API.Data;
 using HeThongDatTiecCuoi_API.DTOs.PricingPolicy;
 using HeThongDatTiecCuoi_API.Constants;
 using HeThongDatTiecCuoi_API.Models;
+using HeThongDatTiecCuoi_API.Services;
 
 namespace HeThongDatTiecCuoi_API.Controllers
 {
@@ -14,89 +15,29 @@ namespace HeThongDatTiecCuoi_API.Controllers
     public class AdminPricingPolicyController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IPaymentPolicyProvider _paymentPolicies;
 
-        public AdminPricingPolicyController(ApplicationDbContext context)
+        public AdminPricingPolicyController(
+            ApplicationDbContext context,
+            IPaymentPolicyProvider paymentPolicies)
         {
             _context = context;
+            _paymentPolicies = paymentPolicies;
         }
 
         // ================= TAB 1: DỮ LIỆU ĐIỀU KHOẢN HỢP ĐỒNG MẪU =================
-        private static readonly List<PaymentPolicyDto> DefaultPolicies = new()
-        {
-            new PaymentPolicyDto
-            {
-                Id = 1,
-                MaQuyDinh = "POL-PAY-01",
-                TenDieuKhoan = "Đặt cọc Đợt 1 - Giữ chỗ sảnh tiệc",
-                PhanLoai = "Đặt cọc & Giữ chỗ",
-                DinhMuc = "20% Tổng dự toán",
-                ThoiHan = "Trong 48 giờ",
-                CanCu = "Quy chuẩn giữ chỗ 48h",
-                MoTa = "Khách hàng hoàn tất 20% chi phí dự toán để xác lập hợp đồng chính thức. Quá 48 giờ kể từ khi tạo booking nếu chưa nhận cọc, hệ thống tự động hủy giữ chỗ và mở lại lịch sảnh khả dụng.",
-                TrangThai = "Hiệu lực"
-            },
-            new PaymentPolicyDto
-            {
-                Id = 2,
-                MaQuyDinh = "POL-PAY-02",
-                TenDieuKhoan = "Thanh toán Đợt 2 - Chốt thực đơn & dịch vụ",
-                PhanLoai = "Thanh toán đợt",
-                DinhMuc = "50% Tổng giá trị",
-                ThoiHan = "Trước tiệc 7 – 10 ngày",
-                CanCu = "Quy trình thanh toán 3 đợt",
-                MoTa = "Khách hàng chốt chính thức số lượng bàn phát sinh, danh mục ẩm thực và hoàn tất thanh toán lũy kế đạt tối thiểu 70% giá trị hợp đồng.",
-                TrangThai = "Hiệu lực"
-            },
-            new PaymentPolicyDto
-            {
-                Id = 3,
-                MaQuyDinh = "POL-PAY-03",
-                TenDieuKhoan = "Quyết toán Đợt 3 - Sau sự kiện",
-                PhanLoai = "Quyết toán thanh lý",
-                DinhMuc = "100% Số dư công nợ",
-                ThoiHan = "Ngay khi tan tiệc",
-                CanCu = "Thanh lý & quyết toán",
-                MoTa = "Đối soát các chi phí phát sinh thực tế (bàn dự phòng, thức uống gọi thêm, phụ phí dịch vụ) và thanh toán toàn bộ số tiền còn lại ngay sau tiệc.",
-                TrangThai = "Hiệu lực"
-            },
-            new PaymentPolicyDto
-            {
-                Id = 4,
-                MaQuyDinh = "POL-CNC-04",
-                TenDieuKhoan = "Chính sách bồi hoàn & hủy tiệc cưới",
-                PhanLoai = "Hủy hợp đồng",
-                DinhMuc = "Phạt 50% - 100% Cọc",
-                ThoiHan = "Theo mốc ngày hủy",
-                CanCu = "Bồi thường hợp đồng kinh tế",
-                MoTa = "Hủy trước 60 ngày: phạt 50% tiền cọc Đợt 1; Hủy từ 30 đến 59 ngày: phạt 100% tiền cọc Đợt 1; Hủy dưới 30 ngày: bồi hoàn 50% toàn bộ giá trị hợp đồng.",
-                TrangThai = "Hiệu lực"
-            },
-            new PaymentPolicyDto
-            {
-                Id = 5,
-                MaQuyDinh = "POL-CHG-05",
-                TenDieuKhoan = "Chính sách dời ngày & chuyển sảnh tiệc",
-                PhanLoai = "Thay đổi lịch trình",
-                DinhMuc = "Miễn phí / Phụ thu lệch giá",
-                ThoiHan = "Báo trước 45 ngày",
-                CanCu = "Biến động lịch tiệc",
-                MoTa = "Báo trước từ 45 ngày: miễn phí chuyển ngày hoặc sảnh lần đầu (chỉ thanh toán chênh lệch giá sảnh mới). Báo dưới 30 ngày phụ thu 5.000.000 VNĐ phí vận hành.",
-                TrangThai = "Hiệu lực"
-            }
-        };
-
         // GET: api/admin/pricing-policy/payment-terms
         [HttpGet("payment-terms")]
         public IActionResult GetPaymentTerms()
         {
-            return Ok(new { success = true, data = DefaultPolicies });
+            return Ok(new { success = true, data = _paymentPolicies.GetAll() });
         }
 
         // GET: api/admin/pricing-policy/payment-terms/{id} (Chi tiết chính sách)
         [HttpGet("payment-terms/{id}")]
         public IActionResult GetPaymentTermDetail(int id)
         {
-            var item = DefaultPolicies.FirstOrDefault(x => x.Id == id);
+            var item = _paymentPolicies.GetById(id);
             if (item == null) return NotFound(new { success = false, message = "Không tìm thấy điều khoản." });
             return Ok(new { success = true, data = item });
         }
@@ -105,13 +46,8 @@ namespace HeThongDatTiecCuoi_API.Controllers
         [HttpPut("payment-terms/{id}")]
         public IActionResult UpdatePaymentTerm(int id, [FromBody] UpdatePaymentPolicyRequest req)
         {
-            var item = DefaultPolicies.FirstOrDefault(x => x.Id == id);
-            if (item == null) return NotFound(new { success = false, message = "Không tìm thấy điều khoản." });
-
-            item.TenDieuKhoan = req.TenDieuKhoan;
-            item.DinhMuc = req.DinhMuc;
-            item.ThoiHan = req.ThoiHan;
-            item.MoTa = req.MoTa;
+            if (!_paymentPolicies.Update(id, req))
+                return NotFound(new { success = false, message = "Không tìm thấy điều khoản." });
 
             return Ok(new { success = true, message = "Cập nhật điều khoản thành công!" });
         }

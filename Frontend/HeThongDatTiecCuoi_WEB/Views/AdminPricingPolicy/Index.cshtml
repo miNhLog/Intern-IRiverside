@@ -82,10 +82,6 @@
         box-shadow: inset 3px 0 0 #B89758;
     }
 
-    #notifDropdown {
-        z-index: 9999 !important;
-    }
-
     @@keyframes slideUp {
         from
 
@@ -121,62 +117,20 @@
 <div class="policy-page p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 w-full max-w-[1600px] mx-auto">
 
     <!-- ============ 1. HEADER (RESPONSIVE) ============ -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="manager-section-header flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div class="min-w-0">
             <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-500 mb-1 flex-wrap">
                 <span>Quản trị hệ thống</span>
                 <i class="fa-solid fa-chevron-right text-[9px] text-slate-400"></i>
-                <span class="text-[#B89758] font-semibold">Bảng Giá &amp; Chính Sách</span>
+                <span class="text-[#B89758] font-semibold">Bảng giá &amp; chính sách</span>
             </nav>
             <h2 class="font-serif text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                Quản Trị Bảng Giá &amp; Chính Sách Hợp Đồng
+                Quản lý bảng giá &amp; chính sách hợp đồng
             </h2>
+            <p>Quản lý bảng giá sảnh và các chính sách áp dụng cho hợp đồng.</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
-            <!-- Notification -->
-            <div class="relative" id="notifWrapper">
-                <button onclick="toggleNotif()" class="p-2.5 text-slate-500 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 relative focus-ring min-h-[42px] min-w-[42px] flex items-center justify-center transition-colors" aria-label="Thông báo">
-                    <i class="fa-regular fa-bell text-sm"></i>
-                    <span id="notifDot" class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-                </button>
-
-                <div id="notifDropdown" class="hidden fixed sm:absolute top-20 sm:top-auto right-3 left-3 sm:right-0 sm:left-auto sm:mt-2 sm:w-96 sm:max-w-[384px] bg-white rounded-xl shadow-2xl border border-[#E5D5B8] overflow-hidden" style="z-index: 9999;">
-                    <div class="bg-[#FAF8F5] px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-bell text-[#B89758] text-xs"></i>
-                            <span class="font-bold text-xs text-slate-800">Thông báo hệ thống</span>
-                        </div>
-                        <button onclick="markAllRead()" class="text-[11px] text-[#8C6D32] hover:underline font-medium">Đã đọc tất cả</button>
-                    </div>
-                    <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto custom-scrollbar text-xs">
-                        <div class="p-3.5 hover:bg-[#FAF8F5] transition-colors flex gap-3 cursor-pointer">
-                            <div class="w-8 h-8 rounded-full bg-amber-50 border border-amber-200 text-[#8C6D32] flex items-center justify-center shrink-0 mt-0.5">
-                                <i class="fa-solid fa-triangle-exclamation text-xs"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="font-semibold text-slate-800">Biến động trạng thái sảnh</p>
-                                <p class="text-slate-500 text-[11px] mt-0.5 leading-relaxed">Sảnh Elbe chuyển sang "Ngừng hoạt động", sảnh Amur đang "Bảo trì".</p>
-                                <span class="text-[10px] text-slate-400 block mt-1">Vừa cập nhật</span>
-                            </div>
-                        </div>
-                        <div class="p-3.5 hover:bg-[#FAF8F5] transition-colors flex gap-3 cursor-pointer">
-                            <div class="w-8 h-8 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                                <i class="fa-solid fa-calendar-check text-xs"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="font-semibold text-slate-800">Quy chuẩn giữ chỗ 48 giờ</p>
-                                <p class="text-slate-500 text-[11px] mt-0.5 leading-relaxed">Auto-scan giải phóng sảnh quá hạn cọc đang vận hành ổn định.</p>
-                                <span class="text-[10px] text-slate-400 block mt-1">10 phút trước</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-2.5 bg-slate-50 border-t border-slate-100 text-center">
-                        <button onclick="toggleNotif()" class="text-[11px] font-semibold text-slate-600 hover:text-slate-900">Đóng</button>
-                    </div>
-                </div>
-            </div>
-
             <button onclick="exportExcel()" class="flex items-center gap-2 px-3 py-2 sm:px-3.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 focus-ring min-h-[42px] shadow-2xs">
                 <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i>
                 <span class="hidden sm:inline">Xuất Excel</span>
@@ -239,7 +193,7 @@
         </div>
 
         <!-- Create button -->
-        <button id="btnCreate" onclick="openPolicyModal()" class="px-5 py-2.5 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all focus-ring min-h-[42px] w-full lg:w-auto lg:flex-shrink-0">
+        <button id="btnCreate" onclick="openPolicyModal()" class="admin-create-button px-5 py-2.5 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all focus-ring min-h-[42px] w-full lg:w-auto lg:flex-shrink-0">
             <i class="fa-solid fa-plus text-xs"></i>
             <span id="btnCreateLabel">Thêm chính sách mới</span>
         </button>
@@ -487,12 +441,6 @@
             switchTab('payment');
             updateStats();
 
-            document.addEventListener('click', e => {
-                const w = document.getElementById('notifWrapper');
-                const d = document.getElementById('notifDropdown');
-                if (w && !w.contains(e.target)) d.classList.add('hidden');
-            });
-
             document.getElementById('confirmOkBtn').addEventListener('click', () => {
                 if (confirmCallback) confirmCallback();
                 closeConfirm();
@@ -510,16 +458,6 @@
             ic.innerHTML = `<i class="fa-solid ${ok ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i>`;
             t.classList.remove('translate-x-full');
             setTimeout(() => t.classList.add('translate-x-full'), 3000);
-        }
-
-        function toggleNotif() {
-            document.getElementById('notifDropdown').classList.toggle('hidden');
-        }
-
-        function markAllRead() {
-            document.getElementById('notifDot').classList.add('hidden');
-            document.getElementById('notifDropdown').classList.add('hidden');
-            showToast('Thành công', 'Đã đánh dấu tất cả thông báo là đã đọc.');
         }
 
         function updateStats() {

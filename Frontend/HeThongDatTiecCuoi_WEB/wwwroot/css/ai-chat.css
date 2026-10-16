@@ -1,0 +1,141 @@
+/* UC10 — Trợ lý ảo AI Riverside Palace (đồng bộ gold #d4af37 / #B89758). */
+#aiChatFab {
+    position: fixed; right: 22px; bottom: 22px; z-index: 9990;
+    width: 76px; height: 76px; border: 0; border-radius: 22px;
+    background: transparent; color: #e0ad1f; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    filter: drop-shadow(0 12px 15px rgba(17, 24, 34, .28));
+    transition: transform .18s ease, filter .18s ease;
+}
+#aiChatFab:hover { transform: translateY(-3px) scale(1.04); filter: drop-shadow(0 16px 18px rgba(17, 24, 34, .34)); }
+#aiChatFab:focus-visible { outline: 3px solid rgba(127, 231, 255, .8); outline-offset: 4px; }
+#aiChatFab .ai-fab-badge {
+    position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+    background: #111822; color: #fff4c7; font-size: 9px; font-weight: 800;
+    letter-spacing: .04em; padding: 3px 8px; border: 1px solid rgba(224, 173, 31, .7);
+    border-radius: 999px; white-space: nowrap;
+}
+#aiChatFab .ai-fab-dot {
+    position: absolute; top: 5px; right: 4px; width: 12px; height: 12px;
+    border-radius: 50%; background: #22c55e; border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #111822;
+}
+
+/* RobotHead — square / idle / mustard shell / silver trim / cyan screen. */
+.robot-head {
+    --robot-shell: #e0ad1f;
+    --robot-shell-dark: #a97808;
+    --robot-trim: #c4c9d2;
+    --robot-screen: #7fe7ff;
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 68px; height: 62px; box-sizing: border-box; border-radius: 18px;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.48), transparent 28%),
+        linear-gradient(155deg, #f3ca3f 0%, var(--robot-shell) 55%, var(--robot-shell-dark) 100%);
+    border: 2px solid #b8850a;
+    box-shadow: inset 0 -5px 8px rgba(91,56,0,.22), inset 0 2px 3px rgba(255,255,255,.45);
+}
+.robot-screen {
+    position: relative; display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 45px; height: 39px; box-sizing: border-box; overflow: hidden;
+    border: 4px solid var(--robot-trim); border-radius: 10px;
+    background:
+        linear-gradient(rgba(127,231,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(127,231,255,.035) 1px, transparent 1px),
+        #111820;
+    background-size: 4px 4px;
+    box-shadow: inset 0 0 10px #000, 0 1px 2px rgba(68,48,0,.38);
+}
+.robot-eye {
+    width: 7px; height: 13px; border-radius: 2px; background: var(--robot-screen);
+    box-shadow: 0 0 4px #fff, 0 0 9px var(--robot-screen);
+    animation: robotIdleBlink 4.8s ease-in-out infinite;
+}
+.robot-eye:nth-child(2) { animation-delay: .06s; }
+.robot-antenna {
+    position: absolute; left: 50%; top: -15px; width: 2px; height: 15px;
+    transform: translateX(-50%) rotate(-3deg); transform-origin: bottom;
+    background: var(--robot-trim); box-shadow: 1px 0 1px rgba(17,24,34,.3);
+    animation: robotAntenna 3.6s ease-in-out infinite;
+}
+.robot-antenna > span {
+    position: absolute; left: 50%; top: -5px; width: 8px; height: 8px;
+    transform: translateX(-50%); border-radius: 50%; background: #edf1f6;
+    box-shadow: 0 0 8px rgba(127,231,255,.9), inset -2px -2px 2px #9da5b2;
+}
+.robot-ear { position: absolute; top: 23px; width: 7px; height: 17px; border-radius: 5px; background: var(--robot-trim); box-shadow: inset -2px -2px 2px #8e96a3; }
+.robot-ear--left { left: -6px; }
+.robot-ear--right { right: -6px; }
+.robot-screw { position: absolute; bottom: 6px; width: 3px; height: 3px; border-radius: 50%; background: #6f5a1b; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+.robot-screw--left { left: 9px; }
+.robot-screw--right { right: 9px; }
+.robot-head--fab { animation: robotIdleFloat 3.4s ease-in-out infinite; }
+@keyframes robotIdleBlink { 0%, 43%, 47%, 100% { transform: scaleY(1); } 45% { transform: scaleY(.12); } }
+@keyframes robotIdleFloat { 0%, 100% { transform: translateY(1px) rotate(-1deg); } 50% { transform: translateY(-3px) rotate(1deg); } }
+@keyframes robotAntenna { 0%, 100% { transform: translateX(-50%) rotate(-4deg); } 50% { transform: translateX(-50%) rotate(4deg); } }
+#aiChatPanel {
+    position: fixed; right: 22px; bottom: 100px; z-index: 9991;
+    width: 380px; max-width: calc(100vw - 32px); max-height: min(600px, calc(100vh - 140px));
+    display: none; flex-direction: column; overflow: hidden;
+    background: #fff; border-radius: 16px; border: 1px solid #B89758;
+    box-shadow: 0 20px 60px rgba(0,0,0,.35);
+}
+#aiChatPanel.open { display: flex; }
+.ai-chat-head { background: #111822; border-bottom: 2px solid #B89758; color: #fff; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+.ai-chat-head .ai-avatar {
+    width: 48px; height: 44px; flex: 0 0 48px;
+    display: flex; align-items: center; justify-content: center;
+}
+.robot-head--avatar { width: 45px; height: 39px; border-radius: 12px; border-width: 1px; }
+.robot-head--avatar .robot-screen { width: 30px; height: 25px; border-width: 3px; border-radius: 7px; gap: 6px; }
+.robot-head--avatar .robot-eye { width: 4px; height: 8px; }
+.robot-head--avatar .robot-antenna { top: -9px; height: 9px; }
+.robot-head--avatar .robot-antenna > span { width: 5px; height: 5px; top: -3px;
+}
+.ai-chat-head .ai-title { font-size: 13.5px; font-weight: 800; line-height: 1.3; }
+.ai-chat-head .ai-sub { font-size: 11px; color: #9fb0c7; display: flex; align-items: center; gap: 5px; }
+.ai-chat-head .ai-sub .on { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; display: inline-block; }
+.ai-chat-head .ai-close { margin-left: auto; background: transparent; border: 0; color: #d4af37; font-size: 22px; cursor: pointer; line-height: 1; }
+#aiChatMsgs { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: #f8f6f0; min-height: 220px; }
+.ai-msg { max-width: 88%; padding: 9px 12px; border-radius: 12px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.ai-msg.bot { align-self: flex-start; background: #fff; border: 1px solid #e7ddc4; border-left: 3px solid #B89758; color: #1f2937; }
+.ai-msg.user { align-self: flex-end; background: #111822; color: #fff; border-bottom-right-radius: 4px; }
+.ai-quick { display: flex; flex-wrap: wrap; gap: 6px; }
+.ai-quick button {
+    background: #fff; border: 1px solid #B89758; color: #6b5300; border-radius: 999px;
+    font-size: 11.5px; padding: 5px 10px; cursor: pointer;
+}
+.ai-quick button:hover { background: #faf3df; }
+.ai-typing { align-self: flex-start; background: #fff; border: 1px solid #e7ddc4; border-radius: 12px; padding: 10px 14px; display: none; gap: 4px; }
+.ai-typing.show { display: inline-flex; }
+.ai-typing span { width: 7px; height: 7px; border-radius: 50%; background: #B89758; animation: aiBlink 1.1s infinite; }
+.ai-typing span:nth-child(2) { animation-delay: .18s; } .ai-typing span:nth-child(3) { animation-delay: .36s; }
+@keyframes aiBlink { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+#aiExtractBox {
+    display: none; margin: 0 12px 8px; padding: 10px 12px; border-radius: 12px;
+    background: #FFFBEB; border: 1px solid #F59E0B; font-size: 12.5px; color: #573d00;
+}
+#aiExtractBox.show { display: block; }
+#aiExtractBox .ai-extract-title { font-weight: 800; margin-bottom: 4px; }
+#aiApplySurveyBtn {
+    margin-top: 8px; width: 100%; border: 0; border-radius: 10px; cursor: pointer;
+    background: linear-gradient(135deg, #d4af37, #B89758); color: #111822;
+    font-weight: 800; font-size: 12.5px; padding: 10px;
+}
+#aiApplySurveyBtn:hover { filter: brightness(1.06); }
+.ai-chat-input { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid #eee3c6; background: #fff; }
+#aiChatText { flex: 1; border: 1px solid #ddd0ab; border-radius: 10px; padding: 9px 11px; font-size: 13px; resize: none; max-height: 90px; font-family: inherit; }
+#aiChatText:focus { outline: 2px solid rgba(212,175,55,.4); border-color: #B89758; }
+#aiChatSendBtn {
+    border: 0; border-radius: 10px; cursor: pointer; padding: 0 14px;
+    background: #111822; color: #d4af37; font-size: 16px;
+}
+#aiChatSendBtn:disabled { opacity: .55; cursor: wait; }
+@media (max-width: 480px) {
+    #aiChatFab { right: 14px; bottom: 14px; width: 68px; height: 68px; }
+    .robot-head--fab { transform: scale(.9); }
+    #aiChatPanel { right: 8px; left: 8px; bottom: 84px; width: auto; max-height: calc(100vh - 110px); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .robot-head--fab, .robot-antenna, .robot-eye { animation: none; }
+}

@@ -8,7 +8,7 @@
 }
 @section Styles { <link rel="stylesheet" href="~/css/manager-hr.css" asp-append-version="true" /><link rel="stylesheet" href="~/css/manager-hr-fixes.css" asp-append-version="true" /> }
 <main class="hr-page">
- <header class="hr-header"><div><nav>Nhân sự <i class="fa-solid fa-chevron-right"></i> <strong>Quản lý nhân sự</strong></nav><h1><i class="fa-solid fa-users-gear"></i> Quản lý nhân sự</h1><p>Quản lý đội ngũ nhân sự, phân công phụ trách sảnh và gửi yêu cầu thay đổi vai trò.</p></div></header>
+ <header class="hr-header manager-section-header"><div><nav class="breadcrumb">Quản trị hệ thống <i class="fa-solid fa-chevron-right"></i> <strong>Quản lý nhân sự</strong></nav><h1><i class="fa-solid fa-users-gear"></i> Quản lý nhân sự</h1><p>Quản lý đội ngũ nhân sự, phân công phụ trách sảnh và gửi yêu cầu thay đổi vai trò.</p></div></header>
  @Html.AntiForgeryToken()
  @if(!string.IsNullOrWhiteSpace(Model.ErrorMessage)){<div class="hr-alert error">@Model.ErrorMessage</div>}
  <div id="hrToast" class="hr-toast" hidden></div>

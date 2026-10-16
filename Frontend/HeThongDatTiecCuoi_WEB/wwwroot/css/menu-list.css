@@ -155,7 +155,7 @@
     border-radius: 5px;
     padding-inline: 22px;
     background: #bd9840;
-    color: #162839;
+    color: #fff;
     font-size: 13px;
     font-weight: 600;
     box-shadow: 0 5px 12px rgba(126, 94, 20, .16);
@@ -163,7 +163,7 @@
 }
 
 .menu-filter-button:hover {
-    background: #d4af37;
+    background: #a9842f;
     transform: translateY(-1px);
 }
 
@@ -340,7 +340,7 @@
 
 .public-menu-detail:hover {
     background: #b88d2c;
-    color: #162839 !important;
+    color: #fff !important;
 }
 
 .public-menu-detail .material-symbols-outlined {
@@ -377,7 +377,7 @@
 .menu-pagination a.active {
     border-color: #b68f31;
     background: #b68f31;
-    color: #162839;
+    color: #fff;
 }
 
 .menu-pagination a.disabled {
@@ -424,7 +424,7 @@
     border-radius: 5px;
     padding: 10px 19px;
     background: #b68f31;
-    color: #162839;
+    color: #fff;
     font-size: 13px;
     font-weight: 600;
 }

@@ -93,6 +93,36 @@ INSERT INTO SanhTiec (MaSanh, TenSanh, SucChuaToiThieu, SucChuaToiDa, GiaThue, M
 (N'S009', N'Grand Ballroom', 1150, 2000, 80000000, N'Đại sảnh quy mô lớn, không gian rộng và sang trọng.', 201, 1);
 GO
 
+-- 08.1 Hình ảnh sảnh (ảnh đại diện đứng đầu, các ảnh còn lại dùng cho gallery)
+INSERT INTO HinhAnh (SanhTiecID, GoiTrangTriID, DuongDanAnh, LaAnhDaiDien, SoThuTu, TrangThaiDuLieuID) VALUES
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S001'), NULL, N'https://i.imgur.com/dLRu3Ev.jpg', 1, 1, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S001'), NULL, N'https://w.ladicdn.com/s750x950/627f21bd9c91b40021cacc58/486537501_1051098903708793_4071887151124683893_n-20250605044701-f7kla.jpg', 0, 2, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S001'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/z6624417311648_4f379b399c0f642349a41c79797f4c5a-20250605044838-mfg5y.jpg', 0, 3, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S002'), NULL, N'https://i.imgur.com/uIg4ITE.jpg', 1, 1, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S002'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/505448226_1109408611211155_4977161944448474205_n-20250610071429-7luu2.jpg', 0, 2, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S002'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/_bis3150-20250526090828-nxcvc.jpg', 0, 3, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S003'), NULL, N'https://riversidepalace.vn/newsmultidata/goi-trang-tri-timeless-bliss-khong-gian-rong-rai-83.png', 1, 1, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S003'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/z6624417303104_968cf03544cfb49272aaadad51730f31-20250605044838-dhvsx.jpg', 0, 2, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S003'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/screenshot-2025-06-06-162751-20250606092811-nnmad.png', 0, 3, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S004'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/486682498_1051099147042102_898562739317560988_n-20250523163318-eoake.jpg', 1, 1, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S004'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/486504455_1051099107042106_5422749443265490848_n-20250605033030-d9iiw.jpg', 0, 2, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S004'), NULL, N'https://w.ladicdn.com/s750x750/627f21bd9c91b40021cacc58/490832594_1069482701870413_5427973928560910610_n-20250523163318-l9czk.jpg', 0, 3, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S005'), NULL, N'https://i.imgur.com/Kyurs1l.jpeg', 1, 1, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S005'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/z6624420426653_48577edcc278fa8440e83c5fe87052f8-20250523163944-ohryx.jpg', 0, 2, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S005'), NULL, N'https://w.ladicdn.com/s550x550/627f21bd9c91b40021cacc58/459511665_904189138399771_5611431436027280623_n-20240917090532-n8k81.jpg', 0, 3, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S006'), NULL, N'https://i.imgur.com/o62SaIr.jpeg', 1, 1, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S006'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/486279539_1049377703880913_2366136327170399121_n-20250523163318-a63w5.jpg', 0, 2, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S006'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/z6624420426653_48577edcc278fa8440e83c5fe87052f8-20250523163944-ohryx.jpg', 0, 3, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S007'), NULL, N'https://riversidepalace.vn/multidata/159037930_4562480647114485_524947586811668853_n-788.jpg', 1, 1, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S007'), NULL, N'https://riversidepalace.vn/newsmultidata/3-631.jpg', 0, 2, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S008'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/486279539_1049377703880913_2366136327170399121_n-20250523163318-a63w5.jpg', 1, 1, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S008'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/z6624420426653_48577edcc278fa8440e83c5fe87052f8-20250523163944-ohryx.jpg', 0, 2, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S008'), NULL, N'https://w.ladicdn.com/s750x600/627f21bd9c91b40021cacc58/459511665_904189138399771_5611431436027280623_n-20240917090532-n8k81.jpg', 0, 3, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S009'), NULL, N'https://riversidepalace.vn/multidata/sanh-tiec-cuoi-cach-chon.png', 1, 1, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S009'), NULL, N'https://riversidepalace.vn/newsmultidata/riverside-palace-vinh-hanh-duoc-dong-hanh-tren-hanh-trinh-hanh-phuc-cua-cac-cap-doi.jpg', 0, 2, 1),
+((SELECT SanhTiecID FROM SanhTiec WHERE MaSanh = N'S009'), NULL, N'https://riversidepalace.vn/newsmultidata/313257906_6389573251071873_2069709538110873689_n-805.jpg', 0, 3, 1);
+GO
+
 -- 09. LichSanh
 INSERT INTO LichSanh (SanhTiecID, Ngay, CaToChuc, TrangThaiID, TrangThaiDuLieuID) VALUES
 (1, '2026-09-20', N'Ca tối', 302, 1),

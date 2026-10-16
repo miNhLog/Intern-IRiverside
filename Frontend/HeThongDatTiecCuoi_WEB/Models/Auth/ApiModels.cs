@@ -19,6 +19,8 @@ public sealed record AuthResponseDto(
 public sealed record ApiErrorDto(string Message, Dictionary<string, string[]>? Errors = null);
 public sealed record MessageResponseDto(string Message);
 public sealed record FirstPasswordOtpResponseDto(string Message, int CooldownSeconds);
+public sealed record PasswordResetOtpResponseDto(string Message, int CooldownSeconds);
+public sealed record PasswordResetOtpVerificationDto(string Message, string ResetToken);
 public sealed class ChangePasswordViewModel
 {
     [RegularExpression(@"^\d{6}$", ErrorMessage = "Mã OTP phải gồm đúng 6 chữ số.")]

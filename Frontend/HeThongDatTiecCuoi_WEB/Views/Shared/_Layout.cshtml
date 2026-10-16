@@ -1,16 +1,30 @@
+@{
+    var isInternalAuth = string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "Auth", StringComparison.OrdinalIgnoreCase);
+}
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
     <title>@ViewData["Title"] - Riverside Palace</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ui-format.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ai-chat.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
+    @if (isInternalAuth)
+    {
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;subset=vietnamese&amp;display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="~/css/backoffice-auth.css" asp-append-version="true" />
+    }
 </head>
-<body>
+<body class="@(isInternalAuth ? "auth-app" : string.Empty)">
     @RenderBody()
+    <partial name="_AiChatWidget" />
     <script src="~/js/auth.js" asp-append-version="true"></script>
+    <script src="~/js/ui-format.js" asp-append-version="true"></script>
+    <script src="~/js/ai-chat.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

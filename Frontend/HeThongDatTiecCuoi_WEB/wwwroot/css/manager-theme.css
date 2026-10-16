@@ -1,0 +1,171 @@
+.manager-theme {
+    --admin-sidebar-expanded: 278px;
+    --admin-sidebar-collapsed: 68px;
+    --manager-navy: #0f172a;
+    --manager-navy-soft: #17233a;
+    --manager-gold: #c6a15b;
+    --manager-gold-dark: #8a651f;
+    --manager-gold-soft: #fbf4e5;
+    --manager-canvas: #f8fafc;
+    --manager-border: #eef1f5;
+    --manager-text: #162033;
+    --manager-muted: #64748b;
+    font-family: "Plus Jakarta Sans", "Be Vietnam Pro", Arial, sans-serif;
+    background: var(--manager-canvas);
+}
+
+.manager-theme .admin-sidebar {
+    --admin-sidebar-bg: var(--manager-navy);
+    --admin-sidebar-transition: 280ms cubic-bezier(.4, 0, .2, 1);
+    border-right-color: rgba(255, 255, 255, .06);
+    background: var(--manager-navy);
+    box-shadow: 12px 0 35px rgba(15, 23, 42, .08);
+}
+
+.manager-theme .sidebar-header {
+    min-height: 112px;
+    justify-content: flex-start;
+    padding: 18px 20px;
+    background: #0c1425;
+}
+
+.manager-theme .sidebar-brand { flex-direction: row; gap: 12px; text-align: left; }
+.manager-theme .sidebar-brand .brand-icon {
+    width: 42px; height: 42px; flex-basis: 42px; border-radius: 13px;
+    color: #f3d796; background: rgba(198, 161, 91, .12); font-size: 20px;
+}
+.manager-theme .sidebar-brand .brand-text { text-align: left; }
+.manager-theme .sidebar-brand .brand-text strong {
+    color: #f1d99f; font-family: inherit; font-size: 13px; font-weight: 800; letter-spacing: .09em;
+}
+.manager-theme .sidebar-brand .brand-text small {
+    display: block; margin-top: 5px; color: #8f9aab; font-size: 8px; letter-spacing: .08em;
+}
+.manager-theme .sidebar-brand .brand-text small::before,
+.manager-theme .sidebar-brand .brand-text small::after { display: none; }
+.manager-theme .sidebar-content { padding: 18px 10px 22px; }
+.manager-theme .sidebar-section + .sidebar-section { margin-top: 22px; }
+.manager-theme .sidebar-section-title { margin: 0 12px 8px; color: #718096; letter-spacing: .12em; }
+.manager-theme .sidebar-menu { padding: 0; }
+.manager-theme .sidebar-item {
+    min-height: 46px; gap: 12px; margin: 3px 0; padding: 11px 13px; border: 1px solid transparent;
+    border-radius: 13px; color: #aeb8c8; font-weight: 600;
+    transition: color 280ms cubic-bezier(.4, 0, .2, 1), background 280ms cubic-bezier(.4, 0, .2, 1), transform 280ms cubic-bezier(.4, 0, .2, 1);
+}
+.manager-theme .sidebar-item:hover,
+.manager-theme .sidebar-item:focus-visible { color: #f8fafc; background: rgba(255,255,255,.055); transform: translateX(2px); }
+.manager-theme .sidebar-item.active {
+    color: #fff7e5; border-color: rgba(198,161,91,.2);
+    background: linear-gradient(90deg, rgba(198,161,91,.18), rgba(198,161,91,.07));
+    box-shadow: inset 3px 0 0 var(--manager-gold);
+}
+.manager-theme .sidebar-icon { color: #8794a8; font-size: 16px; }
+.manager-theme .sidebar-item.active .sidebar-icon { color: #e2be70; }
+.manager-theme .sidebar-footer { min-height: 76px; padding: 14px; background: #0c1425; }
+
+.manager-theme .main-content { background: var(--manager-canvas); }
+.manager-theme .backoffice-topbar {
+    min-height: 76px; padding: 0 30px; border-bottom: 1px solid #f1f5f9; background: rgba(255,255,255,.96);
+    box-shadow: none;
+}
+.manager-theme .topbar-search {
+    width: min(390px, 38vw); height: 46px; border: 1px solid transparent; border-radius: 15px; background: #f8fafc;
+    transition: border-color 260ms ease, box-shadow 260ms ease, background 260ms ease;
+}
+.manager-theme .topbar-search:focus-within {
+    border-color: rgba(178,135,53,.55); background: #fff; box-shadow: 0 0 0 4px rgba(198,161,91,.12);
+}
+.manager-theme .topbar-search input {
+    height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent;
+}
+.manager-theme #adminMainContent .topbar-search input:focus,
+.manager-theme #adminMainContent .topbar-search input:focus-visible { border: 0; outline: 0; box-shadow: none; }
+.manager-theme .topbar-notification {
+    width: 42px; height: 42px; border: 1px solid #edf1f5; border-radius: 13px; background: #fff;
+}
+.manager-theme .topbar-notification:hover { color: var(--manager-gold-dark); background: var(--manager-gold-soft); }
+.manager-theme .topbar-user { padding: 5px 7px; border-radius: 14px; transition: background 260ms ease; }
+.manager-theme .topbar-user:hover { background: #f8fafc; }
+.manager-theme .topbar-avatar { width: 42px; height: 42px; flex-basis: 42px; border-radius: 13px; background: linear-gradient(145deg,#d3b16a,#9a7127); }
+
+.manager-theme .manager-overview-page {
+    min-height: calc(100vh - 76px); padding: 30px 32px 44px; color: var(--manager-text); background: var(--manager-canvas);
+}
+.manager-theme .manager-page-header { align-items: center; padding: 0 0 26px; }
+.manager-theme .manager-page-eyebrow { margin: 0 0 8px; color: var(--manager-gold-dark); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.manager-theme .manager-page-header h1 { color: var(--manager-text); font-size: clamp(28px, 2.2vw, 32px); font-weight: 800; letter-spacing: -.025em; }
+.manager-theme .manager-page-header p { margin-top: 8px; color: var(--manager-muted); font-size: 14px; }
+.manager-theme .manager-page-header-actions { align-items: flex-end; gap: 11px; }
+.manager-theme .manager-page-header-actions small { color: #7b8799; font-size: 12px; font-weight: 500; }
+.manager-theme .manager-page-header-actions a {
+    min-height: 42px; padding: 0 15px; border: 1px solid rgba(154,113,39,.18); border-radius: 13px;
+    color: #604813; background: #f4dfae; font-size: 12px; font-weight: 800; text-decoration: none;
+}
+.manager-theme .manager-page-header-actions a:hover { color: #3d2d0a; background: #eccf8d; text-decoration: none; transform: translateY(-1px); }
+
+.manager-theme .manager-kpi-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; margin-top: 0; }
+.manager-theme .manager-kpi-card {
+    position: relative; min-height: 138px; align-items: flex-start; gap: 16px; box-sizing: border-box; padding: 22px;
+    border: 1px solid var(--manager-border); border-radius: 22px; box-shadow: 0 4px 16px rgba(15,23,42,.04);
+    transition: transform 280ms cubic-bezier(.4,0,.2,1), box-shadow 280ms cubic-bezier(.4,0,.2,1), border-color 280ms ease;
+}
+.manager-theme .manager-kpi-card:hover { transform: translateY(-2px); border-color: #e3e8ee; box-shadow: 0 12px 28px rgba(15,23,42,.075); }
+.manager-theme .manager-kpi-icon { width: 44px; height: 44px; flex-basis: 44px; border-radius: 13px; color: #8a651f; background: #fbf3df; }
+.manager-theme .manager-kpi-card:nth-child(2) .manager-kpi-icon { color:#2563a7; background:#eaf3ff; }
+.manager-theme .manager-kpi-card:nth-child(3) .manager-kpi-icon { color:#a16207; background:#fff5d9; }
+.manager-theme .manager-kpi-card:nth-child(4) .manager-kpi-icon { color:#08775d; background:#e8f8f2; }
+.manager-theme .manager-kpi-card:nth-child(5) .manager-kpi-icon { color:#41546f; background:#eef2f7; }
+.manager-theme .manager-kpi-card > div { min-width: 0; }
+.manager-theme .manager-kpi-card small { margin-bottom: 8px; color:#6b778a; font-size:10px; font-weight:800; letter-spacing:.085em; text-transform:uppercase; }
+.manager-theme .manager-kpi-card strong { color:#111b2e; font-size:30px; font-weight:800; letter-spacing:-.025em; line-height:1.05; }
+.manager-theme .manager-kpi-card em { margin-top:9px; color:#8a96a8; font-size:11px; font-weight:500; line-height:1.45; }
+.manager-theme .manager-kpi-money { font-size: clamp(20px,1.7vw,27px) !important; }
+
+.manager-theme .manager-operational-grid { grid-template-columns: minmax(0,8fr) minmax(300px,4fr); gap:22px; margin-top:26px; }
+.manager-theme .manager-panel { border:1px solid var(--manager-border); border-radius:24px; box-shadow:0 4px 16px rgba(15,23,42,.04); }
+.manager-theme .manager-panel-header { min-height:82px; padding:20px 24px; border-bottom-color:#f1f3f6; }
+.manager-theme .manager-panel-header h3 { color:#162033; font-size:18px; font-weight:800; letter-spacing:-.015em; }
+.manager-theme .manager-panel-header p { margin-top:5px; color:#7c889a; font-size:12px; font-weight:500; }
+.manager-theme .manager-panel-header > a { color:#7a5715; font-size:12px; }
+.manager-theme .manager-data-table th { padding:13px 20px; color:#718095; background:#fbfcfd; letter-spacing:.065em; }
+.manager-theme .manager-data-table td { padding:16px 20px; border-top-color:#f2f4f7; font-size:13px; }
+.manager-theme .manager-data-table tbody tr { transition:background 240ms ease; }
+.manager-theme .manager-data-table tbody tr:hover { background:#fffdf8; }
+.manager-theme .manager-data-table td strong { font-size:13px; font-weight:700; }
+.manager-theme .manager-data-table td small { margin-top:5px; font-size:11px; }
+.manager-theme .manager-status { padding:6px 10px; font-size:11px; font-weight:700; }
+.manager-theme .manager-count-badge { min-width:30px; height:30px; color:#a3332c; background:#fff0ee; }
+.manager-theme .manager-incident-item { gap:13px; padding:16px 20px; border-top-color:#f2f4f7; transition:background 240ms ease; }
+.manager-theme .manager-incident-item:hover { background:#fffafb; }
+.manager-theme .manager-severity { width:38px; height:38px; flex-basis:38px; border-radius:11px; }
+.manager-theme .manager-incident-item strong { font-size:13px; }
+.manager-theme .manager-incident-item small,.manager-theme .manager-incident-item time { font-size:11px; }
+.manager-theme .manager-recent-panel { margin-top:22px; }
+.manager-theme .manager-booking-item { grid-template-columns:42px minmax(0,1fr) auto; gap:13px; padding:17px 20px; border-color:#f2f4f7; transition:background 240ms ease; }
+.manager-theme .manager-booking-icon { width:40px; height:40px; border-radius:12px; }
+.manager-theme .manager-booking-item strong { font-size:13px; }
+.manager-theme .manager-booking-item small { margin-top:5px; font-size:11px; }
+.manager-theme .manager-data-alert { margin-bottom:20px; border-radius:14px; }
+
+@media (max-width: 1180px) {
+    .manager-theme .manager-overview-page { padding-inline:24px; }
+    .manager-theme .manager-kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .manager-theme .manager-operational-grid { grid-template-columns:1fr; }
+}
+@media (max-width: 850px) {
+    .manager-theme .backoffice-topbar { min-height:68px; padding:0 16px 0 64px; }
+    .manager-theme .topbar-search { width:min(310px,43vw); }
+    .manager-theme .manager-overview-page { min-height:calc(100vh - 68px); padding:24px 18px 34px; }
+}
+@media (max-width: 680px) {
+    .manager-theme .manager-page-header { align-items:flex-start; flex-direction:column; gap:16px; }
+    .manager-theme .manager-page-header-actions { align-items:flex-start; }
+    .manager-theme .manager-kpi-grid,.manager-theme .manager-recent-grid { grid-template-columns:1fr; }
+    .manager-theme .manager-kpi-card { min-height:124px; }
+    .manager-theme .manager-panel { border-radius:20px; }
+    .manager-theme .manager-panel-header { align-items:flex-start; padding:18px; }
+    .manager-theme .manager-booking-item:nth-child(odd) { border-right:0; }
+}
+@media (prefers-reduced-motion:reduce) {
+    .manager-theme .manager-kpi-card,.manager-theme .sidebar-item,.manager-theme .manager-booking-item { transition:none; }
+}

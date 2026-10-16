@@ -36,8 +36,18 @@ public sealed class DevelopmentAuthSeeder
         }
 
         var roles = await EnsureRolesAsync(cancellationToken);
-        await UpsertAccountAsync(_options.AdminEmail, _options.AdminPassword, roles[RoleNames.Admin], cancellationToken);
-        await UpsertAccountAsync(_options.StaffEmail, _options.StaffPassword, roles[RoleNames.Coordinator], cancellationToken);
+
+        var coordinatorEmail = string.IsNullOrWhiteSpace(_options.CoordinatorEmail)
+            ? _options.StaffEmail
+            : _options.CoordinatorEmail;
+        var coordinatorPassword = string.IsNullOrWhiteSpace(_options.CoordinatorPassword)
+            ? _options.StaffPassword
+            : _options.CoordinatorPassword;
+
+        await UpsertAccountAsync(_options.AdminEmail, _options.AdminPassword, roles[RoleNames.Admin], null, null, null, cancellationToken);
+        await UpsertAccountAsync(_options.ManagerEmail, _options.ManagerPassword, roles[RoleNames.Manager], "QL001", "Quản lý", "0900000001", cancellationToken);
+        await UpsertAccountAsync(_options.HallManagerEmail, _options.HallManagerPassword, roles[RoleNames.HallManager], "QLS001", "Quản lý sảnh", "0900000002", cancellationToken);
+        await UpsertAccountAsync(coordinatorEmail, coordinatorPassword, roles[RoleNames.Coordinator], "DP001", "Nhân viên điều phối", "0912345678", cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
     }
 
@@ -70,6 +80,9 @@ public sealed class DevelopmentAuthSeeder
         string email,
         string password,
         Role role,
+        string? employeeCode,
+        string? fullName,
+        string? phoneNumber,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
@@ -97,7 +110,8 @@ public sealed class DevelopmentAuthSeeder
                 RoleId = role.RoleId,
                 StatusId = accountStatusId,
                 CreatedAt = DateTime.Now,
-                DataStatusId = existingDataStatus.DataStatusId
+                DataStatusId = existingDataStatus.DataStatusId,
+                MustChangePassword = false
             };
             _db.Users.Add(user);
         }
@@ -107,20 +121,29 @@ public sealed class DevelopmentAuthSeeder
             user.RoleId = role.RoleId;
             user.StatusId = accountStatusId;
             user.DataStatusId = existingDataStatus.DataStatusId;
+            user.MustChangePassword = false;
+            user.UpdatedAt = DateTime.Now;
         }
 
         user.PasswordHash = _hasher.HashPassword(user, password);
 
-        if (role.RoleName == RoleNames.Coordinator && user.Employee is null)
+        // Admin không cần hồ sơ NhanVien; 3 role nhân viên còn lại bắt buộc có Employee để login hợp lệ.
+        if (role.RoleName != RoleNames.Admin && !string.IsNullOrWhiteSpace(employeeCode) && user.Employee is null)
         {
-            user.Employee = new Employee
+            var codeTaken = await _db.Employees.AnyAsync(
+                e => e.EmployeeCode == employeeCode && e.UserId != user.UserId,
+                cancellationToken);
+            if (!codeTaken)
             {
-                User = user,
-                EmployeeCode = "DP001",
-                FullName = "Nhân viên điều phối",
-                PhoneNumber = "0912345678",
-                DataStatusId = existingDataStatus.DataStatusId
-            };
+                user.Employee = new Employee
+                {
+                    User = user,
+                    EmployeeCode = employeeCode,
+                    FullName = fullName ?? role.RoleName,
+                    PhoneNumber = phoneNumber ?? "0900000000",
+                    DataStatusId = existingDataStatus.DataStatusId
+                };
+            }
         }
 
     }

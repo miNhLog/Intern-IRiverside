@@ -74,6 +74,15 @@ public class AdminBookingController : Controller
     }
 
     // 4. POST: /AdminBooking/Create - AJAX tạo mới đơn đặt tiệc
+    [HttpGet]
+    public async Task<IActionResult> GetCreateOptions(DateTime eventDate, CancellationToken cancellationToken = default)
+    {
+        var result = await _apiClient.GetBookingCreateOptionsAsync(eventDate, Request.Cookies[ApiTokenCookie], cancellationToken);
+        return result.Succeeded && result.Value != null
+            ? Json(new { success = true, data = result.Value })
+            : Json(new { success = false, message = result.Error ?? "Không thể tải dữ liệu tạo booking." });
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateBookingRequestViewModel request, CancellationToken cancellationToken = default)
     {
@@ -90,7 +99,7 @@ public class AdminBookingController : Controller
             return Json(new { success = false, message = result.Error ?? "Không thể tạo mới đơn tiệc cưới." });
         }
 
-        return Json(new { success = true, message = "Tạo mới đơn tiệc cưới thành công!" });
+        return Json(new { success = true, message = "Tạo mới đơn tiệc cưới thành công!", bookingId = result.Value?.BookingId });
     }
 
     // 5. POST: /AdminBooking/UpdateStatus/{id} - AJAX duyệt, ghi nhận cọc, hoặc hủy tiệc
@@ -105,6 +114,6 @@ public class AdminBookingController : Controller
             return Json(new { success = false, message = result.Error ?? "Không thể cập nhật trạng thái đơn tiệc." });
         }
 
-        return Json(new { success = true, message = $"Cập nhật trạng thái sang '{request.NewStatus}' thành công!" });
+        return Json(new { success = true, message = "Cập nhật trạng thái booking thành công!" });
     }
 }

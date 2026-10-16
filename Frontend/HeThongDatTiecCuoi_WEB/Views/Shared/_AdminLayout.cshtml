@@ -47,6 +47,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap"
           rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;subset=vietnamese&amp;display=swap"
+          rel="stylesheet" />
     <link rel="stylesheet"
           href="~/css/admin-hall.css"
           asp-append-version="true" />
@@ -56,12 +58,16 @@
     <link rel="stylesheet"
           href="~/css/admin-common.css"
           asp-append-version="true" />
+    @if (isManager) { <link rel="stylesheet" href="~/css/manager-theme.css" asp-append-version="true" /> }
     @if (isAdmin || isManager) { <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" /> }
 
+    <link rel="stylesheet" href="~/css/ui-format.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
+    <link rel="stylesheet" href="~/css/backoffice-theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/backoffice-page-header.css" asp-append-version="true" />
 </head>
-<body>
-    <div class="admin-layout">
+<body class="backoffice-app @(isManager ? "manager-theme" : string.Empty)">
+    <div class="admin-layout backoffice-shell @(isManager ? "manager-theme-shell" : string.Empty)">
         <button type="button"
                 class="mobile-sidebar-toggle"
                 id="mobileSidebarToggle"
@@ -139,21 +145,34 @@
                 }
                 else if (isManager)
                 {
-                <section class="sidebar-section" aria-labelledby="managerOverviewMenuTitle">
-                    <h2 class="sidebar-section-title" id="managerOverviewMenuTitle">Tổng quan</h2>
-                    <nav class="sidebar-menu" aria-label="Tổng quan quản lý">
+                <section class="sidebar-section" aria-labelledby="managerDashboardMenuTitle">
+                    <h2 class="sidebar-section-title" id="managerDashboardMenuTitle">Dashboard</h2>
+                    <nav class="sidebar-menu" aria-label="Dashboard">
                         <a asp-controller="Home" asp-action="Dashboard"
                            class="sidebar-item @(IsActive("Home", "Dashboard") ? "active" : string.Empty)"
                            aria-current="@(IsActive("Home", "Dashboard") ? "page" : null)"
-                           data-sidebar-tooltip="Tổng quan quản lý">
-                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-gauge-high"></i></span>
-                            <span class="sidebar-label">Tổng quan quản lý</span>
+                           data-sidebar-tooltip="Tổng quan">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-chart-pie"></i></span>
+                            <span class="sidebar-label">Tổng quan</span>
+                        </a>
+                    </nav>
+                </section>
+                <section class="sidebar-section" aria-labelledby="managerBookingMenuTitle">
+                    <h2 class="sidebar-section-title" id="managerBookingMenuTitle">Đặt tiệc</h2>
+                    <nav class="sidebar-menu" aria-label="Đặt tiệc">
+                        <a asp-controller="AdminBooking" asp-action="Index" class="sidebar-item @(IsActive("AdminBooking") ? "active" : string.Empty)" aria-current="@(IsActive("AdminBooking") ? "page" : null)" data-sidebar-tooltip="Booking"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-calendar-check"></i></span><span class="sidebar-label">Booking</span></a>
+                        <a asp-controller="ManagerContractPayment" asp-action="Index"
+                           class="sidebar-item @(IsActive("ManagerContractPayment") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("ManagerContractPayment") ? "page" : null)"
+                           data-sidebar-tooltip="Hợp đồng &amp; Thanh toán">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+                            <span class="sidebar-label">Hợp đồng &amp; Thanh toán</span>
                         </a>
                     </nav>
                 </section>
                 <section class="sidebar-section" aria-labelledby="managerOperationsMenuTitle">
-                    <h2 class="sidebar-section-title" id="managerOperationsMenuTitle">Quản lý vận hành</h2>
-                    <nav class="sidebar-menu" aria-label="Quản lý vận hành">
+                    <h2 class="sidebar-section-title" id="managerOperationsMenuTitle">Vận hành</h2>
+                    <nav class="sidebar-menu" aria-label="Vận hành">
                         <a asp-controller="AdminHall" asp-action="Index"
                            class="sidebar-item @(IsActive("AdminHall") ? "active" : string.Empty)"
                            aria-current="@(IsActive("AdminHall") ? "page" : null)"
@@ -161,12 +180,19 @@
                             <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-building"></i></span>
                             <span class="sidebar-label">Sảnh &amp; Lịch</span>
                         </a>
-                        <a asp-controller="AdminMenu" asp-action="Index"
-                           class="sidebar-item @(IsActive("AdminMenu") ? "active" : string.Empty)"
-                           aria-current="@(IsActive("AdminMenu") ? "page" : null)"
-                           data-sidebar-tooltip="Thực đơn &amp; Món ăn">
+                        <a asp-controller="ManagerMenu" asp-action="Index"
+                           class="sidebar-item @(IsActive("ManagerMenu") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("ManagerMenu") ? "page" : null)"
+                           data-sidebar-tooltip="Thực đơn">
                             <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-utensils"></i></span>
-                            <span class="sidebar-label">Thực đơn &amp; Món ăn</span>
+                            <span class="sidebar-label">Thực đơn</span>
+                        </a>
+                        <a asp-controller="ManagerDish" asp-action="Index"
+                           class="sidebar-item @(IsActive("ManagerDish") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("ManagerDish") ? "page" : null)"
+                           data-sidebar-tooltip="Món ăn">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-bowl-food"></i></span>
+                            <span class="sidebar-label">Món ăn</span>
                         </a>
                         <a asp-controller="AdminDecorService" asp-action="Index"
                            class="sidebar-item @(IsActive("AdminDecorService") ? "active" : string.Empty)"
@@ -196,16 +222,15 @@
                         </a>
                     </nav>
                 </section>
-                <section class="sidebar-section" aria-labelledby="managerPartyMenuTitle">
-                    <h2 class="sidebar-section-title" id="managerPartyMenuTitle">Nghiệp vụ tiệc</h2>
-                    <nav class="sidebar-menu" aria-label="Nghiệp vụ tiệc">
-                        <a asp-controller="AdminBooking" asp-action="Index" class="sidebar-item @(IsActive("AdminBooking") ? "active" : string.Empty)" aria-current="@(IsActive("AdminBooking") ? "page" : null)" data-sidebar-tooltip="Đặt tiệc"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-calendar-plus"></i></span><span class="sidebar-label">Đặt tiệc</span></a>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Hợp đồng"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-file-contract"></i></span><span class="sidebar-label">Hợp đồng</span></button>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Thanh toán"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-credit-card"></i></span><span class="sidebar-label">Thanh toán</span></button>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Theo dõi điều phối"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-people-arrows"></i></span><span class="sidebar-label">Theo dõi điều phối</span></button>
+                <section class="sidebar-section" aria-labelledby="managerEventOperationsMenuTitle">
+                    <h2 class="sidebar-section-title" id="managerEventOperationsMenuTitle">Điều hành sự kiện</h2>
+                    <nav class="sidebar-menu" aria-label="Điều hành sự kiện">
+                        <a asp-controller="ManagerEventCoordination" asp-action="Index"
+                           class="sidebar-item @(IsActive("ManagerEventCoordination") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("ManagerEventCoordination") ? "page" : null)"
+                           data-sidebar-tooltip="Tiệc &amp; Điều phối"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-people-arrows"></i></span><span class="sidebar-label">Tiệc &amp; Điều phối</span></a>
                         <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Sự cố"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span><span class="sidebar-label">Sự cố</span></button>
                         <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Thay đổi lịch"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Thay đổi lịch</span></button>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Chăm sóc khách hàng"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-headset"></i></span><span class="sidebar-label">Chăm sóc khách hàng</span></button>
                     </nav>
                 </section>
                 <section class="sidebar-section" aria-labelledby="managerReportMenuTitle">
@@ -214,9 +239,9 @@
                         <a asp-controller="AdminReport" asp-action="Index"
                            class="sidebar-item @(IsActive("AdminReport") ? "active" : string.Empty)"
                            aria-current="@(IsActive("AdminReport") ? "page" : null)"
-                           data-sidebar-tooltip="Báo cáo thống kê / BI">
+                           data-sidebar-tooltip="Thống kê &amp; Báo cáo">
                             <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-chart-line"></i></span>
-                            <span class="sidebar-label">Báo cáo thống kê / BI</span>
+                            <span class="sidebar-label">Thống kê &amp; Báo cáo</span>
                         </a>
                     </nav>
                 </section>
@@ -391,7 +416,7 @@
                             <i class="fa-solid fa-chevron-down topbar-chevron" aria-hidden="true"></i>
                         </summary>
                         <div class="user-dropdown">
-                            <a asp-controller="Auth" asp-action="ChangePassword"><i class="fa-solid fa-key" aria-hidden="true"></i>Đổi mật khẩu</a>
+                            <a asp-controller="Profile" asp-action="Index"><i class="fa-solid fa-user" aria-hidden="true"></i>Hồ sơ cá nhân</a>
                             <div class="user-dropdown-divider" aria-hidden="true"></div>
                             <form asp-controller="Auth" asp-action="Logout" method="post">
                                 @Html.AntiForgeryToken()
@@ -419,6 +444,7 @@
     }
 
     <script src="~/js/admin-sidebar.js" asp-append-version="true"></script>
+    <script src="~/js/ui-format.js" asp-append-version="true"></script>
     @if (isAdmin || isManager) { <script src="~/js/notifications.js" asp-append-version="true"></script> }
     @await RenderSectionAsync("Scripts", required: false)
 </body>

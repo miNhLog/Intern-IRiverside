@@ -177,7 +177,71 @@ public sealed class AuthController : Controller
 
     [HttpGet("auth/forgot-password")]
     [AllowAnonymous]
-    public IActionResult ForgotPassword() => View(new ForgotPasswordViewModel());
+    public IActionResult ForgotPassword() => RedirectToAction(nameof(Login), new { forgotPassword = true });
+
+    [HttpPost("login/password-reset/send-otp")]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendPasswordResetOtp(
+        SendPasswordResetOtpViewModel model,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { message = ModelState.Values.SelectMany(value => value.Errors).First().ErrorMessage });
+
+        var result = await _apiClient.SendPasswordResetOtpAsync(model, cancellationToken);
+        return StatusCode(result.StatusCode ?? (result.Succeeded ? 200 : 400), new
+        {
+            success = result.Succeeded,
+            message = result.Succeeded
+                ? result.Value?.Message ?? "Nếu email tồn tại trong hệ thống, mã OTP sẽ được gửi."
+                : result.Error ?? "Không thể gửi mã OTP.",
+            cooldownSeconds = result.Value?.CooldownSeconds ?? 60
+        });
+    }
+
+    [HttpPost("login/password-reset/verify-otp")]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyPasswordResetOtp(
+        VerifyPasswordResetOtpViewModel model,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { message = ModelState.Values.SelectMany(value => value.Errors).First().ErrorMessage });
+
+        var result = await _apiClient.VerifyPasswordResetOtpAsync(model, cancellationToken);
+        return StatusCode(result.StatusCode ?? (result.Succeeded ? 200 : 400), new
+        {
+            success = result.Succeeded,
+            message = result.Succeeded
+                ? result.Value?.Message ?? "Xác minh OTP thành công."
+                : result.Error ?? "Mã OTP không hợp lệ hoặc đã hết hạn.",
+            resetToken = result.Value?.ResetToken
+        });
+    }
+
+    [HttpPost("login/password-reset/complete")]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CompletePasswordReset(
+        CompletePasswordResetViewModel model,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { message = ModelState.Values.SelectMany(value => value.Errors).First().ErrorMessage });
+
+        var result = await _apiClient.CompletePasswordResetAsync(model, cancellationToken);
+        if (!result.Succeeded)
+            return StatusCode(result.StatusCode ?? 400, new { success = false, message = result.Error });
+
+        await ClearLocalSessionAsync();
+        return Ok(new
+        {
+            success = true,
+            message = result.Value?.Message ?? "Đặt lại mật khẩu thành công."
+        });
+    }
 
     [HttpPost("auth/forgot-password")]
     [AllowAnonymous]
@@ -200,10 +264,8 @@ public sealed class AuthController : Controller
 
     [HttpGet("auth/reset-password")]
     [AllowAnonymous]
-    public IActionResult ResetPassword(string? token)
-    {
-        return View(new ResetPasswordViewModel { Token = token ?? string.Empty });
-    }
+    public IActionResult ResetPassword(string? token) =>
+        RedirectToAction(nameof(Login), new { forgotPassword = true });
 
     [HttpPost("auth/reset-password")]
     [AllowAnonymous]

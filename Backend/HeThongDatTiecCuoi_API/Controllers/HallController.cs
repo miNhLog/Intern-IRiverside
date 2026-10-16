@@ -104,6 +104,10 @@ public sealed class HallController : ControllerBase
                 HallName = hall.HallName,
                 MinimumCapacity = hall.MinimumCapacity,
                 MaximumCapacity = hall.MaximumCapacity,
+                CapacityMinGuests = hall.MinimumCapacity ?? 150,
+                CapacityMaxGuests = hall.MaximumCapacity,
+                CapacityMinTables = (hall.MinimumCapacity ?? 150) / 10,
+                CapacityMaxTables = hall.MaximumCapacity / 10,
                 RentalPrice = hall.RentalPrice,
                 Description = hall.Description,
                 ImageUrl = hall.Images
@@ -142,6 +146,10 @@ public sealed class HallController : ControllerBase
                 HallName = item.HallName,
                 MinimumCapacity = item.MinimumCapacity,
                 MaximumCapacity = item.MaximumCapacity,
+                CapacityMinGuests = item.MinimumCapacity ?? 150,
+                CapacityMaxGuests = item.MaximumCapacity,
+                CapacityMinTables = (item.MinimumCapacity ?? 150) / 10,
+                CapacityMaxTables = item.MaximumCapacity / 10,
                 RentalPrice = item.RentalPrice,
                 Description = item.Description,
                 ImageUrl = item.Images
@@ -149,6 +157,13 @@ public sealed class HallController : ControllerBase
                         image.DataStatus.DataStatusCode == DataStatusCodes.Existing)
                     .Select(image => image.ImagePath)
                     .FirstOrDefault(),
+                ImageUrls = item.Images
+                    .Where(image => image.DataStatus.DataStatusCode == DataStatusCodes.Existing)
+                    .OrderByDescending(image => image.IsPrimary)
+                    .ThenBy(image => image.SortOrder)
+                    .ThenBy(image => image.ImageId)
+                    .Select(image => image.ImagePath)
+                    .ToList(),
                 Status = item.Status.StatusCode,
                 StatusName = item.Status.StatusName
             })
@@ -177,6 +192,10 @@ public sealed class HallController : ControllerBase
                 HallName = hall.HallName,
                 MinimumCapacity = hall.MinimumCapacity,
                 MaximumCapacity = hall.MaximumCapacity,
+                CapacityMinGuests = hall.MinimumCapacity ?? 150,
+                CapacityMaxGuests = hall.MaximumCapacity,
+                CapacityMinTables = (hall.MinimumCapacity ?? 150) / 10,
+                CapacityMaxTables = hall.MaximumCapacity / 10,
                 RentalPrice = hall.RentalPrice,
                 Description = hall.Description,
                 ImageUrl = hall.Images
@@ -402,6 +421,10 @@ public sealed class HallController : ControllerBase
         HallName = hall.HallName,
         MinimumCapacity = hall.MinimumCapacity,
         MaximumCapacity = hall.MaximumCapacity,
+        CapacityMinGuests = hall.MinimumCapacity ?? 150,
+        CapacityMaxGuests = hall.MaximumCapacity,
+        CapacityMinTables = (hall.MinimumCapacity ?? 150) / 10,
+        CapacityMaxTables = hall.MaximumCapacity / 10,
         RentalPrice = hall.RentalPrice,
         Description = hall.Description,
         ImageUrl = hall.Images

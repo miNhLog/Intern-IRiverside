@@ -1,0 +1,371 @@
+@model HeThongDatTiecCuoi_WEB.Models.MyBookings.PublicBookingLookupInputViewModel
+@using HeThongDatTiecCuoi_WEB.Models.MyBookings
+@{
+    ViewData["Title"] = "Tra cứu tiệc cưới trực tuyến - Riverside Palace";
+    ViewData["PublicActivePage"] = "my-bookings";
+    var detail = ViewBag.LookupDetail as PublicBookingDetailViewModel;
+    var lookupError = ViewBag.LookupError as string;
+    var myBookings = ViewBag.MyBookings as List<MyBookingViewModel> ?? new List<MyBookingViewModel>();
+    string[] steps = new[] { "Chờ xác nhận", "Đã xác nhận", "Đã cọc", "Đang chuẩn bị", "Hoàn tất" };
+    int currentStep = 0;
+    if (detail != null)
+    {
+        currentStep = detail.StatusCode switch
+        {
+            "PENDING" => 0,
+            "CONFIRMED" => 1,
+            "PREPARING" => 3,
+            "COMPLETED" => 4,
+            "CANCELLED" => -1,
+            _ => detail.StatusName switch
+            {
+                "Chờ xác nhận" => 0,
+                "Đã xác nhận" => 1,
+                "Đang chuẩn bị" => 3,
+                "Hoàn tất" => 4,
+                _ => detail.DepositPaid > 0 ? 2 : 1
+            }
+        };
+        if (detail.DepositPaid > 0 && currentStep == 1) { currentStep = 2; }
+    }
+}
+
+@section Styles {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Plus+Jakarta+Sans:wght@300..800&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+    <style>
+        :root { --rp-gold: #B89758; --rp-ink: #111822; --rp-cream: #FDFBF7; }
+        .rp-wrap { background: var(--rp-cream); padding: 48px 20px 80px; font-family: 'Plus Jakarta Sans', sans-serif; color: var(--rp-ink); min-height: 80vh; }
+        .rp-container { max-width: 1140px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+        .rp-card { background: #fff; border-radius: 20px; border: 1px solid #E9E2D3; box-shadow: 0 10px 25px -5px rgba(17,24,34,.06); padding: 28px; }
+        .rp-card:hover { border-color: var(--rp-gold); }
+        .rp-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--rp-gold); }
+        .rp-h1 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: var(--rp-ink); margin: 4px 0 0; }
+        .rp-sub { font-size: 13px; color: #64748B; margin-top: 6px; }
+        .rp-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+        @@media (max-width: 720px) { .rp-form-grid { grid-template-columns: 1fr; } }
+        .rp-field label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+        .rp-field label span.req { color: #DC2626; }
+        .rp-field input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #CBD5E1; font-size: 14px; outline: none; font-family: monospace; }
+        .rp-field input:focus { border-color: var(--rp-gold); box-shadow: 0 0 0 3px rgba(184,151,88,.18); }
+        .rp-field .hint { font-size: 11.5px; color: #94A3B8; margin-top: 4px; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .rp-field .field-error { font-size: 12px; color: #DC2626; margin-top: 4px; display: none; }
+        .rp-btn-gold { display: inline-flex; align-items: center; gap: 8px; padding: 13px 28px; border-radius: 12px; background: var(--rp-gold); color: #fff; font-weight: 800; font-size: 14px; border: none; cursor: pointer; }
+        .rp-btn-gold:hover { filter: brightness(.95); }
+        .rp-btn-danger { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 12px; background: #fff; border: 1.5px solid var(--rp-gold); color: #DC2626; font-weight: 800; font-size: 13px; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(220,38,38,.35); }
+        .rp-btn-danger:hover { background: #FEF2F2; }
+        .rp-alert-error { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; border-radius: 12px; padding: 12px 16px; font-size: 13px; margin-top: 14px; }
+        .rp-alert-empty { background: #FFFBEB; border: 1px dashed #E9D9AE; color: #78716C; border-radius: 12px; padding: 26px; text-align: center; font-size: 13px; }
+        .rp-badge-cancelled { display: inline-flex; align-items: center; gap: 6px; background: #DC2626; color: #fff; font-weight: 800; font-size: 12px; padding: 5px 14px; border-radius: 999px; letter-spacing: .04em; }
+        .rp-badge-pending { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+        .rp-badge-success { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+        .rp-code { font-family: monospace; font-weight: 800; color: var(--rp-gold); background: #FFF9EE; border: 1px solid #EEDBB2; padding: 3px 10px; border-radius: 8px; font-size: 15px; }
+        .rp-stepper { display: flex; align-items: flex-start; justify-content: space-between; position: relative; margin: 24px 0 8px; padding: 0 6px; }
+        .rp-stepper::before { content: ''; position: absolute; top: 15px; left: 24px; right: 24px; height: 2px; background: #E2E8F0; z-index: 1; }
+        .rp-step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; background: #fff; padding: 0 6px; flex: 1; text-align: center; }
+        .rp-dot { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+        .rp-dot.done { background: #10B981; color: #fff; }
+        .rp-dot.active { background: var(--rp-gold); color: #fff; box-shadow: 0 0 0 4px rgba(184,151,88,.2); }
+        .rp-dot.wait { background: #F1F5F9; color: #94A3B8; border: 1.5px solid #CBD5E1; }
+        .rp-step span.lbl { font-size: 11px; font-weight: 700; color: var(--rp-ink); }
+        .rp-grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-top: 16px; }
+        @@media (max-width: 860px) { .rp-grid-2 { grid-template-columns: 1fr; } }
+        .rp-info { background: #FAF8F5; border: 1px solid #E9E2D3; border-radius: 14px; padding: 16px 18px; font-size: 13px; }
+        .rp-info h4 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--rp-gold); }
+        .rp-kv { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dashed #E9E2D3; }
+        .rp-kv:last-child { border-bottom: none; }
+        .rp-kv b { text-align: right; }
+        .rp-dish { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; font-size: 13px; }
+        .rp-dish .n { color: var(--rp-gold); font-weight: 800; min-width: 22px; }
+        .rp-countdown { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 12px 16px; font-size: 13px; color: #92400E; margin-top: 14px; }
+        .rp-countdown b { font-variant-numeric: tabular-nums; }
+        .rp-contact { background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 14px 16px; font-size: 13px; color: #1E3A8A; margin-top: 14px; }
+        .rp-modal-backdrop { position: fixed; inset: 0; background: rgba(17,24,34,.55); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+        .rp-modal-backdrop.open { display: flex; }
+        .rp-modal { background: #fff; border-radius: 18px; max-width: 520px; width: 100%; padding: 26px; border-top: 5px solid var(--rp-gold); }
+        .rp-modal h3 { font-family: 'Playfair Display', serif; margin: 0 0 6px; font-size: 20px; }
+        .rp-modal textarea { width: 100%; min-height: 96px; border-radius: 12px; border: 1px solid #CBD5E1; padding: 10px 12px; font-size: 13px; font-family: inherit; resize: vertical; }
+        .rp-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+        .rp-btn-ghost { padding: 10px 18px; border-radius: 10px; border: 1px solid #CBD5E1; background: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .rp-btn-confirm-danger { padding: 10px 18px; border-radius: 10px; background: #DC2626; color: #fff; font-weight: 800; font-size: 13px; border: none; cursor: pointer; }
+    </style>
+}
+
+<div class="home-page">
+    <partial name="_PublicHeader" />
+    <main class="rp-wrap">
+        <div class="rp-container">
+            <div>
+                <span class="rp-eyebrow">Tra cứu tiệc cưới trực tuyến · UC14 &amp; UC15</span>
+                <h1 class="rp-h1">Tiệc của tôi</h1>
+                <p class="rp-sub">Nhập mã đặt tiệc (ví dụ DT-20261012-0001) và số điện thoại 10 số đã dùng khi giữ chỗ để xem hồ sơ chi tiết, thực đơn 7 món, chi phí và hủy giữ chỗ online trong 48 giờ.</p>
+            </div>
+
+            <!-- PHẦN 1: FORM TRA CỨU -->
+            <section class="rp-card" aria-label="Form tra cứu hồ sơ tiệc cưới">
+                <h2 style="font-family:'Playfair Display',serif;font-size:20px;margin:0;">Tra cứu hồ sơ tiệc cưới</h2>
+                <p class="rp-sub">Hệ thống tự điền sẵn từ liên kết sau khi đặt giữ chỗ (cookie/query). Tra cứu sai quá 5 lần trong 15 phút sẽ bị khóa tạm thời (429).</p>
+                <form asp-controller="MyBooking" asp-action="Lookup" method="post" id="lookupForm" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div class="rp-form-grid">
+                        <div class="rp-field">
+                            <label asp-for="BookingCode">Mã đặt tiệc <span class="req">*</span></label>
+                            <input asp-for="BookingCode" id="bookingCodeInput" placeholder="DT-20261012-0001" maxlength="30" autocomplete="off" />
+                            <div class="hint">Định dạng DT-yyyyMMdd-XXXX, ví dụ DT-20261012-0001.</div>
+                            <div class="field-error" id="bookingCodeError">Mã đặt tiệc phải có dạng DT-yyyyMMdd-XXXX.</div>
+                            <span asp-validation-for="BookingCode" style="font-size:12px;color:#DC2626;"></span>
+                        </div>
+                        <div class="rp-field">
+                            <label asp-for="PhoneNumber">Số điện thoại <span class="req">*</span></label>
+                            <input asp-for="PhoneNumber" id="phoneInput" placeholder="0901234567" maxlength="10" inputmode="numeric" autocomplete="tel" />
+                            <div class="hint">SĐT Việt Nam 10 số, bắt đầu bằng 0.</div>
+                            <div class="field-error" id="phoneError">Số điện thoại phải gồm đúng 10 số và bắt đầu bằng 0.</div>
+                            <span asp-validation-for="PhoneNumber" style="font-size:12px;color:#DC2626;"></span>
+                        </div>
+                    </div>
+                    <div style="margin-top:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                        <button type="submit" class="rp-btn-gold"><i class="fa-solid fa-magnifying-glass"></i> Tra cứu hồ sơ tiệc cưới</button>
+                        <a asp-controller="Recommendation" asp-action="Index" style="font-size:13px;color:#B89758;font-weight:700;">Chưa có mã? Đặt giữ chỗ ngay →</a>
+                    </div>
+                </form>
+                @if (!string.IsNullOrWhiteSpace(lookupError))
+                {
+                    <div class="rp-alert-error" role="alert"><i class="fa-solid fa-circle-exclamation"></i> @lookupError</div>
+                }
+            </section>
+
+            <!-- PHẦN 2: CHI TIẾT -->
+            @if (detail != null)
+            {
+                <section class="rp-card" aria-label="Chi tiết hồ sơ tiệc cưới">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid #F1F5F9;">
+                        <div>
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                <span class="rp-code">@detail.BookingCode</span>
+                                @if (detail.IsCancelled)
+                                {
+                                    <span class="rp-badge-cancelled"><i class="fa-solid fa-ban"></i> ĐÃ HỦY</span>
+                                }
+                                else if (detail.IsPending)
+                                {
+                                    <span class="rp-badge-pending"><i class="fa-regular fa-clock"></i> Chờ xác nhận</span>
+                                }
+                                else
+                                {
+                                    <span class="rp-badge-success"><i class="fa-solid fa-circle-check"></i> @detail.StatusName</span>
+                                }
+                            </div>
+                            <span style="font-size:11.5px;color:#94A3B8;display:block;margin-top:5px;">Ngày đặt: @detail.BookedAt.ToString("HH:mm - dd/MM/yyyy") · Khách: @detail.CustomerName (@detail.PhoneNumber)</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:11px;color:#64748B;">Tổng dự toán:</span>
+                            <span style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;display:block;">@detail.TotalAmount.ToString("N0") đ</span>
+                        </div>
+                    </div>
+
+                    @if (!detail.IsCancelled)
+                    {
+                        <div class="rp-stepper" aria-label="Tiến trình hồ sơ">
+                            @for (int i = 0; i < steps.Length; i++)
+                            {
+                                var cls = i < currentStep ? "done" : (i == currentStep ? "active" : "wait");
+                                var num = i < currentStep ? "✓" : (i + 1).ToString();
+                                <div class="rp-step"><div class="rp-dot @cls">@num</div><span class="lbl">@steps[i]</span></div>
+                            }
+                        </div>
+                    }
+
+                    <div class="rp-grid-2">
+                        <div class="rp-info">
+                            <h4>Tóm tắt tiệc cưới</h4>
+                            <div class="rp-kv"><span>Ngày / Ca</span><b>@detail.EventDate.ToString("dd/MM/yyyy") · @detail.Shift</b></div>
+                            <div class="rp-kv"><span>Sảnh</span><b>@detail.HallName (@detail.HallPrice.ToString("N0") đ)</b></div>
+                            <div class="rp-kv"><span>Sức chứa sảnh</span><b>Tối đa @detail.HallCapacity khách</b></div>
+                            <div class="rp-kv"><span>Quy mô</span><b>@detail.GuestCount khách = @detail.OfficialTables + @detail.SpareTables bàn (tổng @detail.TotalTables bàn)</b></div>
+                            <div class="rp-kv"><span>Thực đơn (@(detail.Dishes.Count) món)</span><b>@(detail.MenuName ?? "—") @(detail.MenuPricePerTable.HasValue ? $"({detail.MenuPricePerTable.Value.ToString("N0")} đ/bàn)" : "")</b></div>
+                            @if (detail.Dishes.Count > 0)
+                            {
+                                <div style="margin-top:8px;border-top:1px dashed #E9E2D3;padding-top:8px;">
+                                    @foreach (var d in detail.Dishes)
+                                    {
+                                        <div class="rp-dish"><span class="n">@d.SortOrder</span><span><b>@d.DishName</b> <span style="color:#94A3B8;">· @d.Category</span></span></div>
+                                    }
+                                </div>
+                            }
+                            <div class="rp-kv"><span>Trang trí</span><b>@(detail.DecorName ?? "—") @(detail.DecorPrice.HasValue ? $"({detail.DecorPrice.Value.ToString("N0")} đ)" : "")@(string.IsNullOrWhiteSpace(detail.DecorStyle) ? "" : $" · {detail.DecorStyle}")</b></div>
+                            <div class="rp-kv"><span>Dịch vụ (@detail.Services.Count)</span><b>@(detail.Services.Count == 0 ? "Không có" : string.Join("; ", detail.Services.Select(s => $"{s.ServiceName} x{s.Quantity}")))</b></div>
+                            @if (!string.IsNullOrWhiteSpace(detail.SpecialRequests))
+                            {
+                                <div class="rp-kv"><span>Yêu cầu đặc biệt</span><b>@detail.SpecialRequests</b></div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(detail.ConsultantName))
+                            {
+                                <div class="rp-kv"><span>NV tư vấn</span><b>@detail.ConsultantName (@(detail.ConsultantPhone ?? "—"))</b></div>
+                            }
+                            @if (detail.IsCancelled && !string.IsNullOrWhiteSpace(detail.CancellationReason))
+                            {
+                                <div class="rp-kv"><span>Lý do hủy</span><b>@detail.CancellationReason</b></div>
+                            }
+                        </div>
+                        <div class="rp-info">
+                            <h4>Tài chính</h4>
+                            <div class="rp-kv"><span>Tổng dự toán</span><b>@detail.TotalAmount.ToString("N0") đ</b></div>
+                            <div class="rp-kv"><span>Đã cọc (SUCCESS)</span><b>@detail.DepositPaid.ToString("N0") đ</b></div>
+                            <div class="rp-kv"><span>Còn lại</span><b style="color:#B89758;">@detail.RemainingDebt.ToString("N0") đ</b></div>
+                            <div style="font-size:11.5px;color:#94A3B8;margin-top:8px;">Đã cọc = tổng ThanhToan SUCCESS thuộc HopDong của đơn này.</div>
+
+                            @if (detail.CanCancelOnline && !detail.IsCancelled)
+                            {
+                                <div class="rp-countdown">
+                                    <i class="fa-regular fa-hourglass-half"></i>
+                                    Giữ chỗ hết hạn lúc <b>@detail.HoldExpiresAt.ToString("HH:mm dd/MM/yyyy")</b> (48 giờ sau khi đặt).<br />
+                                    Thời gian còn lại: <b id="holdCountdown" data-expires="@detail.HoldExpiresAt.ToString("o")">--:--:--</b>
+                                </div>
+                                <div style="margin-top:12px;display:flex;justify-content:flex-end;">
+                                    <button type="button" class="rp-btn-danger" id="openCancelModalBtn"><i class="fa-regular fa-trash-can"></i> Hủy giữ chỗ tiệc này</button>
+                                </div>
+                            }
+                            else if (!detail.IsCancelled && detail.DepositPaid > 0)
+                            {
+                                <div class="rp-contact">
+                                    <i class="fa-solid fa-headset"></i>
+                                    <b>Tiệc đã đặt cọc / xác nhận</b> nên không thể hủy online. Vui lòng liên hệ nhân viên @(detail.ConsultantName ?? "Riverside Palace")@(string.IsNullOrWhiteSpace(detail.ConsultantPhone) ? "" : $" ({detail.ConsultantPhone})") để được hỗ trợ đổi lịch hoặc hoàn cọc theo chính sách.
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODAL HỦY GIỮ CHỖ -->
+                @if (detail.CanCancelOnline && !detail.IsCancelled)
+                {
+                    <div class="rp-modal-backdrop" id="cancelModal" role="dialog" aria-modal="true" aria-label="Xác nhận hủy giữ chỗ">
+                        <div class="rp-modal">
+                            <h3>Hủy giữ chỗ @detail.BookingCode?</h3>
+                            <p style="font-size:13px;color:#64748B;margin:0 0 12px;">Thao tác sẽ chuyển đơn sang <b>Đã hủy</b>, ghi lý do và <b>giải phóng lịch sảnh về Trống</b>. Không thể hoàn tác.</p>
+                            <form id="cancelHoldForm">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="bookingId" value="@detail.BookingId" />
+                                <input type="hidden" name="bookingCode" value="@detail.BookingCode" />
+                                <input type="hidden" name="phoneNumber" value="@detail.PhoneNumber" />
+                                <label for="cancelReason" style="font-size:12px;font-weight:700;">Lý do hủy (tối đa 500 ký tự)</label>
+                                <textarea name="reason" id="cancelReason" maxlength="500" placeholder="Ví dụ: Thay đổi ngày tổ chức, trùng lịch gia đình..."></textarea>
+                                <div class="rp-modal-actions">
+                                    <button type="button" class="rp-btn-ghost" id="closeCancelModalBtn">Giữ lại tiệc</button>
+                                    <button type="submit" class="rp-btn-confirm-danger" id="confirmCancelBtn">Xác nhận hủy giữ chỗ</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+            }
+            else if (string.IsNullOrWhiteSpace(lookupError))
+            {
+                <div class="rp-alert-empty">
+                    <i class="fa-regular fa-envelope-open" style="font-size:26px;color:#B89758;"></i>
+                    <p style="margin:10px 0 4px;font-weight:700;color:#111822;">Chưa có hồ sơ nào được hiển thị</p>
+                    <p style="margin:0;">Nhập mã đặt tiệc và số điện thoại ở biểu mẫu phía trên rồi bấm <b>“Tra cứu hồ sơ tiệc cưới”</b>.</p>
+                </div>
+            }
+
+            <!-- DANH SÁCH CŨ (tương thích /MyBookings) -->
+            @if (myBookings.Count > 0)
+            {
+                <section class="rp-card" aria-label="Danh sách đơn theo SĐT">
+                    <h2 style="font-family:'Playfair Display',serif;font-size:18px;margin:0 0 4px;">Đơn tiệc theo số điện thoại của bạn (@myBookings.Count)</h2>
+                    <p class="rp-sub">Danh sách rút gọn từ API cũ <code>GET /api/my-bookings</code> — bấm mã để tra cứu chi tiết đầy đủ ở trên.</p>
+                    <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+                        @foreach (var b in myBookings)
+                        {
+                            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid #E9E2D3;border-radius:12px;padding:10px 14px;font-size:13px;">
+                                <span><span class="rp-code" style="font-size:12px;">@b.BookingCode</span> · @b.HallName · @b.Shift @b.EventDate.ToString("dd/MM/yyyy") · @b.Status</span>
+                                <a asp-controller="MyBooking" asp-action="Index" asp-route-bookingCode="@b.BookingCode" asp-route-phone="@b.PhoneNumber" style="color:#B89758;font-weight:700;">Xem chi tiết →</a>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+    </main>
+    <partial name="_PublicFooter" />
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var codeInput = document.getElementById('bookingCodeInput');
+            var phoneInput = document.getElementById('phoneInput');
+            var codeErr = document.getElementById('bookingCodeError');
+            var phoneErr = document.getElementById('phoneError');
+            var form = document.getElementById('lookupForm');
+            var codeRe = /^DT-\d{8}-[A-Z0-9]{4,}$/;
+            var phoneRe = /^0\d{9}$/;
+            function normCode() { if (codeInput) codeInput.value = (codeInput.value || '').trim().toUpperCase(); }
+            function validateLive() {
+                if (codeInput && codeErr) codeErr.style.display = (codeInput.value.trim() === '' || codeRe.test(codeInput.value.trim().toUpperCase())) ? 'none' : 'block';
+                if (phoneInput && phoneErr) phoneErr.style.display = (phoneInput.value.trim() === '' || phoneRe.test(phoneInput.value.trim())) ? 'none' : 'block';
+            }
+            if (codeInput) { codeInput.addEventListener('input', validateLive); codeInput.addEventListener('blur', function () { normCode(); validateLive(); }); }
+            if (phoneInput) { phoneInput.addEventListener('input', function () { phoneInput.value = (phoneInput.value || '').replace(/\D/g, '').slice(0, 10); validateLive(); }); }
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    normCode();
+                    var okCode = codeInput && codeRe.test((codeInput.value || '').trim());
+                    var okPhone = phoneInput && phoneRe.test((phoneInput.value || '').trim());
+                    validateLive();
+                    if (!okCode || !okPhone) {
+                        e.preventDefault();
+                        if (!okCode && codeInput) codeInput.focus();
+                        else if (phoneInput) phoneInput.focus();
+                    }
+                });
+            }
+            // Countdown 48h
+            var cd = document.getElementById('holdCountdown');
+            if (cd && cd.dataset.expires) {
+                var exp = new Date(cd.dataset.expires).getTime();
+                function tick() {
+                    var diff = exp - Date.now();
+                    if (isNaN(diff) || diff <= 0) { cd.textContent = 'Đã hết hạn giữ chỗ'; return; }
+                    var h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
+                    cd.textContent = h + ' giờ ' + String(m).padStart(2, '0') + ' phút ' + String(s).padStart(2, '0') + ' giây';
+                }
+                tick(); setInterval(tick, 1000);
+            }
+            // Modal hủy giữ chỗ
+            var modal = document.getElementById('cancelModal');
+            var openBtn = document.getElementById('openCancelModalBtn');
+            var closeBtn = document.getElementById('closeCancelModalBtn');
+            var cancelForm = document.getElementById('cancelHoldForm');
+            if (openBtn && modal) openBtn.addEventListener('click', function () { modal.classList.add('open'); });
+            if (closeBtn && modal) closeBtn.addEventListener('click', function () { modal.classList.remove('open'); });
+            if (modal) modal.addEventListener('click', function (e) { if (e.target === modal) modal.classList.remove('open'); });
+            if (cancelForm) {
+                cancelForm.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    var reason = document.getElementById('cancelReason');
+                    if (reason && reason.value.trim().length > 500) { alert('Lý do hủy không được vượt quá 500 ký tự.'); return; }
+                    if (!confirm('Xác nhận HỦY giữ chỗ và giải phóng lịch sảnh?')) return;
+                    var btn = document.getElementById('confirmCancelBtn');
+                    if (btn) { btn.disabled = true; btn.textContent = 'Đang hủy...'; }
+                    try {
+                        var fd = new FormData(cancelForm);
+                        var token = cancelForm.querySelector('input[name="__RequestVerificationToken"]');
+                        var res = await fetch('/MyBooking/CancelHold', {
+                            method: 'POST',
+                            body: fd,
+                            headers: token ? { 'RequestVerificationToken': token.value } : {}
+                        });
+                        var result = await res.json();
+                        if (result.success) { alert(result.message || 'Đã hủy giữ chỗ thành công và giải phóng lịch sảnh.'); window.location.reload(); }
+                        else { alert(result.message || 'Không thể hủy giữ chỗ lúc này.'); }
+                    } catch (err) { alert('Lỗi kết nối khi gửi yêu cầu hủy giữ chỗ.'); }
+                    finally { if (btn) { btn.disabled = false; btn.textContent = 'Xác nhận hủy giữ chỗ'; } }
+                });
+            }
+        })();
+    </script>
+}

@@ -77,7 +77,7 @@ public sealed class AuthController : ControllerBase
     {
         try
         {
-            await _passwordResetService.SendResetLinkForEmailAsync(
+            await _passwordResetService.SendResetOtpForEmailAsync(
                 request.Email, cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
@@ -87,8 +87,20 @@ public sealed class AuthController : ControllerBase
 
         return Ok(new
         {
-            message = "Nếu email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu sẽ được gửi."
+            message = "Nếu email tồn tại trong hệ thống, mã OTP sẽ được gửi.",
+            cooldownSeconds = 60
         });
+    }
+
+    [HttpPost("verify-reset-otp")]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> VerifyResetOtp(
+        [FromBody] VerifyPasswordResetOtpRequest request,
+        CancellationToken cancellationToken)
+    {
+        return ToActionResult(await _passwordResetService.VerifyResetOtpAsync(
+            request.Email, request.OtpCode, cancellationToken));
     }
 
     [HttpPost("reset-password")]

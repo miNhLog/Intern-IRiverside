@@ -1,0 +1,13 @@
+{
+  "w1_budget": 0.30037164182373643,
+  "w2_capacity": 0.3198268244472375,
+  "w3_style": 0.1798856009758396,
+  "w4_service": 0.1999159327531865,
+  "method": "SLSQP min MSE(S vs Satisfaction/5.0)",
+  "baseline": [
+    0.25,
+    0.25,
+    0.25,
+    0.25
+  ]
+}

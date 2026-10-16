@@ -1,0 +1,624 @@
+{
+  "meta": {
+    "venue": "Riverside Palace",
+    "thesis": "CNTT-KLCN257",
+    "advisor": "GVHD ThS. Le Thi Thuy Lan",
+    "currency": "VND",
+    "version": "2.0.0",
+    "source": "Dong bo 100% tu IRiversidePalaceDB (SanhTiec/ThucDon/GoiTrangTri/DichVu). SucChua luu SO KHACH, 1 ban = 10 khach."
+  },
+  "halls": [
+    {
+      "hall_id": 1,
+      "hall_code": "S001",
+      "hall_name": "Amur",
+      "min_guests": 300,
+      "max_guests": 580,
+      "min_tables": 30,
+      "max_tables": 58,
+      "optimal_tables": 44,
+      "base_price": 30000000,
+      "max_capacity": 580,
+      "description": "Tinh tế và sang trọng, không gian ấm cúng và thanh lịch."
+    },
+    {
+      "hall_id": 2,
+      "hall_code": "S002",
+      "hall_name": "Elbe",
+      "min_guests": 150,
+      "max_guests": 360,
+      "min_tables": 15,
+      "max_tables": 36,
+      "optimal_tables": 25,
+      "base_price": 20000000,
+      "max_capacity": 360,
+      "description": "Hiện đại, trẻ trung, tinh giản và phóng khoáng."
+    },
+    {
+      "hall_id": 3,
+      "hall_code": "S003",
+      "hall_name": "Danube",
+      "min_guests": 300,
+      "max_guests": 540,
+      "min_tables": 30,
+      "max_tables": 54,
+      "optimal_tables": 42,
+      "base_price": 28000000,
+      "max_capacity": 540,
+      "description": "Huyền bí, lãng mạn với tông tím nhẹ và ánh sáng dịu."
+    },
+    {
+      "hall_id": 4,
+      "hall_code": "S004",
+      "hall_name": "Seine",
+      "min_guests": 300,
+      "max_guests": 650,
+      "min_tables": 30,
+      "max_tables": 65,
+      "optimal_tables": 47,
+      "base_price": 32000000,
+      "max_capacity": 650,
+      "description": "Phong cách cổ điển châu Âu, không gian lãng mạn và thanh lịch."
+    },
+    {
+      "hall_id": 5,
+      "hall_code": "S005",
+      "hall_name": "Thames",
+      "min_guests": 320,
+      "max_guests": 580,
+      "min_tables": 32,
+      "max_tables": 58,
+      "optimal_tables": 45,
+      "base_price": 30000000,
+      "max_capacity": 580,
+      "description": "Phong cách hoàng gia, sang trọng và lộng lẫy."
+    },
+    {
+      "hall_id": 6,
+      "hall_code": "S006",
+      "hall_name": "Volga",
+      "min_guests": 320,
+      "max_guests": 580,
+      "min_tables": 32,
+      "max_tables": 58,
+      "optimal_tables": 45,
+      "base_price": 30000000,
+      "max_capacity": 580,
+      "description": "Không gian sang trọng, phù hợp tiệc cưới quy mô lớn."
+    },
+    {
+      "hall_id": 7,
+      "hall_code": "S007",
+      "hall_name": "Green Riverside",
+      "min_guests": 150,
+      "max_guests": 300,
+      "min_tables": 15,
+      "max_tables": 30,
+      "optimal_tables": 22,
+      "base_price": 25000000,
+      "max_capacity": 300,
+      "description": "Không gian ngoài trời ven sông, gần gũi thiên nhiên."
+    },
+    {
+      "hall_id": 8,
+      "hall_code": "S008",
+      "hall_name": "Nile",
+      "min_guests": 300,
+      "max_guests": 650,
+      "min_tables": 30,
+      "max_tables": 65,
+      "optimal_tables": 47,
+      "base_price": 35000000,
+      "max_capacity": 650,
+      "description": "Không gian hiện đại, nghệ thuật và phù hợp phong cách cá nhân."
+    },
+    {
+      "hall_id": 9,
+      "hall_code": "S009",
+      "hall_name": "Grand Ballroom",
+      "min_guests": 1150,
+      "max_guests": 2000,
+      "min_tables": 115,
+      "max_tables": 200,
+      "optimal_tables": 157,
+      "base_price": 80000000,
+      "max_capacity": 2000,
+      "description": "Đại sảnh quy mô lớn, không gian rộng và sang trọng."
+    }
+  ],
+  "menus": [
+    {
+      "menu_id": 1,
+      "menu_code": "TD001",
+      "menu_name": "Thực đơn tiệc cưới 1",
+      "price_per_table": 4350000,
+      "description": "Thực đơn kết hợp hải sản, bò Mỹ và sườn BBQ, mang phong vị Á - Nhật hiện đại.",
+      "dishes": [
+        "Tôm phủ bánh ngô sốt phô mai cay",
+        "Salad ức ngỗng xông khói",
+        "Súp dumpling mực",
+        "Cá chẽm đút lò sốt Yakiniku",
+        "Sườn non BBQ và khoai tây",
+        "Lẩu miso bò Mỹ dùng với mì somen",
+        "Pudding trà xanh"
+      ]
+    },
+    {
+      "menu_id": 2,
+      "menu_code": "TD002",
+      "menu_name": "Thực đơn tiệc cưới 2",
+      "price_per_table": 4350000,
+      "description": "Thực đơn nổi bật với cua, cá hồi, tôm, cá chẽm và sườn non, hương vị hài hòa dễ dùng.",
+      "dishes": [
+        "Chả giò cua cá hồi",
+        "Cá chẽm đút lò sốt phô mai",
+        "Súp bắp cua măng tây",
+        "Tôm phong sa dùng với salad",
+        "Sườn non nấu đậu dùng với bánh mì",
+        "Lẩu nấm sườn non dùng với mì udon",
+        "Bánh mousse dừa"
+      ]
+    },
+    {
+      "menu_id": 3,
+      "menu_code": "TD003",
+      "menu_name": "Thực đơn tiệc cưới 3",
+      "price_per_table": 4350000,
+      "description": "Thực đơn kết hợp hải sản, bò sốt rượu vang và mì gà quay, mang phong cách Á - Âu.",
+      "dishes": [
+        "Mực rang muối dùng với salad xoài",
+        "Tôm cuộn cua Nhật BBQ",
+        "Súp sườn hạnh nhân",
+        "Cá chẽm sốt Singapore",
+        "Bắp bò sốt rượu vang đỏ dùng với bánh mì",
+        "Mì gà quay",
+        "Bánh trứng pudding Nhật"
+      ]
+    },
+    {
+      "menu_id": 4,
+      "menu_code": "TD004",
+      "menu_name": "Thực đơn tiệc cưới 4",
+      "price_per_table": 4600000,
+      "description": "Thực đơn thanh nhẹ với tôm, cá tầm, gà hấp và bò tiềm, kết hợp các nguyên liệu thảo mộc.",
+      "dishes": [
+        "Chả giò bách hoa sốt chua ngọt",
+        "Tôm cuộn cua Nhật sốt BBQ",
+        "Bắp bò tiềm đông trùng thảo",
+        "Cá tầm sốt cam",
+        "Gà ta hấp bạch linh và cải thìa",
+        "Mì xá xíu hoa kim ngân",
+        "Chè đậu đỏ vị gừng tươi"
+      ]
+    },
+    {
+      "menu_id": 5,
+      "menu_code": "TD005",
+      "menu_name": "Thực đơn tiệc cưới 5",
+      "price_per_table": 4600000,
+      "description": "Thực đơn đa dạng với tempura, cá chẽm, vịt sốt cam gừng và lẩu miso bò Mỹ.",
+      "dishes": [
+        "Tôm tempura - salad mận",
+        "Sườn quay mật ong",
+        "Súp bắp cua măng tây",
+        "Cá chẽm sốt Singapore",
+        "Ức vịt sốt cam gừng - khoai tây",
+        "Lẩu miso bò Mỹ dùng với mì udon",
+        "Pudding trà xanh"
+      ]
+    },
+    {
+      "menu_id": 6,
+      "menu_code": "TD006",
+      "menu_name": "Thực đơn tiệc cưới 6",
+      "price_per_table": 4600000,
+      "description": "Thực đơn thiên về hải sản với mực, cua, cá chẽm, cá tầm kết hợp bò cuộn nấm.",
+      "dishes": [
+        "Mực rang muối Hồng Kông",
+        "Salad gà rong biển",
+        "Soup miso thịt cua rong biển",
+        "Cá chẽm hấp hành gừng",
+        "Bò cuộn nấm sốt tiêu và khoai tây",
+        "Lẩu cá tầm măng chua dùng với bún tươi",
+        "Bánh kem dừa"
+      ]
+    },
+    {
+      "menu_id": 7,
+      "menu_code": "TD007",
+      "menu_name": "Thực đơn tiệc cưới 7",
+      "price_per_table": 4800000,
+      "description": "Thực đơn đậm vị với cá chẽm, bò nướng, tôm rang muối, sườn mật ong và mì udon hải sản.",
+      "dishes": [
+        "Cá chẽm cuộn thịt sốt phô mai",
+        "Bò nướng - salad xoài",
+        "Súp miso gà",
+        "Tôm rang muối tỏi",
+        "Sườn non mật ong và khoai lang nghiền",
+        "Mì udon hải sản sốt miso tiêu đen",
+        "Bánh kem dừa - sầu riêng"
+      ]
+    },
+    {
+      "menu_id": 8,
+      "menu_code": "TD008",
+      "menu_name": "Thực đơn tiệc cưới 8",
+      "price_per_table": 4800000,
+      "description": "Thực đơn kết hợp tôm, ức ngỗng, gà tiềm, cá chẽm và sườn BBQ cùng lẩu cua đồng.",
+      "dishes": [
+        "Tôm phủ bánh ngô chiên giòn",
+        "Salad ức ngỗng xông khói",
+        "Gà tiềm sâm Hàn Quốc",
+        "Cá chẽm sốt X.O - bông cải",
+        "Sườn BBQ dùng với khoai tây",
+        "Lẩu cua đồng hải sản dùng với bún tươi",
+        "Trái cây tươi - Cam nho"
+      ]
+    },
+    {
+      "menu_id": 9,
+      "menu_code": "TD009",
+      "menu_name": "Thực đơn tiệc cưới 9",
+      "price_per_table": 4800000,
+      "description": "Thực đơn đậm đà với sườn mật ong, hải sản Tứ Xuyên, cá chẽm, vịt quay và lẩu gà.",
+      "dishes": [
+        "Sườn quay mật ong",
+        "Chả tôm hạnh nhân",
+        "Súp hải sản Tứ Xuyên",
+        "Cá chẽm sốt Singapore",
+        "Vịt quay sốt cam thảo",
+        "Lẩu gà nấu ớt xiêm xanh dùng với bún tươi",
+        "Chè tàu hủ trái vải"
+      ]
+    },
+    {
+      "menu_id": 10,
+      "menu_code": "TD010",
+      "menu_name": "Thực đơn tiệc cưới 10",
+      "price_per_table": 5000000,
+      "description": "Thực đơn kết hợp gà, tôm, bò, cá tầm và sườn BBQ, điểm nhấn là lẩu sa tế hải sản.",
+      "dishes": [
+        "Salad gà rong biển",
+        "Tôm phủ bánh ngô sốt phô mai cay",
+        "Súp bò Mỹ nấu nấm",
+        "Cá tầm hấp jambon",
+        "Sườn heo BBQ dùng với bánh bao",
+        "Lẩu sa tế hải sản dùng với bún tươi",
+        "Bánh kem dâu tây"
+      ]
+    },
+    {
+      "menu_id": 11,
+      "menu_code": "TD011",
+      "menu_name": "Thực đơn tiệc cưới 11",
+      "price_per_table": 5000000,
+      "description": "Thực đơn cao cấp với vịt quay, tôm, gà tiềm, cá chẽm, bò Mỹ và sườn non thảo mộc.",
+      "dishes": [
+        "Salad xoài - vịt quay",
+        "Chả tôm lăn cốm",
+        "Gà tiềm đông trùng thảo",
+        "Cá chẽm hấp jambon",
+        "Bắp bò Mỹ sốt miso nấm",
+        "Sườn non tiềm thảo mộc dùng với mì tươi",
+        "Bánh chocolate"
+      ]
+    },
+    {
+      "menu_id": 12,
+      "menu_code": "TD012",
+      "menu_name": "Thực đơn tiệc cưới 12",
+      "price_per_table": 5000000,
+      "description": "Thực đơn đậm vị với bò Mỹ, cá chẽm, tôm trứng muối, sườn BBQ và lẩu Thái tôm càng.",
+      "dishes": [
+        "Bò Mỹ nướng mắm nhĩ và salad xoài",
+        "Cá chẽm cuộn thịt BBQ",
+        "Súp dumpling hải sản",
+        "Tôm rang trứng muối và salad táo",
+        "Sườn non nướng BBQ dùng với khoai tây tỏi",
+        "Lẩu Thái tôm càng baby dùng với bún tươi",
+        "Chè hạt sen nhãn nhục"
+      ]
+    },
+    {
+      "menu_id": 13,
+      "menu_code": "TD013",
+      "menu_name": "Thực đơn tiệc cưới 13",
+      "price_per_table": 5200000,
+      "description": "Thực đơn kết hợp tôm, nấm cuộn thịt, cá tầm, bò nấu đậu và lẩu Thái tôm càng.",
+      "dishes": [
+        "Tôm phủ bánh ngô chiên giòn",
+        "Nấm cuộn thịt sốt Teriyaki",
+        "Súp hoành thánh hải sản",
+        "Cá tầm sốt Singapore",
+        "Bắp bò nấu đậu răng ngựa dùng với bánh mì",
+        "Lẩu Thái tôm càng baby dùng với bún",
+        "Bánh tiramisu"
+      ]
+    },
+    {
+      "menu_id": 14,
+      "menu_code": "TD014",
+      "menu_name": "Thực đơn tiệc cưới 14",
+      "price_per_table": 5200000,
+      "description": "Thực đơn hiện đại với cá chẽm, hải sản Tứ Xuyên, tôm càng, sườn sốt cà phê và mì bò.",
+      "dishes": [
+        "Cá chẽm cuộn thịt sốt miso chanh dây",
+        "Gỏi gà rong biển",
+        "Súp hải sản Tứ Xuyên",
+        "Tôm càng sốt giấm đen",
+        "Sườn non sốt cà phê - khoai môn chiên giòn",
+        "Mì Phúc Kiến - bò hầm tiêu đen",
+        "Pudding quả mọng"
+      ]
+    },
+    {
+      "menu_id": 15,
+      "menu_code": "TD015",
+      "menu_name": "Thực đơn tiệc cưới 15",
+      "price_per_table": 5200000,
+      "description": "Thực đơn gồm sườn sốt me, tôm trứng muối, gà hấp, cá bống mú và lẩu bò Mỹ cuộn nấm.",
+      "dishes": [
+        "Sườn non sốt me Thái",
+        "Tôm rang trứng muối - salad táo xanh",
+        "Súp dumpling tôm",
+        "Gà hấp đông trùng thảo dùng với cải Hồng Kông",
+        "Cá bống mú hấp Hồng Kông",
+        "Lẩu bò Mỹ cuộn nấm dùng với mì somen",
+        "Chè tàu hủ hạnh nhân"
+      ]
+    },
+    {
+      "menu_id": 16,
+      "menu_code": "TD016",
+      "menu_name": "Thực đơn tiệc cưới 16",
+      "price_per_table": 5500000,
+      "description": "Thực đơn mang hương vị châu Á với bò Mỹ, tempura, cá bống mú, sườn cà ri và lẩu nấm.",
+      "dishes": [
+        "Bò Mỹ thượng hạng rang muối tỏi",
+        "Salad Nhật - tôm tempura",
+        "Súp hải sản hương vị Thái",
+        "Cá bống mú sốt Singapore",
+        "Sườn nướng cà ri - khoai môn chiên",
+        "Lẩu nấm sườn non dùng với mì udon",
+        "Chè đậu đỏ vị gừng tươi"
+      ]
+    },
+    {
+      "menu_id": 17,
+      "menu_code": "TD017",
+      "menu_name": "Thực đơn tiệc cưới 17",
+      "price_per_table": 5500000,
+      "description": "Thực đơn kết hợp tôm, cá chẽm, sườn BBQ, vịt quay thảo mộc và lẩu cua đồng hải sản.",
+      "dishes": [
+        "Tôm cuộn cua Nhật sốt cay",
+        "Cá chẽm chiên nước mắm xoài",
+        "Súp gà tiềm đông trùng thảo",
+        "Sườn non nướng BBQ dùng với bánh bao",
+        "Vịt quay thảo mộc",
+        "Lẩu cua đồng hải sản dùng với bún",
+        "Bánh opera"
+      ]
+    },
+    {
+      "menu_id": 18,
+      "menu_code": "TD018",
+      "menu_name": "Thực đơn tiệc cưới 18",
+      "price_per_table": 5500000,
+      "description": "Thực đơn sang trọng với bò cuộn nấm, hải sản nhụy hoa nghệ tây, cá tầm và cơm rang tôm càng.",
+      "dishes": [
+        "Gỏi gà rong biển",
+        "Bò Mỹ cuộn nấm BBQ",
+        "Súp hải sản với nhụy hoa nghệ tây",
+        "Cá tầm sốt miso chanh dây",
+        "Giò heo tiềm jambon",
+        "Cơm rang tôm càng baby",
+        "Chè hạt sen nhãn nhục"
+      ]
+    },
+    {
+      "menu_id": 19,
+      "menu_code": "TD019",
+      "menu_name": "Thực đơn tiệc cưới 19",
+      "price_per_table": 5700000,
+      "description": "Thực đơn phong phú với bò Mỹ, cá hồi, tôm càng, gà hấp và cơm chiên xá xíu.",
+      "dishes": [
+        "Bò Mỹ cuộn xúc xích sốt đậu pois",
+        "Gỏi xoài cá hồi",
+        "Súp dumpling hải sản",
+        "Tôm càng baby rang muối tỏi",
+        "Gà hấp jambon và cải Hồng Kông",
+        "Cơm chiên xá xíu - bông cải xanh",
+        "Chè tàu hủ long nhãn"
+      ]
+    },
+    {
+      "menu_id": 20,
+      "menu_code": "TD020",
+      "menu_name": "Thực đơn tiệc cưới 20",
+      "price_per_table": 5700000,
+      "description": "Thực đơn phong cách Á - Âu với tôm sốt dijon, gà chanh dây, cá tầm, bò sốt Thái và mì vịt quay.",
+      "dishes": [
+        "Tôm bách hoa sốt dijon trứng muối",
+        "Gà tẩm gia vị chiên giòn sốt chanh dây",
+        "Súp miso hải sản",
+        "Cá tầm phi lê hấp cải Hồng Kông",
+        "Bắp bò sốt Thái dùng với bánh mì nâu",
+        "Mì hấp vịt quay thảo mộc",
+        "Bánh opera"
+      ]
+    },
+    {
+      "menu_id": 21,
+      "menu_code": "TD021",
+      "menu_name": "Thực đơn tiệc cưới 21",
+      "price_per_table": 5700000,
+      "description": "Thực đơn cao cấp với tôm, mực, gà tiềm, cá chẽm, thăn bê và lẩu hải sản.",
+      "dishes": [
+        "Tôm cuộn cua Nhật sốt BBQ",
+        "Mực nhồi trứng muối - salad",
+        "Gà tiềm đông trùng thảo",
+        "Cá chẽm sốt Singapore",
+        "Thăn bê nướng BBQ - khoai tây tỏi",
+        "Lẩu lê hải sản dùng với bún tươi",
+        "Bánh choco fondant"
+      ]
+    },
+    {
+      "menu_id": 22,
+      "menu_code": "TD022",
+      "menu_name": "Thực đơn tiệc cưới 22",
+      "price_per_table": 5900000,
+      "description": "Thực đơn nổi bật với cá tầm, tôm, cua, vịt quay, bò sốt Thái và lẩu cá tầm măng chua.",
+      "dishes": [
+        "Cá tầm sốt me Thái và salad",
+        "Tôm cuộn cua Nhật sốt BBQ",
+        "Súp gạch cua bắp non",
+        "Vịt quay thảo mộc - bánh bao hấp",
+        "Bắp bò sốt Thái dùng với bánh mì nâu",
+        "Lẩu cá tầm măng chua dùng với bún tươi",
+        "Chè tàu hủ long nhãn"
+      ]
+    },
+    {
+      "menu_id": 23,
+      "menu_code": "TD023",
+      "menu_name": "Thực đơn tiệc cưới 23",
+      "price_per_table": 5900000,
+      "description": "Thực đơn hải sản đậm vị với tôm càng, cá bống mú, sườn BBQ và mì hấp vịt quay.",
+      "dishes": [
+        "Tôm càng baby rang muối tỏi",
+        "Gỏi gà rong biển",
+        "Súp dumpling hải sản",
+        "Cá bống mú sốt Singapore",
+        "Sườn non BBQ dùng với bánh bao",
+        "Mì hấp vịt quay",
+        "Bánh kem chanh dây"
+      ]
+    },
+    {
+      "menu_id": 24,
+      "menu_code": "TD024",
+      "menu_name": "Thực đơn tiệc cưới 24",
+      "price_per_table": 5900000,
+      "description": "Thực đơn đa dạng với bò BBQ, cá hồi, gà tiềm, tôm càng, gân nai và lẩu cua đồng hải sản.",
+      "dishes": [
+        "Bò cuộn xúc xích sốt BBQ",
+        "Salad cá hồi sốt mè",
+        "Cánh gà tiềm sâm Hàn Quốc",
+        "Tôm càng baby rang muối tỏi",
+        "Gân nai sốt X.O và cải thìa",
+        "Lẩu cua đồng hải sản dùng với bún tươi",
+        "Chè tàu hủ trái vải"
+      ]
+    }
+  ],
+  "decors": [
+    {
+      "decor_id": 1,
+      "decor_code": "GT001",
+      "decor_name": "Endless Love",
+      "style": "Lãng mạn",
+      "description": "Chủ đề tình yêu vĩnh cửu, không gian cưới lãng mạn.",
+      "price": 20000000
+    },
+    {
+      "decor_id": 2,
+      "decor_code": "GT002",
+      "decor_name": "Đám cưới cuối năm",
+      "style": "Nhẹ nhàng",
+      "description": "Trang trí nhẹ nhàng, không quá cầu kỳ.",
+      "price": 18000000
+    },
+    {
+      "decor_id": 3,
+      "decor_code": "GT003",
+      "decor_name": "Elegant Blue",
+      "style": "Hiện đại / lãng mạn",
+      "description": "Tông xanh dương chủ đạo, thanh lịch.",
+      "price": 22000000
+    },
+    {
+      "decor_id": 4,
+      "decor_code": "GT004",
+      "decor_name": "The Color of Love",
+      "style": "Sân vườn / lãng mạn",
+      "description": "Không gian sân vườn với hoa nhiều màu sắc.",
+      "price": 25000000
+    },
+    {
+      "decor_id": 5,
+      "decor_code": "GT005",
+      "decor_name": "Dear My Princess",
+      "style": "Cổ tích / lãng mạn",
+      "description": "Phong cách công chúa, khu vườn và cảm giác cổ tích.",
+      "price": 28000000
+    },
+    {
+      "decor_id": 6,
+      "decor_code": "GT006",
+      "decor_name": "Tiệc cưới ven sông",
+      "style": "Thiên nhiên / ngoài trời",
+      "description": "Không gian ngoài trời ven sông, thoáng và thanh bình.",
+      "price": 22000000
+    },
+    {
+      "decor_id": 7,
+      "decor_code": "GT007",
+      "decor_name": "Tiệc cưới mùa thu",
+      "style": "Lãng mạn",
+      "description": "Phối tông xanh dương, trắng, hồng và xanh lam.",
+      "price": 24000000
+    }
+  ],
+  "services": [
+    {
+      "service_id": "DV001",
+      "service_name": "Dịch vụ thức uống trọn gói",
+      "service_type": "Thức uống",
+      "description": "Thức uống trọn gói trong 2,5 giờ. Giá tham khảo từ 200.000 đến 1.100.000 đồng/bàn; gồm các lựa chọn nước suối, nước ngọt, bia tùy gói.",
+      "price": 200000
+    },
+    {
+      "service_id": "DV002",
+      "service_name": "Dịch vụ đón khách tại tiền sảnh",
+      "service_type": "Đón khách",
+      "description": "Dịch vụ trong 1 giờ với các lựa chọn như độc tấu Piano, Violin - Piano hoặc Violin - Piano - Guitar. Giá tham khảo từ 2.000.000 đến 4.000.000 đồng.",
+      "price": 2000000
+    },
+    {
+      "service_id": "DV003",
+      "service_name": "Dịch vụ lễ khai tiệc",
+      "service_type": "Nghi lễ",
+      "description": "Có thể gồm MC, violin đón dâu và vũ đoàn múa khai tiệc. Giá tham khảo từ 1.000.000 đến 6.000.000 đồng.",
+      "price": 1000000
+    },
+    {
+      "service_id": "DV004",
+      "service_name": "Chương trình giải trí",
+      "service_type": "Giải trí",
+      "description": "Chương trình giải trí trong 2 giờ với các lựa chọn như ban nhạc hòa tấu, ca sĩ Việt hoặc ban nhạc Acoustic. Giá tham khảo từ 800.000 đến 10.000.000 đồng.",
+      "price": 800000
+    },
+    {
+      "service_id": "DV005",
+      "service_name": "Dịch vụ tiệc cưới khác",
+      "service_type": "Dịch vụ bổ sung",
+      "description": "Có thể gồm tổ chức Lễ Gia Tiên tại Riverside Palace, thiệp cưới, karaoke trong 2 giờ và các dịch vụ bổ sung khác. Giá tham khảo từ 2.000.000 đến 15.000.000 đồng.",
+      "price": 2000000
+    }
+  ],
+  "style_groups": {
+    "romantic": [
+      "Lãng mạn",
+      "Hiện đại / lãng mạn",
+      "Sân vườn / lãng mạn",
+      "Cổ tích / lãng mạn"
+    ],
+    "gentle": [
+      "Nhẹ nhàng"
+    ],
+    "nature": [
+      "Thiên nhiên / ngoài trời"
+    ]
+  }
+}

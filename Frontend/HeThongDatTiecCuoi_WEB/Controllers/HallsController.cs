@@ -94,6 +94,7 @@ public sealed class HallsController : Controller
             RentalPrice = hall.RentalPrice,
             Description = hall.Description,
             ImageUrl = hall.ImageUrl,
+            ImageUrls = hall.ImageUrls,
             Status = hall.Status,
             StatusName = hall.StatusName
         });
