@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" role="img" aria-labelledby="title desc">
+  <title id="title">Chưa có hình ảnh</title>
+  <desc id="desc">Hình minh họa trung tính cho nội dung chưa có ảnh</desc>
+  <rect width="800" height="520" fill="#f4f0e7"/>
+  <path d="M0 390c120-54 224-73 352-42s265 38 448-31v203H0z" fill="#e9e1d2"/>
+  <circle cx="400" cy="223" r="74" fill="none" stroke="#b89b58" stroke-width="3"/>
+  <path d="M372 223h56M400 195v56" stroke="#b89b58" stroke-width="3" stroke-linecap="round"/>
+  <text x="400" y="355" fill="#716b60" font-family="sans-serif" font-size="20" text-anchor="middle">Chưa có hình ảnh</text>
+</svg>

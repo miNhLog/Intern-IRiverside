@@ -3,6 +3,7 @@ using HeThongDatTiecCuoi_WEB.Models.AdminAccount;
 using HeThongDatTiecCuoi_WEB.Models.Auth;
 using HeThongDatTiecCuoi_WEB.Models.Halls;
 using HeThongDatTiecCuoi_WEB.Models.Menus;
+using HeThongDatTiecCuoi_WEB.Models.DecorPackages;
 namespace HeThongDatTiecCuoi_WEB.Services;
 using HeThongDatTiecCuoi_WEB.Models.AdminMenu;
 using HeThongDatTiecCuoi_WEB.Models.AdminReport;
@@ -16,6 +17,7 @@ using HeThongDatTiecCuoi_WEB.Models.ManagerHr;
 using HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment;
 using HeThongDatTiecCuoi_WEB.Models.ManagerEventCoordination;
 using Microsoft.AspNetCore.Mvc;
+
 
 public interface IRiversideApiClient
 {
@@ -116,9 +118,16 @@ public interface IRiversideApiClient
         int menuId,
         CancellationToken cancellationToken);
 
-    Task<ApiCallResult<List<PublicDishDto>>> GetPublicDishesAsync(
+
+    Task<ApiCallResult<PublicDecorPackageListResponse>> GetPublicDecorPackagesAsync(
         string? keyword,
-        string? category,
+        string? sort,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
+
+    Task<ApiCallResult<PublicDecorPackageDto>> GetPublicDecorPackageAsync(
+        int decorationPackageId,
         CancellationToken cancellationToken);
 
     Task<ApiCallResult<List<HallDto>>> GetHallsAsync(
@@ -394,4 +403,9 @@ public interface IRiversideApiClient
     Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.AiChat.AiChatExtractResultViewModel>> ExtractAiEntitiesAsync(
         List<HeThongDatTiecCuoi_WEB.Models.AiChat.AiChatMessageViewModel> history,
         CancellationToken cancellationToken = default);
+    Task<ApiCallResult<List<PublicDishDto>>> GetPublicDishesAsync(
+    string? keyword,
+    string? category,
+    CancellationToken cancellationToken);
+
 }

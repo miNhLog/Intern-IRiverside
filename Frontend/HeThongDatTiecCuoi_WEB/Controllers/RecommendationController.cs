@@ -217,7 +217,7 @@ public class RecommendationController : Controller
     {
         try
         {
-            var result = await _apiClient.GetPublicDishesAsync(keyword, category, cancellationToken);
+            var result = await _apiClient.GetPublicDishesAsync(keyword, category, cancellationToken: cancellationToken);
             var list = result.Value ?? new List<HeThongDatTiecCuoi_WEB.Models.Menus.PublicDishDto>();
             return Json(new { success = true, data = list });
         }
