@@ -25,7 +25,8 @@ public sealed class ManagerContractController : ControllerBase
         AuditActions.ContractUpdated,
         AuditActions.ContractActivated,
         AuditActions.ContractCompleted,
-        AuditActions.ContractCancelled
+        AuditActions.ContractCancelled,
+        AuditActions.DepositCommitmentConfirmed
     ];
 
     private readonly ApplicationDbContext _context;
@@ -224,6 +225,8 @@ public sealed class ManagerContractController : ControllerBase
 
         var totalValue = request.TotalValue ?? booking.EstimatedTotal ?? 0m;
         if (totalValue < 0) return BadRequest(new { message = "Tổng giá trị hợp đồng không được âm." });
+        if (request.RequiredDepositAmount.HasValue && !PaymentBusinessRules.IsValidCommitment(request.RequiredDepositAmount, totalValue))
+            return BadRequest(new { message = "Mức cọc phải dương, tối đa hai số lẻ và không vượt tổng hợp đồng." });
         var templateData = ToTemplateData(booking);
         var contract = new Contract
         {
@@ -231,6 +234,7 @@ public sealed class ManagerContractController : ControllerBase
             ContractCode = await _codeGenerator.GenerateAsync(cancellationToken),
             CreatedDate = DateTime.Now.Date,
             TotalValue = totalValue,
+            RequiredDepositAmount = request.RequiredDepositAmount,
             ContractContent = Normalize(request.ContractContent) ?? _templates.BuildContractContent(templateData),
             PaymentTerms = Normalize(request.PaymentTerms) ?? _templates.BuildPaymentTerms(),
             StatusId = await _statusService.GetStatusIdAsync(StatusGroups.Contract, ContractStatusCodes.Draft, cancellationToken)
@@ -241,7 +245,7 @@ public sealed class ManagerContractController : ControllerBase
         {
             await _context.SaveChangesAsync(cancellationToken);
             AddAudit(actorId, AuditActions.ContractCreated, contract, null,
-                new { contract.ContractCode, contract.BookingId, contract.TotalValue, Status = ContractStatusCodes.Draft },
+                new { contract.ContractCode, contract.BookingId, contract.TotalValue, contract.RequiredDepositAmount, Status = ContractStatusCodes.Draft },
                 $"Tạo hợp đồng nháp {contract.ContractCode} cho booking {booking.BookingCode}.");
             await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -271,25 +275,37 @@ public sealed class ManagerContractController : ControllerBase
         if (request.TotalValue < 0) return BadRequest(new { message = "Tổng giá trị hợp đồng không được âm." });
 
         await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-        var contract = await _context.Contracts.Include(item => item.Status)
+        var contract = await _context.Contracts.FromSqlInterpolated($"SELECT * FROM [HopDong] WITH (UPDLOCK, HOLDLOCK) WHERE [HopDongID] = {id}").Include(item => item.Status)
             .SingleOrDefaultAsync(item => item.ContractId == id, cancellationToken);
         if (contract is null) return NotFound(new { message = "Không tìm thấy hợp đồng." });
         if (contract.Status.StatusCode != ContractStatusCodes.Draft)
             return Conflict(new { message = "Chỉ hợp đồng bản nháp mới được chỉnh sửa." });
+        if (request.RequiredDepositAmount.HasValue && !PaymentBusinessRules.IsValidCommitment(request.RequiredDepositAmount, request.TotalValue))
+            return BadRequest(new { message = "Mức cọc không hợp lệ hoặc vượt tổng hợp đồng." });
+        if (await _context.Payments.AnyAsync(p => p.ContractId == id, cancellationToken) &&
+            (request.TotalValue != contract.TotalValue ||
+                (request.RequiredDepositAmount ?? contract.RequiredDepositAmount) != contract.RequiredDepositAmount))
+            return Conflict(new { message = "Hợp đồng đã phát sinh giao dịch, không được sửa cam kết hoặc tổng giá trị qua bản nháp." });
 
         var oldData = new
         {
             contract.TotalValue,
+            contract.RequiredDepositAmount,
             ContractContentLength = contract.ContractContent?.Length ?? 0,
             PaymentTermsLength = contract.PaymentTerms?.Length ?? 0
         };
         contract.TotalValue = request.TotalValue;
+        // Older clients omitting the additive field must not erase a verified commitment.
+        contract.RequiredDepositAmount = request.RequiredDepositAmount ?? contract.RequiredDepositAmount;
+        if (contract.RequiredDepositAmount > contract.TotalValue)
+            return BadRequest(new { message = "Tổng hợp đồng không được nhỏ hơn mức cọc cam kết." });
         contract.ContractContent = Normalize(request.ContractContent);
         contract.PaymentTerms = Normalize(request.PaymentTerms);
         AddAudit(actorId, AuditActions.ContractUpdated, contract, oldData,
             new
             {
                 contract.TotalValue,
+                contract.RequiredDepositAmount,
                 ContractContentLength = contract.ContractContent?.Length ?? 0,
                 PaymentTermsLength = contract.PaymentTerms?.Length ?? 0
             },
@@ -299,19 +315,50 @@ public sealed class ManagerContractController : ControllerBase
         return ActionResult(contract, ContractStatusCodes.Draft, "Đã cập nhật bản nháp hợp đồng.");
     }
 
+    [HttpPost("{id:int}/deposit-commitment")]
+    public async Task<ActionResult<ContractActionResponseDto>> ConfirmDeposit(int id,
+        [FromBody] ConfirmDepositRequestDto request, CancellationToken cancellationToken)
+    {
+        if (!TryGetActorId(out var actorId)) return Unauthorized();
+        await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        var contract = await _context.Contracts.FromSqlInterpolated(
+                $"SELECT * FROM [HopDong] WITH (UPDLOCK, HOLDLOCK) WHERE [HopDongID] = {id}")
+            .Include(c => c.Status).SingleOrDefaultAsync(cancellationToken);
+        if (contract is null) return NotFound(new { message = "Không tìm thấy hợp đồng." });
+        if (contract.RequiredDepositAmount.HasValue || contract.Status.StatusCode is not (ContractStatusCodes.Draft or ContractStatusCodes.Active))
+            return Conflict(new { message = "Chỉ xác minh một lần cho hợp đồng nháp/hiệu lực chưa có mức cọc." });
+        if (contract.Status.StatusGroup != StatusGroups.Contract)
+            return Conflict(new { message = "Trạng thái hợp đồng sai nhóm nghiệp vụ." });
+        if (!PaymentBusinessRules.IsValidCommitment(request.RequiredDepositAmount, contract.TotalValue))
+            return BadRequest(new { message = "Mức cọc phải dương, tối đa hai số lẻ và không vượt tổng hợp đồng." });
+        contract.RequiredDepositAmount = request.RequiredDepositAmount;
+        AddAudit(actorId, AuditActions.DepositCommitmentConfirmed, contract,
+            new { RequiredDepositAmount = (decimal?)null }, new { contract.RequiredDepositAmount },
+            "Manager xác minh mức cọc theo hợp đồng hiện hữu; giữ nguyên trạng thái và lịch sử.");
+        await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return ActionResult(contract, contract.Status.StatusCode, "Đã xác minh mức cọc cam kết.");
+    }
+
     [HttpPost("{id:int}/activate")]
     public async Task<ActionResult<ContractActionResponseDto>> Activate(int id, CancellationToken cancellationToken)
     {
         if (!TryGetActorId(out var actorId)) return Unauthorized();
         await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-        var contract = await _context.Contracts.Include(item => item.Status)
+        var contract = await _context.Contracts.FromSqlInterpolated($"SELECT * FROM [HopDong] WITH (UPDLOCK, HOLDLOCK) WHERE [HopDongID] = {id}").Include(item => item.Status)
             .Include(item => item.Booking).ThenInclude(item => item.Status)
             .SingleOrDefaultAsync(item => item.ContractId == id, cancellationToken);
         if (contract is null) return NotFound(new { message = "Không tìm thấy hợp đồng." });
         var activationError = ContractBusinessRules.ValidateActivation(
             contract.Status.StatusCode, contract.TotalValue, contract.ContractContent,
-            contract.PaymentTerms, contract.Booking.Status.StatusCode);
+            contract.PaymentTerms, contract.Booking.Status.StatusCode, contract.RequiredDepositAmount,
+            await _context.Payments.Where(p => p.ContractId == id && p.PaymentType == PaymentTypes.Deposit &&
+                p.Status.StatusGroup == StatusGroups.Payment && p.Status.StatusCode == PaymentStatusCodes.Success)
+                .SumAsync(p => (decimal?)p.Amount, cancellationToken) ?? 0m);
         if (activationError is not null) return Conflict(new { message = activationError });
+        var paid = await _context.Payments.Where(p => p.ContractId == id && p.Status.StatusGroup == StatusGroups.Payment &&
+            p.Status.StatusCode == PaymentStatusCodes.Success).SumAsync(p => (decimal?)p.Amount, cancellationToken) ?? 0m;
+        if (paid > contract.TotalValue) return Conflict(new { message = "Dữ liệu thanh toán vượt tổng hợp đồng. Cần đối soát trước khi kích hoạt." });
 
         contract.StatusId = await _statusService.GetStatusIdAsync(StatusGroups.Contract, ContractStatusCodes.Active, cancellationToken);
         AddAudit(actorId, AuditActions.ContractActivated, contract,
@@ -327,7 +374,7 @@ public sealed class ManagerContractController : ControllerBase
     {
         if (!TryGetActorId(out var actorId)) return Unauthorized();
         await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-        var contract = await _context.Contracts.Include(item => item.Status)
+        var contract = await _context.Contracts.FromSqlInterpolated($"SELECT * FROM [HopDong] WITH (UPDLOCK, HOLDLOCK) WHERE [HopDongID] = {id}").Include(item => item.Status)
             .Include(item => item.Payments).ThenInclude(item => item.Status)
             .SingleOrDefaultAsync(item => item.ContractId == id, cancellationToken);
         if (contract is null) return NotFound(new { message = "Không tìm thấy hợp đồng." });
@@ -350,7 +397,7 @@ public sealed class ManagerContractController : ControllerBase
     {
         if (!TryGetActorId(out var actorId)) return Unauthorized();
         await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-        var contract = await _context.Contracts.Include(item => item.Status)
+        var contract = await _context.Contracts.FromSqlInterpolated($"SELECT * FROM [HopDong] WITH (UPDLOCK, HOLDLOCK) WHERE [HopDongID] = {id}").Include(item => item.Status)
             .SingleOrDefaultAsync(item => item.ContractId == id, cancellationToken);
         if (contract is null) return NotFound(new { message = "Không tìm thấy hợp đồng." });
         var oldStatus = contract.Status.StatusCode;
@@ -383,6 +430,10 @@ public sealed class ManagerContractController : ControllerBase
                 ContractCode = contract.ContractCode,
                 CreatedDate = contract.CreatedDate,
                 TotalValue = contract.TotalValue,
+                RequiredDepositAmount = contract.RequiredDepositAmount,
+                DepositPaidAmount = contract.Payments.Where(p => p.PaymentType == PaymentTypes.Deposit &&
+                    p.Status.StatusGroup == StatusGroups.Payment && p.Status.StatusCode == PaymentStatusCodes.Success)
+                    .Sum(p => (decimal?)p.Amount) ?? 0m,
                 ContractContent = contract.ContractContent ?? string.Empty,
                 PaymentTerms = contract.PaymentTerms ?? string.Empty,
                 StatusCode = contract.Status.StatusCode,

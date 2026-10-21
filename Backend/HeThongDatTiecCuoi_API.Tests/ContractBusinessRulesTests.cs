@@ -46,9 +46,14 @@ public sealed class ContractBusinessRulesTests
         Assert.Equal(expected, ContractBusinessRules.IsAwaitingPayment(status, total, paid));
 
     [Fact]
+    public void Activate_WithoutVerifiedDeposit_IsRejected() =>
+        Assert.NotNull(ContractBusinessRules.ValidateActivation(
+            ContractStatusCodes.Draft, 100m, "Nội dung", "Điều khoản", BookingStatusCodes.Confirmed));
+
+    [Fact]
     public void Activate_ValidDraft_IsAccepted() =>
         Assert.Null(ContractBusinessRules.ValidateActivation(
-            ContractStatusCodes.Draft, 100m, "Nội dung", "Điều khoản", BookingStatusCodes.Confirmed));
+            ContractStatusCodes.Draft, 100m, "Nội dung", "Điều khoản", BookingStatusCodes.Confirmed, 30m, 30m));
 
     [Theory]
     [InlineData(0, "Nội dung", "Điều khoản", BookingStatusCodes.Confirmed)]
@@ -85,12 +90,12 @@ public sealed class ContractBusinessRulesTests
     }
 
     [Fact]
-    public void PaymentController_ExposesNoWriteActions()
+    public void PaymentController_ExposesNoUpdateOrDeleteActions()
     {
         var methods = typeof(ManagerPaymentController).GetMethods()
             .Where(method => method.DeclaringType == typeof(ManagerPaymentController));
         Assert.DoesNotContain(methods, method => method.GetCustomAttributes(true).Any(attribute =>
-            attribute.GetType().Name is "HttpPostAttribute" or "HttpPutAttribute" or "HttpPatchAttribute" or "HttpDeleteAttribute"));
+            attribute.GetType().Name is "HttpPutAttribute" or "HttpPatchAttribute" or "HttpDeleteAttribute"));
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace HeThongDatTiecCuoi_API.DTOs.Contract;
 
@@ -68,6 +69,7 @@ public sealed class EligibleBookingDto
 
 public sealed class CreateContractRequestDto
 {
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)] public decimal? RequiredDepositAmount { get; set; }
     [Range(1, int.MaxValue)] public int BookingId { get; set; }
     [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal? TotalValue { get; set; }
@@ -77,6 +79,7 @@ public sealed class CreateContractRequestDto
 
 public sealed class UpdateDraftContractRequestDto
 {
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)] public decimal? RequiredDepositAmount { get; set; }
     [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal TotalValue { get; set; }
     public string? ContractContent { get; set; }
@@ -85,6 +88,8 @@ public sealed class UpdateDraftContractRequestDto
 
 public sealed class ManagerContractDetailDto
 {
+    public decimal? RequiredDepositAmount { get; set; }
+    public decimal DepositPaidAmount { get; set; }
     public int ContractId { get; set; }
     public string ContractCode { get; set; } = string.Empty;
     public DateTime CreatedDate { get; set; }

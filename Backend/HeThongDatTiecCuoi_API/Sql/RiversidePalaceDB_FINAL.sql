@@ -368,6 +368,7 @@ CREATE TABLE HopDong (
     MaHopDong NVARCHAR(50) NOT NULL,
     NgayLap DATE NOT NULL CONSTRAINT DF_HopDong_NgayLap DEFAULT (CONVERT(DATE, SYSDATETIME())),
     TongGiaTri DECIMAL(18,2) NOT NULL,
+    SoTienCocCamKet DECIMAL(18,2) NULL,
     NoiDungHopDong NVARCHAR(MAX) NULL,
     DieuKhoanThanhToan NVARCHAR(MAX) NULL,
     TrangThaiID INT NOT NULL CONSTRAINT DF_HopDong_TrangThai DEFAULT 901,
@@ -389,6 +390,7 @@ CREATE TABLE ThanhToan (
     NgayThanhToan DATETIME2(0) NOT NULL CONSTRAINT DF_ThanhToan_NgayThanhToan DEFAULT SYSDATETIME(),
     PhuongThuc NVARCHAR(50) NULL,
     MaGiaoDich NVARCHAR(100) NULL,
+    RequestId UNIQUEIDENTIFIER NULL,
     TrangThaiID INT NOT NULL CONSTRAINT DF_ThanhToan_TrangThai DEFAULT 1001,
     CONSTRAINT PK_ThanhToan PRIMARY KEY (ThanhToanID),
     CONSTRAINT FK_ThanhToan_HopDong FOREIGN KEY (HopDongID) REFERENCES HopDong(HopDongID),
@@ -396,6 +398,15 @@ CREATE TABLE ThanhToan (
     CONSTRAINT CK_ThanhToan_Loai CHECK (LoaiThanhToan IN (N'Đặt cọc', N'Thanh toán đợt', N'Quyết toán')),
     CONSTRAINT CK_ThanhToan_SoTien CHECK (SoTien > 0)
 );
+-- Required session options for the UC17 filtered index.
+SET ANSI_NULLS ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET QUOTED_IDENTIFIER ON;
+SET NUMERIC_ROUNDABORT OFF;
+CREATE UNIQUE INDEX UX_ThanhToan_RequestId ON ThanhToan(RequestId) WHERE RequestId IS NOT NULL;
 GO
 
 -- 19. PhanCongDieuPhoi

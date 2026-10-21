@@ -131,6 +131,27 @@
 
 <div class="cp-modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle"><div class="cp-modal-card small"><header class="cp-modal-head"><h2 id="confirmTitle">Xác nhận</h2><button type="button" class="cp-drawer-close" data-close-modal="confirmModal"><i class="fa-solid fa-xmark"></i></button></header><div class="cp-modal-body"><p id="confirmMessage" style="margin:0;font-size:12px;line-height:1.65;color:#42516a"></p></div><footer class="cp-modal-actions"><button type="button" class="cp-secondary" data-close-modal="confirmModal">Hủy</button><button type="button" class="cp-primary" id="confirmAction">Xác nhận</button></footer></div></div>
 
+<div class="cp-modal" id="recordPaymentModal" role="dialog" aria-modal="true" aria-labelledby="recordPaymentTitle">
+    <form class="cp-modal-card" id="recordPaymentForm">
+        <header class="cp-modal-head"><h2 id="recordPaymentTitle">Ghi nhận tiền đã nhận</h2><button type="button" class="cp-secondary" data-close-modal="recordPaymentModal">Đóng</button></header>
+        <div class="cp-modal-body">
+            <p id="recordPaymentContract"></p>
+            <div class="cp-form-group"><label for="recordPaymentType">Loại thanh toán</label><select class="cp-select" id="recordPaymentType"><option>Đặt cọc</option><option>Thanh toán đợt</option><option>Quyết toán</option></select></div>
+            <div class="cp-form-group"><label for="recordPaymentAmount">Số tiền đã nhận (đ)</label><input class="cp-input" id="recordPaymentAmount" type="number" min="0.01" step="0.01" required /></div>
+            <div class="cp-form-group"><label for="recordPaymentMethod">Phương thức</label><input class="cp-input" id="recordPaymentMethod" maxlength="50" required /></div>
+            <div class="cp-form-group"><label for="recordPaymentReference">Mã giao dịch / tham chiếu (nếu có)</label><input class="cp-input" id="recordPaymentReference" maxlength="100" /></div>
+            <p id="recordPaymentError" role="alert"></p>
+        </div>
+        <footer class="cp-modal-actions"><button type="submit" class="cp-primary" id="savePayment">Xác nhận ghi nhận</button></footer>
+    </form>
+</div>
+<div class="cp-modal" id="confirmDepositModal" role="dialog" aria-modal="true" aria-labelledby="confirmDepositTitle">
+    <form class="cp-modal-card" id="confirmDepositForm">
+        <header class="cp-modal-head"><h2 id="confirmDepositTitle">Xác minh mức cọc một lần</h2><button type="button" class="cp-secondary" data-close-modal="confirmDepositModal">Đóng</button></header>
+        <div class="cp-modal-body"><p>Đối chiếu hợp đồng trước khi xác nhận. Thao tác có audit, không đổi trạng thái hoặc sửa lịch sử.</p><label for="verifiedDeposit">Số tiền cọc cam kết (đ)</label><input class="cp-input" id="verifiedDeposit" type="number" min="0.01" step="0.01" required /><p id="confirmDepositError" role="alert"></p></div>
+        <footer class="cp-modal-actions"><button type="submit" class="cp-primary" id="saveDepositConfirmation">Xác nhận đã đối chiếu</button></footer>
+    </form>
+</div>
 <div class="cp-toast" id="cpToast" role="status" aria-live="polite"></div>
 
 @section Scripts { <script src="~/js/manager-contract-payment.js" asp-append-version="true"></script> }

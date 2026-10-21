@@ -35,6 +35,8 @@ public interface IRiversideApiClient
     Task<ApiCallResult<ContractActionResponseViewModel>> CompleteManagerContractAsync(string accessToken, int id, CancellationToken cancellationToken);
     Task<ApiCallResult<ContractActionResponseViewModel>> CancelManagerContractAsync(string accessToken, int id, CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerPaymentListResponseViewModel>> GetManagerPaymentsAsync(string accessToken, string? keyword, string? type, string? status, DateTime? fromDate, DateTime? toDate, int page, CancellationToken cancellationToken);
+    Task<ApiCallResult<PaymentActionResponseViewModel>> RecordManagerPaymentAsync(string accessToken, RecordPaymentViewModel model, CancellationToken cancellationToken);
+    Task<ApiCallResult<ContractActionResponseViewModel>> ConfirmManagerDepositAsync(string accessToken, int id, ConfirmDepositViewModel model, CancellationToken cancellationToken);
     Task<ApiCallResult<PdfDownloadViewModel>> DownloadManagerContractPdfAsync(string accessToken, int id, CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerHrPageViewModel>> GetManagerHrAsync(string accessToken,string? search,string? role,string? status,string? assignmentStatus,int page,int pageSize,CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerHrActionViewModel>> AssignManagerHallsAsync(int employeeId,AssignHallsViewModel model,string accessToken,CancellationToken cancellationToken);

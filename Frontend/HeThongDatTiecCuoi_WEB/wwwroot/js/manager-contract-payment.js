@@ -16,14 +16,24 @@
         return element;
     };
 
-    async function request(url, options = {}) {
+    async function request(url, options = {}, expectPayment = false) {
         const headers = { ...(options.headers || {}) };
         if (options.body !== undefined) headers['Content-Type'] = 'application/json';
         if (options.method && options.method !== 'GET') headers.RequestVerificationToken = token;
         const response = await fetch(url, { ...options, headers });
+        if (expectPayment && (response.redirected || !/^application\/(?:json|[\w.-]+\+json)(?:\s*;|$)/i.test(response.headers.get('Content-Type') || '')))
+            throw new Error('Chưa nhận được xác nhận thanh toán hợp lệ. Vui lòng kiểm tra phiên đăng nhập.');
         let payload = null;
         try { payload = await response.json(); } catch { /* PDF and empty bodies are not used here. */ }
-        if (!response.ok || payload?.success === false) throw new Error(payload?.message || 'Yêu cầu không thành công.');
+        if (!response.ok || payload?.success === false) {
+            const error = new Error(payload?.message || 'Yêu cầu không thành công.');
+            error.status = response.status;
+            throw error;
+        }
+        if (expectPayment && (payload?.success !== true || !Number.isSafeInteger(payload.data?.paymentId) ||
+            payload.data.paymentId <= 0 || payload.data.paymentId > 2147483647 ||
+            typeof payload.data.replayed !== 'boolean' || typeof payload.data.message !== 'string'))
+            throw new Error('Phản hồi thanh toán chưa hợp lệ; mã yêu cầu được giữ để gửi lại.');
         return payload?.data ?? payload;
     }
 
@@ -180,7 +190,8 @@
         general.append(detailCard('Thông tin chung', [
             ['Mã hợp đồng', detail.contractCode], ['Mã booking', detail.booking.bookingCode], ['Khách hàng', detail.booking.customerName],
             ['Số điện thoại', detail.booking.customerPhone], ['Email', detail.booking.customerEmail || 'Chưa cung cấp'],
-            ['Ngày tạo', date(detail.createdDate)], ['Tổng giá trị', money(detail.totalValue)], ['Trạng thái', detail.statusName]
+            ['Ngày tạo', date(detail.createdDate)], ['Tổng giá trị', money(detail.totalValue)], ['Trạng thái', detail.statusName],
+            ['Cọc cam kết', detail.requiredDepositAmount == null ? 'Chưa xác minh' : money(detail.requiredDepositAmount)]
         ]));
         general.append(textCard('Nội dung hợp đồng', detail.contractContent), textCard('Điều khoản thanh toán', detail.paymentTerms));
 
@@ -215,12 +226,31 @@
         const track = createNode('div', 'cp-progress-track'); const bar = createNode('div', 'cp-progress-bar');
         bar.style.width = `${Math.max(0, Math.min(100, Number(detail.paymentPercentage || 0)))}%`; track.append(bar); summary.append(track);
         const values = createNode('div', 'cp-payment-summary');
-        [['Đã thanh toán', money(detail.paidAmount)], ['Còn lại', money(detail.remainingBalance)], ['Tổng giá trị', money(detail.totalValue)]].forEach(([label, value]) => {
+        [['Đã thanh toán', money(detail.paidAmount)], ['Cọc đã nhận', money(detail.depositPaidAmount)], ['Còn lại', money(detail.remainingBalance)], ['Tổng giá trị', money(detail.totalValue)]].forEach(([label, value]) => {
             const item = createNode('div'); item.append(createNode('span', '', label), createNode('strong', '', value)); values.append(item);
         }); summary.append(values);
         if (detail.hasPaymentInconsistency) summary.append(createNode('p', 'cp-warning', 'Tổng thanh toán vượt giá trị hợp đồng. Vui lòng kiểm tra dữ liệu.'));
         else if (detail.statusCode === 'ACTIVE' && detail.remainingBalance > 0) summary.append(createNode('p', 'cp-warning', `Còn ${money(detail.remainingBalance)} chưa thanh toán.`));
         section.append(summary);
+        if (['DRAFT', 'ACTIVE'].includes(detail.statusCode)) {
+            if (detail.requiredDepositAmount == null) {
+                const confirmDeposit = actionButton('Xác minh mức cọc', 'cp-primary', event => {
+                byId('confirmDepositForm').dataset.contractId = detail.contractId;
+                byId('confirmDepositError').textContent = ''; byId('verifiedDeposit').value = ''; openModal('confirmDepositModal', event.currentTarget);
+                });
+                confirmDeposit.id = 'openConfirmDeposit'; section.append(confirmDeposit);
+            }
+            else if (!detail.hasPaymentInconsistency && detail.remainingBalance > 0) {
+                const recordPayment = actionButton('Ghi nhận thanh toán', 'cp-primary', event => {
+                byId('recordPaymentForm').reset(); byId('recordPaymentError').textContent = '';
+                byId('recordPaymentForm').dataset.contractId = detail.contractId;
+                byId('recordPaymentContract').textContent = `${detail.contractCode} · Còn ${money(detail.remainingBalance)}`;
+                Array.from(byId('recordPaymentType').options).forEach(option => option.disabled = detail.statusCode === 'DRAFT' && option.value !== 'Đặt cọc');
+                openModal('recordPaymentModal', event.currentTarget);
+                });
+                recordPayment.id = 'openRecordPayment'; section.append(recordPayment);
+            }
+        }
         const history = createNode('article', 'cp-detail-card'); history.append(createNode('h3', '', 'Lịch sử giao dịch (chỉ đọc)'));
         if (!detail.payments?.length) history.append(createNode('p', 'cp-pre', 'Chưa phát sinh giao dịch thanh toán.'));
         else detail.payments.forEach(payment => history.append(detailCard(`${payment.paymentType} · ${money(payment.amount)}`, [
@@ -244,7 +274,10 @@
         const pdf = createNode('a', 'cp-secondary', 'In / Tải PDF'); pdf.href = `${base}/contracts/${detail.contractId}/pdf`; pdf.target = '_blank';
         const pdfIcon = createNode('i', 'fa-solid fa-print'); pdf.prepend(pdfIcon); actions.append(pdf);
         if (detail.statusCode === 'DRAFT') {
-            actions.append(actionButton('Sửa hợp đồng', 'cp-secondary', () => openEdit(detail)), actionButton('Kích hoạt', 'cp-primary', () => confirmActivate(detail)), actionButton('Hủy hợp đồng', 'cp-danger', () => confirmCancel(detail)));
+            actions.append(actionButton('Sửa hợp đồng', 'cp-secondary', () => openEdit(detail)));
+            if (detail.requiredDepositAmount > 0 && detail.depositPaidAmount >= detail.requiredDepositAmount)
+                actions.append(actionButton('Kích hoạt', 'cp-primary', () => confirmActivate(detail)));
+            actions.append(actionButton('Hủy hợp đồng', 'cp-danger', () => confirmCancel(detail)));
         } else if (detail.statusCode === 'ACTIVE') {
             if (!detail.hasPaymentInconsistency && Number(detail.paidAmount) === Number(detail.totalValue)) actions.append(actionButton('Hoàn tất hợp đồng', 'cp-primary', () => confirmComplete(detail)));
             actions.append(actionButton('Hủy hợp đồng', 'cp-danger', () => confirmCancel(detail)));
@@ -292,16 +325,16 @@
     async function saveDraft() {
         if (!state.selectedBooking) return showToast('Vui lòng chọn booking.', true);
         try {
-            const result = await request(`${base}/contracts`, { method: 'POST', body: JSON.stringify({ bookingId: state.selectedBooking.bookingId, totalValue: Number(byId('createTotalValue').value || 0), contractContent: byId('createContent').value, paymentTerms: byId('createTerms').value }) });
+            const result = await request(`${base}/contracts`, { method: 'POST', body: JSON.stringify({ bookingId: state.selectedBooking.bookingId, totalValue: Number(byId('createTotalValue').value || 0), requiredDepositAmount: depositValue('create'), contractContent: byId('createContent').value, paymentTerms: byId('createTerms').value }) });
             closeModal('createModal'); showToast(result.message || 'Đã lưu hợp đồng bản nháp.'); state.selectedBooking = null; root.dataset.initialBookingId = ''; await loadContracts(1); await openDrawer(result.contractId);
         } catch (error) { showToast(error.message, true); }
     }
 
-    function openEdit(detail) { byId('editTotalValue').value = detail.totalValue; byId('editContent').value = detail.contractContent; byId('editTerms').value = detail.paymentTerms; openModal('editModal'); }
+    function openEdit(detail) { byId('editTotalValue').value = detail.totalValue; byId('editDeposit').value = detail.requiredDepositAmount ?? ''; byId('editTotalValue').readOnly = !!detail.payments?.length; byId('editDeposit').readOnly = !!detail.payments?.length; byId('editContent').value = detail.contractContent; byId('editTerms').value = detail.paymentTerms; openModal('editModal'); }
     async function saveEdit() {
         if (!state.currentContract) return;
         try {
-            const result = await request(`${base}/contracts/${state.currentContract.contractId}`, { method: 'PUT', body: JSON.stringify({ totalValue: Number(byId('editTotalValue').value || 0), contractContent: byId('editContent').value, paymentTerms: byId('editTerms').value }) });
+            const result = await request(`${base}/contracts/${state.currentContract.contractId}`, { method: 'PUT', body: JSON.stringify({ totalValue: Number(byId('editTotalValue').value || 0), requiredDepositAmount: depositValue('edit'), contractContent: byId('editContent').value, paymentTerms: byId('editTerms').value }) });
             closeModal('editModal'); showToast(result.message); await loadContracts(state.contractPage); await openDrawer(state.currentContract.contractId);
         } catch (error) { showToast(error.message, true); }
     }
@@ -312,8 +345,46 @@
     function confirmCancel(detail) { const warning = detail.paidAmount > 0 ? ' Hợp đồng đã phát sinh thanh toán thành công. Việc hủy không xóa hoặc hoàn tiền các giao dịch đã ghi nhận.' : ''; showConfirm('Hủy hợp đồng', `Bạn có chắc chắn muốn hủy ${detail.contractCode}? Booking không bị hủy.${warning}`, () => runCommand(detail.contractId, 'cancel'), true); }
     async function runCommand(id, command) { closeModal('confirmModal'); try { const result = await request(`${base}/contracts/${id}/${command}`, { method: 'POST' }); showToast(result.message); await loadContracts(state.contractPage); await openDrawer(id); } catch (error) { showToast(error.message, true); } }
 
-    function openModal(id) { byId(id).classList.add('open'); }
-    function closeModal(id) { byId(id).classList.remove('open'); if (id === 'confirmModal') state.confirmCallback = null; }
+    let paymentDialogTrigger = null;
+    let depositDialogTrigger = null;
+    function restoreDepositFocus() {
+        const trigger = depositDialogTrigger?.isConnected ? depositDialogTrigger : byId('openConfirmDeposit');
+        (trigger || byId('openRecordPayment') || document.querySelector('[data-drawer-tab="payments"]')).focus();
+    }
+    function restorePaymentFocus() {
+        const trigger = paymentDialogTrigger?.isConnected ? paymentDialogTrigger : byId('openRecordPayment');
+        (trigger || document.querySelector('[data-drawer-tab="payments"]')).focus();
+    }
+    function openModal(id, trigger) {
+        byId(id).classList.add('open');
+        if (id === 'recordPaymentModal') {
+            paymentDialogTrigger = trigger || document.activeElement;
+            byId('recordPaymentAmount').focus();
+        } else if (id === 'confirmDepositModal') {
+            depositDialogTrigger = trigger || document.activeElement;
+            byId('verifiedDeposit').focus();
+        }
+    }
+    function closeModal(id) {
+        byId(id).classList.remove('open');
+        if (id === 'recordPaymentModal') restorePaymentFocus();
+        if (id === 'confirmDepositModal') restoreDepositFocus();
+        if (id === 'confirmModal') state.confirmCallback = null;
+    }
+    const paymentDialog = byId('recordPaymentModal');
+    const depositDialog = byId('confirmDepositModal');
+    [paymentDialog, depositDialog].forEach(dialog => dialog.addEventListener('keydown', event => {
+        if (event.key !== 'Tab') return;
+        const controls = Array.from(dialog.querySelectorAll('button, input, select, textarea, a[href], [tabindex]'))
+            .filter(control => !control.disabled && control.tabIndex >= 0 && control.getClientRects().length);
+        const first = controls[0], last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }));
+    document.addEventListener('focusin', event => {
+        if (paymentDialog.classList.contains('open') && !paymentDialog.contains(event.target)) byId('recordPaymentAmount').focus();
+        else if (depositDialog.classList.contains('open') && !depositDialog.contains(event.target)) byId('verifiedDeposit').focus();
+    });
     function debounce(handler, delay = 350) { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => handler(...args), delay); }; }
 
     document.querySelectorAll('[data-main-tab]').forEach(button => button.addEventListener('click', () => {
@@ -330,7 +401,51 @@
     byId('openCreateContract').addEventListener('click', openCreateModal); byId('saveDraft').addEventListener('click', saveDraft); byId('saveEdit').addEventListener('click', saveEdit);
     byId('closeDrawer').addEventListener('click', closeDrawer); byId('drawerOverlay').addEventListener('click', closeDrawer);
     byId('confirmAction').addEventListener('click', () => { const callback = state.confirmCallback; if (callback) callback(); });
-    document.addEventListener('keydown', event => { if (event.key === 'Escape') { closeDrawer(); document.querySelectorAll('.cp-modal.open').forEach(modal => closeModal(modal.id)); } });
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        if (paymentDialog.classList.contains('open')) { closeModal('recordPaymentModal'); return; }
+        if (depositDialog.classList.contains('open')) { closeModal('confirmDepositModal'); return; }
+        closeDrawer(); document.querySelectorAll('.cp-modal.open').forEach(modal => closeModal(modal.id));
+    });
+
+    function depositValue(prefix) { const value = byId(`${prefix}Deposit`).value; return value === '' ? null : value; }
+    ['create', 'edit'].forEach(prefix => {
+        const group = createNode('div', 'cp-form-group full');
+        const label = createNode('label', '', 'Số tiền cọc cam kết theo hợp đồng (đ)'); label.htmlFor = `${prefix}Deposit`;
+        const input = createNode('input', 'cp-input'); input.id = `${prefix}Deposit`; input.type = 'number'; input.min = '0.01'; input.step = '0.01';
+        group.append(label, input); byId(`${prefix}TotalValue`).parentElement.after(group);
+    });
+    byId('confirmDepositForm').addEventListener('submit', async event => {
+        event.preventDefault(); const id = Number(byId('confirmDepositForm').dataset.contractId); if (!id) return;
+        const button = byId('saveDepositConfirmation'); button.disabled = true;
+        try {
+            await request(`${base}/contracts/${id}/deposit-commitment`, { method: 'POST', body: JSON.stringify({ requiredDepositAmount: byId('verifiedDeposit').value }) });
+            closeModal('confirmDepositModal'); await openDrawer(id, 'payments');
+            restoreDepositFocus();
+        } catch (error) { byId('confirmDepositError').textContent = error.message; }
+        finally { button.disabled = false; }
+    });
+    byId('recordPaymentForm').addEventListener('submit', async event => {
+        event.preventDefault(); const id = Number(byId('recordPaymentForm').dataset.contractId); if (!id || byId('savePayment').disabled) return;
+        const button = byId('savePayment'); button.disabled = true;
+        try {
+            const payload = { contractId: id, paymentType: byId('recordPaymentType').value, amount: byId('recordPaymentAmount').value,
+                paymentMethod: byId('recordPaymentMethod').value.trim(), transactionCode: byId('recordPaymentReference').value.trim() || null };
+            // Persist only the intent key and a digest, never credentials or payment reference text.
+            const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(payload)))))
+                .map(value => value.toString(16).padStart(2, '0')).join('');
+            const storageKey = `uc17-payment-intent-${id}`;
+            let intent = JSON.parse(sessionStorage.getItem(storageKey) || 'null');
+            if (intent && intent.digest !== digest && !window.confirm('Khoản thu trước có thể đã được ghi nhận. Hãy đối chiếu lịch sử. Bạn đã kiểm tra và muốn tạo một khoản thu khác?')) return;
+            if (!intent || intent.digest !== digest) intent = { requestId: crypto.randomUUID(), digest };
+            sessionStorage.setItem(storageKey, JSON.stringify(intent));
+            const result = await request(`${base}/payments`, { method: 'POST', body: JSON.stringify({ ...payload, requestId: intent.requestId }) }, true);
+            sessionStorage.removeItem(storageKey); closeModal('recordPaymentModal'); showToast(result.message);
+            await loadContracts(state.contractPage); if (state.paymentsLoaded) await loadPayments(state.paymentPage); await openDrawer(id, 'payments');
+            restorePaymentFocus();
+        } catch (error) { byId('recordPaymentError').textContent = `${error.message} Nếu chưa rõ kết quả, kiểm tra lịch sử hoặc gửi lại cùng dữ liệu.`; }
+        finally { button.disabled = false; }
+    });
 
     loadContracts(1);
     if (root.dataset.openCreate === 'true' || root.dataset.initialBookingId) openCreateModal();
