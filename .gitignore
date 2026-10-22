@@ -373,6 +373,7 @@ venv/
 *.docx
 *.doc
 ~$*.docx
+/tests/uc17/
 *_Backup.docx
 
 # AI & Vector DB Cache
