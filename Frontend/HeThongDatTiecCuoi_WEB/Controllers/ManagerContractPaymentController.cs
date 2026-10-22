@@ -67,6 +67,26 @@ public sealed class ManagerContractPaymentController : Controller
         return ApiJson(await _api.GetEligibleContractBookingsAsync(token, keyword, cancellationToken));
     }
 
+    [HttpPost("payments")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RecordPayment([FromBody] RecordPaymentViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Dữ liệu thanh toán chưa hợp lệ." });
+        var token = Token();
+        if (token is null) return UnauthorizedJson();
+        return ApiJson(await _api.RecordManagerPaymentAsync(token, model, cancellationToken));
+    }
+
+    [HttpPost("contracts/{id:int}/deposit-commitment")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfirmDeposit(int id, [FromBody] ConfirmDepositViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Mức cọc chưa hợp lệ." });
+        var token = Token();
+        if (token is null) return UnauthorizedJson();
+        return ApiJson(await _api.ConfirmManagerDepositAsync(token, id, model, cancellationToken));
+    }
+
     [HttpPost("contracts")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([FromBody] CreateContractViewModel model, CancellationToken cancellationToken)

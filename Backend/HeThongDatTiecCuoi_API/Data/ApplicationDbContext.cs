@@ -679,6 +679,7 @@ public sealed class ApplicationDbContext : DbContext
             entity.Property(x => x.CreatedDate).HasColumnName("NgayLap").HasColumnType("date")
                 .HasDefaultValueSql("CONVERT(date, SYSDATETIME())");
             entity.Property(x => x.TotalValue).HasColumnName("TongGiaTri").HasColumnType("decimal(18,2)").IsRequired();
+            entity.Property(x => x.RequiredDepositAmount).HasColumnName("SoTienCocCamKet").HasColumnType("decimal(18,2)");
             entity.Property(x => x.ContractContent).HasColumnName("NoiDungHopDong").HasColumnType("nvarchar(max)");
             entity.Property(x => x.PaymentTerms).HasColumnName("DieuKhoanThanhToan").HasColumnType("nvarchar(max)");
             entity.Property(x => x.StatusId).HasColumnName("TrangThaiID").HasDefaultValue(901);
@@ -707,6 +708,8 @@ public sealed class ApplicationDbContext : DbContext
                 .HasDefaultValueSql("SYSDATETIME()");
             entity.Property(x => x.PaymentMethod).HasColumnName("PhuongThuc").HasMaxLength(50);
             entity.Property(x => x.TransactionCode).HasColumnName("MaGiaoDich").HasMaxLength(100);
+            entity.Property(x => x.RequestId).HasColumnName("RequestId");
+            entity.HasIndex(x => x.RequestId).HasDatabaseName("UX_ThanhToan_RequestId").IsUnique().HasFilter("[RequestId] IS NOT NULL");
             entity.Property(x => x.StatusId).HasColumnName("TrangThaiID").HasDefaultValue(1001);
             entity.HasOne(x => x.Contract).WithMany(x => x.Payments)
                 .HasForeignKey(x => x.ContractId).OnDelete(DeleteBehavior.NoAction);

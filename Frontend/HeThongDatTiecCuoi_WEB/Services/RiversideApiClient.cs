@@ -100,6 +100,14 @@ public sealed class RiversideApiClient : IRiversideApiClient
         string accessToken, int id, CancellationToken cancellationToken) =>
         SendAsync<ContractActionResponseViewModel>(HttpMethod.Post, $"api/manager/contracts/{id}/activate", null, accessToken, cancellationToken);
 
+    public Task<ApiCallResult<PaymentActionResponseViewModel>> RecordManagerPaymentAsync(
+        string accessToken, RecordPaymentViewModel model, CancellationToken cancellationToken) =>
+        SendAsync<PaymentActionResponseViewModel>(HttpMethod.Post, "api/manager/payments", model, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ContractActionResponseViewModel>> ConfirmManagerDepositAsync(
+        string accessToken, int id, ConfirmDepositViewModel model, CancellationToken cancellationToken) =>
+        SendAsync<ContractActionResponseViewModel>(HttpMethod.Post, $"api/manager/contracts/{id}/deposit-commitment", model, accessToken, cancellationToken);
+
     public Task<ApiCallResult<ContractActionResponseViewModel>> CompleteManagerContractAsync(
         string accessToken, int id, CancellationToken cancellationToken) =>
         SendAsync<ContractActionResponseViewModel>(HttpMethod.Post, $"api/manager/contracts/{id}/complete", null, accessToken, cancellationToken);

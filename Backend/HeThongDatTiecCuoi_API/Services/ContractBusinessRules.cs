@@ -34,12 +34,17 @@ public static class ContractBusinessRules
         decimal totalValue,
         string? contractContent,
         string? paymentTerms,
-        string bookingStatusCode)
+        string bookingStatusCode,
+        decimal? requiredDepositAmount = null,
+        decimal successfulDeposits = 0m)
     {
         if (contractStatusCode != ContractStatusCodes.Draft) return "Chỉ hợp đồng bản nháp mới được kích hoạt.";
         if (totalValue <= 0) return "Tổng giá trị hợp đồng phải lớn hơn 0 trước khi kích hoạt.";
         if (string.IsNullOrWhiteSpace(contractContent)) return "Nội dung hợp đồng không được để trống.";
         if (string.IsNullOrWhiteSpace(paymentTerms)) return "Điều khoản thanh toán không được để trống.";
+        if (!PaymentBusinessRules.IsValidCommitment(requiredDepositAmount, totalValue) ||
+            successfulDeposits < requiredDepositAmount!.Value)
+            return "Chưa nhận đủ tiền cọc cam kết đã được xác minh.";
         return bookingStatusCode == BookingStatusCodes.Confirmed
             ? null
             : "Booking liên kết không còn ở trạng thái đã xác nhận.";

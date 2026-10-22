@@ -10,6 +10,7 @@ public sealed class Payment
     public string? PaymentMethod { get; set; }
     public string? TransactionCode { get; set; }
     public int StatusId { get; set; }
+    public Guid? RequestId { get; set; }
 
     public Contract Contract { get; set; } = null!;
     public Status Status { get; set; } = null!;

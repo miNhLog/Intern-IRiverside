@@ -2,6 +2,8 @@ namespace HeThongDatTiecCuoi_API.Constants;
 
 public static class AuditActions
 {
+    public const string PaymentRecorded = "PAYMENT_RECORDED";
+    public const string DepositCommitmentConfirmed = "DEPOSIT_COMMITMENT_CONFIRMED";
     public const string CreateAccount = "CREATE_ACCOUNT";
     public const string UpdateAccount = "UPDATE_ACCOUNT";
     public const string LockAccount = "LOCK_ACCOUNT";
@@ -51,6 +53,7 @@ public static class AuditActions
 
 public static class AuditEntityNames
 {
+    public const string Payment = "Payment";
     public const string User = "User";
     public const string RoleChangeRequest = "RoleChangeRequest";
     public const string HallManagerAssignment = "HallManagerAssignment";
