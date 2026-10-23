@@ -9,12 +9,14 @@ namespace HeThongDatTiecCuoi_API.DTOs.Booking;
 public sealed class PublicBookingLookupRequestDto
 {
     [Required(ErrorMessage = "Vui lòng nhập mã đặt tiệc.")]
-    [RegularExpression(@"^DT-\d{8}-[A-Z0-9]{4,}$",
+    [StringLength(60)]
+    [RegularExpression(@"^\s*(?i:DT)-\d{8}-[A-Za-z0-9]{4,}\s*$",
         ErrorMessage = "Mã đặt tiệc phải có dạng DT-yyyyMMdd-XXXX (ví dụ DT-20261012-0001).")]
     public string BookingCode { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập số điện thoại.")]
-    [RegularExpression(@"^0\d{9}$",
+    [StringLength(30)]
+    [RegularExpression(@"^\s*0\d{9}\s*$",
         ErrorMessage = "Số điện thoại Việt Nam phải gồm đúng 10 số và bắt đầu bằng 0.")]
     public string PhoneNumber { get; set; } = string.Empty;
 }
@@ -38,83 +40,36 @@ public sealed class PublicBookingCancelHoldRequestDto
     public string? Reason { get; set; }
 }
 
-public sealed class PublicBookingDishDto
+/// <summary>Customer-facing successful payment information without transaction identifiers.</summary>
+public sealed class PublicBookingPaymentDto
 {
-    public int DishId { get; set; }
-    public string DishCode { get; set; } = string.Empty;
-    public string DishName { get; set; } = string.Empty;
-    public string Category { get; set; } = string.Empty;
-    public int SortOrder { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public DateTime PaidAt { get; set; }
 }
 
-public sealed class PublicBookingServiceDto
-{
-    public int ServiceId { get; set; }
-    public string ServiceCode { get; set; } = string.Empty;
-    public string ServiceName { get; set; } = string.Empty;
-    public int Quantity { get; set; }
-    public decimal UnitPrice { get; set; }
-    public decimal LineTotal { get; set; }
-}
-
-/// <summary>
-/// UC14: Chi tiết hồ sơ tiệc cưới trả về cho khách tra cứu online.
-/// Nguồn cột: DatTiec (MaDatTiec/SoLuongKhach/GiaThucDonChot/GiaTrangTriChot/GiaSanhChot/TongTienDuKien/NgayDat/LyDoHuy),
-/// KhachHang (HoTen/SoDienThoai/Email), LichSanh (Ngay/CaToChuc) + SanhTiec (TenSanh/GiaThue/SucChuaToiDa),
-/// ThucDon (TenThucDon/GiaMoiBan) + ChiTietThucDon/MonAn (7 món), GoiTrangTri (TenGoi/Gia/PhongCach),
-/// DatTiec_DichVu + DichVu, HopDong (TongGiaTri) + ThanhToan (SoTien SUCCESS), TrangThai (TenTrangThai),
-/// PhanCongDieuPhoi + NhanVien (tư vấn viên).
-/// </summary>
+/// <summary>UC14 customer-facing summary; excludes internal identifiers and unrelated personal data.</summary>
 public sealed class PublicBookingDetailDto
 {
     public int BookingId { get; set; }
     public string BookingCode { get; set; } = string.Empty;
-
     public string CustomerName { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
-    public string? Email { get; set; }
-
-    // Serialize yyyy-MM-dd để Frontend hiển thị đúng, tránh lệch giờ SQL date.
     public DateTime EventDate { get; set; }
     public string EventDateString { get; set; } = string.Empty;
     public string Shift { get; set; } = string.Empty;
-
-    public int HallId { get; set; }
     public string HallName { get; set; } = string.Empty;
-    public decimal HallPrice { get; set; }
-    public int HallCapacity { get; set; }
-
     public int GuestCount { get; set; }
-    public int OfficialTables { get; set; }
-    public int SpareTables { get; set; }
-    public int TotalTables { get; set; }
-
-    public int? MenuId { get; set; }
-    public string? MenuName { get; set; }
-    public decimal? MenuPricePerTable { get; set; }
-    public List<PublicBookingDishDto> Dishes { get; set; } = [];
-
-    public int? DecorId { get; set; }
-    public string? DecorName { get; set; }
-    public decimal? DecorPrice { get; set; }
-    public string? DecorStyle { get; set; }
-
-    public List<PublicBookingServiceDto> Services { get; set; } = [];
-
-    public decimal TotalAmount { get; set; }
-    public decimal DepositPaid { get; set; }
-    public decimal RemainingDebt { get; set; }
-
-    // 5 trạng thái thực tế trong DB (TrangThai NhomTrangThai=BOOKING):
-    // Chờ xác nhận / Đã xác nhận / Đang chuẩn bị / Hoàn tất / Đã hủy.
     public string StatusCode { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
     public bool CanCancelOnline { get; set; }
     public DateTime HoldExpiresAt { get; set; }
-    public DateTime BookedAt { get; set; }
-    public string? CancellationReason { get; set; }
-    public string? SpecialRequests { get; set; }
-
-    public string? ConsultantName { get; set; }
-    public string? ConsultantPhone { get; set; }
+    public bool HasContract { get; set; }
+    public decimal? ContractTotal { get; set; }
+    public decimal? EstimatedTotal { get; set; }
+    public decimal? RequiredDepositAmount { get; set; }
+    public string? PaymentTerms { get; set; }
+    public decimal DepositPaid { get; set; }
+    public decimal TotalPaid { get; set; }
+    public decimal? RemainingBalance { get; set; }
+    public List<PublicBookingPaymentDto> SuccessfulPayments { get; set; } = [];
 }

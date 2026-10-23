@@ -388,7 +388,6 @@ public interface IRiversideApiClient
     PublicBookingRequestViewModel request,
     CancellationToken cancellationToken = default);
 
-    Task<ApiCallResult<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>> GetMyBookingsAsync(string? phone, int? userId = null, CancellationToken cancellationToken = default);
     Task<ApiCallResult<bool>> CancelBookingAsync(int bookingId, CancellationToken cancellationToken = default);
 
     // UC14 & UC15: tra cứu + hủy giữ chỗ public bằng mã + SĐT

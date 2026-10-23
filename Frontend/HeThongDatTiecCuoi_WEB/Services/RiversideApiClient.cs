@@ -20,6 +20,7 @@ using HeThongDatTiecCuoi_WEB.Models.ManagerHr;
 using HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment;
 using HeThongDatTiecCuoi_WEB.Models.ManagerEventCoordination;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 
 public sealed class RiversideApiClient : IRiversideApiClient
 {
@@ -28,10 +29,12 @@ public sealed class RiversideApiClient : IRiversideApiClient
         PropertyNameCaseInsensitive = true
     };
     private readonly HttpClient _httpClient;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public RiversideApiClient(HttpClient httpClient)
+    public RiversideApiClient(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
     {
         _httpClient = httpClient;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public Task<ApiCallResult<EventCoordinationListResponseViewModel>> GetManagerEventCoordinationAsync(
@@ -1836,44 +1839,6 @@ public sealed class RiversideApiClient : IRiversideApiClient
         }
     }
 
-    public async Task<ApiCallResult<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>> GetMyBookingsAsync(string? phone, int? userId = null, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var queryParams = new List<string>();
-            if (!string.IsNullOrWhiteSpace(phone))
-            {
-                queryParams.Add($"phone={Uri.EscapeDataString(phone.Trim())}");
-            }
-            if (userId.HasValue && userId.Value > 0)
-            {
-                queryParams.Add($"userId={userId.Value}");
-            }
-
-            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-            var response = await _httpClient.GetAsync($"api/my-bookings{queryString}", cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return ApiCallResult<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>.Failure("Không thể lấy danh sách đơn tiệc cưới.");
-            }
-
-            var doc = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>(cancellationToken: cancellationToken);
-            if (doc.TryGetProperty("data", out var dataElem))
-            {
-                var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var list = System.Text.Json.JsonSerializer.Deserialize<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>(dataElem.GetRawText(), options);
-                return ApiCallResult<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>.Success(list ?? new List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>());
-            }
-
-            return ApiCallResult<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>.Success(new List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>());
-        }
-        catch (Exception ex)
-        {
-            return ApiCallResult<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>.Failure($"Lỗi: {ex.Message}");
-        }
-    }
-
     public async Task<ApiCallResult<bool>> CancelBookingAsync(int bookingId, CancellationToken cancellationToken = default)
     {
         try
@@ -1898,10 +1863,18 @@ public sealed class RiversideApiClient : IRiversideApiClient
     {
         try
         {
-            using var response = await _httpClient.PostAsJsonAsync(
-                "api/v1/public/bookings/lookup",
-                new { bookingCode = (bookingCode ?? string.Empty).Trim().ToUpperInvariant(), phoneNumber = (phoneNumber ?? string.Empty).Trim() },
-                cancellationToken);
+            using var request = new HttpRequestMessage(HttpMethod.Post, "api/v1/public/bookings/lookup")
+            {
+                Content = JsonContent.Create(new
+                {
+                    bookingCode = (bookingCode ?? string.Empty).Trim().ToUpperInvariant(),
+                    phoneNumber = (phoneNumber ?? string.Empty).Trim()
+                })
+            };
+            var clientIp = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress;
+            if (clientIp is not null)
+                request.Headers.TryAddWithoutValidation("X-Forwarded-For", clientIp.ToString());
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!response.IsSuccessStatusCode)
                 return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.MyBookings.PublicBookingDetailViewModel>.Failure(

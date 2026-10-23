@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HeThongDatTiecCuoi_API.Controllers;
 
@@ -22,6 +23,7 @@ public sealed class PublicBookingController : ControllerBase
 {
     private const int MaxFailedAttempts = 5;
     private static readonly TimeSpan FailedWindow = TimeSpan.FromMinutes(15);
+    private static readonly object FailedLookupSync = new();
 
     private readonly ApplicationDbContext _context;
     private readonly IStatusService _statusService;
@@ -42,24 +44,30 @@ public sealed class PublicBookingController : ControllerBase
 
     /// <summary>UC14: POST /api/v1/public/bookings/lookup — tra cứu bằng mã + SĐT.</summary>
     [HttpPost("lookup")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [EnableRateLimiting("public-booking-lookup")]
     public async Task<IActionResult> Lookup([FromBody] PublicBookingLookupRequestDto? request)
     {
+        Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
+        Response.Headers.Pragma = "no-cache";
+        Response.Headers.Expires = "0";
+        string? rateKey = null;
+        FailedLookupState? attempt = null;
+        var attemptCompleted = false;
+
         try
         {
             if (request is null)
                 return BadRequest(new { success = false, message = "Thiếu dữ liệu tra cứu." });
 
             if (!ModelState.IsValid)
-                return ValidationProblem(ModelState);
+                return BadRequest(new { success = false, message = "Dữ liệu tra cứu không hợp lệ." });
 
             var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            var rateKey = $"public-lookup-fail:{clientIp}";
-            if (_cache.TryGetValue<int>(rateKey, out var fails) && fails >= MaxFailedAttempts)
-                return StatusCode(StatusCodes.Status429TooManyRequests, new
-                {
-                    success = false,
-                    message = "Bạn đã tra cứu sai quá 5 lần trong 15 phút. Vui lòng thử lại sau."
-                });
+            rateKey = $"public-lookup-fail:{clientIp}";
+            attempt = TryReserveLookupAttempt(rateKey);
+            if (attempt is null)
+                return TooManyAttempts();
 
             var code = request.BookingCode.Trim().ToUpperInvariant();
             var phone = request.PhoneNumber.Trim();
@@ -71,12 +79,7 @@ public sealed class PublicBookingController : ControllerBase
                 .Include(b => b.Customer)
                 .Include(b => b.Status)
                 .Include(b => b.HallSchedule).ThenInclude(s => s.Hall)
-                .Include(b => b.HallSchedule).ThenInclude(s => s.Status)
-                .Include(b => b.Menu!).ThenInclude(m => m!.MenuDishes).ThenInclude(md => md.Dish)
-                .Include(b => b.DecorationPackage)
-                .Include(b => b.BookingServices).ThenInclude(bs => bs.ServiceItem)
                 .Include(b => b.Contract!).ThenInclude(c => c!.Payments).ThenInclude(p => p.Status)
-                .Include(b => b.CoordinationAssignments).ThenInclude(a => a.Coordinator)
                 .SingleOrDefaultAsync(b =>
                     b.BookingCode == code &&
                     b.Customer.PhoneNumber == phone &&
@@ -84,8 +87,9 @@ public sealed class PublicBookingController : ControllerBase
 
             if (booking is null)
             {
-                var next = fails + 1;
-                _cache.Set(rateKey, next, FailedWindow);
+                CompleteLookupAttempt(rateKey, attempt, matched: false);
+                attemptCompleted = true;
+                _logger.LogInformation("Public booking lookup did not match. traceId={TraceId}", HttpContext.TraceIdentifier);
                 return NotFound(new
                 {
                     success = false,
@@ -93,21 +97,23 @@ public sealed class PublicBookingController : ControllerBase
                 });
             }
 
-            // Tra cứu đúng -> reset đếm sai của IP này.
-            _cache.Remove(rateKey);
+            // A successful lookup releases its in-flight reservation but does not erase prior failures.
+            CompleteLookupAttempt(rateKey, attempt, matched: true);
+            attemptCompleted = true;
 
             var detail = BuildDetailDto(booking);
+            _logger.LogInformation("Public booking lookup matched. traceId={TraceId}", HttpContext.TraceIdentifier);
             return Ok(new { success = true, data = detail });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "PublicBooking lookup thất bại. traceId={TraceId}. Chi tiết: {Detail}",
-                HttpContext.TraceIdentifier, ex.ToString());
+            if (!attemptCompleted && rateKey is not null && attempt is not null)
+                CompleteLookupAttempt(rateKey, attempt, matched: null);
+            _logger.LogError(ex, "PublicBooking lookup thất bại. traceId={TraceId}", HttpContext.TraceIdentifier);
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
                 success = false,
-                message = "Không thể tra cứu lúc này, vui lòng thử lại.",
-                traceId = HttpContext.TraceIdentifier
+                message = "Không thể tra cứu lúc này, vui lòng thử lại."
             });
         }
     }
@@ -213,106 +219,112 @@ public sealed class PublicBookingController : ControllerBase
         }
     }
 
+    private ObjectResult TooManyAttempts() => StatusCode(StatusCodes.Status429TooManyRequests, new
+    {
+        success = false,
+        message = "Bạn đã tra cứu sai quá 5 lần trong 15 phút. Vui lòng thử lại sau."
+    });
+
+    private FailedLookupState? TryReserveLookupAttempt(string rateKey)
+    {
+        lock (FailedLookupSync)
+        {
+            var now = DateTimeOffset.UtcNow;
+            if (!_cache.TryGetValue<FailedLookupState>(rateKey, out var state) || state is null ||
+                (state.HasFailures && state.WindowStartedAt + FailedWindow <= now))
+            {
+                state = new FailedLookupState();
+                _cache.Set(rateKey, state, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpiration = now + FailedWindow
+                });
+            }
+
+            if (state.FailedCount + state.InFlightCount >= MaxFailedAttempts)
+                return null;
+
+            state.InFlightCount++;
+            return state;
+        }
+    }
+
+    private void CompleteLookupAttempt(string rateKey, FailedLookupState attempt, bool? matched)
+    {
+        lock (FailedLookupSync)
+        {
+            if (!_cache.TryGetValue<FailedLookupState>(rateKey, out var current) || !ReferenceEquals(current, attempt))
+                return;
+
+            attempt.InFlightCount--;
+            if (matched == false)
+            {
+                if (!attempt.HasFailures)
+                {
+                    attempt.HasFailures = true;
+                    attempt.WindowStartedAt = DateTimeOffset.UtcNow;
+                }
+                attempt.FailedCount++;
+                _cache.Set(rateKey, attempt, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpiration = attempt.WindowStartedAt + FailedWindow
+                });
+            }
+            else if (!attempt.HasFailures && attempt.InFlightCount == 0)
+            {
+                _cache.Remove(rateKey);
+            }
+        }
+    }
+
+    private sealed class FailedLookupState
+    {
+        public int FailedCount { get; set; }
+        public int InFlightCount { get; set; }
+        public bool HasFailures { get; set; }
+        public DateTimeOffset WindowStartedAt { get; set; }
+    }
+
     private static PublicBookingDetailDto BuildDetailDto(WeddingBooking booking)
     {
-        var official = (int)Math.Ceiling(booking.GuestCount / 10m);
-        // LỖI B: khôi phục bàn dự phòng từ marker trong SpecialRequests
-        // (RecommendationController lưu "[Bàn dự phòng: N]"). DatTiec không có cột riêng
-        // nên không được hardcode spare=0 — phải dùng giá trị thật để khớp 100% với lúc đặt.
-        var spare = TryParseSpareTables(booking.SpecialRequests);
-        var totalTables = official + spare;
-
-        var dishes = booking.Menu?.MenuDishes
-            .OrderBy(md => md.SortOrder)
-            .Select(md => new PublicBookingDishDto
+        var successful = booking.Contract?.Payments
+            .Where(payment => payment.Status is not null &&
+                payment.Status.StatusGroup == StatusGroups.Payment &&
+                payment.Status.StatusCode == PaymentStatusCodes.Success)
+            .OrderBy(payment => payment.PaymentDate)
+            .Select(payment => new PublicBookingPaymentDto
             {
-                DishId = md.Dish.DishId,
-                DishCode = md.Dish.DishCode,
-                DishName = md.Dish.DishName,
-                Category = md.Dish.Category,
-                SortOrder = md.SortOrder
+                Type = payment.PaymentType,
+                Amount = payment.Amount,
+                PaidAt = payment.PaymentDate
             }).ToList() ?? [];
-
-        var services = booking.BookingServices
-            .OrderBy(bs => bs.ServiceItem.TenDichVu)
-            .Select(bs => new PublicBookingServiceDto
-            {
-                ServiceId = bs.ServiceId,
-                ServiceCode = bs.ServiceItem.MaDichVu,
-                ServiceName = bs.ServiceItem.TenDichVu,
-                Quantity = bs.Quantity,
-                UnitPrice = bs.FinalUnitPrice,
-                LineTotal = bs.FinalUnitPrice * bs.Quantity
-            }).ToList();
-
-        var total = booking.EstimatedTotal
-            ?? (booking.FinalHallPrice ?? 0m)
-                + (booking.FinalMenuPrice ?? 0m) * totalTables
-                + (booking.FinalDecorationPrice ?? 0m)
-                + services.Sum(s => s.LineTotal);
-
-        // Đã cọc = tổng ThanhToan SUCCESS của HopDong (mọi loại: Đặt cọc/đợt/quyết toán).
-        var deposit = booking.Contract?.Payments
-            .Where(p => p.Status != null && p.Status.StatusCode == "SUCCESS")
-            .Sum(p => p.Amount) ?? 0m;
-        var remaining = Math.Max(0m, total - deposit);
-
-        var consultant = booking.CoordinationAssignments
-            .OrderByDescending(a => a.AssignedAt)
-            .FirstOrDefault();
+        var paid = successful.Sum(payment => payment.Amount);
+        var deposit = successful.Where(payment => payment.Type == PaymentTypes.Deposit).Sum(payment => payment.Amount);
+        var contractTotal = booking.Contract?.TotalValue;
 
         return new PublicBookingDetailDto
         {
             BookingId = booking.BookingId,
             BookingCode = booking.BookingCode,
             CustomerName = booking.Customer.FullName,
-            PhoneNumber = booking.Customer.PhoneNumber,
-            Email = booking.Customer.Email,
             EventDate = booking.HallSchedule.Date,
             EventDateString = booking.HallSchedule.Date.ToString("yyyy-MM-dd"),
             Shift = booking.HallSchedule.Shift,
-            HallId = booking.HallSchedule.HallId,
             HallName = booking.HallSchedule.Hall.HallName,
-            HallPrice = booking.FinalHallPrice ?? booking.HallSchedule.Hall.RentalPrice,
-            HallCapacity = booking.HallSchedule.Hall.MaximumCapacity,
             GuestCount = booking.GuestCount,
-            OfficialTables = official,
-            SpareTables = spare,
-            TotalTables = totalTables,
-            MenuId = booking.MenuId,
-            MenuName = booking.Menu?.MenuName,
-            MenuPricePerTable = booking.FinalMenuPrice ?? booking.Menu?.PricePerTable,
-            Dishes = dishes,
-            DecorId = booking.DecorationPackageId,
-            DecorName = booking.DecorationPackage?.TenGoi,
-            DecorPrice = booking.FinalDecorationPrice ?? booking.DecorationPackage?.Gia,
-            DecorStyle = booking.DecorationPackage?.PhongCach,
-            Services = services,
-            TotalAmount = total,
-            DepositPaid = deposit,
-            RemainingDebt = remaining,
             StatusCode = booking.Status.StatusCode,
             StatusName = booking.Status.StatusName,
-            CanCancelOnline = booking.Status.StatusGroup == StatusGroups.Booking
-                && booking.Status.StatusCode == BookingStatusCodes.Pending,
+            CanCancelOnline = booking.Status.StatusGroup == StatusGroups.Booking &&
+                booking.Status.StatusCode == BookingStatusCodes.Pending,
             HoldExpiresAt = booking.BookedAt.AddHours(48),
-            BookedAt = booking.BookedAt,
-            CancellationReason = booking.CancellationReason,
-            SpecialRequests = booking.SpecialRequests,
-            ConsultantName = consultant?.Coordinator.FullName,
-            ConsultantPhone = consultant?.Coordinator.PhoneNumber
+            HasContract = booking.Contract is not null,
+            ContractTotal = contractTotal,
+            EstimatedTotal = booking.Contract is null ? booking.EstimatedTotal : null,
+            RequiredDepositAmount = booking.Contract?.RequiredDepositAmount,
+            PaymentTerms = booking.Contract?.PaymentTerms,
+            DepositPaid = deposit,
+            TotalPaid = paid,
+            RemainingBalance = contractTotal.HasValue ? contractTotal.Value - paid : null,
+            SuccessfulPayments = successful
         };
-    }
-
-    private static int TryParseSpareTables(string? specialRequests)
-    {
-        if (string.IsNullOrWhiteSpace(specialRequests)) return 0;
-        // Khớp "[Bàn dự phòng: 2]", "dự phòng: 2", "spare: 2", "sơ cua ... 2".
-        var m = System.Text.RegularExpressions.Regex.Match(
-            specialRequests, @"(?:dự\s*phòng|spare|sơ\s*cua)\s*[:\-]?\s*(\d{1,2})",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        if (m.Success && int.TryParse(m.Groups[1].Value, out var v) && v >= 0 && v <= 50)
-            return v;
-        return 0;
     }
 }
