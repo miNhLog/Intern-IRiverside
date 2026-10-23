@@ -1,8 +1,8 @@
 using HeThongDatTiecCuoi_API.Constants;
 using HeThongDatTiecCuoi_API.Constants.StatusCodes;
 using HeThongDatTiecCuoi_API.Data;
-using HeThongDatTiecCuoi_API.DTOs.Booking;
 using HeThongDatTiecCuoi_API.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,53 +22,13 @@ public sealed class MyBookingsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetMyBookings([FromQuery] int? userId, [FromQuery] string? bookingCode, [FromQuery] string? phone)
+    public IActionResult GetMyBookings()
     {
-        var existingId = await _context.DataStatuses
-            .Where(item => item.DataStatusCode == DataStatusCodes.Existing)
-            .Select(item => item.DataStatusId).SingleAsync();
-        var query = _context.WeddingBookings.AsNoTracking().AsQueryable();
-
-        if (userId is > 0)
-            query = query.Where(item => item.Customer.UserId == userId && item.Customer.DataStatusId == existingId);
-        else
+        return StatusCode(StatusCodes.Status410Gone, new
         {
-            if (string.IsNullOrWhiteSpace(bookingCode) || string.IsNullOrWhiteSpace(phone))
-                return BadRequest(new { success = false, message = "Tra cứu khách cần cả mã đặt tiệc và số điện thoại." });
-            var normalizedCode = bookingCode.Trim();
-            var normalizedPhone = phone.Trim();
-            query = query.Where(item => item.BookingCode == normalizedCode &&
-                item.Customer.PhoneNumber == normalizedPhone && item.Customer.DataStatusId == existingId);
-        }
-
-        var result = await query.OrderByDescending(item => item.BookedAt)
-            .Select(item => new MyBookingDto
-            {
-                BookingId = item.BookingId,
-                BookingCode = item.BookingCode,
-                CustomerName = item.Customer.FullName,
-                PhoneNumber = item.Customer.PhoneNumber,
-                HallId = item.HallSchedule.HallId,
-                HallName = item.HallSchedule.Hall.HallName,
-                EventDate = item.HallSchedule.Date,
-                Shift = item.HallSchedule.Shift,
-                GuestCount = item.GuestCount,
-                // LỖI D: bổ sung để list cũ không hiện 0 bàn / trống trạng thái.
-                TableCount = (int)Math.Ceiling(item.GuestCount / 10m),
-                Status = item.Status.StatusName,
-                MenuName = item.Menu != null ? item.Menu.MenuName : null,
-                FinalMenuPrice = item.FinalMenuPrice,
-                DecorName = item.DecorationPackage != null ? item.DecorationPackage.TenGoi : null,
-                FinalDecorationPrice = item.FinalDecorationPrice,
-                FinalHallPrice = item.FinalHallPrice,
-                EstimatedTotal = item.EstimatedTotal,
-                StatusCode = item.Status.StatusCode,
-                StatusName = item.Status.StatusName,
-                BookedAt = item.BookedAt,
-                SpecialRequests = item.SpecialRequests
-            }).ToListAsync();
-
-        return Ok(new { success = true, data = result });
+            success = false,
+            message = "Tra cứu công khai yêu cầu mã đặt tiệc và số điện thoại đã đăng ký."
+        });
     }
 
     [HttpPut("{id:int}/cancel")]

@@ -1,7 +1,5 @@
 // Alias route /MyBooking theo yêu cầu UC14/UC15 (giữ nguyên /MyBookings/Index tương thích).
 using System;
-using System.Collections.Generic;
-using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,67 +21,16 @@ public class MyBookingController : Controller
         _logger = logger;
     }
 
-    // GET /MyBooking — form tra cứu (prefill cookie/query SĐT + mã) + chi tiết nếu có query hợp lệ.
+    // GET /MyBooking renders only the public proof form; proof is never read from a URL or cookie.
     [HttpGet("")]
     [HttpGet("Index")]
-    public async Task<IActionResult> Index(
-        [FromQuery] string? bookingCode,
-        [FromQuery(Name = "code")] string? codeAlias,
-        [FromQuery] string? phone,
-        CancellationToken cancellationToken)
+    public IActionResult Index()
     {
-        try
-        {
-            ViewData["PublicActivePage"] = "my-bookings";
-            // LỖI E: chấp nhận alias `code` (link mail cũ) lẫn `bookingCode` (link mới).
-            var normalizedCode = (bookingCode ?? codeAlias ?? Request.Cookies["booking_code"] ?? string.Empty).Trim().ToUpperInvariant();
-            var targetPhone = (phone ?? Request.Cookies["customer_phone"] ?? string.Empty).Trim();
-            if (User.Identity?.IsAuthenticated == true && string.IsNullOrEmpty(targetPhone))
-                targetPhone = User.FindFirstValue(ClaimTypes.MobilePhone) ?? User.FindFirstValue("phone") ?? string.Empty;
-
-            var input = new PublicBookingLookupInputViewModel
-            {
-                BookingCode = normalizedCode,
-                PhoneNumber = targetPhone
-            };
-            ViewBag.LookupInput = input;
-
-            // Auto-lookup khi query đủ mã + SĐT hợp lệ (deep-link từ Recommendation sau khi giữ chỗ).
-            if (IsLookupShapeValid(normalizedCode, targetPhone))
-            {
-                var result = await _apiClient.LookupPublicBookingAsync(normalizedCode, targetPhone, cancellationToken);
-                if (result.Succeeded && result.Value is not null)
-                    ViewBag.LookupDetail = result.Value;
-                else
-                    ViewBag.LookupError = result.Error ?? "Thông tin mã đặt tiệc hoặc số điện thoại không chính xác.";
-            }
-
-            // Danh sách cũ (tương thích): best-effort, lỗi thì list rỗng, không throw.
-            try
-            {
-                int? currentUserId = null;
-                if (User.Identity?.IsAuthenticated == true
-                    && int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid))
-                    currentUserId = uid;
-                var listResult = await _apiClient.GetMyBookingsAsync(
-                    string.IsNullOrEmpty(targetPhone) ? null : targetPhone, currentUserId, cancellationToken);
-                ViewBag.MyBookings = listResult.Value ?? new List<MyBookingViewModel>();
-            }
-            catch
-            {
-                ViewBag.MyBookings = new List<MyBookingViewModel>();
-            }
-
-            return View(input);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "MyBooking Index thất bại. traceId={TraceId}. Chi tiết: {Detail}",
-                HttpContext.TraceIdentifier, ex.ToString());
-            ViewBag.LookupError = "Không thể tra cứu lúc này, vui lòng thử lại.";
-            ViewBag.MyBookings = new List<MyBookingViewModel>();
-            return View("Index", new PublicBookingLookupInputViewModel());
-        }
+        Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
+        Response.Headers.Pragma = "no-cache";
+        Response.Headers.Expires = "0";
+        ViewData["PublicActivePage"] = "my-bookings";
+        return View(new PublicBookingLookupInputViewModel());
     }
 
     // POST /MyBooking/Lookup — gọi Backend lookup, không throw 500.
@@ -93,6 +40,9 @@ public class MyBookingController : Controller
     {
         try
         {
+            Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
+            Response.Headers.Pragma = "no-cache";
+            Response.Headers.Expires = "0";
             ViewData["PublicActivePage"] = "my-bookings";
             input.BookingCode = (input.BookingCode ?? string.Empty).Trim().ToUpperInvariant();
             input.PhoneNumber = (input.PhoneNumber ?? string.Empty).Trim();
@@ -101,7 +51,6 @@ public class MyBookingController : Controller
             if (!ModelState.IsValid)
             {
                 ViewBag.LookupError = "Vui lòng nhập đúng mã đặt tiệc (DT-yyyyMMdd-XXXX) và SĐT 10 số.";
-                ViewBag.MyBookings = new List<MyBookingViewModel>();
                 return View("Index", input);
             }
 
@@ -109,16 +58,6 @@ public class MyBookingController : Controller
             if (result.Succeeded && result.Value is not null)
             {
                 ViewBag.LookupDetail = result.Value;
-                Response.Cookies.Append("customer_phone", input.PhoneNumber, new CookieOptions
-                {
-                    Expires = DateTimeOffset.Now.AddDays(30),
-                    IsEssential = true
-                });
-                Response.Cookies.Append("booking_code", input.BookingCode, new CookieOptions
-                {
-                    Expires = DateTimeOffset.Now.AddDays(30),
-                    IsEssential = true
-                });
             }
             else
             {
@@ -127,16 +66,13 @@ public class MyBookingController : Controller
                     Response.StatusCode = 429;
             }
 
-            ViewBag.MyBookings = new List<MyBookingViewModel>();
             return View("Index", input);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "MyBooking Lookup thất bại. traceId={TraceId}. Chi tiết: {Detail}",
-                HttpContext.TraceIdentifier, ex.ToString());
+            _logger.LogError(ex, "MyBooking Lookup thất bại. traceId={TraceId}", HttpContext.TraceIdentifier);
             ViewBag.LookupError = "Không thể tra cứu lúc này, vui lòng thử lại.";
             ViewBag.LookupInput = input;
-            ViewBag.MyBookings = new List<MyBookingViewModel>();
             return View("Index", input);
         }
     }
