@@ -279,7 +279,10 @@
                 actions.append(actionButton('Kích hoạt', 'cp-primary', () => confirmActivate(detail)));
             actions.append(actionButton('Hủy hợp đồng', 'cp-danger', () => confirmCancel(detail)));
         } else if (detail.statusCode === 'ACTIVE') {
-            if (!detail.hasPaymentInconsistency && Number(detail.paidAmount) === Number(detail.totalValue)) actions.append(actionButton('Hoàn tất hợp đồng', 'cp-primary', () => confirmComplete(detail)));
+            // BR05: chỉ cho hoàn tất khi đã thanh toán đủ và sự kiện đã diễn ra/booking đã hoàn tất.
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const eventHandled = detail.booking.statusCode === 'COMPLETED' || new Date(detail.booking.eventDate) < today;
+            if (!detail.hasPaymentInconsistency && Number(detail.paidAmount) === Number(detail.totalValue) && eventHandled) actions.append(actionButton('Hoàn tất hợp đồng', 'cp-primary', () => confirmComplete(detail)));
             actions.append(actionButton('Hủy hợp đồng', 'cp-danger', () => confirmCancel(detail)));
         }
     }

@@ -75,7 +75,8 @@ public sealed class PaymentSqlServerFixture : IAsyncLifetime
         return controller;
     }
     public ManagerContractController Contracts(ApplicationDbContext db) =>
-        AsActor(new ManagerContractController(db, new StatusService(db), null!, null!, null!));
+        AsActor(new ManagerContractController(db, new StatusService(db),
+            new ContractTemplateProvider(new PaymentPolicyProvider()), null!, null!));
     public async Task<IActionResult> Pay(RecordPaymentRequestDto request)
     {
         await using var db = Context();

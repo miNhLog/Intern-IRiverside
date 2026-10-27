@@ -34,19 +34,25 @@ public sealed class ManagerContractController : ControllerBase
     private readonly IContractTemplateProvider _templates;
     private readonly IContractCodeGenerator _codeGenerator;
     private readonly IContractPdfGenerator _pdfGenerator;
+    private readonly IEmailService? _emailService;
+    private readonly ILogger<ManagerContractController>? _logger;
 
     public ManagerContractController(
         ApplicationDbContext context,
         IStatusService statusService,
         IContractTemplateProvider templates,
         IContractCodeGenerator codeGenerator,
-        IContractPdfGenerator pdfGenerator)
+        IContractPdfGenerator pdfGenerator,
+        IEmailService? emailService = null,
+        ILogger<ManagerContractController>? logger = null)
     {
         _context = context;
         _statusService = statusService;
         _templates = templates;
         _codeGenerator = codeGenerator;
         _pdfGenerator = pdfGenerator;
+        _emailService = emailService;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -184,13 +190,25 @@ public sealed class ManagerContractController : ControllerBase
                     .Where(item => item.DataStatus.DataStatusCode == DataStatusCodes.Existing)
                     .OrderBy(item => item.BookingServiceId)
                     .Select(item => item.ServiceItem.TenDichVu).ToList(),
+                HallPrice = booking.FinalHallPrice,
+                MenuPricePerTable = booking.FinalMenuPrice,
+                DecorationPrice = booking.FinalDecorationPrice,
+                ServiceLines = booking.BookingServices
+                    .Where(item => item.DataStatus.DataStatusCode == DataStatusCodes.Existing)
+                    .OrderBy(item => item.BookingServiceId)
+                    .Select(item => new ContractServiceLineDto
+                    {
+                        Name = item.ServiceItem.TenDichVu,
+                        Quantity = item.Quantity,
+                        UnitPrice = item.FinalUnitPrice
+                    }).ToList(),
                 EstimatedTotal = booking.EstimatedTotal ?? 0m
             })
             .ToListAsync(cancellationToken);
 
         foreach (var booking in bookings)
         {
-            var templateData = ToTemplateData(booking);
+            var templateData = ToTemplateData(booking, booking.EstimatedTotal);
             booking.DefaultContractContent = _templates.BuildContractContent(templateData);
             booking.DefaultPaymentTerms = _templates.BuildPaymentTerms();
         }
@@ -227,7 +245,12 @@ public sealed class ManagerContractController : ControllerBase
         if (totalValue < 0) return BadRequest(new { message = "Tổng giá trị hợp đồng không được âm." });
         if (request.RequiredDepositAmount.HasValue && !PaymentBusinessRules.IsValidCommitment(request.RequiredDepositAmount, totalValue))
             return BadRequest(new { message = "Mức cọc phải dương, tối đa hai số lẻ và không vượt tổng hợp đồng." });
-        var templateData = ToTemplateData(booking);
+        var defaultContent = _templates.BuildContractContent(ToTemplateData(booking, booking.EstimatedTotal ?? 0m));
+        var requestedContent = Normalize(request.ContractContent);
+        var contractContent = requestedContent is null ||
+            NormalizeComparable(requestedContent) == NormalizeComparable(defaultContent)
+            ? _templates.BuildContractContent(ToTemplateData(booking, totalValue))
+            : requestedContent;
         var contract = new Contract
         {
             BookingId = booking.BookingId,
@@ -235,7 +258,7 @@ public sealed class ManagerContractController : ControllerBase
             CreatedDate = DateTime.Now.Date,
             TotalValue = totalValue,
             RequiredDepositAmount = request.RequiredDepositAmount,
-            ContractContent = Normalize(request.ContractContent) ?? _templates.BuildContractContent(templateData),
+            ContractContent = contractContent,
             PaymentTerms = Normalize(request.PaymentTerms) ?? _templates.BuildPaymentTerms(),
             StatusId = await _statusService.GetStatusIdAsync(StatusGroups.Contract, ContractStatusCodes.Draft, cancellationToken)
         };
@@ -276,6 +299,12 @@ public sealed class ManagerContractController : ControllerBase
 
         await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         var contract = await _context.Contracts.FromSqlInterpolated($"SELECT * FROM [HopDong] WITH (UPDLOCK, HOLDLOCK) WHERE [HopDongID] = {id}").Include(item => item.Status)
+            .Include(item => item.Booking).ThenInclude(item => item.Customer)
+            .Include(item => item.Booking).ThenInclude(item => item.HallSchedule).ThenInclude(item => item.Hall)
+            .Include(item => item.Booking).ThenInclude(item => item.Menu)
+            .Include(item => item.Booking).ThenInclude(item => item.DecorationPackage)
+            .Include(item => item.Booking).ThenInclude(item => item.BookingServices).ThenInclude(item => item.ServiceItem)
+            .Include(item => item.Booking).ThenInclude(item => item.BookingServices).ThenInclude(item => item.DataStatus)
             .SingleOrDefaultAsync(item => item.ContractId == id, cancellationToken);
         if (contract is null) return NotFound(new { message = "Không tìm thấy hợp đồng." });
         if (contract.Status.StatusCode != ContractStatusCodes.Draft)
@@ -294,12 +323,25 @@ public sealed class ManagerContractController : ControllerBase
             ContractContentLength = contract.ContractContent?.Length ?? 0,
             PaymentTermsLength = contract.PaymentTerms?.Length ?? 0
         };
+        var previousContent = contract.ContractContent;
+        var previousTotalValue = contract.TotalValue;
         contract.TotalValue = request.TotalValue;
         // Older clients omitting the additive field must not erase a verified commitment.
         contract.RequiredDepositAmount = request.RequiredDepositAmount ?? contract.RequiredDepositAmount;
         if (contract.RequiredDepositAmount > contract.TotalValue)
             return BadRequest(new { message = "Tổng hợp đồng không được nhỏ hơn mức cọc cam kết." });
-        contract.ContractContent = Normalize(request.ContractContent);
+        var providedContent = Normalize(request.ContractContent);
+        // BR04: nội dung do Manager tự soạn luôn được giữ; chỉ sinh lại bảng giá khi nội dung
+        // đang lưu vẫn là template của tổng cũ và tổng giá trị vừa được sửa hợp lệ.
+        string? contractContent;
+        if (providedContent is null)
+            contractContent = previousContent;
+        else if (request.TotalValue != previousTotalValue && NormalizeComparable(providedContent) ==
+            NormalizeComparable(_templates.BuildContractContent(ToTemplateData(contract.Booking, previousTotalValue))))
+            contractContent = _templates.BuildContractContent(ToTemplateData(contract.Booking, request.TotalValue));
+        else
+            contractContent = providedContent;
+        contract.ContractContent = contractContent;
         contract.PaymentTerms = Normalize(request.PaymentTerms);
         AddAudit(actorId, AuditActions.ContractUpdated, contract, oldData,
             new
@@ -366,6 +408,7 @@ public sealed class ManagerContractController : ControllerBase
             $"Kích hoạt hợp đồng {contract.ContractCode}.");
         await _context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+        await TryNotifyContractStatusAsync(contract.ContractId);
         return ActionResult(contract, ContractStatusCodes.Active, "Đã kích hoạt hợp đồng.");
     }
 
@@ -376,11 +419,15 @@ public sealed class ManagerContractController : ControllerBase
         await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         var contract = await _context.Contracts.FromSqlInterpolated($"SELECT * FROM [HopDong] WITH (UPDLOCK, HOLDLOCK) WHERE [HopDongID] = {id}").Include(item => item.Status)
             .Include(item => item.Payments).ThenInclude(item => item.Status)
+            .Include(item => item.Booking).ThenInclude(item => item.Status)
+            .Include(item => item.Booking).ThenInclude(item => item.HallSchedule)
             .SingleOrDefaultAsync(item => item.ContractId == id, cancellationToken);
         if (contract is null) return NotFound(new { message = "Không tìm thấy hợp đồng." });
         var paid = contract.Payments.Where(payment => payment.Status.StatusCode == PaymentStatusCodes.Success)
             .Sum(payment => payment.Amount);
-        var completionError = ContractBusinessRules.ValidateCompletion(contract.Status.StatusCode, contract.TotalValue, paid);
+        var completionError = ContractBusinessRules.ValidateCompletion(
+            contract.Status.StatusCode, contract.TotalValue, paid,
+            contract.Booking.Status.StatusCode, contract.Booking.HallSchedule.Date, DateTime.Now.Date);
         if (completionError is not null) return Conflict(new { message = completionError });
 
         contract.StatusId = await _statusService.GetStatusIdAsync(StatusGroups.Contract, ContractStatusCodes.Completed, cancellationToken);
@@ -389,6 +436,7 @@ public sealed class ManagerContractController : ControllerBase
             $"Hoàn tất hợp đồng {contract.ContractCode} sau khi đã thanh toán đủ.");
         await _context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+        await TryNotifyContractStatusAsync(contract.ContractId);
         return ActionResult(contract, ContractStatusCodes.Completed, "Đã hoàn tất hợp đồng.");
     }
 
@@ -410,6 +458,7 @@ public sealed class ManagerContractController : ControllerBase
             $"Hủy hợp đồng {contract.ContractCode}. Booking và lịch sử thanh toán được giữ nguyên.");
         await _context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+        await TryNotifyContractStatusAsync(contract.ContractId);
         return ActionResult(contract, ContractStatusCodes.Cancelled, "Đã hủy hợp đồng. Booking và thanh toán không bị thay đổi.");
     }
 
@@ -480,18 +529,67 @@ public sealed class ManagerContractController : ControllerBase
                     }).ToList()
             });
 
-    private static ContractTemplateData ToTemplateData(EligibleBookingDto booking) => new(
+    private static ContractTemplateData ToTemplateData(EligibleBookingDto booking, decimal contractTotalValue) => new(
         booking.BookingCode, booking.CustomerName, booking.EventDate, booking.Shift,
         booking.HallName, booking.GuestCount, booking.MenuName,
-        booking.DecorationPackageName, booking.Services);
+        booking.DecorationPackageName, booking.Services,
+        booking.HallPrice, booking.MenuPricePerTable, booking.DecorationPrice,
+        booking.ServiceLines
+            .Select(line => new ContractTemplateServiceLine(line.Name, line.Quantity, line.UnitPrice)).ToList(),
+        booking.EstimatedTotal, contractTotalValue);
 
-    private static ContractTemplateData ToTemplateData(WeddingBooking booking) => new(
-        booking.BookingCode, booking.Customer.FullName, booking.HallSchedule.Date,
-        booking.HallSchedule.Shift, booking.HallSchedule.Hall.HallName, booking.GuestCount,
-        booking.Menu?.MenuName, booking.DecorationPackage?.TenGoi,
-        booking.BookingServices.Where(item => item.DataStatus.DataStatusCode == DataStatusCodes.Existing)
+    private static ContractTemplateData ToTemplateData(WeddingBooking booking, decimal contractTotalValue)
+    {
+        var services = booking.BookingServices
+            .Where(item => item.DataStatus.DataStatusCode == DataStatusCodes.Existing)
             .OrderBy(item => item.BookingServiceId)
-            .Select(item => item.ServiceItem.TenDichVu).ToList());
+            .ToList();
+        return new(
+            booking.BookingCode, booking.Customer.FullName, booking.HallSchedule.Date,
+            booking.HallSchedule.Shift, booking.HallSchedule.Hall.HallName, booking.GuestCount,
+            booking.Menu?.MenuName, booking.DecorationPackage?.TenGoi,
+            services.Select(item => item.ServiceItem.TenDichVu).ToList(),
+            booking.FinalHallPrice, booking.FinalMenuPrice, booking.FinalDecorationPrice,
+            services.Select(item => new ContractTemplateServiceLine(item.ServiceItem.TenDichVu, item.Quantity, item.FinalUnitPrice)).ToList(),
+            booking.EstimatedTotal, contractTotalValue);
+    }
+
+    /// <summary>
+    /// FR15 / UC16: chỉ gửi email sau khi transaction đã commit; lỗi SMTP không ảnh hưởng kết quả đã lưu.
+    /// </summary>
+    private async Task TryNotifyContractStatusAsync(int contractId)
+    {
+        if (_emailService is null) return;
+        try
+        {
+            var info = await _context.Contracts.AsNoTracking()
+                .Where(contract => contract.ContractId == contractId)
+                .Select(contract => new
+                {
+                    contract.ContractCode,
+                    contract.TotalValue,
+                    CustomerEmail = contract.Booking.Customer.Email,
+                    CustomerName = contract.Booking.Customer.FullName,
+                    BookingCode = contract.Booking.BookingCode,
+                    EventDate = contract.Booking.HallSchedule.Date,
+                    Shift = contract.Booking.HallSchedule.Shift,
+                    HallName = contract.Booking.HallSchedule.Hall.HallName,
+                    StatusName = contract.Status.StatusName,
+                    PaidAmount = contract.Payments
+                        .Where(payment => payment.Status.StatusCode == PaymentStatusCodes.Success)
+                        .Sum(payment => (decimal?)payment.Amount) ?? 0m
+                })
+                .SingleOrDefaultAsync();
+            if (info is null || string.IsNullOrWhiteSpace(info.CustomerEmail)) return;
+            await _emailService.SendContractStatusChangedAsync(
+                info.CustomerEmail.Trim(), info.CustomerName, info.ContractCode, info.BookingCode,
+                info.StatusName, info.TotalValue, info.PaidAmount, info.EventDate, info.Shift, info.HallName);
+        }
+        catch (Exception exception)
+        {
+            _logger?.LogWarning(exception, "Không gửi được email cập nhật hợp đồng {ContractId}.", contractId);
+        }
+    }
 
     private void AddAudit(int actorId, string action, Contract contract, object? oldData, object? newData, string notes) =>
         _context.AuditLogs.Add(new AuditLog
@@ -518,6 +616,8 @@ public sealed class ManagerContractController : ControllerBase
     private bool TryGetActorId(out int actorId) =>
         int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out actorId);
     private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    private static string? NormalizeComparable(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Replace("\r\n", "\n").Trim();
     private static string? NormalizeCode(string? value) => Normalize(value)?.ToUpperInvariant();
     private static bool IsContractStatus(string value) => value is ContractStatusCodes.Draft or
         ContractStatusCodes.Active or ContractStatusCodes.Completed or ContractStatusCodes.Cancelled;

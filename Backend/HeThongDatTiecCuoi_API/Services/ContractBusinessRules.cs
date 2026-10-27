@@ -50,11 +50,25 @@ public static class ContractBusinessRules
             : "Booking liên kết không còn ở trạng thái đã xác nhận.";
     }
 
-    public static string? ValidateCompletion(string contractStatusCode, decimal totalValue, decimal paidAmount)
+    /// <summary>
+    /// BR05: chỉ hoàn tất khi đã thanh toán đủ và dữ liệu hiện hữu xác nhận sự kiện đã diễn ra
+    /// (booking COMPLETED hoặc ngày sự kiện đã qua). Không tạo trạng thái/phê duyệt mới.
+    /// </summary>
+    public static string? ValidateCompletion(
+        string contractStatusCode,
+        decimal totalValue,
+        decimal paidAmount,
+        string bookingStatusCode,
+        DateTime eventDate,
+        DateTime today)
     {
         if (contractStatusCode != ContractStatusCodes.Active) return "Chỉ hợp đồng đang hiệu lực mới được hoàn tất.";
         if (paidAmount < totalValue) return "Hợp đồng chưa được thanh toán đủ.";
         if (paidAmount > totalValue) return "Tổng thanh toán vượt giá trị hợp đồng. Vui lòng kiểm tra dữ liệu.";
+        if (bookingStatusCode == BookingStatusCodes.Cancelled)
+            return "Booking đã hủy nên sự kiện không được xác nhận hoàn tất.";
+        if (bookingStatusCode != BookingStatusCodes.Completed && eventDate.Date >= today.Date)
+            return "Sự kiện chưa diễn ra nên chưa thể hoàn tất hợp đồng.";
         return null;
     }
 

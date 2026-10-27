@@ -40,4 +40,21 @@ public interface IEmailService
         DateTime holdExpiresAt,
         string? phoneNumber = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// FR15 / UC16: Gửi email cho khách khi hợp đồng đổi trạng thái (kích hoạt/hoàn tất/hủy).
+    /// Fault-tolerant: caller phải try-catch sau khi transaction đã commit.
+    /// </summary>
+    Task SendContractStatusChangedAsync(
+        string recipientEmail,
+        string customerName,
+        string contractCode,
+        string bookingCode,
+        string statusName,
+        decimal totalValue,
+        decimal paidAmount,
+        DateTime eventDate,
+        string shift,
+        string hallName,
+        CancellationToken cancellationToken = default);
 }
