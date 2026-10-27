@@ -63,8 +63,20 @@ public sealed class EligibleBookingDto
     public string? DecorationPackageName { get; set; }
     public List<string> Services { get; set; } = [];
     public decimal EstimatedTotal { get; set; }
+    // BR04: snapshot giá tại thời điểm booking, dùng để dựng bảng giá của hợp đồng.
+    public decimal? HallPrice { get; set; }
+    public decimal? MenuPricePerTable { get; set; }
+    public decimal? DecorationPrice { get; set; }
+    public List<ContractServiceLineDto> ServiceLines { get; set; } = [];
     public string DefaultContractContent { get; set; } = string.Empty;
     public string DefaultPaymentTerms { get; set; } = string.Empty;
+}
+
+public sealed class ContractServiceLineDto
+{
+    public string Name { get; set; } = string.Empty;
+    public int Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
 }
 
 public sealed class CreateContractRequestDto

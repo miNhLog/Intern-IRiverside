@@ -126,6 +126,97 @@ public class SmtpEmailService : IEmailService
         return SendHtmlAsync(recipientEmail, subject, html, cancellationToken);
     }
 
+    /// <inheritdoc />
+    public Task SendContractStatusChangedAsync(
+        string recipientEmail,
+        string customerName,
+        string contractCode,
+        string bookingCode,
+        string statusName,
+        decimal totalValue,
+        decimal paidAmount,
+        DateTime eventDate,
+        string shift,
+        string hallName,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(recipientEmail))
+            throw new ArgumentException("Email người nhận không được để trống.", nameof(recipientEmail));
+
+        var subject = $"[Riverside Palace] Cập nhật hợp đồng {contractCode} - {statusName}";
+        var html = BuildContractStatusHtml(
+            customerName, contractCode, bookingCode, statusName, totalValue, paidAmount,
+            eventDate, shift, hallName, _mail.ClientAppBaseUrl);
+        return SendHtmlAsync(recipientEmail, subject, html, cancellationToken);
+    }
+
+    internal static string BuildContractStatusHtml(
+        string customerName,
+        string contractCode,
+        string bookingCode,
+        string statusName,
+        decimal totalValue,
+        decimal paidAmount,
+        DateTime eventDate,
+        string shift,
+        string hallName,
+        string? clientAppBaseUrl = null)
+    {
+        var vi = new CultureInfo("vi-VN");
+        string E(string? v) => WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(v) ? "—" : v.Trim());
+        string Money(decimal amount) => E(amount.ToString("N0", vi) + " VNĐ");
+        var remaining = totalValue - paidAmount;
+        var eventStr = $"{eventDate:dd/MM/yyyy} · {E(shift)}";
+        var baseUrl = string.IsNullOrWhiteSpace(clientAppBaseUrl) ? "https://localhost:7102" : clientAppBaseUrl.TrimEnd('/');
+        var lookupUrl = $"{baseUrl}/MyBooking";
+
+        var sb = new StringBuilder();
+        sb.Append($"""
+        <!DOCTYPE html>
+        <html lang="vi"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+        <title>Cập nhật hợp đồng {E(contractCode)}</title></head>
+        <body style="margin:0;padding:0;background:#FDFBF7;font-family:Arial,Helvetica,sans-serif;color:#111822;">
+        <div style="max-width:640px;margin:0 auto;padding:24px 16px;">
+          <div style="background:#111822;color:#fff;text-align:center;padding:28px 20px;border-radius:12px 12px 0 0;">
+            <div style="letter-spacing:4px;font-size:13px;color:#B89758;">RIVERSIDE PALACE</div>
+            <h1 style="margin:8px 0 4px;font-size:22px;">Cập nhật hợp đồng tiệc cưới</h1>
+            <p style="margin:0;color:#d7d7d7;font-size:13px;">Trung Tâm Hội Nghị Tiệc Cưới Riverside Palace</p>
+          </div>
+          <div style="background:#fff;border:1px solid #eee;border-top:none;border-radius:0 0 12px 12px;padding:24px;">
+            <p style="font-size:15px;">Xin chào <strong>{E(customerName)}</strong>,</p>
+            <p style="font-size:14px;line-height:1.6;">Hợp đồng của Quý khách vừa được cập nhật trạng thái mới.</p>
+            <div style="border:2px dashed #B89758;border-radius:10px;padding:16px;text-align:center;background:#FDFBF7;margin:16px 0;">
+              <div style="font-size:13px;color:#666;">MÃ HỢP ĐỒNG</div>
+              <div style="font-size:24px;font-weight:bold;letter-spacing:2px;color:#111822;">{E(contractCode)}</div>
+              <div style="font-size:12px;color:#666;margin-top:6px;">Trạng thái: <strong>{E(statusName)}</strong></div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <tr><td style="padding:10px;border-bottom:1px solid #f0e8d5;color:#666;width:38%;">Mã hồ sơ</td><td style="padding:10px;border-bottom:1px solid #f0e8d5;font-weight:bold;">{E(bookingCode)}</td></tr>
+              <tr><td style="padding:10px;border-bottom:1px solid #f0e8d5;color:#666;">Sự kiện</td><td style="padding:10px;border-bottom:1px solid #f0e8d5;font-weight:bold;">{eventStr} — {E(hallName)}</td></tr>
+              <tr><td style="padding:10px;border-bottom:1px solid #f0e8d5;color:#666;">Tổng giá trị hợp đồng</td><td style="padding:10px;border-bottom:1px solid #f0e8d5;font-weight:bold;color:#B89758;">{Money(totalValue)}</td></tr>
+              <tr><td style="padding:10px;border-bottom:1px solid #f0e8d5;color:#666;">Đã thanh toán</td><td style="padding:10px;border-bottom:1px solid #f0e8d5;">{Money(paidAmount)}</td></tr>
+              <tr><td style="padding:10px;color:#666;">Còn lại</td><td style="padding:10px;font-weight:bold;">{Money(remaining)}</td></tr>
+            </table>
+            <div style="background:#fff8e8;border-left:4px solid #B89758;padding:12px 14px;border-radius:6px;margin:16px 0;font-size:13px;line-height:1.6;">
+              Nếu cần hỗ trợ về hợp đồng hoặc các khoản thanh toán, vui lòng liên hệ Riverside Palace.
+            </div>
+            <div style="text-align:center;margin:20px 0;">
+              <a href="{E(lookupUrl)}" style="display:inline-block;background:#B89758;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold;font-size:15px;">Tra cứu hồ sơ của tôi</a>
+              <div style="font-size:12px;color:#666;margin-top:8px;">{E(lookupUrl)}</div>
+            </div>
+            <hr style="border:none;border-top:1px solid #eee;margin:20px 0;"/>
+            <p style="font-size:12px;color:#666;line-height:1.7;margin:0;">
+              Trung Tâm Hội Nghị Tiệc Cưới Riverside Palace<br/>
+              Địa chỉ: 360D Bến Vân Đồn, Quận 4, TP. Hồ Chí Minh<br/>
+              Hotline tư vấn: <strong>0933 777 888</strong> — Email: riversidepalace.contact@gmail.com
+            </p>
+          </div>
+        </div>
+        </body></html>
+        """);
+        return sb.ToString();
+    }
+
     internal static string BuildBookingConfirmationHtml(
         string customerName,
         string bookingCode,
