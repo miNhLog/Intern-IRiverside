@@ -1,6 +1,8 @@
+using System.Data;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Data.SqlClient;
 using HeThongDatTiecCuoi_API.Constants;
 using HeThongDatTiecCuoi_API.Constants.StatusCodes;
 using HeThongDatTiecCuoi_API.Data;
@@ -9,6 +11,7 @@ using HeThongDatTiecCuoi_API.Models;
 using HeThongDatTiecCuoi_API.Options;
 using HeThongDatTiecCuoi_API.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -1209,6 +1212,7 @@ public sealed class RecommendationController : ControllerBase
 
     [HttpPost("register-booking")]
     [HttpPost("register")]
+    [EnableRateLimiting("public-booking-register")]
     public async Task<IActionResult> RegisterPublicBooking([FromBody] RegisterPublicBookingDto? request)
     {
         if (request is null)
@@ -1232,19 +1236,27 @@ public sealed class RecommendationController : ControllerBase
         }
         // Tự phục hồi GuestCount từ TableCount*10 trước Model validation để hết lỗi 400
         // "Số lượng khách phải lớn hơn 0" khi JS chỉ gửi TableCount.
+        var cleanPhone = request.PhoneNumber.Trim();
+        // UC14 tra cứu bằng đúng SĐT 10 số bắt đầu bằng 0; chặn sớm để không tạo booking không thể tra cứu.
+        if (cleanPhone.Length != 10 || cleanPhone[0] != '0' || !cleanPhone.All(char.IsDigit))
+            return BadRequest(new { success = false, message = "Số điện thoại Việt Nam phải gồm đúng 10 số và bắt đầu bằng 0." });
+
         if (request.GuestCount <= 0 && request.TableCount > 0)
             request.GuestCount = request.TableCount * 10;
         if (request.GuestCount <= 0)
             return BadRequest(new { success = false, message = "Số lượng khách phải lớn hơn 0." });
 
-        await using var transaction = await _context.Database.BeginTransactionAsync();
+        // SQL Server dùng Serializable để khóa khoảng lịch trong lúc kiểm tra và ghi.
+        // InMemory (unit test cũ) không hỗ trợ transaction cách ly nên bỏ qua.
+        await using var transaction = _context.Database.IsRelational()
+            ? await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable)
+            : null;
         try
         {
         var existingDataStatus = await _context.DataStatuses.SingleAsync(item => item.DataStatusCode == DataStatusCodes.Existing);
-        var cleanPhone = request.PhoneNumber.Trim();
         var customer = await _context.Customers.FirstOrDefaultAsync(customer =>
             customer.DataStatusId == existingDataStatus.DataStatusId &&
-            (customer.PhoneNumber == cleanPhone || (request.UserId.HasValue && customer.UserId == request.UserId.Value)));
+            customer.PhoneNumber == cleanPhone);
         if (customer == null)
         {
             customer = new Customer
@@ -1253,7 +1265,6 @@ public sealed class RecommendationController : ControllerBase
                 FullName = request.CustomerName.Trim(),
                 PhoneNumber = cleanPhone,
                 Email = cleanEmail,
-                UserId = request.UserId,
                 CreatedAt = DateTime.Now,
                 DataStatusId = existingDataStatus.DataStatusId
             };
@@ -1263,11 +1274,6 @@ public sealed class RecommendationController : ControllerBase
         else
         {
             var dirty = false;
-            if (request.UserId.HasValue && !customer.UserId.HasValue)
-            {
-                customer.UserId = request.UserId.Value;
-                dirty = true;
-            }
             // Đồng bộ email mới để mail xác nhận luôn tới đúng địa chỉ hiện tại.
             if (!string.IsNullOrWhiteSpace(cleanEmail) &&
                 !string.Equals((customer.Email ?? string.Empty).Trim(), cleanEmail, StringComparison.OrdinalIgnoreCase))
@@ -1289,14 +1295,68 @@ public sealed class RecommendationController : ControllerBase
             // (Index.cshtml submitActualBooking mở duplicateBookingModal khi message chứa các cụm này).
             return BadRequest(new { success = false, message = "Quý khách đã có đơn tiệc đang xử lý. Để bảo đảm lịch sảnh, mỗi khách hàng chỉ giữ chỗ 01 phương án tiệc cưới tại một thời điểm. Vui lòng vào mục \"Tiệc của tôi\" để xem hoặc hủy đơn cũ." });
 
-        // Default-to-Available + auto-init LichSanh (CREATE-IF-NOT-EXISTS):
-        // - HallScheduleId > 0: dùng record hiện có (tự phục hồi nếu stale-lock mà không có DatTiec chiếm giữ).
-        // - HallScheduleId <= 0 (ngày xa chưa có dòng) hoặc trỏ nhầm sang HallId (JS gửi hallScheduleId || hallId):
-        //   resolve bằng (HallId, EventDate yyyy-MM-dd, Shift); chưa có record + không có DatTiec hoạt động
-        //   -> tự INSERT LichSanh BOOKED, tuyệt đối không báo "Lịch sảnh không tồn tại".
         // Chuẩn hóa ca tổ chức: "Ca Tối (17:30 – 21:30)", "ca toi", "Ca Tối"... -> "Ca tối"/"Ca trưa" chuẩn.
         var requestedShift = NormalizeHallShift(request.Shift);
+        if (!string.Equals(requestedShift, HallShiftNames.Lunch, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(requestedShift, HallShiftNames.Dinner, StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { success = false, message = "Ca tổ chức không hợp lệ. Vui lòng chọn Ca trưa hoặc Ca tối." });
 
+        // Hỗ trợ client cũ chỉ gửi HallScheduleId: suy ra sảnh/ngày/ca từ lịch rồi vẫn validate đầy đủ.
+        if ((request.HallId <= 0 || !request.EventDate.HasValue) && request.HallScheduleId > 0)
+        {
+            var scheduleMeta = await _context.HallSchedules.AsNoTracking()
+                .Where(item => item.HallScheduleId == request.HallScheduleId &&
+                    item.DataStatusId == existingDataStatus.DataStatusId)
+                .Select(item => new { item.HallId, item.Date, item.Shift })
+                .SingleOrDefaultAsync();
+            if (scheduleMeta != null)
+            {
+                if (request.HallId <= 0) request.HallId = scheduleMeta.HallId;
+                request.EventDate ??= scheduleMeta.Date;
+                if (string.IsNullOrWhiteSpace(request.Shift))
+                    requestedShift = NormalizeHallShift(scheduleMeta.Shift);
+            }
+        }
+
+        if (request.HallId <= 0 || !request.EventDate.HasValue)
+            return BadRequest(new { success = false, message = "Thiếu thông tin sảnh/ngày/ca tổ chức. Vui lòng chọn lại ngày/ca khác." });
+
+        // Chuẩn hóa ngày (chỉ lấy phần Date, bỏ Time).
+        var eventDay = request.EventDate.Value.Date;
+        var minDate = DateTime.Today.AddDays(30);
+        var maxDate = DateTime.Today.AddDays(365);
+        if (eventDay < minDate)
+            return BadRequest(new { success = false, message = "Ngày tổ chức tiệc cưới phải cách ngày hiện tại tối thiểu 30 ngày. Vui lòng chọn ngày xa hơn để Riverside Palace có thời gian chuẩn bị tốt nhất." });
+        if (eventDay > maxDate)
+            return BadRequest(new { success = false, message = "Hệ thống chỉ nhận đăng ký giữ chỗ trước tối đa 365 ngày (1 năm). Vui lòng chọn ngày gần hơn." });
+        var nextDay = eventDay.AddDays(1);
+
+        var hall = await _context.Halls
+            .Include(h => h.Status)
+            .SingleOrDefaultAsync(h => h.HallId == request.HallId &&
+                h.DataStatusId == existingDataStatus.DataStatusId);
+        if (hall == null || hall.Status == null ||
+            hall.Status.StatusGroup != StatusGroups.Hall || hall.Status.StatusCode != HallStatusCodes.Active)
+            return BadRequest(new { success = false, message = "Sảnh tiệc không tồn tại hoặc đã ngừng hoạt động." });
+        if (request.GuestCount > hall.MaximumCapacity ||
+            (hall.MinimumCapacity.HasValue && request.GuestCount < hall.MinimumCapacity.Value))
+            return BadRequest(new { success = false, message = "Số khách không phù hợp sức chứa sảnh." });
+        if (request.TableCount < 0 || request.TableCount > 500 ||
+            request.SpareTableCount < 0 || request.SpareTableCount > 50)
+            return BadRequest(new { success = false, message = "Số bàn không hợp lệ." });
+
+        var officialTableCount = (int)Math.Ceiling(request.GuestCount / 10m);
+        var spareTableCount = Math.Max(0, request.SpareTableCount);
+        var estimatedTableCount = officialTableCount + spareTableCount;
+        if (request.TableCount > estimatedTableCount)
+            estimatedTableCount = request.TableCount;
+        if (estimatedTableCount <= 0 || estimatedTableCount * 10 > hall.MaximumCapacity)
+            return BadRequest(new { success = false, message = "Tổng số bàn (kể cả bàn dự phòng) vượt sức chứa sảnh." });
+
+        // Tìm LichSanh theo (HallId, Date, Shift chuẩn hóa). So sánh Shift
+        // case-insensitive (ToLower dịch được sang SQL) để khớp cả record cũ
+        // lưu "Ca Tối"/"Ca Trưa" lệch hoa/thường.
+        var normalizedShiftLower = requestedShift.ToLower();
         HallSchedule? schedule = null;
         if (request.HallScheduleId > 0)
         {
@@ -1306,49 +1366,20 @@ public sealed class RecommendationController : ControllerBase
                 .SingleOrDefaultAsync(item => item.HallScheduleId == request.HallScheduleId &&
                     item.DataStatusId == existingDataStatus.DataStatusId &&
                     item.Hall.DataStatusId == existingDataStatus.DataStatusId);
-            // LỖI A: verify khớp (HallId, EventDate.Date, Shift chuẩn hóa). Nếu JS gửi nhầm HallId
-            // vào HallScheduleId hoặc lịch đã đổi ca/ngày -> set null để rơi vào nhánh
-            // auto-init theo (HallId, EventDate yyyy-MM-dd, Shift), tránh đặt nhầm lịch.
-            // So sánh Shift sau chuẩn hóa + OrdinalIgnoreCase để tránh lệch hoa/thường ("Ca Tối" vs "Ca tối").
-            if (schedule != null && request.HallId > 0 && request.EventDate.HasValue
-                && !string.IsNullOrWhiteSpace(requestedShift))
+            // Nếu JS gửi nhầm HallId vào HallScheduleId hoặc lịch đã đổi ca/ngày,
+            // bỏ lịch đó và resolve lại theo (HallId, EventDate, Shift).
+            if (schedule != null)
             {
-                var reqDay = request.EventDate.Value.Date;
                 var sameHall = schedule.HallId == request.HallId;
-                var sameDate = schedule.Date.Date == reqDay;
+                var sameDate = schedule.Date.Date == eventDay;
                 var sameShift = string.Equals(NormalizeHallShift(schedule.Shift), requestedShift, StringComparison.OrdinalIgnoreCase);
                 if (!sameHall || !sameDate || !sameShift)
                     schedule = null;
             }
         }
 
-        if (schedule == null && request.HallId > 0 && request.EventDate.HasValue)
+        if (schedule == null)
         {
-            // Chuẩn hóa ngày (chỉ lấy phần Date, bỏ Time).
-            var eventDay = request.EventDate.Value.Date;
-            var minDate = DateTime.Today.AddDays(30);
-            var maxDate = DateTime.Today.AddDays(365);
-            if (eventDay < minDate)
-                return BadRequest(new { success = false, message = "Ngày tổ chức tiệc cưới phải cách ngày hiện tại tối thiểu 30 ngày. Vui lòng chọn ngày xa hơn để Riverside Palace có thời gian chuẩn bị tốt nhất." });
-            if (eventDay > maxDate)
-                return BadRequest(new { success = false, message = "Hệ thống chỉ nhận đăng ký giữ chỗ trước tối đa 365 ngày (1 năm). Vui lòng chọn ngày gần hơn." });
-            var nextDay = eventDay.AddDays(1);
-
-            var hall = await _context.Halls
-                .Include(h => h.Status)
-                .SingleOrDefaultAsync(h => h.HallId == request.HallId &&
-                    h.DataStatusId == existingDataStatus.DataStatusId);
-            if (hall == null || hall.Status == null ||
-                hall.Status.StatusGroup != StatusGroups.Hall || hall.Status.StatusCode != HallStatusCodes.Active)
-                return BadRequest(new { success = false, message = "Sảnh tiệc không tồn tại hoặc đã ngừng hoạt động." });
-            if (request.GuestCount > hall.MaximumCapacity ||
-                (hall.MinimumCapacity.HasValue && request.GuestCount < hall.MinimumCapacity.Value))
-                return BadRequest(new { success = false, message = "Số khách không phù hợp sức chứa sảnh." });
-
-            // Tìm LichSanh theo (HallId, Date, Shift chuẩn hóa). So sánh Shift
-            // case-insensitive (ToLower dịch được sang SQL) để khớp cả record cũ
-            // lưu "Ca Tối"/"Ca Trưa" lệch hoa/thường.
-            var normalizedShiftLower = requestedShift.ToLower();
             schedule = await _context.HallSchedules
                 .Include(item => item.Hall)
                 .Include(item => item.Status)
@@ -1356,127 +1387,94 @@ public sealed class RecommendationController : ControllerBase
                     item.Date >= eventDay && item.Date < nextDay &&
                     item.Shift.ToLower() == normalizedShiftLower &&
                     item.DataStatusId == existingDataStatus.DataStatusId);
-
-            if (schedule == null)
-            {
-                // Chưa có dòng LichSanh: kiểm tra DatTiec đang hoạt động chiếm dụng
-                // (PENDING/CONFIRMED/PREPARING, bỏ qua CANCELLED/COMPLETED) rồi tự INSERT.
-                // Chỉ báo bận khi thật sự có booking; còn không thì CREATE-IF-NOT-EXISTS.
-                var occupiedByBooking = await _context.WeddingBookings.AnyAsync(booking =>
-                    booking.HallSchedule.HallId == request.HallId &&
-                    booking.HallSchedule.Date >= eventDay && booking.HallSchedule.Date < nextDay &&
-                    booking.HallSchedule.Shift.ToLower() == normalizedShiftLower &&
-                    booking.HallSchedule.DataStatusId == existingDataStatus.DataStatusId &&
-                    booking.Status != null &&
-                    booking.Status.StatusGroup == StatusGroups.Booking &&
-                    BookingStatusCodes.OccupyingSchedule.Contains(booking.Status.StatusCode));
-                if (occupiedByBooking)
-                    return Conflict(new { success = false, message = $"Sảnh này vào ngày {eventDay:dd/MM/yyyy} ({requestedShift}) đã có khách đặt. Vui lòng chọn sảnh hoặc ngày/ca khác." });
-                schedule = new HallSchedule
-                {
-                    HallId = request.HallId,
-                    Date = eventDay,
-                    Shift = requestedShift,
-                    StatusId = await _statusService.GetStatusIdAsync(StatusGroups.HallSchedule, HallScheduleStatusCodes.Booked),
-                    DataStatusId = existingDataStatus.DataStatusId,
-                    Hall = hall
-                };
-                _context.HallSchedules.Add(schedule);
-                await _context.SaveChangesAsync();
-                // FIX TRIỆT ĐỂ: sau INSERT, EF chỉ gán StatusId, navigation Status vẫn null
-                // (dù đã gán Hall). Guard bên dưới check schedule.Status == null nên báo sai
-                // "Thiếu thông tin sảnh/ngày/ca...". Reload navigation ngay tại đây.
-                try
-                {
-                    await _context.Entry(schedule).Reference(s => s.Status).LoadAsync();
-                }
-                catch (Exception loadEx)
-                {
-                    _logger.LogWarning(loadEx, "Không reload được Status sau auto-init HallSchedule (HallId={HallId}, Date={Date}, Shift={Shift}).",
-                        schedule.HallId, schedule.Date.ToString("yyyy-MM-dd"), schedule.Shift);
-                }
-                if (schedule.Hall == null)
-                {
-                    try { await _context.Entry(schedule).Reference(s => s.Hall).LoadAsync(); } catch { }
-                }
-            }
         }
 
-        // Log chi tiết trước guard để dễ debug: HallId, HallScheduleId, EventDate raw, Shift.
-        _logger.LogInformation(
-            "RegisterPublicBooking resolve schedule: HallId={HallId}, HallScheduleId={HallScheduleId}, EventDateRaw={EventDateRaw}, EventDate={EventDate}, RequestedShift={RequestedShift}, ScheduleId={ScheduleId}, StatusId={StatusId}, HasHall={HasHall}, HasStatus={HasStatus}",
-            request.HallId, request.HallScheduleId, request.EventDate?.ToString("o") ?? "<null>",
-            request.EventDate?.ToString("yyyy-MM-dd") ?? "<null>", requestedShift,
-            schedule?.HallScheduleId, schedule?.StatusId, schedule?.Hall != null, schedule?.Status != null);
-
-        // Tự phục hồi navigation nếu bị null nhưng FK vẫn hợp lệ (tránh báo thiếu oan):
-        // schedule.Status null + StatusId != 0 -> reload; chỉ báo thiếu khi StatusId == 0.
-        if (schedule != null && schedule.Status == null && schedule.StatusId != 0)
+        if (schedule == null)
         {
-            try { await _context.Entry(schedule).Reference(s => s.Status).LoadAsync(); } catch { }
-        }
-        if (schedule != null && schedule.Hall == null && schedule.HallId != 0)
-        {
-            try { await _context.Entry(schedule).Reference(s => s.Hall).LoadAsync(); } catch { }
-        }
-
-        // Sau nhánh auto-init ở trên, schedule chỉ còn null khi thiếu HallId/EventDate
-        // (request không hợp lệ) — không còn báo "Lịch sảnh không tồn tại" cho ô xanh
-        // (ngày xa chưa có record đã được tự INSERT BOOKED ở trên).
-        // Guard cứng: thiếu hẳn schedule/Hall/StatusId mới báo thiếu; Status navigation null
-        // nhưng StatusId hợp lệ thì KHÔNG báo thiếu (đã reload ở trên).
-        if (schedule == null || schedule.Hall == null || (schedule.Status == null && schedule.StatusId == 0))
-            return BadRequest(new { success = false, message = "Thiếu thông tin sảnh/ngày/ca tổ chức. Vui lòng chọn lại ngày/ca khác." });
-        // Phòng thủ: nếu Status navigation vẫn null (hiếm) thì query lại Include đầy đủ rồi mới check tiếp.
-        if (schedule.Status == null)
-        {
-            schedule = await _context.HallSchedules
-                .Include(item => item.Hall)
-                .Include(item => item.Status)
-                .SingleOrDefaultAsync(item => item.HallScheduleId == schedule.HallScheduleId);
-            if (schedule == null || schedule.Hall == null || schedule.Status == null)
-                return BadRequest(new { success = false, message = "Thiếu thông tin sảnh/ngày/ca tổ chức. Vui lòng chọn lại ngày/ca khác." });
-        }
-        if (schedule.Status.StatusGroup != StatusGroups.HallSchedule ||
-            schedule.Status.StatusCode != HallScheduleStatusCodes.Available)
-        {
-            // Stale-lock tự phục hồi: LichSanh != AVAILABLE nhưng không còn DatTiec hoạt động nào
-            // chiếm giữ (các ca hủy trước đây chưa giải phóng) -> cho phép đặt tiếp thay vì chặn.
-            var occupied = await _context.WeddingBookings.AnyAsync(booking =>
-                booking.HallScheduleId == schedule.HallScheduleId &&
+            // Chưa có dòng LichSanh: kiểm tra DatTiec đang hoạt động chiếm dụng
+            // (PENDING/CONFIRMED/PREPARING, bỏ qua CANCELLED/COMPLETED) rồi tự INSERT.
+            var occupiedByBooking = await _context.WeddingBookings.AnyAsync(booking =>
+                booking.HallSchedule.HallId == request.HallId &&
+                booking.HallSchedule.Date >= eventDay && booking.HallSchedule.Date < nextDay &&
+                booking.HallSchedule.Shift.ToLower() == normalizedShiftLower &&
+                booking.HallSchedule.DataStatusId == existingDataStatus.DataStatusId &&
                 booking.Status != null &&
                 booking.Status.StatusGroup == StatusGroups.Booking &&
                 BookingStatusCodes.OccupyingSchedule.Contains(booking.Status.StatusCode));
-            if (occupied)
-                return Conflict(new { success = false, message = "Lịch sảnh không còn AVAILABLE." });
+            if (occupiedByBooking)
+                return Conflict(new { success = false, message = $"Sảnh này vào ngày {eventDay:dd/MM/yyyy} ({requestedShift}) đã có khách đặt. Vui lòng chọn sảnh hoặc ngày/ca khác." });
+            schedule = new HallSchedule
+            {
+                HallId = request.HallId,
+                Date = eventDay,
+                Shift = requestedShift,
+                StatusId = await _statusService.GetStatusIdAsync(StatusGroups.HallSchedule, HallScheduleStatusCodes.Booked),
+                DataStatusId = existingDataStatus.DataStatusId,
+                Hall = hall
+            };
+            _context.HallSchedules.Add(schedule);
+            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.Entry(schedule).Reference(s => s.Status).LoadAsync();
+            }
+            catch (Exception loadEx)
+            {
+                _logger.LogWarning(loadEx, "Không reload được Status sau auto-init HallSchedule (HallId={HallId}, Date={Date}, Shift={Shift}).",
+                    schedule.HallId, schedule.Date.ToString("yyyy-MM-dd"), schedule.Shift);
+            }
         }
-        if (request.GuestCount > schedule.Hall.MaximumCapacity ||
-            (schedule.Hall.MinimumCapacity.HasValue && request.GuestCount < schedule.Hall.MinimumCapacity.Value))
-            return BadRequest(new { success = false, message = "Số khách không phù hợp sức chứa sảnh." });
+
+        // Luôn kiểm tra booking chiếm chỗ, không phụ thuộc trạng thái lịch:
+        // dữ liệu LichSanh có thể lệch nhưng không được phép có hai booking hiệu lực.
+        var occupied = await _context.WeddingBookings.AnyAsync(booking =>
+            booking.HallScheduleId == schedule.HallScheduleId &&
+            booking.Status != null &&
+            booking.Status.StatusGroup == StatusGroups.Booking &&
+            BookingStatusCodes.OccupyingSchedule.Contains(booking.Status.StatusCode));
+        if (occupied)
+            return Conflict(new { success = false, message = "Lịch sảnh không còn AVAILABLE." });
+
+        if (schedule.Hall == null) schedule.Hall = hall;
+        if (schedule.Status == null && schedule.StatusId != 0)
+        {
+            try { await _context.Entry(schedule).Reference(s => s.Status).LoadAsync(); } catch { }
+        }
+        if (schedule.Status == null || schedule.Status.StatusGroup != StatusGroups.HallSchedule)
+            return BadRequest(new { success = false, message = "Thiếu thông tin sảnh/ngày/ca tổ chức. Vui lòng chọn lại ngày/ca khác." });
+        if (schedule.Status.StatusCode == HallScheduleStatusCodes.Locked)
+            return Conflict(new { success = false, message = "Khung giờ này đang bị khóa vận hành. Vui lòng chọn sảnh hoặc ngày/ca khác." });
+        if (schedule.Status.StatusCode != HallScheduleStatusCodes.Available &&
+            schedule.Status.StatusCode != HallScheduleStatusCodes.Booked)
+            return Conflict(new { success = false, message = "Lịch sảnh không ở trạng thái có thể đặt." });
+
+        _logger.LogInformation(
+            "RegisterPublicBooking resolve schedule: HallId={HallId}, HallScheduleId={HallScheduleId}, EventDate={EventDate}, RequestedShift={RequestedShift}, ScheduleId={ScheduleId}, StatusId={StatusId}",
+            request.HallId, request.HallScheduleId, eventDay.ToString("yyyy-MM-dd"), requestedShift,
+            schedule.HallScheduleId, schedule.StatusId);
 
         Menu? menu = null;
         if (request.MenuId.HasValue)
         {
-            menu = await _context.Menus.SingleOrDefaultAsync(item =>
+            menu = await _context.Menus.Include(item => item.Status).SingleOrDefaultAsync(item =>
                 item.MenuId == request.MenuId && item.DataStatusId == existingDataStatus.DataStatusId);
             if (menu == null) return BadRequest(new { success = false, message = "Thực đơn không tồn tại." });
+            if (menu.Status == null || menu.Status.StatusGroup != StatusGroups.Menu ||
+                menu.Status.StatusCode != BusinessStatusCodes.Active)
+                return BadRequest(new { success = false, message = "Thực đơn đã ngừng áp dụng." });
         }
 
         DecorPackage? decor = null;
         if (request.DecorationPackageId.HasValue)
         {
-            decor = await _context.DecorPackages.SingleOrDefaultAsync(item =>
+            decor = await _context.DecorPackages.Include(item => item.Status).SingleOrDefaultAsync(item =>
                 item.GoiTrangTriID == request.DecorationPackageId && item.DataStatusId == existingDataStatus.DataStatusId);
             if (decor == null) return BadRequest(new { success = false, message = "Gói trang trí không tồn tại." });
+            if (decor.Status == null || decor.Status.StatusGroup != StatusGroups.DecorationPackage ||
+                decor.Status.StatusCode != BusinessStatusCodes.Active)
+                return BadRequest(new { success = false, message = "Gói trang trí đã ngừng áp dụng." });
         }
 
-        // LỖI B: giữ bàn dự phòng. DatTiec chỉ lưu SoLuongKhach nên tổng bàn
-        // = Official (ceil Guest/10) + Spare; ưu tiên TableCount FE gửi lên nếu lớn hơn.
-        var officialTableCount = (int)Math.Ceiling(request.GuestCount / 10m);
-        var spareTableCount = Math.Max(0, request.SpareTableCount);
-        var estimatedTableCount = officialTableCount + spareTableCount;
-        if (request.TableCount > estimatedTableCount)
-            estimatedTableCount = request.TableCount;
         // Nhúng marker bàn dự phòng + ngân sách/phong cách vào SpecialRequests để
         // lookup (PublicBookingController.BuildDetailDto) khôi phục đúng 100%.
         var enrichedRequests = (request.SpecialRequests ?? string.Empty).Trim();
@@ -1494,23 +1492,42 @@ public sealed class RecommendationController : ControllerBase
             enrichedRequests = string.IsNullOrEmpty(enrichedRequests)
                 ? $"Phong cách mong muốn: {request.DesiredStyle.Trim()}"
                 : $"{enrichedRequests}; Phong cách mong muốn: {request.DesiredStyle.Trim()}";
-        // Thực đơn tùy chỉnh: khách tự thêm/bớt món trong Top 3 (FE gửi customMenuName +
-        // customMenuPricePerTable + customMenuItems). Lưu giá custom vào FinalMenuPrice để
-        // EstimatedTotal khớp với tổng tiền đã cập nhật ngoài card; nhúng chi tiết món
-        // vào SpecialRequests để tra cứu "Tiệc của tôi" vẫn thấy được.
+        // Thực đơn tùy chỉnh: chỉ tin mã món, tự tra giá từ Dish đang phục vụ.
+        // Giá/tên món do client gửi (CustomMenuPricePerTable/CustomMenuItems) không dùng để tính tiền.
         var customMenuName = (request.CustomMenuName ?? string.Empty).Trim();
+        var requestedDishIds = (request.CustomMenuDishIds ?? [])
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+        // UC13: mỗi booking chỉ dùng một chế độ thực đơn — menu chuẩn HOẶC menu tùy chỉnh theo mã món.
+        // Chặn tổ hợp để MenuID đã lưu luôn khớp với giá thực đơn đã chốt.
+        if (request.MenuId.HasValue && request.MenuId.Value > 0 && requestedDishIds.Count > 0)
+            return BadRequest(new { success = false, message = "Vui lòng chọn thực đơn chuẩn hoặc thực đơn tùy chỉnh, không chọn đồng thời cả hai." });
         var hasCustomMenu = !string.IsNullOrWhiteSpace(customMenuName)
+            || requestedDishIds.Count > 0
             || (request.CustomMenuPricePerTable.HasValue && request.CustomMenuPricePerTable.Value > 0);
         var effectiveMenuPricePerTable = menu?.PricePerTable ?? 0m;
-        if (hasCustomMenu && request.CustomMenuPricePerTable.HasValue && request.CustomMenuPricePerTable.Value > 0)
-            effectiveMenuPricePerTable = request.CustomMenuPricePerTable.Value;
         if (hasCustomMenu)
         {
-            var itemsText = request.CustomMenuItems is { Count: > 0 }
-                ? string.Join("; ", request.CustomMenuItems.Select(x => (x ?? string.Empty).Trim()).Where(x => x.Length > 0))
-                : string.Empty;
+            if (requestedDishIds.Count == 0)
+                return BadRequest(new { success = false, message = "Thực đơn tùy chỉnh thiếu mã món. Vui lòng chọn lại thực đơn." });
+            var dishes = await _context.Dishes.AsNoTracking()
+                .Where(dish => requestedDishIds.Contains(dish.DishId) &&
+                    dish.DataStatusId == existingDataStatus.DataStatusId &&
+                    dish.Status != null &&
+                    dish.Status.StatusGroup == StatusGroups.Dish &&
+                    dish.Status.StatusCode == BusinessStatusCodes.Active)
+                .ToListAsync();
+            if (dishes.Count != requestedDishIds.Count)
+                return BadRequest(new { success = false, message = "Thực đơn tùy chỉnh có món không còn phục vụ. Vui lòng chọn lại." });
+            var dishById = dishes.ToDictionary(dish => dish.DishId);
+            effectiveMenuPricePerTable = requestedDishIds.Sum(id => dishById[id].Price);
+            if (effectiveMenuPricePerTable <= 0)
+                return BadRequest(new { success = false, message = "Thực đơn tùy chỉnh chưa có giá hợp lệ. Vui lòng chọn lại." });
+            var itemsText = string.Join("; ", requestedDishIds.Select(id =>
+                $"{dishById[id].DishName} ({dishById[id].Price:N0} đ)"));
             var customLabel = string.IsNullOrWhiteSpace(customMenuName) ? "Thực đơn tùy chỉnh" : customMenuName;
-            var customMarker = $"[{customLabel}: {effectiveMenuPricePerTable:N0} đ/bàn{(string.IsNullOrEmpty(itemsText) ? string.Empty : " | " + itemsText)}]";
+            var customMarker = $"[{customLabel}: {effectiveMenuPricePerTable:N0} đ/bàn | {itemsText}]";
             enrichedRequests = string.IsNullOrEmpty(enrichedRequests)
                 ? customMarker
                 : $"{enrichedRequests}; {customMarker}";
@@ -1535,6 +1552,8 @@ public sealed class RecommendationController : ControllerBase
                     svc.Status.StatusCode == BusinessStatusCodes.Active &&
                     serviceCodes.Contains(svc.MaDichVu.ToUpper()))
                 .ToListAsync();
+            if (serviceEntities.Count != serviceCodes.Count)
+                return BadRequest(new { success = false, message = "Một hoặc nhiều dịch vụ đi kèm không còn áp dụng. Vui lòng chọn lại." });
             bookingServices = serviceEntities
                 .OrderBy(svc => serviceCodes.IndexOf((svc.MaDichVu ?? string.Empty).ToUpperInvariant()))
                 .Select(svc => new RecommendedServiceDto
@@ -1561,9 +1580,9 @@ public sealed class RecommendationController : ControllerBase
             DecorationPackageId = decor?.GoiTrangTriID,
             GuestCount = request.GuestCount,
             FinalHallPrice = schedule.Hall.RentalPrice,
-            FinalMenuPrice = menu == null ? (decimal?)null : effectiveMenuPricePerTable,
+            FinalMenuPrice = menu == null && !hasCustomMenu ? (decimal?)null : effectiveMenuPricePerTable,
             FinalDecorationPrice = decor?.Gia,
-            EstimatedTotal = schedule.Hall.RentalPrice + (menu == null ? 0m : effectiveMenuPricePerTable) * estimatedTableCount + (decor?.Gia ?? 0m) + servicesTotalBooking,
+            EstimatedTotal = schedule.Hall.RentalPrice + effectiveMenuPricePerTable * estimatedTableCount + (decor?.Gia ?? 0m) + servicesTotalBooking,
             SpecialRequests = NormalizeOptional(enrichedRequests),
             StatusId = await _statusService.GetStatusIdAsync(StatusGroups.Booking, BookingStatusCodes.Pending),
             BookedAt = DateTime.Now
@@ -1587,7 +1606,7 @@ public sealed class RecommendationController : ControllerBase
             }
             await _context.SaveChangesAsync();
         }
-        await transaction.CommitAsync();
+        if (transaction != null) await transaction.CommitAsync();
 
         // FR15 / UC13 (6a) fault-tolerant: gửi email xác nhận SAU commit, lỗi SMTP
         // chỉ LogError, KHÔNG rollback, vẫn trả success + mã cho client.
@@ -1602,14 +1621,12 @@ public sealed class RecommendationController : ControllerBase
         var snapshotTotal = booking.EstimatedTotal ?? 0m;
         var snapshotHoldExpiresAt = booking.BookedAt.AddHours(48);
         bool emailSent = false;
-        string? emailError = null;
         if (!string.IsNullOrWhiteSpace(recipientEmail))
         {
             try
             {
                 if (_emailService is null)
                 {
-                    emailError = "IEmailService chưa được đăng ký DI.";
                     _logger.LogWarning("Bỏ qua gửi email giữ chỗ {Code}: IEmailService chưa được đăng ký DI.",
                         snapshotBookingCode);
                 }
@@ -1636,7 +1653,6 @@ public sealed class RecommendationController : ControllerBase
             }
             catch (Exception ex)
             {
-                emailError = ex.Message;
                 _logger.LogError(ex, "Gửi email xác nhận thất bại cho mã đơn {BookingCode} đến {Email}",
                     snapshotBookingCode, recipientEmail);
             }
@@ -1646,20 +1662,53 @@ public sealed class RecommendationController : ControllerBase
             _logger.LogWarning("Khách hàng không cung cấp email cho mã đơn {BookingCode}, bỏ qua gửi email", snapshotBookingCode);
         }
 
-        return Ok(new { success = true, bookingCode = booking.BookingCode, bookingId = booking.BookingId, emailSent, emailError });
+        var bookingStatus = await _context.Statuses.AsNoTracking()
+            .Where(status => status.StatusId == booking.StatusId)
+            .Select(status => new { status.StatusCode, status.StatusName })
+            .SingleAsync();
+        return Ok(new
+        {
+            success = true,
+            bookingCode = booking.BookingCode,
+            bookingId = booking.BookingId,
+            statusCode = bookingStatus.StatusCode,
+            statusName = bookingStatus.StatusName,
+            holdExpiresAt = snapshotHoldExpiresAt,
+            emailSent
+        });
+        }
+        catch (Exception ex) when (IsReservationConflict(ex))
+        {
+            try { if (transaction != null) await transaction.RollbackAsync(); } catch { }
+            _logger.LogWarning(ex, "RegisterPublicBooking xung đột giữ chỗ. traceId={TraceId}", HttpContext?.TraceIdentifier);
+            return Conflict(new
+            {
+                success = false,
+                message = "Khung giờ này vừa được khách khác giữ chỗ. Vui lòng chọn sảnh hoặc ngày/ca khác."
+            });
         }
         catch (Exception ex)
         {
-            try { await transaction.RollbackAsync(); } catch { }
+            try { if (transaction != null) await transaction.RollbackAsync(); } catch { }
             _logger.LogError(ex, "RegisterPublicBooking thất bại. traceId={TraceId}. Chi tiết: {Detail}",
-                HttpContext.TraceIdentifier, ex.ToString());
+                HttpContext?.TraceIdentifier, ex.ToString());
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
                 success = false,
                 message = "Không thể lưu đơn đăng ký lúc này, vui lòng thử lại.",
-                traceId = HttpContext.TraceIdentifier
+                traceId = HttpContext?.TraceIdentifier
             });
         }
+    }
+
+    private static bool IsReservationConflict(Exception exception)
+    {
+        for (var current = exception; current != null; current = current.InnerException)
+        {
+            if (current is SqlException sql && sql.Number is 1205 or 1222 or 2601 or 2627 or 3960)
+                return true;
+        }
+        return false;
     }
 
     private async Task<int?> ResolveAuthenticatedCustomerIdAsync(byte existingDataStatusId)

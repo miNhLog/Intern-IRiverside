@@ -218,7 +218,6 @@ public class HallSlotItemViewModel
 
 public class PublicBookingRequestViewModel
 {
-    public int? UserId { get; set; } // Thêm trường này
     public string CustomerName { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
     public string? Email { get; set; }
@@ -237,7 +236,17 @@ public class PublicBookingRequestViewModel
     public string? CustomMenuName { get; set; }
     public decimal? CustomMenuPricePerTable { get; set; }
     public List<string>? CustomMenuItems { get; set; }
+    public List<int>? CustomMenuDishIds { get; set; }
     public List<string>? ServiceCodes { get; set; }
+}
+
+public class PublicBookingRegistrationResultViewModel
+{
+    public string BookingCode { get; set; } = string.Empty;
+    public string StatusCode { get; set; } = string.Empty;
+    public string StatusName { get; set; } = string.Empty;
+    public DateTime? HoldExpiresAt { get; set; }
+    public bool EmailSent { get; set; }
 }
 
 public class AvailableDateItemViewModel

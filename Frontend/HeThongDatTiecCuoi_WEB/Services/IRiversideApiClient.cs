@@ -384,7 +384,7 @@ public interface IRiversideApiClient
 
     Task<ApiCallResult<List<AvailableDateItemViewModel>>> GetAvailableDatesAsync(string? from, string? to, string? shift, CancellationToken cancellationToken = default);
 
-    Task<ApiCallResult<string>> RegisterPublicBookingAsync(
+    Task<ApiCallResult<PublicBookingRegistrationResultViewModel>> RegisterPublicBookingAsync(
     PublicBookingRequestViewModel request,
     CancellationToken cancellationToken = default);
 

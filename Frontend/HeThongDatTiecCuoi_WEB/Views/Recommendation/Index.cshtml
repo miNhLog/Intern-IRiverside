@@ -403,7 +403,13 @@
             <div class="recom-summary-row"><span>Cặp đôi đại diện:</span><strong id="succCouple">--</strong></div>
             <div class="recom-summary-row"><span>Sảnh tiệc bảo lưu:</span><strong id="succHall" style="color:#735c00;">--</strong></div>
             <div class="recom-summary-row"><span>Thời gian tổ chức:</span><strong id="succDateTime">--</strong></div>
-            <div class="recom-summary-row"><span>Trạng thái:</span><span class="recom-status-pill">Chờ xác nhận</span></div>
+            <div class="recom-summary-row"><span>Trạng thái:</span><span id="succStatus" class="recom-status-pill">Chờ xác nhận</span></div>
+            <div class="recom-summary-row"><span>Hạn giữ chỗ:</span><strong id="succHold">--</strong></div>
+        </div>
+
+        <div id="succEmailWarning" class="recom-contact-note" hidden style="background:#fff8e8;border-color:#B89758;">
+            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+            <span>Hồ sơ đã được giữ chỗ nhưng email xác nhận chưa gửi được. Vui lòng lưu mã đơn tiệc bên trên để tra cứu.</span>
         </div>
 
         <div class="recom-contact-note">
@@ -1622,7 +1628,7 @@
                 shift: shiftStr,
                 hallScheduleId: scheduleIdNum,
                 hallId: hallIdNum,
-                menuId: selectedComboToBook.menuId,
+                menuId: custom ? null : selectedComboToBook.menuId,
                 decorationPackageId: selectedComboToBook.decorId,
                 guestCount: gCount,
                 tableCount: totalT,
@@ -1633,6 +1639,7 @@
                 customMenuName: custom ? custom.customName : null,
                 customMenuPricePerTable: custom ? custom.customPricePerTable : null,
                 customMenuItems: custom ? (custom.items || []).map(x => `${x.dishName} (${Number(x.price || 0).toLocaleString('vi-VN')} đ)`) : null,
+                customMenuDishIds: custom ? (custom.items || []).map(x => Number(x.dishId)).filter(id => id > 0) : null,
                 serviceCodes: Array.isArray(currentPayload.selectedServiceCodes) ? currentPayload.selectedServiceCodes : []
             };
 
@@ -1655,6 +1662,13 @@
                     document.getElementById('succHall').innerText = selectedComboToBook.hallName;
                     document.getElementById('succDateTime').innerText = `${fmtVN(currentPayload.eventDate)} · ${currentPayload.shift}`;
                     document.getElementById('succPhone').innerText = currentPayload.phoneNumber;
+                    document.getElementById('succStatus').innerText = result.statusName || 'Chờ xác nhận';
+                    const holdRaw = String(result.holdExpiresAt || '');
+                    const holdTime = holdRaw.match(/T(\d{2}):(\d{2})/);
+                    document.getElementById('succHold').innerText = holdRaw
+                        ? `${holdTime ? holdTime[1] + ':' + holdTime[2] + ' - ' : ''}${fmtVN(holdRaw.slice(0, 10))}`
+                        : '--';
+                    document.getElementById('succEmailWarning').hidden = result.emailSent !== false;
 
                     openRecomModal('bookingSuccessModal');
                 } else {
