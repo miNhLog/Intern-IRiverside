@@ -1758,7 +1758,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         }
     }
 
-    public async Task<ApiCallResult<string>> RegisterPublicBookingAsync(
+    public async Task<ApiCallResult<PublicBookingRegistrationResultViewModel>> RegisterPublicBookingAsync(
      PublicBookingRequestViewModel request,
      CancellationToken cancellationToken = default)
     {
@@ -1790,7 +1790,6 @@ public sealed class RiversideApiClient : IRiversideApiClient
                 enrichedSpecial = $"Đăng ký từ AI Recommendation: Ngân sách dự kiến {request.ExpectedBudget.Value:N0} đ";
             var backendPayload = new
             {
-                userId = request.UserId,
                 customerName = request.CustomerName,
                 phoneNumber = request.PhoneNumber,
                 email = request.Email,
@@ -1811,6 +1810,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
                 customMenuName = request.CustomMenuName,
                 customMenuPricePerTable = request.CustomMenuPricePerTable,
                 customMenuItems = request.CustomMenuItems,
+                customMenuDishIds = request.CustomMenuDishIds,
                 serviceCodes = request.ServiceCodes
             };
             var response = await _httpClient.PostAsJsonAsync("api/recommendations/register-booking", backendPayload, cancellationToken);
@@ -1822,20 +1822,37 @@ public sealed class RiversideApiClient : IRiversideApiClient
                     using var doc = System.Text.Json.JsonDocument.Parse(err);
                     if (doc.RootElement.TryGetProperty("message", out var msgElem))
                     {
-                        return ApiCallResult<string>.Failure(msgElem.GetString() ?? err);
+                        return ApiCallResult<PublicBookingRegistrationResultViewModel>.Failure(msgElem.GetString() ?? err);
                     }
                 }
                 catch { }
-                return ApiCallResult<string>.Failure(err);
+                return ApiCallResult<PublicBookingRegistrationResultViewModel>.Failure(err);
             }
 
             var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>(cancellationToken: cancellationToken);
-            string code = result.TryGetProperty("bookingCode", out var codeElem) ? codeElem.GetString() ?? "DT-ONLINE" : "DT-ONLINE";
-            return ApiCallResult<string>.Success(code);
+            var registration = new PublicBookingRegistrationResultViewModel
+            {
+                BookingCode = result.TryGetProperty("bookingCode", out var codeElem)
+                    ? codeElem.GetString() ?? string.Empty
+                    : string.Empty,
+                StatusCode = result.TryGetProperty("statusCode", out var statusCodeElem)
+                    ? statusCodeElem.GetString() ?? string.Empty
+                    : string.Empty,
+                StatusName = result.TryGetProperty("statusName", out var statusNameElem)
+                    ? statusNameElem.GetString() ?? string.Empty
+                    : string.Empty,
+                HoldExpiresAt = result.TryGetProperty("holdExpiresAt", out var holdElem) &&
+                    holdElem.TryGetDateTime(out var hold)
+                        ? hold
+                        : null,
+                EmailSent = result.TryGetProperty("emailSent", out var emailElem) &&
+                    emailElem.ValueKind == System.Text.Json.JsonValueKind.True
+            };
+            return ApiCallResult<PublicBookingRegistrationResultViewModel>.Success(registration);
         }
         catch (Exception ex)
         {
-            return ApiCallResult<string>.Failure($"Lỗi kết nối API: {ex.Message}");
+            return ApiCallResult<PublicBookingRegistrationResultViewModel>.Failure($"Lỗi kết nối API: {ex.Message}");
         }
     }
 

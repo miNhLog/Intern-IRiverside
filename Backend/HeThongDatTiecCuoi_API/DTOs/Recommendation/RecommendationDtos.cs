@@ -120,7 +120,6 @@ public sealed class SuggestedNextDto
 
 public sealed class RegisterPublicBookingDto
 {
-    public int? UserId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
     // Email validate thủ công trong action để trả message tiếng Việt {success,message}
@@ -145,10 +144,12 @@ public sealed class RegisterPublicBookingDto
     public string? SpecialRequests { get; set; }
     /// <summary>Tên thực đơn tùy chỉnh do khách tự chọn món (vd "Thực đơn tùy chỉnh 1"). Optional.</summary>
     public string? CustomMenuName { get; set; }
-    /// <summary>Giá mỗi bàn của thực đơn tùy chỉnh (= tổng giá món đã chọn). Optional.</summary>
+    /// <summary>Giá mỗi bàn do client gửi lên — chỉ giữ để tương thích payload cũ, API không dùng để tính tiền.</summary>
     public decimal? CustomMenuPricePerTable { get; set; }
-    /// <summary>Danh sách món trong thực đơn tùy chỉnh ("Tên món (giá)") để lưu vào SpecialRequests. Optional.</summary>
+    /// <summary>Danh sách món trong thực đơn tùy chỉnh ("Tên món (giá)") — chỉ để tham khảo, API dựng lại từ DB.</summary>
     public List<string>? CustomMenuItems { get; set; }
+    /// <summary>Mã món khách đã chọn cho thực đơn tùy chỉnh; API dùng để tra giá tin cậy từ bảng Dish.</summary>
+    public List<int>? CustomMenuDishIds { get; set; }
     /// <summary>Mã dịch vụ khách đã chọn ở form (DV001...) để lưu BookingServices + cộng vào EstimatedTotal.</summary>
     public List<string>? ServiceCodes { get; set; }
 }

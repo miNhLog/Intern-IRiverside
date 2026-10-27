@@ -3,7 +3,6 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using HeThongDatTiecCuoi_WEB.Constants;
 using HeThongDatTiecCuoi_WEB.Models.Recommendation;
 using HeThongDatTiecCuoi_WEB.Models.AdminBooking;
 using HeThongDatTiecCuoi_WEB.Services;
@@ -240,32 +239,22 @@ public class RecommendationController : Controller
         // được LichSanh (tránh gửi "Ca Tối (17:30 – 21:30)" gây lỗi "Lịch sảnh không tồn tại").
         request.Shift = NormalizeHallShift(request.Shift);
         request.EventDate = request.EventDate.Date;
-        // Chỉ liên kết hồ sơ đặt tiệc với tài khoản khách hàng. Tài khoản nội bộ
-        // (quản lý/nhân viên) thử chức năng không được biến thành hồ sơ khách hàng.
-        if (User.Identity?.IsAuthenticated == true && User.IsInRole(RoleNames.Customer))
-        {
-            var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (int.TryParse(idClaim, out var uid))
-            {
-                request.UserId = uid;
-            }
-        }
 
         var result = await _apiClient.RegisterPublicBookingAsync(request, cancellationToken);
 
         if (result.Succeeded)
         {
-            // 2. Tự động lưu SĐT vào Cookie để khi chuyển sang trang "Tiệc của tôi" sẽ tự nhận diện
-            if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+            var booking = result.Value;
+            return Json(new
             {
-                Response.Cookies.Append("customer_phone", request.PhoneNumber.Trim(), new CookieOptions
-                {
-                    Expires = DateTimeOffset.Now.AddDays(30),
-                    IsEssential = true
-                });
-            }
-
-            return Json(new { success = true, message = "Đăng ký giữ chỗ thành công!", bookingCode = result.Value });
+                success = true,
+                message = "Đăng ký giữ chỗ thành công!",
+                bookingCode = booking?.BookingCode,
+                statusCode = booking?.StatusCode,
+                statusName = booking?.StatusName,
+                holdExpiresAt = booking?.HoldExpiresAt,
+                emailSent = booking?.EmailSent ?? false
+            });
         }
 
         return Json(new { success = false, message = result.Error ?? "Không thể lưu đơn đăng ký tiệc." });

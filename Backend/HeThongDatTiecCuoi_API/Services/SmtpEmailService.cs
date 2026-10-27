@@ -149,10 +149,8 @@ public class SmtpEmailService : IEmailService
         var scaleStr = $"{guestCount} khách ({totalTables} bàn)";
         var holdStr = holdExpiresAt.ToString("HH:mm - dd/MM/yyyy", vi);
         var baseUrl = string.IsNullOrWhiteSpace(clientAppBaseUrl) ? "https://localhost:7102" : clientAppBaseUrl.TrimEnd('/');
-        // LỖI E: link auto-fill cả mã + SĐT để /MyBooking tự tra cứu (deep-link).
-        var lookupUrl = string.IsNullOrWhiteSpace(phoneNumber)
-            ? $"{baseUrl}/MyBooking?bookingCode={Uri.EscapeDataString(bookingCode)}"
-            : $"{baseUrl}/MyBooking?bookingCode={Uri.EscapeDataString(bookingCode)}&phone={Uri.EscapeDataString(phoneNumber.Trim())}";
+        // Không đưa mã + SĐT lên URL: khách tự nhập tại form /MyBooking sau khi mở email.
+        var lookupUrl = $"{baseUrl}/MyBooking";
 
         var sb = new StringBuilder();
         sb.Append($"""
