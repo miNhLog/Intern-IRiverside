@@ -1,31 +1,22 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using HeThongDatTiecCuoi_WEB.Services;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace HeThongDatTiecCuoi_WEB.Controllers;
 
+/// <summary>
+/// Legacy route đã ngừng hoạt động (UC15). Chuyển hướng tra cứu sang /MyBooking.
+/// </summary>
 public class MyBookingsController : Controller
 {
-    private readonly IRiversideApiClient _apiClient;
-
-    public MyBookingsController(IRiversideApiClient apiClient)
-    {
-        _apiClient = apiClient;
-    }
-
     [HttpGet]
     public IActionResult Index() => RedirectToAction("Index", "MyBooking");
 
     [HttpPost]
-    public async Task<IActionResult> CancelBooking(int bookingId, CancellationToken cancellationToken)
+    public IActionResult CancelBooking(int bookingId)
     {
-        var result = await _apiClient.CancelBookingAsync(bookingId, cancellationToken);
-        if (result.Succeeded)
+        return StatusCode(StatusCodes.Status410Gone, new
         {
-            return Json(new { success = true, message = "Đã hủy đơn giữ chỗ tiệc cưới thành công." });
-        }
-        return Json(new { success = false, message = result.Error ?? "Không thể hủy đơn tiệc lúc này." });
+            success = false,
+            message = "Tính năng hủy đơn cũ đã ngừng hoạt động. Vui lòng dùng mục \"Tiệc của tôi\" (/MyBooking) và xác thực bằng mã đặt tiệc cùng số điện thoại đã đăng ký."
+        });
     }
 }

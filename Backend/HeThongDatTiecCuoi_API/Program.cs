@@ -197,6 +197,17 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
+    // UC15: giới hạn thao tác ghi công khai (hủy / đổi lịch) để chặn dò mã và spam.
+    options.AddPolicy("public-booking-mutation", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -232,7 +243,7 @@ app.UseForwardedHeaders();
 app.Use(async (context, next) =>
 {
     if (HttpMethods.IsPost(context.Request.Method) &&
-        string.Equals(context.Request.Path.Value, "/api/v1/public/bookings/lookup", StringComparison.OrdinalIgnoreCase))
+        context.Request.Path.StartsWithSegments("/api/v1/public/bookings", StringComparison.OrdinalIgnoreCase))
     {
         context.Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
         context.Response.Headers.Pragma = "no-cache";

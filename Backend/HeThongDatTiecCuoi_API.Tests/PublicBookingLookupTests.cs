@@ -182,7 +182,7 @@ public sealed class PublicBookingLookupTests : IDisposable
     [Fact]
     public async Task LegacyBookingListRead_IsRetired()
     {
-        var legacy = new MyBookingsController(_db, new StatusService(_db));
+        var legacy = new MyBookingsController();
 
         var result = legacy.GetMyBookings();
 

@@ -1,25 +1,17 @@
-using HeThongDatTiecCuoi_API.Constants;
-using HeThongDatTiecCuoi_API.Constants.StatusCodes;
-using HeThongDatTiecCuoi_API.Data;
-using HeThongDatTiecCuoi_API.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HeThongDatTiecCuoi_API.Controllers;
 
+/// <summary>
+/// Legacy route đã ngừng hoạt động (UC15). Không còn thao tác hủy chỉ bằng ID.
+/// Khách dùng /api/v1/public/bookings/* với mã đặt tiệc + SĐT (xem PublicBookingController).
+/// </summary>
 [ApiController]
 [Route("api/my-bookings")]
 public sealed class MyBookingsController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
-    private readonly IStatusService _statusService;
-
-    public MyBookingsController(ApplicationDbContext context, IStatusService statusService)
-    {
-        _context = context;
-        _statusService = statusService;
-    }
+    private const string RetiredMessage =
+        "Tính năng này đã ngừng hoạt động. Vui lòng dùng mục \"Tiệc của tôi\" (/MyBooking) và xác thực bằng mã đặt tiệc cùng số điện thoại đã đăng ký.";
 
     [HttpGet]
     public IActionResult GetMyBookings()
@@ -27,50 +19,17 @@ public sealed class MyBookingsController : ControllerBase
         return StatusCode(StatusCodes.Status410Gone, new
         {
             success = false,
-            message = "Tra cứu công khai yêu cầu mã đặt tiệc và số điện thoại đã đăng ký."
+            message = RetiredMessage
         });
     }
 
     [HttpPut("{id:int}/cancel")]
-    public async Task<IActionResult> CancelBooking(int id, [FromQuery] string? cancellationReason)
+    public IActionResult CancelBooking(int id)
     {
-        await using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        return StatusCode(StatusCodes.Status410Gone, new
         {
-        var booking = await _context.WeddingBookings
-            .Include(item => item.Status)
-            .Include(item => item.HallSchedule)
-            .SingleOrDefaultAsync(item => item.BookingId == id);
-        if (booking == null)
-            return NotFound(new { success = false, message = "Không tìm thấy đơn tiệc cưới này." });
-        if (booking.Status.StatusGroup != StatusGroups.Booking || booking.Status.StatusCode != BookingStatusCodes.Pending)
-            return BadRequest(new { success = false, message = "Chỉ có thể hủy booking đang ở trạng thái PENDING." });
-        if (cancellationReason?.Trim().Length > 500)
-            return BadRequest(new { success = false, message = "Lý do hủy không được vượt quá 500 ký tự." });
-
-        booking.StatusId = await _statusService.GetStatusIdAsync(StatusGroups.Booking, BookingStatusCodes.Cancelled);
-        booking.CancellationReason = string.IsNullOrWhiteSpace(cancellationReason)
-            ? "Hủy theo yêu cầu khách hàng"
-            : cancellationReason.Trim();
-
-        // Giải phóng LichSanh về AVAILABLE theo BR03 trong cùng transaction.
-        // Bỏ qua nếu schedule null (default-available). Chỉ giữ BOOKED khi còn DatTiec hoạt động khác.
-        var hasOtherActiveBooking = await _context.WeddingBookings.AnyAsync(item =>
-            item.BookingId != booking.BookingId && item.HallScheduleId == booking.HallScheduleId &&
-            item.Status != null &&
-            item.Status.StatusGroup == StatusGroups.Booking &&
-            BookingStatusCodes.OccupyingSchedule.Contains(item.Status.StatusCode));
-        if (!hasOtherActiveBooking && booking.HallSchedule is not null)
-            booking.HallSchedule.StatusId = await _statusService.GetStatusIdAsync(StatusGroups.HallSchedule, HallScheduleStatusCodes.Available);
-
-        await _context.SaveChangesAsync();
-        await transaction.CommitAsync();
-        return Ok(new { success = true, message = "Đã hủy đơn giữ chỗ tiệc cưới thành công." });
-        }
-        catch
-        {
-            try { await transaction.RollbackAsync(); } catch { }
-            throw;
-        }
+            success = false,
+            message = RetiredMessage
+        });
     }
 }
