@@ -91,6 +91,8 @@
         .rp-modal { background: #fff; border-radius: 18px; max-width: 520px; width: 100%; padding: 26px; border-top: 5px solid var(--rp-gold); }
         .rp-modal h3 { font-family: 'Playfair Display', serif; margin: 0 0 6px; font-size: 20px; }
         .rp-modal textarea { width: 100%; min-height: 96px; border-radius: 12px; border: 1px solid #CBD5E1; padding: 10px 12px; font-size: 13px; font-family: inherit; resize: vertical; }
+        .rp-modal input[type="date"], .rp-modal select { width: 100%; min-height: 44px; border-radius: 10px; border: 1px solid #CBD5E1; padding: 8px 12px; font-size: 13px; font-family: inherit; background: #fff; }
+        .rp-modal label { display: block; font-size: 12px; font-weight: 700; margin: 12px 0 6px; }
         .rp-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
         .rp-btn-ghost { padding: 10px 18px; border-radius: 10px; border: 1px solid #CBD5E1; background: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
         .rp-btn-confirm-danger { padding: 10px 18px; border-radius: 10px; background: #DC2626; color: #fff; font-weight: 800; font-size: 13px; border: none; cursor: pointer; }
@@ -223,13 +225,25 @@
                                 <p class="rp-sub">Thông tin hợp đồng và thanh toán sẽ hiển thị khi được cập nhật.</p>
                             }
 
+                            @if (detail.IsPending && detail.IsHoldExpired)
+                            {
+                                <div class="rp-contact" role="status">
+                                    <strong>Đơn giữ chỗ đã quá 48 giờ.</strong> Bạn không thể tự hủy hoặc đổi lịch trực tuyến; vui lòng liên hệ nhân viên Riverside Palace để được hỗ trợ.
+                                </div>
+                            }
                             @if (detail.CanCancelOnline && !detail.IsCancelled)
                             {
                                 <div class="rp-countdown">
                                     Giữ chỗ theo quy tắc 48 giờ đến <b>@detail.HoldExpiresAt.ToString("HH:mm dd/MM/yyyy")</b>.<br />
                                     Thời gian còn lại: <b id="holdCountdown" data-expires="@detail.HoldExpiresAt.ToString("o")">--:--:--</b>
                                 </div>
-                                <div style="margin-top:12px;display:flex;justify-content:flex-end;">
+                                <div style="margin-top:12px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+                                    @if (detail.CanRescheduleOnline)
+                                    {
+                                        <button type="button" class="rp-btn-gold" id="openRescheduleModalBtn" style="min-height:44px;">
+                                            <span class="material-symbols-outlined" aria-hidden="true">event_repeat</span> Đổi lịch tiệc
+                                        </button>
+                                    }
                                     <button type="button" class="rp-btn-danger" id="openCancelModalBtn"><i class="fa-regular fa-trash-can"></i> Hủy giữ chỗ tiệc này</button>
                                 </div>
                             }
@@ -254,6 +268,43 @@
                                 <div class="rp-modal-actions">
                                     <button type="button" class="rp-btn-ghost" id="closeCancelModalBtn">Giữ lại tiệc</button>
                                     <button type="submit" class="rp-btn-confirm-danger" id="confirmCancelBtn">Xác nhận hủy giữ chỗ</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+
+                <!-- MODAL ĐỔI LỊCH (giữ nguyên sảnh) -->
+                @if (detail.CanRescheduleOnline && !detail.IsCancelled)
+                {
+                    <div class="rp-modal-backdrop" id="rescheduleModal" role="dialog" aria-modal="true" aria-label="Xác nhận đổi lịch tiệc"
+                         data-hall-id="@detail.HallId" data-current-date="@detail.EventDateString" data-current-shift="@detail.Shift">
+                        <div class="rp-modal">
+                            <h3>Đổi lịch tiệc @detail.BookingCode</h3>
+                            <p style="font-size:13px;color:#64748B;margin:0 0 4px;">
+                                Chỉ đổi <b>ngày và/hoặc ca</b>; sảnh <b>@detail.HallName</b> được giữ nguyên.
+                                Giá đã chốt không thay đổi và thời hạn giữ chỗ 48 giờ <b>không được làm mới</b>.
+                            </p>
+                            <form id="rescheduleForm">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="bookingId" value="@detail.BookingId" />
+                                <input type="hidden" name="bookingCode" value="@detail.BookingCode" />
+                                <input type="hidden" name="phoneNumber" value="@Model.PhoneNumber" />
+                                <label for="rescheduleDate">Ngày tổ chức mới</label>
+                                <input type="date" id="rescheduleDate" name="newDate"
+                                       min="@DateTime.Today.AddDays(30).ToString("yyyy-MM-dd")"
+                                       max="@DateTime.Today.AddDays(365).ToString("yyyy-MM-dd")" required />
+                                <label for="rescheduleShift">Ca tổ chức mới</label>
+                                <select id="rescheduleShift" name="newShift">
+                                    <option value="Ca trưa">Ca trưa</option>
+                                    <option value="Ca tối">Ca tối</option>
+                                </select>
+                                <div class="hint" id="rescheduleAvailability" aria-live="polite" style="margin-top:8px;font-size:12px;color:#56616b;"></div>
+                                <label for="rescheduleReason" style="margin-top:12px;">Lý do đổi lịch (tối đa 500 ký tự)</label>
+                                <textarea name="reason" id="rescheduleReason" maxlength="500" placeholder="Ví dụ: Thay đổi ngày tổ chức do lịch gia đình..."></textarea>
+                                <div class="rp-modal-actions">
+                                    <button type="button" class="rp-btn-ghost" id="closeRescheduleModalBtn">Giữ lịch cũ</button>
+                                    <button type="submit" class="rp-btn-gold" id="confirmRescheduleBtn" style="min-height:42px;">Xác nhận đổi lịch</button>
                                 </div>
                             </form>
                         </div>
@@ -371,6 +422,81 @@
                         else { alert(result.message || 'Không thể hủy giữ chỗ lúc này.'); }
                     } catch (err) { alert('Lỗi kết nối khi gửi yêu cầu hủy giữ chỗ.'); }
                     finally { if (btn) { btn.disabled = false; btn.textContent = 'Xác nhận hủy giữ chỗ'; } }
+                });
+            }
+
+            // Modal đổi lịch (giữ nguyên sảnh)
+            var rescheduleModal = document.getElementById('rescheduleModal');
+            var openRescheduleBtn = document.getElementById('openRescheduleModalBtn');
+            var closeRescheduleBtn = document.getElementById('closeRescheduleModalBtn');
+            var rescheduleForm = document.getElementById('rescheduleForm');
+            var rescheduleDate = document.getElementById('rescheduleDate');
+            var rescheduleShift = document.getElementById('rescheduleShift');
+            function setAvailabilityMessage(text) {
+                var el = document.getElementById('rescheduleAvailability');
+                if (el) el.textContent = text || '';
+            }
+            async function refreshAvailability() {
+                if (!rescheduleModal || !rescheduleDate || !rescheduleDate.value) { setAvailabilityMessage(''); return; }
+                setAvailabilityMessage('Đang kiểm tra lịch trống...');
+                try {
+                    var res = await fetch('/MyBooking/Availability?date=' + encodeURIComponent(rescheduleDate.value));
+                    var data = await res.json();
+                    if (!data.success) { setAvailabilityMessage(data.message || 'Không thể kiểm tra lịch lúc này.'); return; }
+                    var hallId = parseInt(rescheduleModal.dataset.hallId, 10);
+                    var hall = (data.halls || []).find(function (h) { return h.hallId === hallId; });
+                    if (!hall) { setAvailabilityMessage('Không tìm thấy thông tin sảnh của bạn.'); return; }
+                    var noonOpt = rescheduleShift.querySelector('option[value="Ca trưa"]');
+                    var eveningOpt = rescheduleShift.querySelector('option[value="Ca tối"]');
+                    noonOpt.disabled = !hall.isNoonAvailable;
+                    eveningOpt.disabled = !hall.isEveningAvailable;
+                    var selected = rescheduleShift.selectedOptions[0];
+                    if (selected && selected.disabled) {
+                        if (!noonOpt.disabled) rescheduleShift.value = 'Ca trưa';
+                        else if (!eveningOpt.disabled) rescheduleShift.value = 'Ca tối';
+                    }
+                    var isSame = rescheduleDate.value === rescheduleModal.dataset.currentDate
+                        && rescheduleShift.value === rescheduleModal.dataset.currentShift;
+                    setAvailabilityMessage('Ca trưa: ' + (hall.isNoonAvailable ? 'còn trống' : 'đã kín')
+                        + ' · Ca tối: ' + (hall.isEveningAvailable ? 'còn trống' : 'đã kín')
+                        + (isSame ? ' · Lịch này trùng lịch hiện tại.' : ''));
+                } catch (err) {
+                    setAvailabilityMessage('Không thể kiểm tra lịch lúc này.');
+                }
+            }
+            if (openRescheduleBtn && rescheduleModal) openRescheduleBtn.addEventListener('click', function () {
+                rescheduleModal.classList.add('open');
+                refreshAvailability();
+            });
+            if (closeRescheduleBtn && rescheduleModal) closeRescheduleBtn.addEventListener('click', function () { rescheduleModal.classList.remove('open'); });
+            if (rescheduleModal) rescheduleModal.addEventListener('click', function (e) { if (e.target === rescheduleModal) rescheduleModal.classList.remove('open'); });
+            if (rescheduleDate) rescheduleDate.addEventListener('change', refreshAvailability);
+            if (rescheduleShift) rescheduleShift.addEventListener('change', refreshAvailability);
+            if (rescheduleForm) {
+                rescheduleForm.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    if (!rescheduleDate.value) { alert('Vui lòng chọn ngày tổ chức mới.'); return; }
+                    if (rescheduleDate.value === rescheduleModal.dataset.currentDate
+                        && rescheduleShift.value === rescheduleModal.dataset.currentShift) {
+                        alert('Ngày và ca mới trùng với lịch hiện tại của đơn tiệc.');
+                        return;
+                    }
+                    if (!confirm('Xác nhận ĐỔI LỊCH tiệc? Sảnh và giá đã chốt được giữ nguyên.')) return;
+                    var btn = document.getElementById('confirmRescheduleBtn');
+                    if (btn) { btn.disabled = true; btn.textContent = 'Đang đổi lịch...'; }
+                    try {
+                        var fd = new FormData(rescheduleForm);
+                        var token = rescheduleForm.querySelector('input[name="__RequestVerificationToken"]');
+                        var res = await fetch('/MyBooking/Reschedule', {
+                            method: 'POST',
+                            body: fd,
+                            headers: token ? { 'RequestVerificationToken': token.value } : {}
+                        });
+                        var result = await res.json();
+                        if (result.success) { alert(result.message || 'Đã đổi lịch tiệc thành công.'); window.location.reload(); }
+                        else { alert(result.message || 'Không thể đổi lịch lúc này.'); }
+                    } catch (err) { alert('Lỗi kết nối khi gửi yêu cầu đổi lịch.'); }
+                    finally { if (btn) { btn.disabled = false; btn.textContent = 'Xác nhận đổi lịch'; } }
                 });
             }
         })();

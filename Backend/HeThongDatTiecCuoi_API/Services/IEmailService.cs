@@ -57,4 +57,34 @@ public interface IEmailService
         string shift,
         string hallName,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// UC15 / FR17: Gửi email xác nhận khách đã hủy giữ chỗ trực tuyến.
+    /// Fault-tolerant: caller phải try-catch sau khi transaction đã commit.
+    /// </summary>
+    Task SendBookingCancelledAsync(
+        string recipientEmail,
+        string customerName,
+        string bookingCode,
+        DateTime eventDate,
+        string shift,
+        string hallName,
+        string cancellationReason,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// UC15 / FR17: Gửi email xác nhận đổi ngày/ca (giữ nguyên sảnh).
+    /// Fault-tolerant: caller phải try-catch sau khi transaction đã commit.
+    /// </summary>
+    Task SendBookingRescheduledAsync(
+        string recipientEmail,
+        string customerName,
+        string bookingCode,
+        DateTime oldEventDate,
+        string oldShift,
+        string oldHallName,
+        DateTime newEventDate,
+        string newShift,
+        string newHallName,
+        CancellationToken cancellationToken = default);
 }

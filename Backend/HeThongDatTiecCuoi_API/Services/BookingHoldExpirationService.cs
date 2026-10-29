@@ -96,6 +96,8 @@ public sealed class BookingHoldExpirationService : BackgroundService
         {
             // Cập nhật có điều kiện: kiểm tra lại trạng thái, hạn 48 giờ, hợp đồng và
             // thanh toán ngay tại thời điểm ghi để không đè lên xác nhận/cọc vừa phát sinh.
+            // Điều kiện LichSanhID ngăn race với UC15: nếu khách vừa đổi lịch thì bỏ qua
+            // để lần quét sau xử lý đúng lịch mới, không giải phóng nhầm lịch cũ.
             var cancelled = await context.Database.ExecuteSqlInterpolatedAsync($"""
                 UPDATE booking
                 SET booking.TrangThaiID = (
@@ -106,6 +108,7 @@ public sealed class BookingHoldExpirationService : BackgroundService
                     booking.LyDoHuy = {CancellationReason}
                 FROM DatTiec AS booking
                 WHERE booking.DatTiecID = {candidate.BookingId}
+                  AND booking.LichSanhID = {candidate.HallScheduleId}
                   AND booking.TrangThaiID = (
                         SELECT TOP (1) status.TrangThaiID
                         FROM TrangThai AS status

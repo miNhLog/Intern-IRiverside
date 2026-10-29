@@ -32,6 +32,7 @@ public class PublicBookingDetailViewModel
     public DateTime EventDate { get; set; }
     public string EventDateString { get; set; } = string.Empty;
     public string Shift { get; set; } = string.Empty;
+    public int HallId { get; set; }
     public string HallName { get; set; } = string.Empty;
     public int GuestCount { get; set; }
     public bool HasContract { get; set; }
@@ -45,6 +46,8 @@ public class PublicBookingDetailViewModel
     public string StatusCode { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
     public bool CanCancelOnline { get; set; }
+    public bool CanRescheduleOnline { get; set; }
+    public bool IsHoldExpired { get; set; }
     public DateTime HoldExpiresAt { get; set; }
     public List<PublicBookingPaymentViewModel> SuccessfulPayments { get; set; } = new();
 

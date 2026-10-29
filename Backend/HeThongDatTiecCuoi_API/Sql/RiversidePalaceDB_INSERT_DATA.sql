@@ -29,6 +29,7 @@ INSERT INTO TrangThai (TrangThaiID, MaTrangThai, TenTrangThai, NhomTrangThai, Mo
 
 (301, 'AVAILABLE', N'Trống', 'HALL_SCHEDULE', N'Ca tổ chức đang trống'),
 (302, 'BOOKED', N'Đã đặt', 'HALL_SCHEDULE', N'Ca tổ chức đã được đặt'),
+(303, 'LOCKED', N'Đã khóa', 'HALL_SCHEDULE', N'Ca tổ chức bị khóa vận hành, không tự động giải phóng'),
 
 (401, 'ACTIVE', N'Đang áp dụng', 'MENU', N'Thực đơn đang áp dụng'),
 (402, 'INACTIVE', N'Ngừng áp dụng', 'MENU', N'Thực đơn ngừng áp dụng'),

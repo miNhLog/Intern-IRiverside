@@ -1856,24 +1856,6 @@ public sealed class RiversideApiClient : IRiversideApiClient
         }
     }
 
-    public async Task<ApiCallResult<bool>> CancelBookingAsync(int bookingId, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var response = await _httpClient.PutAsync($"api/my-bookings/{bookingId}/cancel", null, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-            {
-                var err = await response.Content.ReadAsStringAsync(cancellationToken);
-                return ApiCallResult<bool>.Failure(err);
-            }
-            return ApiCallResult<bool>.Success(true);
-        }
-        catch (Exception ex)
-        {
-            return ApiCallResult<bool>.Failure($"Lỗi: {ex.Message}");
-        }
-    }
-
     // UC14: POST /api/v1/public/bookings/lookup (AllowAnonymous, không cần token).
     public async Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.MyBookings.PublicBookingDetailViewModel>> LookupPublicBookingAsync(
         string bookingCode, string phoneNumber, CancellationToken cancellationToken = default)
@@ -1931,6 +1913,40 @@ public sealed class RiversideApiClient : IRiversideApiClient
             using var response = await _httpClient.PostAsJsonAsync(
                 $"api/v1/public/bookings/{bookingId}/cancel-hold",
                 new { bookingCode = (bookingCode ?? string.Empty).Trim().ToUpperInvariant(), phoneNumber = (phoneNumber ?? string.Empty).Trim(), reason },
+                cancellationToken);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            var message = ExtractApiMessage(json, response.StatusCode);
+            return response.IsSuccessStatusCode
+                ? ApiCallResult<string>.Success(message)
+                : ApiCallResult<string>.Failure(message, (int)response.StatusCode);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiCallResult<string>.Failure("Không thể kết nối Backend API. Hãy kiểm tra API đã chạy hay chưa.");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return ApiCallResult<string>.Failure("Backend API phản hồi quá lâu.");
+        }
+    }
+
+    // UC15: POST /api/v1/public/bookings/{id}/reschedule (AllowAnonymous).
+    public async Task<ApiCallResult<string>> ReschedulePublicBookingAsync(
+        int bookingId, string bookingCode, string phoneNumber, DateTime newDate, string newShift, string? reason,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var response = await _httpClient.PostAsJsonAsync(
+                $"api/v1/public/bookings/{bookingId}/reschedule",
+                new
+                {
+                    bookingCode = (bookingCode ?? string.Empty).Trim().ToUpperInvariant(),
+                    phoneNumber = (phoneNumber ?? string.Empty).Trim(),
+                    newDate = newDate.ToString("yyyy-MM-dd"),
+                    newShift = (newShift ?? string.Empty).Trim(),
+                    reason
+                },
                 cancellationToken);
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
             var message = ExtractApiMessage(json, response.StatusCode);

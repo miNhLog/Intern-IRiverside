@@ -40,6 +40,31 @@ public sealed class PublicBookingCancelHoldRequestDto
     public string? Reason { get; set; }
 }
 
+/// <summary>
+/// UC15: Request đổi ngày/ca của booking PENDING, verify sở hữu bằng mã + SĐT.
+/// Sảnh giữ nguyên nên không nhận HallId từ client.
+/// </summary>
+public sealed class PublicBookingRescheduleRequestDto
+{
+    [Required(ErrorMessage = "Vui lòng nhập mã đặt tiệc.")]
+    [RegularExpression(@"^DT-\d{8}-[A-Z0-9]{4,}$",
+        ErrorMessage = "Mã đặt tiệc phải có dạng DT-yyyyMMdd-XXXX (ví dụ DT-20261012-0001).")]
+    public string BookingCode { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Vui lòng nhập số điện thoại.")]
+    [RegularExpression(@"^0\d{9}$",
+        ErrorMessage = "Số điện thoại Việt Nam phải gồm đúng 10 số và bắt đầu bằng 0.")]
+    public string PhoneNumber { get; set; } = string.Empty;
+
+    public DateTime? NewDate { get; set; }
+
+    [StringLength(20)]
+    public string NewShift { get; set; } = string.Empty;
+
+    [MaxLength(500, ErrorMessage = "Lý do đổi lịch không được vượt quá 500 ký tự.")]
+    public string? Reason { get; set; }
+}
+
 /// <summary>Customer-facing successful payment information without transaction identifiers.</summary>
 public sealed class PublicBookingPaymentDto
 {
@@ -57,11 +82,14 @@ public sealed class PublicBookingDetailDto
     public DateTime EventDate { get; set; }
     public string EventDateString { get; set; } = string.Empty;
     public string Shift { get; set; } = string.Empty;
+    public int HallId { get; set; }
     public string HallName { get; set; } = string.Empty;
     public int GuestCount { get; set; }
     public string StatusCode { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
     public bool CanCancelOnline { get; set; }
+    public bool CanRescheduleOnline { get; set; }
+    public bool IsHoldExpired { get; set; }
     public DateTime HoldExpiresAt { get; set; }
     public bool HasContract { get; set; }
     public decimal? ContractTotal { get; set; }
