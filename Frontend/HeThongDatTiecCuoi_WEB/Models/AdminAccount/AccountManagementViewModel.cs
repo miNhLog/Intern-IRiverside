@@ -83,9 +83,11 @@ public sealed class AuditLogPageViewModel
     public int TotalPages { get; set; }
     public string? Keyword { get; set; }
     public string? Action { get; set; }
+    public string? EntityNameFilter { get; set; }
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
     public string? ErrorMessage { get; set; }
+    public bool IsLoadError { get; set; }
 }
 
 public sealed class RoleDistributionViewModel

@@ -195,6 +195,7 @@ public interface IRiversideApiClient
         int page,
         int pageSize,
         string? action,
+        string? entityName,
         DateTime? fromDate,
         DateTime? toDate,
         string? keyword,

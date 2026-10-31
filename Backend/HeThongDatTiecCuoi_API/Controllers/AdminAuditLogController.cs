@@ -20,20 +20,32 @@ public sealed class AdminAuditLogController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<AuditLogPageDto>> GetAuditLogs(int page = 1, int pageSize = 20,
         string? action = null, DateTime? fromDate = null, DateTime? toDate = null,
-        string? keyword = null, CancellationToken cancellationToken = default)
+        string? keyword = null, string? entityName = null, CancellationToken cancellationToken = default)
     {
         page = Math.Max(1, page); pageSize = Math.Clamp(pageSize, 1, 100);
         action = string.IsNullOrWhiteSpace(action) ? null : action.Trim().ToUpperInvariant();
         keyword = string.IsNullOrWhiteSpace(keyword) ? null : keyword.Trim();
+        entityName = string.IsNullOrWhiteSpace(entityName) ? null : entityName.Trim();
         fromDate = fromDate?.Date; toDate = toDate?.Date;
         if (fromDate.HasValue && toDate.HasValue && toDate < fromDate) return BadRequest(new { message = "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu." });
         if (keyword?.Length > 200) return BadRequest(new { message = "Từ khóa tìm kiếm không được vượt quá 200 ký tự." });
         if (action is not null && !AuditActions.AdminVisibleActions.Contains(action)) return BadRequest(new { message = "Loại thao tác không hợp lệ." });
+        if (entityName is not null)
+        {
+            entityName = AuditActions.AdminVisibleEntities.FirstOrDefault(
+                visibleEntity => string.Equals(visibleEntity, entityName, StringComparison.OrdinalIgnoreCase));
+            if (entityName is null) return BadRequest(new { message = "Đối tượng nhật ký không hợp lệ." });
+        }
 
         var query = _context.AuditLogs.AsNoTracking().Where(log => AuditActions.AdminVisibleActions.Contains(log.Action));
         if (action is not null) query = query.Where(log => log.Action == action);
+        if (entityName is not null) query = query.Where(log => log.EntityName == entityName);
         if (fromDate.HasValue) query = query.Where(log => log.Timestamp >= fromDate.Value);
-        if (toDate.HasValue) { var endExclusive = toDate.Value.AddDays(1); query = query.Where(log => log.Timestamp < endExclusive); }
+        if (toDate.HasValue)
+        {
+            if (toDate.Value == DateTime.MaxValue.Date) query = query.Where(log => log.Timestamp <= DateTime.MaxValue);
+            else query = query.Where(log => log.Timestamp < toDate.Value.AddDays(1));
+        }
         if (keyword is not null)
         {
             query = query.Where(log => log.Action.Contains(keyword) || (log.Notes != null && log.Notes.Contains(keyword)) ||

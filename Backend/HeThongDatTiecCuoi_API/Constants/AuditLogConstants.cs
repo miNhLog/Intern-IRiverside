@@ -38,6 +38,12 @@ public static class AuditActions
         AdminPasswordChanged
     ];
 
+    public static readonly string[] AdminVisibleEntities =
+    [
+        AuditEntityNames.User,
+        AuditEntityNames.RoleChangeRequest
+    ];
+
     public static readonly string[] AccountActions =
     [
         CreateAccount,

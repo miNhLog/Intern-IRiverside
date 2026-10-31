@@ -766,6 +766,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         int page,
         int pageSize,
         string? action,
+        string? entityName,
         DateTime? fromDate,
         DateTime? toDate,
         string? keyword,
@@ -777,6 +778,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
             $"pageSize={Math.Clamp(pageSize, 1, 100)}"
         };
         if (!string.IsNullOrWhiteSpace(action)) query.Add($"action={Uri.EscapeDataString(action)}");
+        if (!string.IsNullOrWhiteSpace(entityName)) query.Add($"entityName={Uri.EscapeDataString(entityName)}");
         if (fromDate.HasValue) query.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
         if (toDate.HasValue) query.Add($"toDate={toDate.Value:yyyy-MM-dd}");
         if (!string.IsNullOrWhiteSpace(keyword)) query.Add($"keyword={Uri.EscapeDataString(keyword)}");
