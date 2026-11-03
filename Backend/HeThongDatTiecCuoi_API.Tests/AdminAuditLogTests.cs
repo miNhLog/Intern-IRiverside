@@ -99,6 +99,43 @@ public sealed class AdminAuditLogTests : IClassFixture<AdminAuditLogApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Get_ClampsExtremePageToFirstPageWhenNoResults()
+    {
+        await SeedAsync();
+        using var client = CreateClient(RoleNames.Admin);
+
+        using var response = await client.GetAsync("/api/admin/audit-logs?page=2147483647&pageSize=100");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = await response.Content.ReadFromJsonAsync<AuditLogPageDto>();
+        Assert.NotNull(page);
+        Assert.Equal(1, page.Page);
+        Assert.Equal(0, page.TotalItems);
+        Assert.Equal(0, page.TotalPages);
+        Assert.Empty(page.Items);
+    }
+
+    [Fact]
+    public async Task Get_PreservesStablePaginationForExistingResults()
+    {
+        await SeedAsync(
+            new AuditLog { AuditLogId = 1, Action = "CREATE_ACCOUNT", EntityName = "User", EntityId = 1, Timestamp = new DateTime(2026, 10, 20) },
+            new AuditLog { AuditLogId = 2, Action = "CREATE_ACCOUNT", EntityName = "User", EntityId = 2, Timestamp = new DateTime(2026, 10, 20) },
+            new AuditLog { AuditLogId = 3, Action = "CREATE_ACCOUNT", EntityName = "User", EntityId = 3, Timestamp = new DateTime(2026, 10, 20) });
+        using var client = CreateClient(RoleNames.Admin);
+
+        using var response = await client.GetAsync("/api/admin/audit-logs?page=2&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = await response.Content.ReadFromJsonAsync<AuditLogPageDto>();
+        Assert.NotNull(page);
+        Assert.Equal(2, page.Page);
+        Assert.Equal(3, page.TotalItems);
+        Assert.Equal(3, page.TotalPages);
+        Assert.Equal(2, Assert.Single(page.Items).AuditLogId);
+    }
+
     private HttpClient CreateClient(string? role)
     {
         var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });

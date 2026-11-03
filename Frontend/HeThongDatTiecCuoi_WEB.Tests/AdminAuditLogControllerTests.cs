@@ -1,4 +1,6 @@
 using System.Reflection;
+using System.Net;
+using System.Text;
 using HeThongDatTiecCuoi_WEB.Controllers;
 using HeThongDatTiecCuoi_WEB.Models.AdminAccount;
 using HeThongDatTiecCuoi_WEB.Models.Auth;
@@ -52,6 +54,45 @@ public sealed class AdminAuditLogControllerTests
         Assert.Equal("RoleChangeRequest", ((AuditLogApiProxy)(object)api).EntityName);
     }
 
+    [Fact]
+    public async Task ApiClient_ConvertsNonJsonErrorBodyToFailureWithoutExposingBody()
+    {
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.BadGateway)
+        {
+            Content = new StringContent("<html>private gateway details</html>", Encoding.UTF8, "text/html")
+        }))
+        {
+            BaseAddress = new Uri("https://api.test/")
+        };
+        var api = new RiversideApiClient(httpClient, new HttpContextAccessor());
+
+        var result = await api.GetAuditLogsAsync("test-token", 1, 20, null, null, null, null, null, default);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal((int)HttpStatusCode.BadGateway, result.StatusCode);
+        Assert.Equal("Yêu cầu không thành công.", result.Error);
+        Assert.DoesNotContain("private gateway details", result.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ApiClient_PreservesJsonErrorMessageAndStatusCode()
+    {
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent("{\"message\":\"Invalid audit query.\"}", Encoding.UTF8, "application/json")
+        }))
+        {
+            BaseAddress = new Uri("https://api.test/")
+        };
+        var api = new RiversideApiClient(httpClient, new HttpContextAccessor());
+
+        var result = await api.GetAuditLogsAsync("test-token", 1, 20, null, null, null, null, null, default);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal((int)HttpStatusCode.BadRequest, result.StatusCode);
+        Assert.Equal("Invalid audit query.", result.Error);
+    }
+
     private static AdminAuditLogController CreateController(IRiversideApiClient api)
     {
         var controller = new AdminAuditLogController(api)
@@ -79,5 +120,11 @@ public sealed class AdminAuditLogControllerTests
 
             throw new NotSupportedException(targetMethod?.Name);
         }
+    }
+
+    private sealed class StubHttpMessageHandler(HttpResponseMessage response) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(response);
     }
 }

@@ -915,7 +915,15 @@ public sealed class RiversideApiClient : IRiversideApiClient
                     : ApiCallResult<T>.Success(value);
             }
 
-            var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(JsonOptions, cancellationToken);
+            ApiErrorDto? error;
+            try
+            {
+                error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(JsonOptions, cancellationToken);
+            }
+            catch (JsonException)
+            {
+                error = null;
+            }
             return ApiCallResult<T>.Failure(
                 error?.Message ?? "Yêu cầu không thành công.",
                 (int)response.StatusCode);

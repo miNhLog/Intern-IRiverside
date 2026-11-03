@@ -59,7 +59,7 @@ public sealed class AdminAuditLogController : ControllerBase
 
         var totalItems = await query.CountAsync(cancellationToken);
         var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-        if (totalPages > 0 && page > totalPages) page = totalPages;
+        page = totalPages == 0 ? 1 : Math.Min(page, totalPages);
         var rawItems = await query.OrderByDescending(log => log.Timestamp).ThenByDescending(log => log.AuditLogId)
             .Skip((page - 1) * pageSize).Take(pageSize)
             .Select(log => new
