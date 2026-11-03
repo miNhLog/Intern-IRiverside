@@ -16,9 +16,15 @@
         ["FIRST_PASSWORD_CHANGED"] = "Hoàn tất đổi mật khẩu lần đầu",
         ["ADMIN_PASSWORD_CHANGED"] = "Đổi mật khẩu quản trị viên"
     };
+    var entities = new Dictionary<string, string>
+    {
+        ["User"] = "Tài khoản nhân viên",
+        ["RoleChangeRequest"] = "Yêu cầu thay đổi vai trò"
+    };
     string Label(string action) => actions.GetValueOrDefault(action, action);
     var hasFilters = !string.IsNullOrWhiteSpace(Model.Keyword)
         || !string.IsNullOrWhiteSpace(Model.Action)
+        || !string.IsNullOrWhiteSpace(Model.EntityNameFilter)
         || Model.FromDate.HasValue
         || Model.ToDate.HasValue;
     var firstItem = Model.TotalItems == 0 ? 0 : (Model.Page - 1) * Model.PageSize + 1;
@@ -50,6 +56,17 @@
                 @foreach (var item in actions)
                 {
                     <option value="@item.Key" selected="@(Model.Action == item.Key)">@item.Value</option>
+                }
+            </select>
+        </label>
+
+        <label class="audit-field">
+            <span class="audit-field-label">Đối tượng</span>
+            <select name="entityName">
+                <option value="">Tất cả đối tượng</option>
+                @foreach (var item in entities)
+                {
+                    <option value="@item.Key" selected="@(Model.EntityNameFilter == item.Key)">@item.Value</option>
                 }
             </select>
         </label>
@@ -91,14 +108,22 @@
 
     <section class="audit-card" aria-labelledby="auditTableTitle">
         <div class="audit-card-heading">
-            <div><h2 id="auditTableTitle">Lịch sử thao tác</h2><span>@Model.TotalItems nhật ký được tìm thấy</span></div>
-            @if (Model.TotalItems > 0)
+            <div><h2 id="auditTableTitle">Lịch sử thao tác</h2>@if (string.IsNullOrWhiteSpace(Model.ErrorMessage)){<span>@Model.TotalItems nhật ký được tìm thấy</span>}</div>
+            @if (string.IsNullOrWhiteSpace(Model.ErrorMessage) && Model.TotalItems > 0)
             {
                 <span>Hiển thị @firstItem–@lastItem / @Model.TotalItems</span>
             }
         </div>
 
-        @if (Model.Items.Count == 0)
+        @if (Model.IsLoadError)
+        {
+            <div class="audit-empty"><strong>Không thể tải nhật ký</strong><span>Hãy thử tải lại sau khi kiểm tra kết nối.</span></div>
+        }
+        else if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="audit-empty"><strong>Điều kiện lọc chưa hợp lệ</strong><span>Hãy điều chỉnh giá trị ngày rồi thử lại.</span></div>
+        }
+        else if (Model.Items.Count == 0)
         {
             <div class="audit-empty">
                 <span class="audit-empty-icon"><i class="fa-regular fa-clock" aria-hidden="true"></i></span>
@@ -136,12 +161,12 @@
         @if (Model.TotalPages > 1)
         {
             <nav class="audit-pagination" aria-label="Phân trang nhật ký">
-                <a class="audit-page-link @(Model.Page <= 1 ? "disabled" : null)" aria-label="Trang trước" aria-disabled="@(Model.Page <= 1 ? "true" : null)" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize" asp-route-auditAction="@Model.Action" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-keyword="@Model.Keyword"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></a>
+                <a class="audit-page-link @(Model.Page <= 1 ? "disabled" : null)" aria-label="Trang trước" aria-disabled="@(Model.Page <= 1 ? "true" : null)" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize" asp-route-auditAction="@Model.Action" asp-route-entityName="@Model.EntityNameFilter" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-keyword="@Model.Keyword"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></a>
                 @for (var number = Math.Max(1, Model.Page - 2); number <= Math.Min(Model.TotalPages, Model.Page + 2); number++)
                 {
-                    <a class="audit-page-link @(number == Model.Page ? "active" : null)" aria-current="@(number == Model.Page ? "page" : null)" asp-action="Index" asp-route-page="@number" asp-route-pageSize="@Model.PageSize" asp-route-auditAction="@Model.Action" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-keyword="@Model.Keyword">@number</a>
+                    <a class="audit-page-link @(number == Model.Page ? "active" : null)" aria-current="@(number == Model.Page ? "page" : null)" asp-action="Index" asp-route-page="@number" asp-route-pageSize="@Model.PageSize" asp-route-auditAction="@Model.Action" asp-route-entityName="@Model.EntityNameFilter" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-keyword="@Model.Keyword">@number</a>
                 }
-                <a class="audit-page-link @(Model.Page >= Model.TotalPages ? "disabled" : null)" aria-label="Trang sau" aria-disabled="@(Model.Page >= Model.TotalPages ? "true" : null)" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize" asp-route-auditAction="@Model.Action" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-keyword="@Model.Keyword"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a>
+                <a class="audit-page-link @(Model.Page >= Model.TotalPages ? "disabled" : null)" aria-label="Trang sau" aria-disabled="@(Model.Page >= Model.TotalPages ? "true" : null)" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize" asp-route-auditAction="@Model.Action" asp-route-entityName="@Model.EntityNameFilter" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-keyword="@Model.Keyword"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a>
             </nav>
         }
     </section>

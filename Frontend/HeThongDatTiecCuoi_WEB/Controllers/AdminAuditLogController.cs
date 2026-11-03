@@ -20,6 +20,7 @@ public sealed class AdminAuditLogController : Controller
         int page = 1,
         int pageSize = 20,
         string? auditAction = null,
+        string? entityName = null,
         DateTime? fromDate = null,
         DateTime? toDate = null,
         string? keyword = null,
@@ -31,21 +32,48 @@ public sealed class AdminAuditLogController : Controller
         page = Math.Max(1, page);
         pageSize = new[] { 10, 20, 50 }.Contains(pageSize) ? pageSize : 20;
         auditAction = string.IsNullOrWhiteSpace(auditAction) ? null : auditAction.Trim().ToUpperInvariant();
+        entityName = string.IsNullOrWhiteSpace(entityName) ? null : entityName.Trim();
         keyword = string.IsNullOrWhiteSpace(keyword) ? null : keyword.Trim();
         fromDate = fromDate?.Date;
         toDate = toDate?.Date;
 
-        var result = await _apiClient.GetAuditLogsAsync(
-            accessToken, page, pageSize, auditAction, fromDate, toDate, keyword, cancellationToken);
+        if (ModelState.GetFieldValidationState(nameof(fromDate)) == Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid ||
+            ModelState.GetFieldValidationState(nameof(toDate)) == Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid)
+        {
+            var invalidModel = new AuditLogPageViewModel
+            {
+                Page = page, PageSize = pageSize, Action = auditAction, EntityNameFilter = entityName,
+                Keyword = keyword, FromDate = fromDate, ToDate = toDate
+            };
+            invalidModel.ErrorMessage = "Ngày lọc không hợp lệ. Vui lòng nhập ngày theo định dạng hợp lệ.";
+            return View(invalidModel);
+        }
+        if (fromDate.HasValue && toDate.HasValue && toDate < fromDate)
+        {
+            var invalidModel = new AuditLogPageViewModel
+            {
+                Page = page, PageSize = pageSize, Action = auditAction, EntityNameFilter = entityName,
+                Keyword = keyword, FromDate = fromDate, ToDate = toDate
+            };
+            invalidModel.ErrorMessage = "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.";
+            return View(invalidModel);
+        }
 
-        var model = result.Succeeded && result.Value is not null
-            ? result.Value
-            : new AuditLogPageViewModel { Page = page, PageSize = pageSize };
+        var result = await _apiClient.GetAuditLogsAsync(
+            accessToken, page, pageSize, auditAction, entityName, fromDate, toDate, keyword, cancellationToken);
+
+        var loadSucceeded = result.Succeeded && result.Value is not null;
+        var model = result.Value ?? new AuditLogPageViewModel { Page = page, PageSize = pageSize };
         model.Action = auditAction;
+        model.EntityNameFilter = entityName;
         model.FromDate = fromDate;
         model.ToDate = toDate;
         model.Keyword = keyword;
-        if (!result.Succeeded) model.ErrorMessage = result.Error ?? "Không thể tải nhật ký hệ thống.";
+        if (!loadSucceeded)
+        {
+            model.ErrorMessage = result.Error ?? "Không thể tải nhật ký hệ thống.";
+            model.IsLoadError = true;
+        }
         return View(model);
     }
 }
