@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +14,20 @@ namespace HeThongDatTiecCuoi_WEB.Controllers;
 
 public class RecommendationController : Controller
 {
+    // SucChuaToiDa trong SanhTiec là SỐ KHÁCH (không phải bàn). Sảnh lớn nhất hiện tại
+    // (Grand Ballroom) có SucChuaToiDa = 2000 khách, quy chuẩn 10 khách/bàn => 200 bàn.
+    // Giới hạn dưới 150 khách lấy từ sức chứa tối thiểu nhỏ nhất trong catalog.
+    private const int MinGuestCount = 150;
+    private const int MaxGuestCount = 2000;
+    private const int GuestsPerTable = 10;
+    private const int MaxTotalTables = MaxGuestCount / GuestsPerTable;
+    private static readonly Regex PhoneRegex = new(@"^0\d{9}$", RegexOptions.Compiled);
+    private static readonly Regex EmailRegex = new(@"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$", RegexOptions.Compiled);
+    private static readonly HashSet<string> AllowedServiceCodes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "DV001", "DV002", "DV003", "DV004", "DV005"
+    };
+
     private readonly IRiversideApiClient _apiClient;
     private readonly ILogger<RecommendationController> _logger;
 
@@ -69,52 +86,29 @@ public class RecommendationController : Controller
         try
         {
         if (request is null)
-        {
-            ViewBag.RecommendationError = "Thiếu dữ liệu khảo sát.";
             return Json(new { success = false, message = "Thiếu dữ liệu khảo sát, vui lòng nhập lại." });
-        }
+
         if (!ModelState.IsValid)
         {
-            // Trả message chi tiết field đầu tiên thay vì chung chung để JS alert đúng chỗ sai.
-            var firstError = ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage)
-                .FirstOrDefault(e => !string.IsNullOrWhiteSpace(e));
-            ViewBag.RecommendationError = "Dữ liệu khảo sát chưa hợp lệ.";
-            return Json(new { success = false, message = firstError ?? "Dữ liệu khảo sát chưa hợp lệ, vui lòng kiểm tra lại." });
+            var firstError = FirstModelStateFieldError();
+            if (firstError is { } modelError)
+                return Json(new { success = false, field = modelError.Field, message = modelError.Message });
         }
-        // Ràng buộc Riverside Palace: nhận đặt tiệc trước từ 30 ngày đến tối đa 365 ngày.
-        var minDate = DateTime.Today.AddDays(30);
-        var maxDate = DateTime.Today.AddDays(365);
-        if (request.EventDate.Date < minDate)
-            return Json(new { success = false, message = "Ngày tổ chức tiệc cưới phải cách ngày hiện tại tối thiểu 30 ngày. Vui lòng chọn ngày xa hơn để Riverside Palace có thời gian chuẩn bị tốt nhất." });
-        if (request.EventDate.Date > maxDate)
-            return Json(new { success = false, message = "Hệ thống chỉ nhận đăng ký giữ chỗ trước tối đa 365 ngày (1 năm). Vui lòng chọn ngày gần hơn." });
-        // Chuẩn hóa ca/ngày trước khi gọi Backend (tránh lệch hoa/thường hoặc chuỗi dài kèm giờ).
+
+        var surveyError = ValidateSurvey(request);
+        if (surveyError is { } error)
+            return Json(new { success = false, field = error.Field, message = error.Message });
+
+        // Chuẩn hóa dữ liệu sau khi đã validation. Không tin TableCount client gửi:
+        // số bàn chính thức luôn quy đổi từ GuestCount (10 khách/bàn) + bàn dự phòng.
+        request.CoupleName = (request.CoupleName ?? string.Empty).Trim();
+        request.PhoneNumber = (request.PhoneNumber ?? string.Empty).Trim();
+        request.Email = (request.Email ?? string.Empty).Trim();
         request.Shift = NormalizeHallShift(request.Shift);
         request.EventDate = request.EventDate.Date;
-        // Chuẩn hóa GuestCount <-> TableCount trước khi gọi Backend.
-        if (request.GuestCount <= 0 && (request.TableCount > 0 || request.OfficialTableCount > 0))
-            request.GuestCount = Math.Max(request.TableCount, request.OfficialTableCount + request.SpareTableCount) * 10;
-        if (request.OfficialTableCount <= 0 && request.GuestCount > 0)
-            request.OfficialTableCount = (int)Math.Ceiling(request.GuestCount / 10m);
-        request.TableCount = request.OfficialTableCount + Math.Max(0, request.SpareTableCount);
-        // P0: Grand Ballroom tối đa ~140 bàn — chặn trước khi gọi Backend.
-        if (request.TableCount > 140)
-            return Json(new { success = false, message = "Quy mô vượt quá sức chứa sảnh lớn nhất Grand Ballroom (tối đa 140 bàn / 1400 khách). Hai bạn vui lòng giảm số khách hoặc liên hệ Riverside Palace để tách ca tổ chức nhé!" });
-        // Ràng buộc ngân sách: min tuyệt đối 100tr (min thực tế ~103,3tr cho 150 khách:
-        // sảnh Elbe 20tr + menu 4,35tr/bàn × 15 bàn + decor 18tr). Gợi ý chỉ vượt tối đa 10tr.
-        const decimal MinBudgetAbsolute = 100_000_000m;
-        const decimal MaxBudgetAbsolute = 3_000_000_000m;
-        if (request.ExpectedBudget < MinBudgetAbsolute || request.ExpectedBudget > MaxBudgetAbsolute)
-            return Json(new { success = false, message = "Tổng ngân sách dự trù tối thiểu 100 triệu (chi phí tối thiểu ~103,3 triệu cho 150 khách) đến tối đa 3 tỷ VNĐ." });
-        var minForTables = 38_000_000m + Math.Max(0, request.TableCount) * 4_350_000m;
-        if (request.ExpectedBudget < minForTables)
-            return Json(new
-            {
-                success = false,
-                message = $"Với {request.TableCount} bàn ({request.GuestCount} khách), chi phí tối thiểu khoảng {minForTables:N0} đ (chưa gồm dịch vụ). Vui lòng tăng ngân sách lên tối thiểu {Math.Max(MinBudgetAbsolute, minForTables):N0} đ hoặc giảm số khách để gợi ý không vượt quá 10 triệu."
-            });
+        request.OfficialTableCount = (int)Math.Ceiling(request.GuestCount / (decimal)GuestsPerTable);
+        request.SpareTableCount = Math.Max(0, request.SpareTableCount);
+        request.TableCount = request.OfficialTableCount + request.SpareTableCount;
 
         var result = await _apiClient.GetTop3RecommendationsAsync(request, cancellationToken);
 
@@ -265,6 +259,100 @@ public class RecommendationController : Controller
                 HttpContext.TraceIdentifier, ex.ToString());
             return Json(new { success = false, message = "Không thể gửi giữ chỗ lúc này, vui lòng thử lại sau.", traceId = HttpContext.TraceIdentifier });
         }
+    }
+
+    private (string? Field, string Message)? FirstModelStateFieldError()
+    {
+        foreach (var entry in ModelState)
+        {
+            var message = entry.Value?.Errors
+                .Select(e => e.ErrorMessage)
+                .FirstOrDefault(e => !string.IsNullOrWhiteSpace(e));
+            if (string.IsNullOrWhiteSpace(message))
+                continue;
+
+            var key = entry.Key.Split('.').LastOrDefault() ?? entry.Key;
+            var field = key switch
+            {
+                nameof(RecommendationRequestViewModel.CoupleName) => "coupleName",
+                nameof(RecommendationRequestViewModel.PhoneNumber) => "phoneNumber",
+                nameof(RecommendationRequestViewModel.Email) => "email",
+                nameof(RecommendationRequestViewModel.EventDate) => "eventDate",
+                nameof(RecommendationRequestViewModel.Shift) => "shift",
+                nameof(RecommendationRequestViewModel.GuestCount) => "guestCount",
+                nameof(RecommendationRequestViewModel.SpareTableCount) => "spareTableCount",
+                nameof(RecommendationRequestViewModel.ExpectedBudget) => "expectedBudget",
+                nameof(RecommendationRequestViewModel.DesiredStyle) => "desiredStyle",
+                _ => null
+            };
+            return (field, message!);
+        }
+        return null;
+    }
+
+    private static (string Field, string Message)? ValidateSurvey(RecommendationRequestViewModel request)
+    {
+        var coupleName = (request.CoupleName ?? string.Empty).Trim();
+        if (coupleName.Length < 2 || coupleName.Length > 150)
+            return ("coupleName", "Họ tên phải từ 2 đến 150 ký tự.");
+
+        var phone = (request.PhoneNumber ?? string.Empty).Trim();
+        if (!PhoneRegex.IsMatch(phone))
+            return ("phoneNumber", "Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng 0 (VD: 0912345678).");
+
+        var email = (request.Email ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(email))
+            return ("email", "Vui lòng nhập email để nhận bảng dự toán.");
+        if (email.Length > 255 || !EmailRegex.IsMatch(email))
+            return ("email", "Email không hợp lệ (tối đa 255 ký tự).");
+
+        var eventDate = request.EventDate.Date;
+        if (eventDate == default)
+            return ("eventDate", "Vui lòng chọn ngày tổ chức dự kiến.");
+        var minDate = DateTime.Today.AddDays(30);
+        var maxDate = DateTime.Today.AddDays(365);
+        if (eventDate < minDate)
+            return ("eventDate", "Ngày tổ chức tiệc cưới phải cách ngày hiện tại tối thiểu 30 ngày. Vui lòng chọn ngày xa hơn để Riverside Palace có thời gian chuẩn bị tốt nhất.");
+        if (eventDate > maxDate)
+            return ("eventDate", "Hệ thống chỉ nhận đăng ký giữ chỗ trước tối đa 365 ngày (1 năm). Vui lòng chọn ngày gần hơn.");
+
+        var shift = NormalizeHallShift(request.Shift);
+        if (shift != "Ca trưa" && shift != "Ca tối")
+            return ("shift", "Ca tổ chức chỉ có thể là Ca trưa hoặc Ca tối.");
+
+        if (request.GuestCount < MinGuestCount || request.GuestCount > MaxGuestCount)
+            return ("guestCount", $"Số lượng khách từ {MinGuestCount} đến {MaxGuestCount} (quy chuẩn {GuestsPerTable} khách/bàn).");
+
+        if (request.SpareTableCount < 0 || request.SpareTableCount > 10)
+            return ("spareTableCount", "Bàn dự phòng từ 0 đến 10 bàn.");
+
+        var officialTables = (int)Math.Ceiling(request.GuestCount / (decimal)GuestsPerTable);
+        var totalTables = officialTables + Math.Max(0, request.SpareTableCount);
+        if (totalTables > MaxTotalTables)
+            return ("spareTableCount", $"Tổng {totalTables} bàn (kể cả bàn dự phòng) vượt sức chứa sảnh lớn nhất ({MaxTotalTables} bàn / {MaxGuestCount} khách). Vui lòng giảm số khách hoặc bàn dự phòng.");
+
+        // Giữ nguyên giới hạn sản phẩm hiện có (100 triệu – 3 tỷ) và mức sàn theo số bàn;
+        // đây là quy tắc đang được UC12 áp dụng, không phải giới hạn mới của UC11.
+        const decimal MinBudgetAbsolute = 100_000_000m;
+        const decimal MaxBudgetAbsolute = 3_000_000_000m;
+        if (request.ExpectedBudget < MinBudgetAbsolute || request.ExpectedBudget > MaxBudgetAbsolute)
+            return ("expectedBudget", "Tổng ngân sách dự trù tối thiểu 100 triệu (chi phí tối thiểu ~103,3 triệu cho 150 khách) đến tối đa 3 tỷ VNĐ.");
+        var minForTables = 38_000_000m + totalTables * 4_350_000m;
+        if (request.ExpectedBudget < minForTables)
+            return ("expectedBudget", $"Với {totalTables} bàn ({request.GuestCount} khách), chi phí tối thiểu khoảng {minForTables:N0} đ (chưa gồm dịch vụ). Vui lòng tăng ngân sách lên tối thiểu {Math.Max(MinBudgetAbsolute, minForTables):N0} đ hoặc giảm số khách để gợi ý không vượt quá 10 triệu.");
+
+        var style = (request.DesiredStyle ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(style))
+            return ("desiredStyle", "Vui lòng chọn phong cách bài trí.");
+        if (style.Length > 100)
+            return ("desiredStyle", "Phong cách tối đa 100 ký tự.");
+
+        var invalidService = request.SelectedServiceCodes?
+            .FirstOrDefault(code => !AllowedServiceCodes.Contains((code ?? string.Empty).Trim()));
+        if (invalidService != null)
+            return ("selectedServiceCodes", "Dịch vụ ưu tiên không hợp lệ. Vui lòng chọn lại từ danh sách.");
+
+        return null;
     }
 
     private static string NormalizeHallShift(string? raw)

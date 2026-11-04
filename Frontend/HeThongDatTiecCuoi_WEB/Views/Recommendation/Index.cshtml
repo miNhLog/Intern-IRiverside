@@ -17,6 +17,8 @@
         .recom-budget-badge--warning{color:#92400E;background:#FEF3C7;border:1px solid #FCD34D;}
         .recom-analysis--sub{color:#64748B;font-size:12px;}
         .recom-explain-list{margin:10px 0 0 0;padding-left:18px;font-size:12.5px;color:#334155;display:grid;gap:4px;}
+        .recom-field-error{display:block;margin-top:4px;color:#B91C1C;font-size:12px;font-weight:600;line-height:1.35;}
+        .recom-form-control.is-invalid{border-color:#DC2626;box-shadow:0 0 0 1px #DC2626 inset;}
     </style>
 }
 
@@ -45,7 +47,7 @@
         </section>
 
         <div class="recom-box-limit">
-            <form id="clientRecomForm" onsubmit="handleAnalyzeCombos(event)" class="recom-card recom-form">
+            <form id="clientRecomForm" novalidate onsubmit="handleAnalyzeCombos(event)" class="recom-card recom-form">
                 <div>
                     <div class="recom-section-head">
                         <h3 class="recom-section-title">
@@ -57,15 +59,18 @@
                     <div class="recom-grid-3">
                         <div>
                             <label class="recom-label" for="coupleName">Họ tên Cô dâu &amp; Chú rể *</label>
-                            <input type="text" id="coupleName" required value="@Model.CoupleName" placeholder="VD: Trần Hoàng &amp; Mai Phương" class="recom-form-control">
+                            <input type="text" id="coupleName" required maxlength="150" value="@Model.CoupleName" placeholder="VD: Trần Hoàng &amp; Mai Phương" class="recom-form-control">
+                            <small id="err-coupleName" class="recom-field-error" role="alert" hidden></small>
                         </div>
                         <div>
                             <label class="recom-label" for="phoneNumber">Số điện thoại liên hệ *</label>
-                            <input type="tel" id="phoneNumber" required value="@Model.PhoneNumber" placeholder="09xxxxxxxx" class="recom-form-control">
+                            <input type="tel" id="phoneNumber" required maxlength="10" inputmode="numeric" value="@Model.PhoneNumber" placeholder="09xxxxxxxx" class="recom-form-control">
+                            <small id="err-phoneNumber" class="recom-field-error" role="alert" hidden></small>
                         </div>
                         <div>
                             <label class="recom-label" for="email">Email nhận bảng dự toán *</label>
-                            <input type="email" id="email" required value="@Model.Email" placeholder="wedding@gmail.com" class="recom-form-control">
+                            <input type="email" id="email" required maxlength="255" value="@Model.Email" placeholder="wedding@gmail.com" class="recom-form-control">
+                            <small id="err-email" class="recom-field-error" role="alert" hidden></small>
                         </div>
                     </div>
                 </div>
@@ -98,6 +103,7 @@
                                 </span>
                             </label>
                             <input type="date" id="eventDate" required onchange="handleDateChanged()" class="recom-form-control">
+                            <small id="err-eventDate" class="recom-field-error" role="alert" hidden></small>
                         </div>
                         <div>
                             <label class="recom-label" for="shift">Buổi tiệc mong muốn *</label>
@@ -105,14 +111,16 @@
                                 <option value="Ca tối" selected>Buổi tối (17:30 – 21:30)</option>
                                 <option value="Ca trưa">Buổi trưa (10:30 – 14:00)</option>
                             </select>
+                            <small id="err-shift" class="recom-field-error" role="alert" hidden></small>
                         </div>
                         <div>
                             <label class="recom-label-row" for="guestCount">
                                 <span>Số lượng khách dự kiến *</span>
-                                <span class="recom-label-accent">150 – 1400 khách</span>
+                                <span class="recom-label-accent">150 – 2000 khách</span>
                             </label>
-                            <input type="number" id="guestCount" required min="150" max="1400" step="10" value="@Model.GuestCount" placeholder="Ví dụ: 300 (150 – 1400 khách, 10 khách/bàn)" oninput="syncGuestToTables()" class="recom-form-control recom-form-control--strong">
+                            <input type="number" id="guestCount" required min="150" max="2000" step="1" value="@Model.GuestCount" placeholder="Ví dụ: 300 (150 – 2000 khách, 10 khách/bàn)" oninput="syncGuestToTables()" class="recom-form-control recom-form-control--strong">
                             <input type="hidden" id="officialTableCount" value="30">
+                            <small id="err-guestCount" class="recom-field-error" role="alert" hidden></small>
                         </div>
                         <div>
                             <label class="recom-label-row" for="spareTableCount">
@@ -120,6 +128,7 @@
                                 <span class="recom-label-accent">0 – 10 bàn</span>
                             </label>
                             <input type="number" id="spareTableCount" min="0" max="10" value="@Model.SpareTableCount" placeholder="Ví dụ: 2 (để trống = 0 bàn)" oninput="syncGuestToTables()" onchange="validateTableCounts()" class="recom-form-control">
+                            <small id="err-spareTableCount" class="recom-field-error" role="alert" hidden></small>
                         </div>
                     </div>
                     <div id="tableConvertHint" class="recom-convert-hint">Nhập số khách để tự động quy đổi số bàn (quy chuẩn 10 khách/bàn) + số bàn dự phòng.</div>
@@ -147,6 +156,7 @@
                                 </span>
                             </label>
                             <input type="text" inputmode="numeric" id="expectedBudget" required value="@Model.ExpectedBudget" placeholder="Ví dụ: 200.000.000 (tối thiểu 100 triệu – 3 tỷ VNĐ)" class="recom-form-control recom-form-control--strong" oninput="formatBudgetInput(this); updateBudgetMinHint()">
+                            <small id="err-expectedBudget" class="recom-field-error" role="alert" hidden></small>
                             <small id="budgetMinHint" class="recom-small-note">Ngân sách tối thiểu 100 triệu; với quy mô hiện tại cần khoảng -- để không vượt quá 10 triệu.</small>
                         </div>
                         <div>
@@ -181,11 +191,11 @@
                             <label class="recom-label" for="desiredStyle">Concept Decor Hot Trend</label>
                             <select id="desiredStyle" class="recom-form-control">
                                 <option value="Hiện đại / lãng mạn" selected>Midnight Celestial Blue (Đêm Huyền Bí Sắc Xanh)</option>
-                                <option value="Hoàng gia">Royal Versailles Gold (Hoàng Gia Versailles)</option>
                                 <option value="Sân vườn / lãng mạn">Botanical Garden Muse (Vườn Cổ Tích Rustic)</option>
                                 <option value="Cổ tích / lãng mạn">Fairy Princesscore (Công Chúa Ngọt Ngào)</option>
                                 <option value="Nhẹ nhàng">Pure Minimalism (Trắng Pha Lê Tinh Giản)</option>
                             </select>
+                            <small id="err-desiredStyle" class="recom-field-error" role="alert" hidden></small>
                         </div>
                         <div>
                             <label class="recom-label" for="foodPreference">Phong vị ẩm thực chủ đạo</label>
@@ -558,6 +568,87 @@
         let menuCustomCategory = '';
         const RECOM_HALL_PLACEHOLDER = '@hallPlaceholder';
 
+        // SucChuaToiDa trong DB là SỐ KHÁCH; sảnh lớn nhất hiện tại 2000 khách
+        // (Grand Ballroom) => tối đa 200 bàn theo quy chuẩn 10 khách/bàn.
+        const MIN_GUEST_COUNT = 150;
+        const MAX_GUEST_COUNT = 2000;
+        const GUESTS_PER_TABLE = 10;
+        const MAX_TOTAL_TABLES = MAX_GUEST_COUNT / GUESTS_PER_TABLE;
+        const FIELD_ERROR_FIELDS = ['coupleName', 'phoneNumber', 'email', 'eventDate', 'shift', 'guestCount', 'spareTableCount', 'expectedBudget', 'desiredStyle'];
+
+        // ---- Lỗi theo từng trường: hiển thị inline, focus trường sai đầu tiên ----
+        function setFieldError(fieldId, message) {
+            const input = document.getElementById(fieldId);
+            const error = document.getElementById('err-' + fieldId);
+            if (input) {
+                input.classList.add('is-invalid');
+                input.setAttribute('aria-invalid', 'true');
+            }
+            if (error) {
+                error.textContent = message || '';
+                error.hidden = !message;
+            }
+        }
+
+        function clearFieldError(fieldId) {
+            const input = document.getElementById(fieldId);
+            const error = document.getElementById('err-' + fieldId);
+            if (input) {
+                input.classList.remove('is-invalid');
+                input.removeAttribute('aria-invalid');
+            }
+            if (error) {
+                error.hidden = true;
+                error.textContent = '';
+            }
+        }
+
+        function clearAllFieldErrors() { FIELD_ERROR_FIELDS.forEach(clearFieldError); }
+
+        function focusField(fieldId) {
+            const input = document.getElementById(fieldId);
+            if (!input) return;
+            try { input.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { }
+            try { input.focus({ preventScroll: true }); } catch (e) { try { input.focus(); } catch (x) { } }
+        }
+
+        function showFieldFailure(failure) {
+            if (!failure) return;
+            if (!failure.field || !document.getElementById(failure.field)) {
+                showRecomAlert(failure.message || 'Dữ liệu khảo sát chưa hợp lệ, vui lòng kiểm tra lại.', 'Dữ liệu chưa hợp lệ', 'warning');
+                return;
+            }
+            setFieldError(failure.field, failure.message);
+            focusField(failure.field);
+        }
+
+        FIELD_ERROR_FIELDS.forEach((fieldId) => {
+            const input = document.getElementById(fieldId);
+            if (!input) return;
+            const eventName = (input.tagName === 'SELECT' || input.type === 'date') ? 'change' : 'input';
+            input.addEventListener(eventName, () => clearFieldError(fieldId));
+        });
+
+        function readContact() {
+            return {
+                coupleName: String((document.getElementById('coupleName') || {}).value || '').trim(),
+                phoneNumber: String((document.getElementById('phoneNumber') || {}).value || '').trim(),
+                email: String((document.getElementById('email') || {}).value || '').trim()
+            };
+        }
+
+        function validateContact(contact) {
+            if (contact.coupleName.length < 2 || contact.coupleName.length > 150)
+                return { field: 'coupleName', message: 'Họ tên phải từ 2 đến 150 ký tự.' };
+            if (!/^0\d{9}$/.test(contact.phoneNumber))
+                return { field: 'phoneNumber', message: 'Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng 0 (VD: 0912345678).' };
+            if (!contact.email)
+                return { field: 'email', message: 'Vui lòng nhập email để nhận bảng dự toán.' };
+            if (contact.email.length > 255 || !/^[^\s@@]+@@[^\s@@]+\.[^\s@@]{2,}$/.test(contact.email))
+                return { field: 'email', message: 'Email không hợp lệ (tối đa 255 ký tự).' };
+            return null;
+        }
+
         // ---- A11y modal helpers: lock scroll + focus + class .open (giữ API display cũ) ----
         function lockRecomScroll() { document.body.classList.add('recom-modal-open'); }
         function unlockRecomScroll() {
@@ -708,14 +799,14 @@
             const spareInput = document.getElementById('spareTableCount');
             const rawGuest = gInput ? String(gInput.value || '').trim() : '';
             const rawSpare = spareInput ? String(spareInput.value || '').trim() : '';
-            let spare = parseInt(rawSpare === '' ? '0' : rawSpare) || 0;
-            if (spare < 0) spare = 0;
-            if (spare > 10) spare = 10;
+            if (spareInput && spareInput.validity.badInput)
+                return { guests: 0, official: 0, spare: NaN, total: NaN };
+            // Không tự cắt giá trị người dùng nhập để validation còn phát hiện và báo lỗi.
+            const spare = parseInt(rawSpare === '' ? '0' : rawSpare) || 0;
             if (rawGuest === '') return { guests: 0, official: 0, spare, total: spare };
-            let guests = parseInt(rawGuest) || 0;
-            if (guests > 1400) guests = 1400;
+            const guests = parseInt(rawGuest) || 0;
             if (guests === 0) return { guests: 0, official: 0, spare, total: spare };
-            const official = Math.ceil(guests / 10);
+            const official = Math.ceil(guests / GUESTS_PER_TABLE);
             return { guests, official, spare, total: official + spare };
         }
 
@@ -727,22 +818,24 @@
             const hint = document.getElementById('tableConvertHint');
             const rawGuest = gInput ? String(gInput.value || '').trim() : '';
             const rawSpare = spareInput ? String(spareInput.value || '').trim() : '';
-            let spare = parseInt(rawSpare === '' ? '0' : rawSpare) || 0;
-            if (spare < 0) spare = 0;
-            if (spare > 10) { spare = 10; if (spareInput) spareInput.value = 10; }
+            if (spareInput && spareInput.validity.badInput) {
+                if (hint) hint.innerText = 'Vui lòng nhập số bàn dự phòng hợp lệ.';
+                return { guests: 0, official: 0, spare: NaN, total: NaN };
+            }
+            // Không tự cắt giá trị người dùng nhập để validation còn phát hiện và báo lỗi.
+            const spare = parseInt(rawSpare === '' ? '0' : rawSpare) || 0;
             if (rawGuest === '') {
                 if (offInput) offInput.value = 0;
                 if (hint) hint.innerText = 'Nhập số khách để tự động quy đổi số bàn (quy chuẩn 10 khách/bàn) + số bàn dự phòng.';
                 return { guests: 0, official: 0, spare, total: spare };
             }
-            let guests = parseInt(rawGuest) || 0;
+            const guests = parseInt(rawGuest) || 0;
             if (guests === 0) {
                 if (offInput) offInput.value = 0;
                 if (hint) hint.innerText = 'Nhập số khách để tự động quy đổi số bàn (quy chuẩn 10 khách/bàn) + số bàn dự phòng.';
                 return { guests: 0, official: 0, spare, total: spare };
             }
-            if (guests > 1400) { guests = 1400; if (gInput) gInput.value = 1400; }
-            let official = Math.ceil(guests / 10);
+            const official = Math.ceil(guests / GUESTS_PER_TABLE);
             if (offInput) offInput.value = official;
             const total = official + spare;
             if (hint) hint.innerText = `Quy đổi: ${official} bàn chính thức + ${spare} bàn dự phòng = Tổng ${total} bàn`;
@@ -866,42 +959,96 @@
         async function handleAnalyzeCombos(e) {
             e.preventDefault();
             validateTableCounts();
+            clearAllFieldErrors();
 
-            // Validate ràng buộc 30–365 ngày trước khi gọi Backend.
-            const dateVal = document.getElementById('eventDate').value;
-            if (!dateVal) { showRecomAlert('Hai bạn vui lòng chọn ngày tổ chức dự kiến để Riverside Palace kiểm tra sảnh trống nhé!', 'Chưa chọn ngày tổ chức', 'info'); return; }
+            // Validate từng trường và hiển thị lỗi inline, focus trường sai đầu tiên.
+            const contact = readContact();
+            const contactError = validateContact(contact);
+            if (contactError) { showFieldFailure(contactError); return; }
+
+            const dateVal = String((document.getElementById('eventDate') || {}).value || '').trim();
+            if (!dateVal) {
+                showFieldFailure({ field: 'eventDate', message: 'Vui lòng chọn ngày tổ chức dự kiến.' });
+                return;
+            }
             const today0 = new Date(); today0.setHours(0, 0, 0, 0);
             const minD = new Date(today0); minD.setDate(minD.getDate() + 30);
             const maxD = new Date(today0); maxD.setDate(maxD.getDate() + 365);
             const minStr = toLocalDateStr(minD);
             const maxStr = toLocalDateStr(maxD);
-            if (dateVal < minStr) { showRecomAlert('Ngày tổ chức cần cách hôm nay tối thiểu 30 ngày để Riverside Palace chuẩn bị chu đáo nhất. Hai bạn vui lòng chọn ngày xa hơn nhé!', 'Cần chọn ngày xa hơn một chút', 'warning'); return; }
-            if (dateVal > maxStr) { showRecomAlert('Riverside Palace chỉ nhận giữ chỗ trước tối đa 365 ngày (1 năm). Hai bạn vui lòng chọn ngày gần hơn nhé!', 'Ngày chọn đang quá xa', 'warning'); return; }
-            // Validate thông tin liên hệ (tên/SĐT/email) trước khi gọi Backend để khỏi nhận
-            // lỗi ModelState chung chung "Dữ liệu khảo sát chưa hợp lệ".
-            const coupleVal = String(document.getElementById('coupleName').value || '').trim();
-            const phoneVal = String(document.getElementById('phoneNumber').value || '').trim();
-            const emailVal = String(document.getElementById('email').value || '').trim();
-            if (coupleVal.length < 2) { showRecomAlert('Hai bạn vui lòng nhập họ tên cô dâu & chú rể (hoặc người đại diện) để chuyên viên tiện xưng hô nhé!', 'Chưa nhập tên cặp đôi', 'info'); return; }
-            if (!/^0\d{9}$/.test(phoneVal)) { showRecomAlert('Số điện thoại liên hệ gồm 10 chữ số, bắt đầu bằng số 0 (VD: 0912345678) để chuyên viên gọi xác nhận giữ chỗ nhé!', 'Số điện thoại chưa đúng', 'warning'); return; }
-            if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]{2,}$/.test(emailVal)) { showRecomAlert('Hai bạn vui lòng nhập email hợp lệ để nhận bảng dự toán và xác nhận giữ chỗ nhé!', 'Email chưa hợp lệ', 'warning'); return; }
+            if (dateVal < minStr) {
+                showFieldFailure({ field: 'eventDate', message: 'Ngày tổ chức phải cách hôm nay tối thiểu 30 ngày. Vui lòng chọn ngày xa hơn.' });
+                return;
+            }
+            if (dateVal > maxStr) {
+                showFieldFailure({ field: 'eventDate', message: 'Riverside Palace chỉ nhận giữ chỗ trước tối đa 365 ngày (1 năm). Vui lòng chọn ngày gần hơn.' });
+                return;
+            }
+
+            const shiftVal = String((document.getElementById('shift') || {}).value || '').trim();
+            if (!/ca\s*(trưa|tối)/i.test(shiftVal)) {
+                showFieldFailure({ field: 'shift', message: 'Ca tổ chức chỉ có thể là Ca trưa hoặc Ca tối.' });
+                return;
+            }
+
+            const spareInput = document.getElementById('spareTableCount');
+            // Với input type=number, badInput có thể đi kèm value rỗng dù người dùng đã nhập.
+            if (spareInput.validity.badInput) {
+                showFieldFailure({ field: 'spareTableCount', message: 'Bàn dự phòng phải là số nguyên từ 0 đến 10.' });
+                return;
+            }
             const calc = syncGuestToTables();
-            const guestRaw = String(document.getElementById('guestCount').value || '').trim();
-            if (!guestRaw) { showRecomAlert('Hai bạn vui lòng nhập số lượng khách dự kiến (150 – 1400 khách, chuẩn 10 khách/bàn) nhé!', 'Chưa nhập số khách', 'info'); return; }
-            const guestCount = parseInt(guestRaw) || calc.guests;
-            if (guestCount < 150 || guestCount > 1400) { showRecomAlert('Số lượng khách phù hợp từ 150 đến 1400 khách (chuẩn 10 khách/bàn). Hai bạn vui lòng điều chỉnh lại nhé!', 'Số khách chưa phù hợp', 'warning'); return; }
-            // P0: chặn quy đổi vượt Grand Ballroom (~140 bàn) trước submit.
-            if ((calc.total || 0) > 140) { showRecomAlert('Quy mô ' + calc.total + ' bàn đã vượt quá sức chứa sảnh lớn nhất Grand Ballroom (tối đa 140 bàn / 1400 khách). Hai bạn vui lòng giảm số khách hoặc liên hệ Riverside Palace để tách ca tổ chức nhé!', 'Vượt sức chứa sảnh lớn nhất', 'warning'); return; }
-            const budgetRaw = String(document.getElementById('expectedBudget').value || '').trim();
-            if (!budgetRaw) { showRecomAlert('Hai bạn vui lòng nhập tổng ngân sách dự trù (tối thiểu 100 triệu – 3 tỷ VNĐ). Nhấn icon "?" cạnh ô ngân sách để xem khoảng hợp lệ nhé!', 'Chưa nhập ngân sách', 'info'); return; }
+            const guestRaw = document.getElementById('guestCount').value.trim();
+            const spareRaw = spareInput.value.trim();
+            if (guestRaw && !/^\d+$/.test(guestRaw)) {
+                showFieldFailure({ field: 'guestCount', message: 'Số lượng khách phải là số nguyên.' });
+                return;
+            }
+            if (!calc.guests) {
+                showFieldFailure({ field: 'guestCount', message: 'Vui lòng nhập số lượng khách dự kiến.' });
+                return;
+            }
+            const guestCount = calc.guests;
+            if (guestCount < MIN_GUEST_COUNT || guestCount > MAX_GUEST_COUNT) {
+                showFieldFailure({ field: 'guestCount', message: `Số lượng khách từ ${MIN_GUEST_COUNT} đến ${MAX_GUEST_COUNT} (quy chuẩn ${GUESTS_PER_TABLE} khách/bàn).` });
+                return;
+            }
+            if ((spareRaw && !/^\d+$/.test(spareRaw)) || calc.spare < 0 || calc.spare > 10) {
+                showFieldFailure({ field: 'spareTableCount', message: 'Bàn dự phòng từ 0 đến 10 bàn.' });
+                return;
+            }
+            // Tổng bàn gồm cả bàn dự phòng phải nằm trong sức chứa sảnh lớn nhất.
+            const spareTables = Math.max(0, calc.spare);
+            const totalTables = calc.official + spareTables;
+            if (totalTables > MAX_TOTAL_TABLES) {
+                showFieldFailure({ field: 'spareTableCount', message: `Tổng ${totalTables} bàn (kể cả bàn dự phòng) vượt sức chứa sảnh lớn nhất (${MAX_TOTAL_TABLES} bàn / ${MAX_GUEST_COUNT} khách). Vui lòng giảm số khách hoặc bàn dự phòng.` });
+                return;
+            }
+
+            const budgetRaw = String((document.getElementById('expectedBudget') || {}).value || '').trim();
+            if (!budgetRaw) {
+                showFieldFailure({ field: 'expectedBudget', message: 'Vui lòng nhập tổng ngân sách dự trù (tối thiểu 100 triệu – 3 tỷ VNĐ).' });
+                return;
+            }
             const budgetVal = parseBudget(budgetRaw);
-            if (isNaN(budgetVal)) { showRecomAlert('Ngân sách hai bạn nhập chưa hợp lệ. Vui lòng nhập số tiền bằng số (VNĐ) nhé!', 'Ngân sách chưa hợp lệ', 'warning'); return; }
-            if (budgetVal < MIN_BUDGET_ABSOLUTE || budgetVal > MAX_BUDGET_ABSOLUTE) { showRecomAlert('Ngân sách phù hợp từ 100 triệu (tối thiểu ~103,3 triệu cho 150 khách) đến 3 tỷ VNĐ. Nhấn icon "?" cạnh ô ngân sách để xem cách ước lượng (sảnh 20–80tr + menu 4,35–5,9tr/bàn + decor 18–28tr) nhé!', 'Ngân sách ngoài khoảng cho phép', 'warning'); return; }
+            if (budgetVal < MIN_BUDGET_ABSOLUTE || budgetVal > MAX_BUDGET_ABSOLUTE) {
+                showFieldFailure({ field: 'expectedBudget', message: 'Ngân sách phù hợp từ 100 triệu (tối thiểu ~103,3 triệu cho 150 khách) đến 3 tỷ VNĐ.' });
+                return;
+            }
             // Ràng buộc động theo số bàn thực tế: Min = 38tr + tổng bàn × 4,35tr (chưa gồm dịch vụ).
-            const minForTables = estimateMinBudget(calc.total);
+            const minForTables = estimateMinBudget(totalTables);
             if (budgetVal < minForTables) {
-                showRecomAlert(`Với ${calc.total} bàn (${guestCount} khách), chi phí tối thiểu khoảng ${fmtVnd(minForTables)} (20tr sảnh Elbe + ${calc.total}×4,35tr menu + 18tr decor, chưa gồm dịch vụ).\nNgân sách ${fmtVnd(budgetVal)} sẽ khiến gợi ý vượt quá 10 triệu.\nHai bạn vui lòng tăng ngân sách lên tối thiểu ${fmtVnd(Math.max(MIN_BUDGET_ABSOLUTE, minForTables))} hoặc giảm số khách nhé!`, 'Ngân sách hơi thấp so với quy mô', 'warning');
+                showFieldFailure({
+                    field: 'expectedBudget',
+                    message: `Với ${totalTables} bàn (${guestCount} khách), chi phí tối thiểu khoảng ${fmtVnd(minForTables)} (chưa gồm dịch vụ). Vui lòng tăng ngân sách lên tối thiểu ${fmtVnd(Math.max(MIN_BUDGET_ABSOLUTE, minForTables))} hoặc giảm số khách.`
+                });
                 try { updateBudgetMinHint(); } catch (e) { }
+                return;
+            }
+
+            const styleVal = String((document.getElementById('desiredStyle') || {}).value || '').trim();
+            if (!styleVal) {
+                showFieldFailure({ field: 'desiredStyle', message: 'Vui lòng chọn phong cách bài trí.' });
                 return;
             }
 
@@ -927,8 +1074,8 @@
                 shift: (/trưa|trua/i.test(rawShiftVal || '') ? 'Ca trưa' : (/tối|toi/i.test(rawShiftVal || '') ? 'Ca tối' : String(rawShiftVal || '').trim())),
                 guestCount: guestCount,
                 officialTableCount: calc.official,
-                spareTableCount: calc.spare,
-                tableCount: calc.total,
+                spareTableCount: spareTables,
+                tableCount: totalTables,
                 expectedBudget: budgetVal,
                 budgetPriority: document.getElementById('budgetPriority').value,
                 preferredSpaceType: document.getElementById('preferredSpaceType').value || null,
@@ -953,6 +1100,9 @@
                     renderCombosResult(result.data, currentPayload);
                     results.style.display = 'flex';
                     results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else if (result.field) {
+                    // Server trả lỗi theo trường: hiển thị inline + focus đúng ô sai.
+                    showFieldFailure({ field: result.field, message: result.message });
                 } else {
                     showRecomAlert(result.message || 'Chưa tìm thấy gói tiệc khả dụng trong ngày và ca này. Hai bạn hãy nhấn "Xem Lịch & Ca Trống" để chọn thời điểm phù hợp hơn nhé!', 'Chưa có gói phù hợp', 'info');
                 }
@@ -1559,6 +1709,19 @@
                 showRecomAlert('Chưa có gói tiệc để giữ chỗ. Hai bạn hãy nhấn "Tính Toán & Trích Xuất Top 3 Combo" trước nhé!', 'Chưa có gói tiệc', 'info');
                 return;
             }
+
+            // Người dùng có thể sửa lại thông tin liên hệ sau khi đã có Top 3.
+            // Đồng bộ lại vào payload để UC13 dùng đúng dữ liệu mới nhất, không dùng bản cũ.
+            const latestContact = readContact();
+            const contactError = validateContact(latestContact);
+            if (contactError) {
+                showFieldFailure(contactError);
+                return;
+            }
+            currentPayload.coupleName = latestContact.coupleName;
+            currentPayload.phoneNumber = latestContact.phoneNumber;
+            currentPayload.email = latestContact.email;
+
             const d = getComboDisplay(s);
             const totalCostStr = d.totalCost.toLocaleString('vi-VN');
             selectedComboToBook = {

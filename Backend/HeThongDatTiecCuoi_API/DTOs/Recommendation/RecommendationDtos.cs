@@ -8,30 +8,30 @@ public sealed class RecommendationRequestDto
     [Range(typeof(decimal), "100000000", "3000000000", ErrorMessage = "Ngân sách tối thiểu 100 triệu (chi phí tối thiểu ~103,3 triệu cho 150 khách) đến 3 tỷ VNĐ.")]
     public decimal ExpectedBudget { get; set; }
 
-    [Range(1, int.MaxValue)]
+    [Range(1, int.MaxValue, ErrorMessage = "Số lượng khách phải lớn hơn 0.")]
     public int GuestCount { get; set; }
 
     /// <summary>Số bàn chính thức quy đổi từ GuestCount (ceil(GuestCount/10)). Optional để tương thích JS cũ.</summary>
-    [Range(0, 500)]
+    [Range(0, 500, ErrorMessage = "Số bàn chính thức không hợp lệ.")]
     public int OfficialTableCount { get; set; }
 
     /// <summary>Số bàn dự phòng. Optional.</summary>
-    [Range(0, 50)]
+    [Range(0, 50, ErrorMessage = "Bàn dự phòng từ 0 đến 50 bàn.")]
     public int SpareTableCount { get; set; }
 
     /// <summary>Tổng bàn = Official + Spare. Optional, Backend tự tính lại nếu <= 0.</summary>
-    [Range(0, 500)]
+    [Range(0, 500, ErrorMessage = "Tổng số bàn không hợp lệ.")]
     public int TableCount { get; set; }
 
     public DateTime DesiredDate { get; set; }
 
-    [Required, MaxLength(20)]
+    [Required(ErrorMessage = "Vui lòng chọn ca tổ chức."), MaxLength(20)]
     public string DesiredShift { get; set; } = string.Empty;
 
-    [Required, MaxLength(100)]
+    [Required(ErrorMessage = "Vui lòng chọn phong cách bài trí."), MaxLength(100)]
     public string DesiredStyle { get; set; } = string.Empty;
 
-    [MaxLength(500)]
+    [MaxLength(500, ErrorMessage = "Nhu cầu dịch vụ tối đa 500 ký tự.")]
     public string? ServiceNeeds { get; set; }
 }
 

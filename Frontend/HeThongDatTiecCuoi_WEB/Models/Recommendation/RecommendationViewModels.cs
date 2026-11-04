@@ -8,26 +8,30 @@ namespace HeThongDatTiecCuoi_WEB.Models.Recommendation;
 public class RecommendationRequestViewModel
 {
     [Required(ErrorMessage = "Vui lòng nhập họ tên cặp đôi")]
+    [StringLength(150, MinimumLength = 2, ErrorMessage = "Họ tên phải từ 2 đến 150 ký tự")]
     [Display(Name = "Họ tên cặp đôi / Người đại diện")]
     public string CoupleName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập số điện thoại")]
+    [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng 0")]
     [Display(Name = "Số điện thoại")]
     public string PhoneNumber { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Vui lòng nhập email")]
     [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+    [StringLength(255, ErrorMessage = "Email tối đa 255 ký tự")]
     public string? Email { get; set; }
 
     [Required(ErrorMessage = "Vui lòng chọn ngày dự kiến")]
     public DateTime EventDate { get; set; } = DateTime.Today.AddMonths(2);
 
-    [Required]
+    [Required(ErrorMessage = "Vui lòng chọn ca tổ chức")]
     public string Shift { get; set; } = "Ca tối";
 
     public bool IsDateFlexible { get; set; } = false;
 
     [Required(ErrorMessage = "Vui lòng nhập số lượng khách dự kiến")]
-    [Range(150, 1400, ErrorMessage = "Số lượng khách từ 150 đến 1400 (quy chuẩn 10 khách/bàn)")]
+    [Range(150, 2000, ErrorMessage = "Số lượng khách từ 150 đến 2000 (quy chuẩn 10 khách/bàn)")]
     public int GuestCount { get; set; } = 300;
 
     [Range(0, 500)]
@@ -49,6 +53,8 @@ public class RecommendationRequestViewModel
 
     public string? PreferredSpaceType { get; set; }
 
+    [Required(ErrorMessage = "Vui lòng chọn phong cách bài trí")]
+    [StringLength(100, ErrorMessage = "Phong cách tối đa 100 ký tự")]
     public string? DesiredStyle { get; set; }
 
     public string? MainColorTone { get; set; }

@@ -127,10 +127,9 @@
     function mapStyle(v) {
         if (!v) return null;
         var s = String(v);
-        var opts = ['Hiện đại / lãng mạn', 'Hoàng gia', 'Sân vườn / lãng mạn', 'Cổ tích / lãng mạn', 'Nhẹ nhàng'];
+        var opts = ['Hiện đại / lãng mạn', 'Sân vườn / lãng mạn', 'Cổ tích / lãng mạn', 'Nhẹ nhàng'];
         if (opts.indexOf(s) >= 0) return s;
-        if (/thiên nhiên|ngoài trời|ven sông/i.test(s)) return 'Sân vườn / lãng mạn';
-        return 'Hiện đại / lãng mạn';
+        return null;
     }
 
     function fillSurvey(e) {
@@ -144,14 +143,14 @@
         }
         var guests = e.so_khach_du_kien || (e.so_ban_du_kien ? e.so_ban_du_kien * 10 : 0);
         var gInput = $('guestCount');
-        if (gInput && guests && guests >= 150 && guests <= 1400) {
+        if (gInput && guests && guests >= 150 && guests <= 2000) {
             gInput.value = guests; filled++;
             try { if (typeof syncGuestToTables === 'function') syncGuestToTables(); } catch (x) { }
         } else if (e.so_ban_du_kien) {
             var off = $('officialTableCount');
             if (off) { off.value = e.so_ban_du_kien; }
             if (gInput) {
-                gInput.value = Math.min(1400, e.so_ban_du_kien * 10);
+                gInput.value = Math.min(2000, e.so_ban_du_kien * 10);
                 try { if (typeof syncGuestToTables === 'function') syncGuestToTables(); } catch (x) { }
             }
             filled++;
