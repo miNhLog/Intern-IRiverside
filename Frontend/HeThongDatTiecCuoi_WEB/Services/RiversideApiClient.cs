@@ -1575,14 +1575,11 @@ public sealed class RiversideApiClient : IRiversideApiClient
             var guestCount = request.GuestCount > 0
                 ? request.GuestCount
                 : Math.Max(1, (request.OfficialTableCount + request.SpareTableCount) * 10);
-            // Quy đổi chuẩn 10 khách/bàn khi GuestCount thay đổi từ form mới.
-            var officialTables = request.OfficialTableCount > 0
-                ? request.OfficialTableCount
-                : (int)Math.Ceiling(guestCount / 10m);
+            // Không tin TableCount/OfficialTableCount do client gửi: luôn quy đổi
+            // 10 khách/bàn từ GuestCount rồi cộng bàn dự phòng.
+            var officialTables = (int)Math.Ceiling(guestCount / 10m);
             var spareTables = Math.Max(0, request.SpareTableCount);
-            var tableCount = request.TableCount > 0
-                ? request.TableCount
-                : officialTables + spareTables;
+            var tableCount = officialTables + spareTables;
             var serviceNeeds = request.SelectedServiceCodes is { Count: > 0 }
                 ? string.Join(",", request.SelectedServiceCodes)
                 : null;

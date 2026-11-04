@@ -789,6 +789,17 @@ public sealed class RecommendationController : ControllerBase
         try
         {
         var existingDataStatusId = await GetDataStatusIdAsync(DataStatusCodes.Existing);
+        // Không tin TableCount client gửi: quy đổi 10 khách/bàn từ GuestCount rồi cộng bàn dự phòng.
+        var officialTableCount = (int)Math.Ceiling(request.GuestCount / 10m);
+        var spareTableCount = Math.Max(0, request.SpareTableCount);
+        var estimatedTableCount = officialTableCount + spareTableCount;
+        // SucChuaToiDa lưu SỐ KHÁCH; tổng bàn kể cả dự phòng cũng phải nằm trong sức chứa lớn nhất.
+        var largestHallCapacity = await _context.Halls.AsNoTracking()
+            .Where(hall => hall.DataStatusId == existingDataStatusId)
+            .MaxAsync(hall => (int?)hall.MaximumCapacity);
+        if (largestHallCapacity.HasValue && (long)estimatedTableCount * 10 > largestHallCapacity.Value)
+            return BadRequest(new { message = $"Tổng {estimatedTableCount} bàn (kể cả bàn dự phòng) vượt sức chứa sảnh lớn nhất ({largestHallCapacity.Value / 10} bàn / {largestHallCapacity.Value} khách). Vui lòng giảm số khách hoặc bàn dự phòng." });
+
         var customerId = await ResolveAuthenticatedCustomerIdAsync(existingDataStatusId);
         var requestEntity = new RecommendationRequestEntity
         {
@@ -807,6 +818,11 @@ public sealed class RecommendationController : ControllerBase
         var candidateSchedules = await ResolveAvailableCandidatesAsync(
             targetDate, nextDay, desiredShift, request.GuestCount, existingDataStatusId);
 
+        // Bao gồm bàn dự phòng khi kiểm tra sức chứa của từng sảnh.
+        candidateSchedules = candidateSchedules
+            .Where(candidate => (long)estimatedTableCount * 10 <= candidate.Hall.MaximumCapacity)
+            .ToList();
+
         // Ảnh đại diện sảnh (primary ImageAsset) để card hiển thị đúng ảnh từng sảnh
         // thay vì placeholder cho tất cả.
         var hallImageById = await _context.ImageAssets.AsNoTracking()
@@ -815,14 +831,9 @@ public sealed class RecommendationController : ControllerBase
             .Select(g => new { HallId = g.Key, ImagePath = g.OrderBy(i => i.SortOrder).Select(i => i.ImagePath).FirstOrDefault() })
             .ToDictionaryAsync(x => x.HallId, x => x.ImagePath);
 
-        var estimatedTableCountEarly = request.TableCount > 0
-            ? request.TableCount
-            : (request.OfficialTableCount + request.SpareTableCount) > 0
-                ? request.OfficialTableCount + request.SpareTableCount
-                : (int)Math.Ceiling(request.GuestCount / 10m);
         if (candidateSchedules.Count == 0)
         {
-            var suggestedEmpty = await BuildSuggestedNextAsync(targetDate, desiredShift, estimatedTableCountEarly, request.ExpectedBudget, existingDataStatusId);
+            var suggestedEmpty = await BuildSuggestedNextAsync(targetDate, desiredShift, estimatedTableCount, request.ExpectedBudget, existingDataStatusId);
             return Ok(new RecommendationResponseDto
             {
                 RecommendationRequestId = requestEntity.RecommendationRequestId,
@@ -858,11 +869,6 @@ public sealed class RecommendationController : ControllerBase
             })
             .ToListAsync();
 
-        var estimatedTableCount = request.TableCount > 0
-            ? request.TableCount
-            : (request.OfficialTableCount + request.SpareTableCount) > 0
-                ? request.OfficialTableCount + request.SpareTableCount
-                : (int)Math.Ceiling(request.GuestCount / 10m);
         // Dịch vụ ưu tiên (ServiceNeeds "DV001,DV002..."): query trực tiếp bảng DichVu
         // (chỉ lấy ACTIVE) để cộng vào dự toán trọn gói, khớp từng đồng với thẻ hiển thị.
         var priorityServices = await ResolvePriorityServicesAsync(request.ServiceNeeds, existingDataStatusId);
