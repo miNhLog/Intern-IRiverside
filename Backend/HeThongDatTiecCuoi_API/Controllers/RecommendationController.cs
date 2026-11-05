@@ -27,7 +27,6 @@ public sealed class RecommendationController : ControllerBase
     private const double SpaceWeight = 0.3198;
     private const double StyleWeight = 0.1799;
     private const double ServiceWeight = 0.1999;
-    private const decimal OverBudgetToleranceVnd = 10_000_000m;
 
     private readonly ApplicationDbContext _context;
     private readonly IStatusService _statusService;
@@ -90,8 +89,7 @@ public sealed class RecommendationController : ControllerBase
             request.GuestCount = Math.Max(request.TableCount, request.OfficialTableCount + request.SpareTableCount) * 10;
         if (request.GuestCount <= 0)
             return BadRequest(new { message = "Số lượng khách phải lớn hơn 0." });
-        // Ràng buộc ngân sách: min tuyệt đối 100tr (min thực tế ~103,3tr cho 150 khách:
-        // sảnh Elbe 20tr + menu 4,35tr/bàn × 15 bàn + decor 18tr). Gợi ý chỉ vượt tối đa 10tr.
+            // Validate the supported budget range; UC12 candidate filtering is strict.
         const decimal MinBudgetAbsolute = 100_000_000m;
         const decimal MaxBudgetAbsolute = 3_000_000_000m;
         if (request.ExpectedBudget < MinBudgetAbsolute || request.ExpectedBudget > MaxBudgetAbsolute)
@@ -242,7 +240,7 @@ public sealed class RecommendationController : ControllerBase
             {
                 try
                 {
-                    var sg = await BuildSuggestedNextAsync(targetDate, desiredShift, tableCount, request.ExpectedBudget, existingDataStatusId);
+                    var sg = await BuildSuggestedNextAsync(targetDate, desiredShift, request.GuestCount, tableCount, request.ExpectedBudget, existingDataStatusId, request.ServiceNeeds);
                     suggestedNextAi = new
                     {
                         minRequiredBudget = sg.MinRequiredBudget,
@@ -463,6 +461,24 @@ public sealed class RecommendationController : ControllerBase
         // Dịch vụ ưu tiên (ServiceNeeds "DV001,DV002..."): query trực tiếp bảng DichVu
         // (chỉ lấy ACTIVE) để cộng vào dự toán trọn gói, khớp từng đồng với thẻ hiển thị.
         var priorityServices = await ResolvePriorityServicesAsync(request.ServiceNeeds, existingDataStatusId);
+        var requestedServiceCodes = (request.ServiceNeeds ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(code => code.Trim()).Where(code => code.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var resolvedServiceCodes = priorityServices.Select(service => service.ServiceCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!requestedServiceCodes.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(resolvedServiceCodes))
+        {
+            var suggested = await BuildSuggestedNextAsync(targetDate, desiredShift, request.GuestCount, tableCount, request.ExpectedBudget, existingDataStatusId, request.ServiceNeeds);
+            return new
+            {
+                success = true,
+                count = 0,
+                data = new List<ComboSuggestionDto>(),
+                totalCandidatesEvaluated = 0,
+                top3 = new List<ComboSuggestionDto>(),
+                topCombos = new List<ComboSuggestionDto>(),
+                suggestedNext = suggested,
+                algorithmNotice = "Không thể chấm điểm vì dịch vụ được chọn không có trong danh mục ACTIVE."
+            };
+        }
         var servicesTotalFallback = priorityServices.Sum(s => s.Price);
 
         var priorityCodes = (request.ServiceNeeds ?? string.Empty)
@@ -481,8 +497,8 @@ public sealed class RecommendationController : ControllerBase
             var menuTotal = menu.PricePerTable * tableCount;
             // Dự toán trọn gói = Giá thuê sảnh + (Đơn giá Menu × Tổng số bàn) + Giá Decor + Tổng giá Dịch vụ ưu tiên.
             var totalCost = hall.RentalPrice + menuTotal + decor.Gia + servicesTotalFallback;
-            // Hard filter WSM: est_total <= budget + 10tr (đồng bộ py + C#).
-            if (totalCost > request.ExpectedBudget + OverBudgetToleranceVnd)
+            // Hard filter: complete estimated cost must fit the submitted budget.
+            if (totalCost > request.ExpectedBudget)
                 continue;
             var budgetDifference = request.ExpectedBudget - totalCost;
             // WSM chuẩn 4 chiều (r1..r4 0..1) — khớp wsm_engine.py.
@@ -508,10 +524,12 @@ public sealed class RecommendationController : ControllerBase
             scored.Add(new ComboSuggestionDto
             {
                 OverallMatchScore = overallScore,
+                WsmScore = score,
                 BudgetMatchScore = Math.Round(r1 * 100, 1),
                 SpaceFitScore = Math.Round(r2 * 100, 1),
                 StyleThemeScore = Math.Round(r3 * 100, 1),
                 RatingCredibilityScore = Math.Round((r2 + r3) / 2 * 100, 1),
+                ServiceMatchScore = Math.Round(r4 * 100, 1),
                 HallScheduleId = schedule.HallScheduleId,
                 HallId = hall.HallId,
                 HallName = hall.HallName,
@@ -548,10 +566,7 @@ public sealed class RecommendationController : ControllerBase
             });
         }
 
-        // Diversity Filter: không trả 3 combo giống hệt (chỉ khác tên menu cùng giá).
-        // Ưu tiên sảnh khác nhau, sau đó Menu/Decor mức giá khác nhau.
-        // Truyền ExpectedBudget để ưu tiên combo trong ngân sách / vượt nhẹ ≤ 10tr.
-        var top = SelectDiverseTop3(scored, request.ExpectedBudget);
+        var top = SelectTop3(scored);
         for (var index = 0; index < top.Count; index++)
         {
             top[index].Rank = index + 1;
@@ -559,7 +574,7 @@ public sealed class RecommendationController : ControllerBase
         }
         if (top.Count == 0)
         {
-            var suggested = await BuildSuggestedNextAsync(targetDate, desiredShift, tableCount, request.ExpectedBudget, existingDataStatusId);
+            var suggested = await BuildSuggestedNextAsync(targetDate, desiredShift, request.GuestCount, tableCount, request.ExpectedBudget, existingDataStatusId, request.ServiceNeeds);
             return new
             {
                 success = true,
@@ -569,7 +584,7 @@ public sealed class RecommendationController : ControllerBase
                 top3 = new List<ComboSuggestionDto>(),
                 topCombos = new List<ComboSuggestionDto>(),
                 suggestedNext = suggested,
-                algorithmNotice = $"Fallback heuristic nội bộ: đã đánh giá {scored.Count} phương án, không có combo trong ngân sách +10tr."
+                algorithmNotice = $"Fallback heuristic nội bộ: đã đánh giá {scored.Count} phương án, không có combo trong ngân sách."
             };
         }
         return new
@@ -600,72 +615,20 @@ public sealed class RecommendationController : ControllerBase
         combo.PackageName = title;
     }
 
-    private static List<ComboSuggestionDto> SelectDiverseTop3(List<ComboSuggestionDto> scored, decimal? expectedBudget = null)
+    private static List<ComboSuggestionDto> SelectTop3(List<ComboSuggestionDto> scored)
     {
-        // Ưu tiên ngân sách: trong ngân sách trước, sau đó vượt nhẹ ≤ 10tr, cuối cùng mới tới vượt xa.
-        // Tránh trả combo vượt quá xa gây chênh lệch lớn so với dự trù của khách.
-        const decimal ToleranceVnd = 10_000_000m;
-        List<ComboSuggestionDto> ordered;
-        if (expectedBudget.HasValue && expectedBudget.Value > 0)
-        {
-            var budget = expectedBudget.Value;
-            ordered = scored
-                .OrderBy(c => c.TotalEstimatedCost - budget > ToleranceVnd ? 2
-                    : c.TotalEstimatedCost - budget > 0 ? 1 : 0)
-                .ThenByDescending(c => c.OverallMatchScore)
-                .ThenBy(c => c.TotalEstimatedCost)
-                .ToList();
-        }
-        else
-        {
-            ordered = scored.OrderByDescending(c => c.OverallMatchScore).ToList();
-        }
-        var picked = new List<ComboSuggestionDto>();
-        var usedHalls = new HashSet<int>();
-        var usedMenuDecor = new HashSet<string>();
-        // Pass 1: sảnh khác nhau + cặp (menu,decor) khác nhau.
-        foreach (var c in ordered)
-        {
-            if (picked.Count >= 3) break;
-            var key = $"{c.MenuId}|{c.DecorationPackageId}|{(c.MenuPricePerTable / 1000000):F0}|{(c.DecorationPrice / 1000000):F0}";
-            if (!usedHalls.Contains(c.HallId) && !usedMenuDecor.Contains(key))
-            {
-                picked.Add(c);
-                usedHalls.Add(c.HallId);
-                usedMenuDecor.Add(key);
-            }
-        }
-        // Pass 2: nới lỏng — chỉ cần sảnh khác hoặc cặp menu/decor khác.
-        foreach (var c in ordered)
-        {
-            if (picked.Count >= 3) break;
-            if (picked.Contains(c)) continue;
-            var key = $"{c.MenuId}|{c.DecorationPackageId}";
-            if (!usedHalls.Contains(c.HallId) || !usedMenuDecor.Contains(key))
-            {
-                picked.Add(c);
-                usedHalls.Add(c.HallId);
-                usedMenuDecor.Add(key);
-            }
-        }
-        // Pass 3: vét phần còn lại để luôn đủ 3 (khi DB ít dữ liệu).
-        foreach (var c in ordered)
-        {
-            if (picked.Count >= 3) break;
-            if (!picked.Contains(c)) picked.Add(c);
-        }
-        return picked.Take(3).ToList();
+        return scored.OrderByDescending(c => c.WsmScore)
+            .ThenBy(c => c.TotalEstimatedCost)
+            .ThenBy(c => c.HallId)
+            .ThenBy(c => c.MenuId)
+            .ThenBy(c => c.DecorationPackageId)
+            .Take(3).ToList();
     }
 
-    /// <summary>
-    /// P0 fallback 0 combo: minRequiredBudget = sảnh rẻ nhất còn trống
-    /// + 4_350_000 × Số bàn + 18_000_000; suggestedDates quét 3 ngày gần nhất
-    /// còn sảnh trống phù hợp quy mô bàn (forward từ ngày yêu cầu, tối đa 60 ngày).
-    /// </summary>
+    /// <summary>Builds recovery amounts and dates only from catalogue-complete, capacity-valid halls available within the supported date window.</summary>
     private async Task<SuggestedNextDto> BuildSuggestedNextAsync(
-        DateTime targetDate, string desiredShift, int tableCount, decimal budget, byte existingDataStatusId)
+        DateTime targetDate, string desiredShift, int guestCount, int tableCount, decimal budget, byte existingDataStatusId, string? serviceNeeds = null)
     {
-        var guestCount = Math.Max(1, tableCount * 10);
         var cheapestMenu = await _context.Menus.AsNoTracking()
             .Where(m => m.MenuType == MenuTypes.Standard
                 && m.DataStatusId == existingDataStatusId
@@ -673,45 +636,34 @@ public sealed class RecommendationController : ControllerBase
                 && m.Status.StatusGroup == StatusGroups.Menu
                 && m.Status.StatusCode == MenuStatusCodes.Active)
             .OrderBy(m => m.PricePerTable)
-            .Select(m => m.PricePerTable)
+            .Select(m => (decimal?)m.PricePerTable)
             .FirstOrDefaultAsync();
-        if (cheapestMenu <= 0) cheapestMenu = 4_350_000m;
         var cheapestDecor = await _context.DecorPackages.AsNoTracking()
             .Where(d => d.DataStatusId == existingDataStatusId
                 && d.Status != null
                 && d.Status.StatusGroup == StatusGroups.DecorationPackage
                 && d.Status.StatusCode == BusinessStatusCodes.Active)
             .OrderBy(d => d.Gia)
-            .Select(d => d.Gia)
+            .Select(d => (decimal?)d.Gia)
             .FirstOrDefaultAsync();
-        if (cheapestDecor <= 0) cheapestDecor = 18_000_000m;
 
-        // Sảnh rẻ nhất còn trống ngày yêu cầu mà chứa được quy mô bàn;
-        // không còn sảnh nào thì lấy sảnh rẻ nhất chứa được quy mô (kể cả kín) để ước lượng.
-        var hallsByPrice = await _context.Halls.AsNoTracking()
-            .Where(h => h.DataStatusId == existingDataStatusId
-                && h.Status != null
-                && h.Status.StatusGroup == StatusGroups.Hall
-                && h.Status.StatusCode == HallStatusCodes.Active
-                && guestCount <= h.MaximumCapacity
-                && (!h.MinimumCapacity.HasValue || guestCount >= h.MinimumCapacity.Value))
-            .OrderBy(h => h.RentalPrice)
-            .Select(h => new { h.HallId, h.HallName, h.RentalPrice })
-            .ToListAsync();
-        decimal cheapestHallPrice = 20_000_000m;
-        if (hallsByPrice.Count > 0)
-        {
-            var nextDay = targetDate.AddDays(1);
-            var cands = await ResolveAvailableCandidatesAsync(targetDate, nextDay, desiredShift, guestCount, existingDataStatusId);
-            var freeIds = cands.Select(c => c.Hall.HallId).ToHashSet();
-            var freeCheapest = hallsByPrice.FirstOrDefault(h => freeIds.Contains(h.HallId));
-            cheapestHallPrice = (freeCheapest ?? hallsByPrice[0]).RentalPrice;
-        }
-        var minRequired = cheapestHallPrice + cheapestMenu * Math.Max(0, tableCount) + cheapestDecor;
-
+        var priorityServices = await ResolvePriorityServicesAsync(serviceNeeds, existingDataStatusId);
+        var requestedServiceCodes = (serviceNeeds ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(code => code.Trim()).Where(code => code.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+        // A price estimate is actionable only when every requested component resolves.
+        var catalogueComplete = cheapestMenu.HasValue && cheapestDecor.HasValue && priorityServices.Count == requestedServiceCodes;
+        var nonHallMinimum = catalogueComplete
+            ? cheapestMenu!.Value * Math.Max(0, tableCount) + cheapestDecor!.Value + priorityServices.Sum(s => s.Price)
+            : 0m;
         var suggestedDates = new List<SuggestedDateDto>();
-        var startDay = targetDate.Date;
-        for (var day = startDay; day <= startDay.AddDays(60) && suggestedDates.Count < 3; day = day.AddDays(1))
+        var targetAvailability = await ResolveAvailableCandidatesAsync(targetDate.Date, targetDate.Date.AddDays(1), desiredShift, guestCount, existingDataStatusId);
+        var targetHasCapacity = targetAvailability.Any(candidate => (long)tableCount * 10 <= candidate.Hall.MaximumCapacity);
+        decimal? cheapestAvailableHallPrice = null;
+        var hasFreeHallAboveBudgetLimit = false;
+        var today = DateTime.Today;
+        var startDay = new[] { targetDate.Date, today.AddDays(30) }.Max();
+        var endDay = new[] { targetDate.Date.AddDays(60), today.AddDays(365) }.Min();
+        for (var day = startDay; catalogueComplete && day <= endDay && suggestedDates.Count < 3; day = day.AddDays(1))
         {
             var dayNext = day.AddDays(1);
             List<CandidateHallItem> free;
@@ -723,23 +675,55 @@ public sealed class RecommendationController : ControllerBase
             {
                 continue;
             }
+            free = free.Where(c => (long)tableCount * 10 <= c.Hall.MaximumCapacity).ToList();
             if (free.Count == 0) continue;
-            suggestedDates.Add(new SuggestedDateDto
+            hasFreeHallAboveBudgetLimit |= free.Any(c => c.Hall.RentalPrice + nonHallMinimum > 3_000_000_000m);
+            free = free.Where(c => c.Hall.RentalPrice + nonHallMinimum <= 3_000_000_000m).ToList();
+            if (free.Count == 0) continue;
+            var dayCheapestHall = free.Min(candidate => candidate.Hall.RentalPrice);
+            cheapestAvailableHallPrice = cheapestAvailableHallPrice.HasValue
+                ? Math.Min(cheapestAvailableHallPrice.Value, dayCheapestHall)
+                : dayCheapestHall;
+            if (suggestedDates.Count < 3)
             {
-                Date = day.ToString("yyyy-MM-dd"),
-                Shift = NormalizeHallShift(desiredShift),
-                AvailableHalls = free.Select(c => c.Hall.HallName)
-                    .Where(n => !string.IsNullOrWhiteSpace(n))
-                    .Distinct()
-                    .OrderBy(n => n)
-                    .ToList()
-            });
+                suggestedDates.Add(new SuggestedDateDto
+                {
+                    Date = day.ToString("yyyy-MM-dd"),
+                    Shift = NormalizeHallShift(desiredShift),
+                    AvailableHalls = free.Select(c => c.Hall.HallName)
+                        .Where(n => !string.IsNullOrWhiteSpace(n))
+                        .Distinct()
+                        .OrderBy(n => n)
+                        .ToList()
+                });
+            }
         }
+        // Price only the actual halls/dates represented by the returned nearest-date suggestions.
+        decimal? minRequired = catalogueComplete && cheapestAvailableHallPrice.HasValue
+            ? cheapestAvailableHallPrice.Value + cheapestMenu!.Value * Math.Max(0, tableCount) + cheapestDecor!.Value + priorityServices.Sum(s => s.Price)
+            : null;
+        if (minRequired.HasValue && minRequired.Value > 3_000_000_000m)
+            minRequired = null;
         return new SuggestedNextDto
         {
             MinRequiredBudget = minRequired,
             SuggestedDates = suggestedDates,
-            Reason = "Ngân sách thấp hơn tối thiểu hoặc ngày đã kín sảnh phù hợp."
+            Reason = !cheapestMenu.HasValue || !cheapestDecor.HasValue || priorityServices.Count != requestedServiceCodes
+                    ? "Thiếu thực đơn, gói trang trí hoặc dịch vụ ACTIVE đã chọn; không thể tính ngân sách khả thi hoặc gợi ý ngày có thể đặt."
+                    : !minRequired.HasValue
+                        ? cheapestAvailableHallPrice.HasValue
+                            ? "Mức tối thiểu khả thi vượt phạm vi ngân sách được hỗ trợ; không thể tự điều chỉnh ngân sách."
+                            : hasFreeHallAboveBudgetLimit
+                                ? "Có sảnh ACTIVE trống phù hợp sức chứa, nhưng tổng chi phí khả thi vượt mức ngân sách tối đa được hỗ trợ."
+                                : "Không có sảnh ACTIVE đủ sức chứa và lịch trống trong cửa sổ ngày được phép; không thể tính ngân sách khả thi."
+                        : string.Join(" ", new[]
+                        {
+                            !targetHasCapacity ? "Ngày/ca đã chọn không có sảnh ACTIVE trống phù hợp sức chứa." : null,
+                            budget < minRequired.Value ? "Ngân sách thấp hơn mức tối thiểu từ danh mục ACTIVE cho cấu hình này." : null,
+                            suggestedDates.Count == 0 ? "Không tìm thấy ngày trống phù hợp trong cửa sổ ngày được phép." : null
+                        }.Where(reason => reason is not null)) is { Length: > 0 } causes
+                            ? causes
+                            : "Không có tổ hợp khả thi cho ngày và ca đã chọn; có thể thử ngày gợi ý."
         };
     }
 
@@ -833,7 +817,7 @@ public sealed class RecommendationController : ControllerBase
 
         if (candidateSchedules.Count == 0)
         {
-            var suggestedEmpty = await BuildSuggestedNextAsync(targetDate, desiredShift, estimatedTableCount, request.ExpectedBudget, existingDataStatusId);
+            var suggestedEmpty = await BuildSuggestedNextAsync(targetDate, desiredShift, request.GuestCount, estimatedTableCount, request.ExpectedBudget, existingDataStatusId, request.ServiceNeeds);
             return Ok(new RecommendationResponseDto
             {
                 RecommendationRequestId = requestEntity.RecommendationRequestId,
@@ -873,6 +857,22 @@ public sealed class RecommendationController : ControllerBase
         // (chỉ lấy ACTIVE) để cộng vào dự toán trọn gói, khớp từng đồng với thẻ hiển thị.
         var priorityServices = await ResolvePriorityServicesAsync(request.ServiceNeeds, existingDataStatusId);
         var servicesTotal = priorityServices.Sum(s => s.Price);
+        var requestedServiceCodes = (request.ServiceNeeds ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(code => code.Trim()).Where(code => code.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var resolvedServiceCodes = priorityServices.Select(service => service.ServiceCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!requestedServiceCodes.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(resolvedServiceCodes))
+        {
+            var suggested = await BuildSuggestedNextAsync(targetDate, desiredShift, request.GuestCount, estimatedTableCount, request.ExpectedBudget, existingDataStatusId, request.ServiceNeeds);
+            return Ok(new RecommendationResponseDto
+            {
+                RecommendationRequestId = requestEntity.RecommendationRequestId,
+                TotalCandidatesEvaluated = 0,
+                TopCombos = [],
+                AlgorithmNotice = "Không thể chấm điểm vì dịch vụ được chọn không có trong danh mục ACTIVE.",
+                AnalyzedAt = DateTime.Now,
+                SuggestedNext = suggested
+            });
+        }
         var scoredCombos = new List<ComboSuggestionDto>();
 
         foreach (var schedule in candidateSchedules)
@@ -884,8 +884,8 @@ public sealed class RecommendationController : ControllerBase
             var menuTotal = menu.PricePerTable * estimatedTableCount;
             // Dự toán trọn gói = Giá thuê sảnh + (Đơn giá Menu × Tổng số bàn) + Giá Decor + Tổng giá Dịch vụ ưu tiên.
             var totalCost = hall.RentalPrice + menuTotal + decor.Gia + servicesTotal;
-            // Hard filter WSM: est_total <= budget + 10tr (đồng bộ py + C#).
-            if (totalCost > request.ExpectedBudget + OverBudgetToleranceVnd)
+            // Hard filter: complete estimated cost must fit the submitted budget.
+            if (totalCost > request.ExpectedBudget)
                 continue;
             var budgetDifference = request.ExpectedBudget - totalCost;
             var r1 = CalculateBudgetScore(totalCost, request.ExpectedBudget);
@@ -915,10 +915,12 @@ public sealed class RecommendationController : ControllerBase
             scoredCombos.Add(new ComboSuggestionDto
             {
                 OverallMatchScore = overallScore,
+                WsmScore = BudgetWeight * r1 + SpaceWeight * r2 + StyleWeight * r3 + ServiceWeight * r4,
                 BudgetMatchScore = Math.Round(r1 * 100, 1),
                 SpaceFitScore = Math.Round(r2 * 100, 1),
                 StyleThemeScore = Math.Round(r3 * 100, 1),
                 RatingCredibilityScore = Math.Round((r2 + r3) / 2 * 100, 1),
+                ServiceMatchScore = Math.Round(r4 * 100, 1),
                 HallScheduleId = schedule.HallScheduleId,
                 HallId = hall.HallId,
                 HallName = hall.HallName,
@@ -955,7 +957,7 @@ public sealed class RecommendationController : ControllerBase
             });
         }
 
-        var topCombos = SelectDiverseTop3(scoredCombos, request.ExpectedBudget);
+        var topCombos = SelectTop3(scoredCombos);
         for (var index = 0; index < topCombos.Count; index++)
         {
             topCombos[index].Rank = index + 1;
@@ -963,11 +965,11 @@ public sealed class RecommendationController : ControllerBase
         }
 
         SuggestedNextDto? suggestedNext = null;
-        var notice = $"Đã đánh giá {scoredCombos.Count} phương án bằng scoring C# (W* 0.3004/0.3198/0.1799/0.1999) và trả về tối đa 3 kết quả.";
+        var notice = $"Đã đánh giá {scoredCombos.Count} phương án theo WSM C# (0.3004/0.3198/0.1799/0.1999) và trả về tối đa 3 kết quả.";
         if (topCombos.Count == 0)
         {
-            suggestedNext = await BuildSuggestedNextAsync(targetDate, desiredShift, estimatedTableCount, request.ExpectedBudget, existingDataStatusId);
-            notice = $"Đã đánh giá {scoredCombos.Count} phương án, không có combo trong ngân sách +10tr.";
+            suggestedNext = await BuildSuggestedNextAsync(targetDate, desiredShift, request.GuestCount, estimatedTableCount, request.ExpectedBudget, existingDataStatusId, request.ServiceNeeds);
+            notice = $"Đã đánh giá {scoredCombos.Count} phương án, không có combo trong ngân sách.";
         }
 
         return Ok(new RecommendationResponseDto
@@ -1846,9 +1848,8 @@ public sealed class RecommendationController : ControllerBase
         list.Add(diff >= 0
             ? $"Chi phí: Tiết kiệm {FormatVnd(diff)} ({tr:F1} triệu, {pct:F1}%) so với ngân sách."
             : $"Chi phí: Vượt {FormatVnd(Math.Abs(diff))} ({tr:F1} triệu, {pct:F1}%) so với ngân sách, cân nhắc điều chỉnh.");
-        var span = Math.Max(1, maxTables - minTables);
-        var ratio = Math.Clamp((double)(tableCount - minTables) / span, 0.0, 1.0);
-        list.Add($"Sức chứa: {tableCount} bàn đạt lấp đầy {ratio * 100:F1}% sảnh {hallName} ({minTables}-{maxTables} bàn, tối ưu {optimalTables} bàn).");
+        var ratio = maxTables > 0 ? Math.Clamp((double)tableCount / maxTables, 0.0, 1.0) : 0.0;
+        list.Add($"Sức chứa: {tableCount} bàn sử dụng khoảng {ratio * 100:F1}% sức chứa tối đa sảnh {hallName} ({minTables}-{maxTables} bàn, tối ưu {optimalTables} bàn).");
         list.Add(r3 >= 1.0
             ? $"Phong cách: '{decorStyle}' khớp 100% với mong muốn '{desiredStyle}'."
             : r3 >= 0.5

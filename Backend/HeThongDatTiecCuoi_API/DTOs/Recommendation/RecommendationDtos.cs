@@ -47,9 +47,13 @@ public sealed class ComboSuggestionDto
     public string ComboName { get; set; } = string.Empty;
     public string PackageName { get; set; } = string.Empty;
     public double OverallMatchScore { get; set; }
+    [JsonIgnore]
+    public double WsmScore { get; set; }
     public double BudgetMatchScore { get; set; }
     public double SpaceFitScore { get; set; }
     public double StyleThemeScore { get; set; }
+    /// <summary>Actual fourth WSM criterion: fraction of requested active services matched.</summary>
+    public double ServiceMatchScore { get; set; }
     public double RatingCredibilityScore { get; set; }
     public int HallScheduleId { get; set; }
     public int HallId { get; set; }
@@ -113,7 +117,7 @@ public sealed class SuggestedDateDto
 
 public sealed class SuggestedNextDto
 {
-    public decimal MinRequiredBudget { get; set; }
+    public decimal? MinRequiredBudget { get; set; }
     public List<SuggestedDateDto> SuggestedDates { get; set; } = [];
     public string Reason { get; set; } = string.Empty;
 }

@@ -151,13 +151,13 @@
                                         <strong>Min &asymp; 38tr (sảnh rẻ nhất 20tr + decor rẻ nhất 18tr) + tổng số bàn &times; 4,35tr</strong><br />
                                         Vd 15 bàn (150 khách): tối thiểu &asymp; <strong>103,3 triệu</strong> (20 + 15&times;4,35 + 18, chưa gồm dịch vụ).<br />
                                         Vd 30 bàn: tối thiểu &asymp; <strong>168,5 triệu</strong> (20 + 30&times;4,35 + 18), tối đa &asymp; <strong>285 triệu</strong> (80 + 30&times;5,9 + 28, chưa gồm dịch vụ).<br />
-                                        Hệ thống chỉ gợi ý combo <strong>trong ngân sách hoặc vượt tối đa 5 – 10 triệu</strong>. Nếu ngân sách thấp hơn mức tối thiểu, hãy <em>tăng ngân sách</em> hoặc <em>giảm số khách</em>.
+                                        Hệ thống chỉ gợi ý combo có tổng chi phí <strong>không vượt quá ngân sách</strong>. Nếu ngân sách thấp hơn mức tối thiểu, hãy <em>tăng ngân sách</em> hoặc <em>giảm số khách</em>.
                                     </span>
                                 </span>
                             </label>
                             <input type="text" inputmode="numeric" id="expectedBudget" required value="@Model.ExpectedBudget" placeholder="Ví dụ: 200.000.000 (tối thiểu 100 triệu – 3 tỷ VNĐ)" class="recom-form-control recom-form-control--strong" oninput="formatBudgetInput(this); updateBudgetMinHint()">
                             <small id="err-expectedBudget" class="recom-field-error" role="alert" hidden></small>
-                            <small id="budgetMinHint" class="recom-small-note">Ngân sách tối thiểu 100 triệu; với quy mô hiện tại cần khoảng -- để không vượt quá 10 triệu.</small>
+                            <small id="budgetMinHint" class="recom-small-note">Ngân sách tối thiểu 100 triệu; combo được gợi ý phải nằm trong ngân sách.</small>
                         </div>
                         <div>
                             <label class="recom-label" for="budgetPriority">Ưu tiên cân đối</label>
@@ -678,7 +678,7 @@
         }
 
         // Popup thông báo chuyên nghiệp thay thế alert() native.
-        function showRecomAlert(message, title, type) {
+        function showRecomAlert(message, title, type, fallbackUrl) {
             const modal = document.getElementById('recomAlertModal');
             if (!modal) return;
             const msgEl = document.getElementById('recomAlertMessage');
@@ -693,7 +693,15 @@
                 success: { t: 'Tuyệt vời, hai bạn ơi!', b: 'Tin vui từ Riverside Palace', icon: 'check_circle', cls: 'recom-alert-icon--success', bc: '#059669', bb: '#D1FAE5' },
                 info: { t: 'Riverside Palace xin chia sẻ', b: 'Thông tin hữu ích', icon: 'info', cls: 'recom-alert-icon--info', bc: '#2563EB', bb: '#DBEAFE' }
             }[kind] || { t: 'Thông báo', b: 'Thông báo từ Riverside Palace', icon: 'notifications', cls: 'recom-alert-icon--warning', bc: '#92400E', bb: '#FEF3C7' };
-            if (msgEl) msgEl.innerText = message || '';
+            if (msgEl) {
+                msgEl.innerText = message || '';
+                if (fallbackUrl === '/halls') {
+                    const link = document.createElement('a');
+                    link.href = '/halls';
+                    link.innerText = ' Xem danh sách sảnh';
+                    msgEl.appendChild(link);
+                }
+            }
             if (titleEl) titleEl.innerText = title || cfg.t;
             if (badgeEl) { badgeEl.innerText = cfg.b; badgeEl.style.color = cfg.bc; badgeEl.style.background = cfg.bb; }
             if (iconBox) iconBox.className = 'recom-alert-icon ' + cfg.cls;
@@ -760,7 +768,6 @@
         const CHEAPEST_HALL_PRICE = 20000000;
         const CHEAPEST_DECOR_PRICE = 18000000;
         const CHEAPEST_MENU_PER_TABLE = 4350000;
-        const OVER_BUDGET_TOLERANCE_VND = 10000000;
 
         function estimateMinBudget(totalTables) {
             const t = Math.max(0, parseInt(totalTables) || 0);
@@ -787,9 +794,9 @@
             const calc = syncGuestToTablesSilent();
             const minForTables = estimateMinBudget(calc.total);
             if (calc.total > 0) {
-                hint.innerText = `Với ${calc.total} bàn (${calc.guests} khách), chi phí tối thiểu khoảng ${fmtVnd(minForTables)} (chưa gồm dịch vụ). Gợi ý chỉ vượt tối đa 10 triệu — hãy nhập ngân sách ≥ ${fmtVnd(Math.max(MIN_BUDGET_ABSOLUTE, minForTables))}.`;
+                hint.innerText = `Với ${calc.total} bàn (${calc.guests} khách), chi phí tối thiểu khoảng ${fmtVnd(minForTables)} (chưa gồm dịch vụ). Hãy nhập ngân sách ≥ ${fmtVnd(Math.max(MIN_BUDGET_ABSOLUTE, minForTables))} để tổng chi phí không vượt ngân sách.`;
             } else {
-                hint.innerText = 'Ngân sách tối thiểu 100 triệu; với quy mô hiện tại cần khoảng -- để không vượt quá 10 triệu.';
+                hint.innerText = 'Ngân sách tối thiểu 100 triệu; combo được gợi ý phải nằm trong ngân sách.';
             }
         }
 
@@ -843,7 +850,7 @@
                 const bHint = document.getElementById('budgetMinHint');
                 if (bHint) {
                     const minForTables = estimateMinBudget(total);
-                    bHint.innerText = `Với ${total} bàn (${guests} khách), chi phí tối thiểu khoảng ${fmtVnd(minForTables)} (chưa gồm dịch vụ). Gợi ý chỉ vượt tối đa 10 triệu — hãy nhập ngân sách ≥ ${fmtVnd(Math.max(MIN_BUDGET_ABSOLUTE, minForTables))}.`;
+                    bHint.innerText = `Với ${total} bàn (${guests} khách), chi phí tối thiểu khoảng ${fmtVnd(minForTables)} (chưa gồm dịch vụ). Hãy nhập ngân sách ≥ ${fmtVnd(Math.max(MIN_BUDGET_ABSOLUTE, minForTables))} để tổng chi phí không vượt ngân sách.`;
                 }
             } catch (e) { }
             return { guests, official, spare, total };
@@ -1104,13 +1111,13 @@
                     // Server trả lỗi theo trường: hiển thị inline + focus đúng ô sai.
                     showFieldFailure({ field: result.field, message: result.message });
                 } else {
-                    showRecomAlert(result.message || 'Chưa tìm thấy gói tiệc khả dụng trong ngày và ca này. Hai bạn hãy nhấn "Xem Lịch & Ca Trống" để chọn thời điểm phù hợp hơn nhé!', 'Chưa có gói phù hợp', 'info');
+                    showRecomAlert(result.message || 'Chưa tìm thấy gói tiệc khả dụng trong ngày và ca này. Hai bạn hãy nhấn "Xem Lịch & Ca Trống" để chọn thời điểm phù hợp hơn nhé!', 'Chưa có gói phù hợp', 'info', result.fallbackUrl);
                 }
             } catch (err) {
                 btn.disabled = false;
                 btn.style.opacity = '1';
                 loading.style.display = 'none';
-                showRecomAlert('Kết nối phân tích gói tiệc đang gián đoạn. Hai bạn vui lòng thử lại sau ít phút nhé!', 'Lỗi kết nối', 'error');
+                showRecomAlert('Kết nối phân tích gói tiệc đang gián đoạn. Bạn có thể xem danh sách sảnh hoặc thử lại sau.', 'Lỗi kết nối', 'error', '/halls');
             }
         }
 
@@ -1126,7 +1133,7 @@
                 if (cardsBox) cardsBox.innerHTML = '';
                 renderSmartSuggestBox(suggestedNext, req);
                 if (box) box.style.display = 'block';
-                document.getElementById('resNotice').innerText = (data.algorithmNotice || data.AlgorithmNotice || 'Không có combo phù hợp trong ngân sách +10tr hoặc ngày đã kín sảnh.');
+                document.getElementById('resNotice').innerText = (data.algorithmNotice || data.AlgorithmNotice || 'Không có combo phù hợp trong ngân sách hoặc ngày đã kín sảnh.');
                 return;
             }
             if (box) box.style.display = 'none';
@@ -1147,7 +1154,7 @@
                     budgetScore: c.budgetMatchScore ?? c.BudgetMatchScore ?? 0,
                     spaceScore: c.spaceFitScore ?? c.SpaceFitScore ?? 0,
                     styleScore: c.styleThemeScore ?? c.StyleThemeScore ?? 0,
-                    ratingScore: c.ratingCredibilityScore ?? c.RatingCredibilityScore ?? 0,
+                    serviceScore: c.serviceMatchScore ?? c.ServiceMatchScore ?? 0,
                     analysisText: c.budgetAnalysisText || c.BudgetAnalysisText || '',
                     hallScheduleId: c.hallScheduleId ?? c.HallScheduleId ?? c.hall_schedule_id ?? 0,
                     hallId: c.hallId ?? c.HallId ?? c.hall_id ?? 0,
@@ -1284,7 +1291,7 @@
                                     <div><span>Ngân sách</span><strong>${s.budgetScore}%</strong></div>
                                     <div><span>Sức chứa</span><strong>${s.spaceScore}%</strong></div>
                                     <div><span>Phong cách</span><strong>${s.styleScore}%</strong></div>
-                                    <div><span>Hài lòng</span><strong>${s.ratingScore}%</strong></div>
+                                    <div><span>Dịch vụ ưu tiên</span><strong>${s.serviceScore}%</strong></div>
                                 </div>
                                 <div class="recom-break-row" onclick="showDetailModal('HALL', '${esc(s.hallName)}', '${hallPrice} đ', '${esc(s.hallDesc)}', '${s.hallMinTables}|${s.hallMaxTables}|${s.hallMaxGuests}')" role="button" tabindex="0">
                                     <div class="recom-break-top"><span><span class="material-symbols-outlined" aria-hidden="true">apartment</span>${escHtml(s.hallName)}</span><span>${hallPrice} đ</span></div>
@@ -1316,14 +1323,18 @@
             const applyBtn = document.getElementById('smartSuggestApplyBtn');
             smartSuggestState = suggestedNext || null;
             const minBudget = Number((suggestedNext && (suggestedNext.minRequiredBudget ?? suggestedNext.MinRequiredBudget)) || 0);
+            const currentBudget = Number(String(document.getElementById('expectedBudget')?.value || '').replace(/\D/g, '')) || 0;
+            const tableCount = syncGuestToTablesSilent().total;
+            const supportedMinimum = Math.max(MIN_BUDGET_ABSOLUTE, estimateMinBudget(tableCount));
+            const effectiveBudget = minBudget > 0 ? Math.ceil(Math.max(minBudget, currentBudget, supportedMinimum)) : 0;
             const reason = (suggestedNext && (suggestedNext.reason || suggestedNext.Reason)) || 'Ngân sách thấp hơn tối thiểu hoặc ngày đã kín sảnh phù hợp.';
             const dates = (suggestedNext && (suggestedNext.suggestedDates || suggestedNext.SuggestedDates)) || [];
             if (reasonEl) reasonEl.innerText = reason;
-            if (budgetEl) budgetEl.innerText = minBudget > 0 ? `Ngân sách tối thiểu gợi ý: ${minBudget.toLocaleString('vi-VN')} đ` : '';
+            if (budgetEl) budgetEl.innerText = effectiveBudget > 0 && effectiveBudget <= MAX_BUDGET_ABSOLUTE ? `Ngân sách tối thiểu gợi ý: ${effectiveBudget.toLocaleString('vi-VN')} đ` : '';
             if (applyBtn) {
-                applyBtn.innerText = minBudget > 0 ? `Tự động điều chỉnh ngân sách lên ${minBudget.toLocaleString('vi-VN')} đ` : 'Tự động điều chỉnh ngân sách';
-                applyBtn.disabled = !(minBudget > 0);
-                applyBtn.style.opacity = minBudget > 0 ? '1' : '0.6';
+                applyBtn.innerText = effectiveBudget > 0 && effectiveBudget <= MAX_BUDGET_ABSOLUTE ? `Tự động điều chỉnh ngân sách lên ${effectiveBudget.toLocaleString('vi-VN')} đ` : 'Không có mức ngân sách khả thi để tự điều chỉnh';
+                applyBtn.disabled = !(effectiveBudget > 0 && effectiveBudget <= MAX_BUDGET_ABSOLUTE);
+                applyBtn.style.opacity = !applyBtn.disabled ? '1' : '0.6';
             }
             if (datesBox) {
                 datesBox.innerHTML = '';
@@ -1349,9 +1360,14 @@
         function applySuggestedBudget() {
             if (!smartSuggestState) return;
             const minBudget = Number(smartSuggestState.minRequiredBudget ?? smartSuggestState.MinRequiredBudget ?? 0);
-            if (!(minBudget > 0)) return;
+            if (!(minBudget > 0) || minBudget > 3000000000) return;
             const budgetInput = document.getElementById('expectedBudget');
-            if (budgetInput) { budgetInput.value = Math.ceil(minBudget); formatBudgetInput(budgetInput); try { updateBudgetMinHint(); } catch (e) { } }
+            const currentBudget = Number(String(budgetInput?.value || '').replace(/\D/g, '')) || 0;
+            const tables = syncGuestToTablesSilent().total;
+            const supportedMinimum = Math.max(MIN_BUDGET_ABSOLUTE, estimateMinBudget(tables));
+            const nextBudget = Math.ceil(Math.max(minBudget, currentBudget, supportedMinimum));
+            if (nextBudget > MAX_BUDGET_ABSOLUTE) return;
+            if (budgetInput) { budgetInput.value = nextBudget; formatBudgetInput(budgetInput); try { updateBudgetMinHint(); } catch (e) { } }
             handleAnalyzeCombos(new Event('submit'));
         }
 
