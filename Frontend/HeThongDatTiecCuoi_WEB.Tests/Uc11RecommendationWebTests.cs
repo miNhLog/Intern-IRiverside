@@ -174,6 +174,43 @@ public sealed class Uc11RecommendationWebTests
         Assert.Empty(data!.TopCombos);
     }
 
+    [Fact]
+    public void SurveyView_UsesStrictBudgetLanguageAndActualServiceCriterionLabel()
+    {
+        var view = File.ReadAllText(Path.Combine(RepositoryRoot(), "Frontend", "HeThongDatTiecCuoi_WEB", "Views", "Recommendation", "Index.cshtml"));
+        Assert.DoesNotContain("OVER_BUDGET_TOLERANCE_VND", view);
+        Assert.DoesNotContain("vượt tối đa 10 triệu", view, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Hài lòng", view, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Dịch vụ ưu tiên", view);
+        Assert.Contains("fallbackUrl === '/halls'", view);
+    }
+
+    [Fact]
+    public async Task AnalyzeTop3_ApiFailureReturnsSafeErrorAndHallCatalogueFallback()
+    {
+        var (apiClient, proxy) = CreateApi();
+        proxy.FailRequest = true;
+
+        var result = Assert.IsType<JsonResult>(await CreateController(apiClient).AnalyzeTop3(ValidModel()));
+        var value = result.Value!;
+        Assert.Equal("/halls", value.GetType().GetProperty("fallbackUrl")!.GetValue(value));
+        Assert.Equal("Không thể tải gợi ý lúc này. Bạn có thể xem danh sách sảnh hoặc thử lại sau.",
+            value.GetType().GetProperty("message")!.GetValue(value));
+        Assert.DoesNotContain("database secret", value.GetType().GetProperty("message")!.GetValue(value)!.ToString());
+    }
+
+    [Fact]
+    public async Task AnalyzeTop3_ApiExceptionReturnsSafeErrorAndHallCatalogueFallback()
+    {
+        var (apiClient, proxy) = CreateApi();
+        proxy.ThrowRequest = true;
+
+        var result = Assert.IsType<JsonResult>(await CreateController(apiClient).AnalyzeTop3(ValidModel()));
+        var value = result.Value!;
+        Assert.Equal("/halls", value.GetType().GetProperty("fallbackUrl")!.GetValue(value));
+        Assert.DoesNotContain("private backend exception", value.GetType().GetProperty("message")!.GetValue(value)!.ToString());
+    }
+
     private static RecommendationRequestViewModel ValidModel() => new()
     {
         CoupleName = "Trần Hoàng & Mai Phương",
@@ -216,6 +253,8 @@ public sealed class Uc11RecommendationWebTests
         public int Calls { get; private set; }
         public RecommendationRequestViewModel? CapturedRequest { get; private set; }
         public bool ReturnCombos { get; set; } = true;
+        public bool FailRequest { get; set; }
+        public bool ThrowRequest { get; set; }
 
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
         {
@@ -224,6 +263,10 @@ public sealed class Uc11RecommendationWebTests
 
             Calls++;
             CapturedRequest = (RecommendationRequestViewModel)args![0]!;
+            if (ThrowRequest)
+                throw new InvalidOperationException("private backend exception");
+            if (FailRequest)
+                return Task.FromResult(ApiCallResult<RecommendationResponseViewModel>.Failure("database secret"));
             var response = new RecommendationResponseViewModel
             {
                 AlgorithmNotice = ReturnCombos ? "ok" : "no combo",

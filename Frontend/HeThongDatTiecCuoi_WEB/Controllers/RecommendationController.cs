@@ -115,8 +115,8 @@ public class RecommendationController : Controller
         if (!result.Succeeded || result.Value == null)
         {
             _logger.LogWarning("AnalyzeTop3: Backend trả lỗi: {Error}", result.Error);
-            ViewBag.RecommendationError = result.Error;
-            return Json(new { success = false, message = result.Error ?? "Không thể phân tích gói tiệc lúc này, vui lòng thử lại sau." });
+            ViewBag.RecommendationError = "Không thể phân tích gói tiệc lúc này, vui lòng thử lại sau.";
+            return Json(new { success = false, message = "Không thể tải gợi ý lúc này. Bạn có thể xem danh sách sảnh hoặc thử lại sau.", fallbackUrl = "/halls" });
         }
 
         return Json(new { success = true, data = result.Value });
@@ -126,7 +126,7 @@ public class RecommendationController : Controller
             _logger.LogError(ex, "AnalyzeTop3 thất bại. traceId={TraceId}. Chi tiết: {Detail}",
                 HttpContext.TraceIdentifier, ex.ToString());
             ViewBag.RecommendationError = "Hệ thống gợi ý đang bận, vui lòng thử lại sau.";
-            return Json(new { success = false, message = "Hệ thống gợi ý đang bận, vui lòng thử lại sau.", traceId = HttpContext.TraceIdentifier });
+            return Json(new { success = false, message = "Hệ thống gợi ý đang bận. Bạn có thể xem danh sách sảnh hoặc thử lại sau.", fallbackUrl = "/halls", traceId = HttpContext.TraceIdentifier });
         }
     }
 
@@ -339,7 +339,7 @@ public class RecommendationController : Controller
             return ("expectedBudget", "Tổng ngân sách dự trù tối thiểu 100 triệu (chi phí tối thiểu ~103,3 triệu cho 150 khách) đến tối đa 3 tỷ VNĐ.");
         var minForTables = 38_000_000m + totalTables * 4_350_000m;
         if (request.ExpectedBudget < minForTables)
-            return ("expectedBudget", $"Với {totalTables} bàn ({request.GuestCount} khách), chi phí tối thiểu khoảng {minForTables:N0} đ (chưa gồm dịch vụ). Vui lòng tăng ngân sách lên tối thiểu {Math.Max(MinBudgetAbsolute, minForTables):N0} đ hoặc giảm số khách để gợi ý không vượt quá 10 triệu.");
+            return ("expectedBudget", $"Với {totalTables} bàn ({request.GuestCount} khách), chi phí tối thiểu khoảng {minForTables:N0} đ (chưa gồm dịch vụ). Vui lòng tăng ngân sách lên tối thiểu {Math.Max(MinBudgetAbsolute, minForTables):N0} đ hoặc giảm số khách để tổng chi phí không vượt ngân sách.");
 
         var style = (request.DesiredStyle ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(style))
