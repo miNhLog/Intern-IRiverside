@@ -83,6 +83,7 @@ public class ComboSuggestionViewModel
     public double SpaceFitScore { get; set; }
     public double StyleThemeScore { get; set; }
     public double RatingCredibilityScore { get; set; }
+    public double ServiceMatchScore { get; set; }
 
     public int HallId { get; set; }
     public string HallName { get; set; } = string.Empty;
@@ -165,7 +166,7 @@ public class SuggestedDateViewModel
 public class SuggestedNextViewModel
 {
     [JsonPropertyName("minRequiredBudget")]
-    public decimal MinRequiredBudget { get; set; }
+    public decimal? MinRequiredBudget { get; set; }
     [JsonPropertyName("suggestedDates")]
     public List<SuggestedDateViewModel> SuggestedDates { get; set; } = new();
     [JsonPropertyName("reason")]
