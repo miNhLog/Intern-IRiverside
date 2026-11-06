@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using System.Security.Claims;
+using System.Text.Json;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace HeThongDatTiecCuoi_API.Controllers;
 
@@ -26,6 +30,7 @@ public sealed class AdminBookingController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = RoleNames.Manager)]
     public async Task<IActionResult> GetBookings([FromQuery] BookingFilterRequestDto filter)
     {
         var query = _context.WeddingBookings.AsNoTracking()
@@ -97,6 +102,7 @@ public sealed class AdminBookingController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Roles = RoleNames.Manager)]
     public async Task<IActionResult> GetBookingDetail(int id)
     {
         var existingDataStatusId = await GetDataStatusIdAsync(DataStatusCodes.Existing);
@@ -316,52 +322,55 @@ public sealed class AdminBookingController : ControllerBase
     }
 
     [HttpPut("{id:int}/status")]
+    [Authorize(Roles = RoleNames.Manager)]
     public async Task<IActionResult> UpdateBookingStatus(int id, [FromBody] UpdateBookingStatusRequestDto request)
     {
         var code = request.StatusCode.Trim().ToUpperInvariant();
-        if (!BookingStatusCodes.All.Contains(code))
-            return BadRequest(new { message = "Mã trạng thái booking không hợp lệ." });
+        if (code != BookingStatusCodes.Confirmed)
+            return BadRequest(new { code = "ERR_STATUS_TRANSITION_NOT_ALLOWED", message = "Chỉ xác nhận booking đang chờ; đổi lịch và hủy phải dùng UC18." });
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actorId)) return Unauthorized();
 
-        await using var transaction = await _context.Database.BeginTransactionAsync();
+        await using var transaction = _context.Database.IsRelational()
+            ? await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable)
+            : null;
         try
         {
+        if (_context.Database.IsSqlServer())
+            await _context.WeddingBookings.FromSqlInterpolated($"SELECT * FROM [DatTiec] WITH (UPDLOCK, HOLDLOCK, ROWLOCK) WHERE [DatTiecID] = {id}")
+                .Select(x => x.BookingId).SingleOrDefaultAsync();
         var booking = await _context.WeddingBookings.Include(b => b.HallSchedule)
+            .Include(b => b.Status)
             .SingleOrDefaultAsync(b => b.BookingId == id);
         if (booking == null) return NotFound(new { message = "Không tìm thấy đơn tiệc." });
+        if (booking.Status.StatusGroup != StatusGroups.Booking || booking.Status.StatusCode != BookingStatusCodes.Pending)
+            return Conflict(new { code = "ERR_BOOKING_TERMINAL", message = "Chỉ booking đang chờ xác nhận mới được chuyển trạng thái." });
+        if (booking.BookedAt.AddHours(BookingHoldExpirationService.HoldHours) <= DateTime.Now)
+            return Conflict(new { code = "ERR_BOOKING_HOLD_EXPIRED", message = "Thời hạn giữ chỗ 48 giờ đã hết; không thể xác nhận booking." });
+        if (await _context.Contracts.AnyAsync(x => x.BookingId == id) || await _context.Payments.AnyAsync(x => x.Contract.BookingId == id))
+            return Conflict(new { code = "ERR_BOOKING_HAS_CONTRACT_OR_PAYMENT", message = "Booking có hợp đồng hoặc thanh toán; không thể đổi trạng thái tại màn booking." });
 
+        var oldStatus = booking.Status.StatusCode;
         booking.StatusId = await _statusService.GetStatusIdAsync(StatusGroups.Booking, code);
-        booking.CancellationReason = code == BookingStatusCodes.Cancelled
-            ? NormalizeOptional(request.CancellationReason) ?? "Hủy theo yêu cầu khách hàng"
-            : null;
-
-        // BR03 trong cùng transaction: hủy -> giải phóng LichSanh về AVAILABLE (bỏ qua nếu schedule null);
-        // chuyển sang trạng thái chiếm giữ -> LichSanh BOOKED.
-        if (code == BookingStatusCodes.Cancelled)
-            await ReleaseScheduleIfUnusedAsync(booking);
-        else if (booking.HallSchedule is not null && BookingStatusCodes.OccupyingSchedule.Contains(code))
-            booking.HallSchedule.StatusId = await _statusService.GetStatusIdAsync(StatusGroups.HallSchedule, HallScheduleStatusCodes.Booked);
-
         await _context.SaveChangesAsync();
-        await transaction.CommitAsync();
+        _context.AuditLogs.Add(new AuditLog
+        {
+            UserId = actorId, Action = "BOOKING_CONFIRMED", EntityName = "DatTiec", EntityId = id,
+            OldData = JsonSerializer.Serialize(new { Status = oldStatus }), NewData = JsonSerializer.Serialize(new { Status = code }),
+            Timestamp = DateTime.Now, Notes = "Manager xác nhận booking đang chờ."
+        });
+        await _context.SaveChangesAsync();
+        if (transaction is not null) await transaction.CommitAsync();
         return Ok(new { success = true, statusCode = code });
+        }
+        catch (Exception ex) when (ex is SqlException { Number: 1205 or 1222 } || ex is DbUpdateException { InnerException: SqlException { Number: 1205 or 1222 } })
+        {
+            return Conflict(new { code = "ERR_BOOKING_STATE_CONFLICT", message = "Booking vừa được thay đổi đồng thời. Hãy tải lại dữ liệu." });
         }
         catch
         {
-            try { await transaction.RollbackAsync(); } catch { }
+            try { if (transaction is not null) await transaction.RollbackAsync(); } catch { }
             throw;
         }
-    }
-
-    private async Task ReleaseScheduleIfUnusedAsync(WeddingBooking booking)
-    {
-        if (booking.HallSchedule is null) return; // default-available: không có dòng vẫn coi trống.
-        var hasOtherActiveBooking = await _context.WeddingBookings.AnyAsync(item =>
-            item.BookingId != booking.BookingId && item.HallScheduleId == booking.HallScheduleId &&
-            item.Status != null &&
-            item.Status.StatusGroup == StatusGroups.Booking &&
-            BookingStatusCodes.OccupyingSchedule.Contains(item.Status.StatusCode));
-        if (!hasOtherActiveBooking)
-            booking.HallSchedule.StatusId = await _statusService.GetStatusIdAsync(StatusGroups.HallSchedule, HallScheduleStatusCodes.Available);
     }
 
     private async Task<string> GenerateBookingCodeAsync(DateTime eventDate)

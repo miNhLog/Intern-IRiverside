@@ -37,6 +37,7 @@ public sealed class BookingSummaryDto
     public DateTime EventDate { get; set; }
     public string Shift { get; set; } = string.Empty;
     public int GuestCount { get; set; }
+    public int TableCount { get; set; }
     public decimal? EstimatedTotal { get; set; }
     public string StatusCode { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;

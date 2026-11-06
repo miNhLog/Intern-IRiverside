@@ -172,3 +172,25 @@ public class UpdateBookingStatusRequestViewModel
     public decimal? DepositAmount { get; set; }
     public string? Notes { get; set; }
 }
+
+public sealed class ManagerBookingRescheduleRequestViewModel
+{
+    public DateTime NewDate { get; set; }
+    public string NewShift { get; set; } = string.Empty;
+    public int NewHallId { get; set; }
+    public string? Reason { get; set; }
+    public bool PriceDifferenceConfirmed { get; set; }
+    public decimal? ConfirmedPriceDifference { get; set; }
+}
+
+public sealed class ManagerBookingCancelRequestViewModel
+{
+    public string Reason { get; set; } = string.Empty;
+}
+
+public sealed class ManagerBookingHallOptionViewModel
+{
+    public int HallId { get; set; }
+    public string HallName { get; set; } = string.Empty;
+    public decimal RentalPrice { get; set; }
+}

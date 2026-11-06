@@ -9,7 +9,7 @@ using HeThongDatTiecCuoi_WEB.Services;
 
 namespace HeThongDatTiecCuoi_WEB.Controllers;
 
-[Authorize(Roles = RoleNames.Admin + "," + RoleNames.Manager)]
+[Authorize(Roles = RoleNames.Manager + "," + RoleNames.HallManager)]
 public class AdminBookingController : Controller
 {
     private const string ApiTokenCookie = "rp_api_token";
@@ -77,6 +77,7 @@ public class AdminBookingController : Controller
     [HttpGet]
     public async Task<IActionResult> GetCreateOptions(DateTime eventDate, CancellationToken cancellationToken = default)
     {
+        if (!User.IsInRole(RoleNames.Manager)) return Forbid();
         var result = await _apiClient.GetBookingCreateOptionsAsync(eventDate, Request.Cookies[ApiTokenCookie], cancellationToken);
         return result.Succeeded && result.Value != null
             ? Json(new { success = true, data = result.Value })
@@ -86,6 +87,7 @@ public class AdminBookingController : Controller
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateBookingRequestViewModel request, CancellationToken cancellationToken = default)
     {
+        if (!User.IsInRole(RoleNames.Manager)) return Forbid();
         if (!ModelState.IsValid)
         {
             return Json(new { success = false, message = "Dữ liệu nhập vào chưa hợp lệ, vui lòng kiểm tra lại." });
@@ -104,8 +106,10 @@ public class AdminBookingController : Controller
 
     // 5. POST: /AdminBooking/UpdateStatus/{id} - AJAX duyệt, ghi nhận cọc, hoặc hủy tiệc
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateBookingStatusRequestViewModel request, CancellationToken cancellationToken = default)
     {
+        if (!User.IsInRole(RoleNames.Manager)) return Forbid();
         var accessToken = Request.Cookies[ApiTokenCookie];
         var result = await _apiClient.UpdateBookingStatusAsync(id, request, accessToken, cancellationToken);
 
@@ -115,5 +119,36 @@ public class AdminBookingController : Controller
         }
 
         return Json(new { success = true, message = "Cập nhật trạng thái booking thành công!" });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetRescheduleQuote(int id, DateTime newDate, string newShift, int newHallId, CancellationToken cancellationToken = default)
+    {
+        var request = new ManagerBookingRescheduleRequestViewModel { NewDate = newDate, NewShift = newShift, NewHallId = newHallId };
+        var result = await _apiClient.GetManagerBookingRescheduleQuoteAsync(id, request, Request.Cookies[ApiTokenCookie], cancellationToken);
+        return result.Succeeded ? Json(new { success = true, data = result.Value }) : Json(new { success = false, message = result.Error });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetRescheduleOptions(int id, CancellationToken cancellationToken = default)
+    {
+        var result = await _apiClient.GetManagerBookingRescheduleOptionsAsync(id, Request.Cookies[ApiTokenCookie], cancellationToken);
+        return result.Succeeded ? Json(new { success = true, data = result.Value }) : Json(new { success = false, message = result.Error });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Reschedule(int id, [FromBody] ManagerBookingRescheduleRequestViewModel request, CancellationToken cancellationToken = default)
+    {
+        var result = await _apiClient.RescheduleManagerBookingAsync(id, request, Request.Cookies[ApiTokenCookie], cancellationToken);
+        return result.Succeeded ? Json(new { success = true, message = "Đã đổi lịch booking." }) : Json(new { success = false, message = result.Error });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Cancel(int id, [FromBody] ManagerBookingCancelRequestViewModel request, CancellationToken cancellationToken = default)
+    {
+        var result = await _apiClient.CancelManagerBookingAsync(id, request, Request.Cookies[ApiTokenCookie], cancellationToken);
+        return result.Succeeded ? Json(new { success = true, message = "Đã hủy booking và giải phóng lịch nếu không còn booking khác." }) : Json(new { success = false, message = result.Error });
     }
 }
