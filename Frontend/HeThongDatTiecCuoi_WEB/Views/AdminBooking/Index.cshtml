@@ -3,6 +3,7 @@
     ViewData["Title"] = "Quản Lý Đặt Tiệc";
     Layout = "_AdminLayout";
     var isManager = User.IsInRole(HeThongDatTiecCuoi_WEB.Constants.RoleNames.Manager);
+    var isHallManager = User.IsInRole(HeThongDatTiecCuoi_WEB.Constants.RoleNames.HallManager);
 }
 
 <!-- Font dùng chung được nạp bởi _AdminLayout. -->
@@ -122,7 +123,8 @@
 </div>
 
 <!-- CONTAINER CHÍNH: Căn chỉnh padding và căn giữa đồng bộ với các trang khác -->
-<div class="booking-page-wrapper p-6 lg:p-8 space-y-6 w-full max-w-[1600px] mx-auto" data-can-manage-contracts="@isManager.ToString().ToLowerInvariant()">
+<div class="booking-page-wrapper p-6 lg:p-8 space-y-6 w-full max-w-[1600px] mx-auto" data-can-manage-contracts="@isManager.ToString().ToLowerInvariant()" data-can-manage-booking-status="@isManager.ToString().ToLowerInvariant()" data-is-hall-manager="@isHallManager.ToString().ToLowerInvariant()">
+    <form class="hidden">@Html.AntiForgeryToken()</form>
 
     <!-- ================= 1. HEADER TRANG ================= -->
     <div class="manager-section-header flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -144,10 +146,13 @@
                 <span>Xuất Excel</span>
             </button>
 
+            @if (isManager)
+            {
             <button type="button" onclick="openCreateBookingModal()" class="admin-create-button flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white rounded-lg text-xs font-bold transition-all shadow-sm min-h-[40px] cursor-pointer">
                 <i class="fa-solid fa-plus text-xs"></i>
                 <span>Tạo Đơn Đặt Tiệc Mới</span>
             </button>
+            }
         </div>
     </div>
 
@@ -196,6 +201,8 @@
                 <input type="text" id="filterKeyword" placeholder="Tìm theo mã tiệc, tên khách, SĐT..." onkeydown="if(event.key==='Enter') executeFilter(1)" class="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#B89758] focus:bg-white focus:ring-1 focus:ring-[#B89758] min-h-[42px] transition-all">
             </div>
 
+            @if (!isHallManager)
+            {
             <!-- Lọc theo sảnh -->
             <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 min-h-[42px] min-w-[200px]">
                 <i class="fa-solid fa-building-columns text-slate-500 mr-2 text-xs"></i>
@@ -213,6 +220,7 @@
                     <option value="9">Sảnh Grand Ballroom</option>
                 </select>
             </div>
+            }
 
             <!-- Lọc theo khoảng ngày -->
             <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 min-h-[42px] text-xs">
@@ -345,7 +353,7 @@
                                         {
                                             <a href="/quan-ly/hop-dong-thanh-toan?bookingId=@b.BookingId&amp;openCreate=true" class="h-[32px] px-2.5 rounded-lg bg-[#B89758]/15 hover:bg-[#B89758]/25 text-[#8C6D32] transition-colors flex items-center justify-center gap-1 text-[10px] font-bold" title="Tạo hợp đồng"><i class="fa-solid fa-file-circle-plus"></i>Tạo HĐ</a>
                                         }
-                                        @if (b.StatusCode == "PENDING")
+                                        @if (isManager && b.StatusCode == "PENDING")
                                         {
                                             <button type="button" onclick="quickUpdateStatus(@b.BookingId, 'CONFIRMED')" class="h-[32px] w-[32px] rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center justify-center" title="Xác nhận đơn tiệc">
                                                 <i class="fa-solid fa-check text-sm"></i>
@@ -353,6 +361,7 @@
                                         }
                                         @if (b.StatusCode != "CANCELLED" && b.StatusCode != "COMPLETED")
                                         {
+                                            <button type="button" onclick="openRescheduleModal(@b.BookingId)" class="h-[32px] w-[32px] rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors flex items-center justify-center" title="Đổi lịch booking"><i class="fa-regular fa-calendar"></i></button>
                                             <button type="button" onclick="cancelBookingPrompt(@b.BookingId)" class="h-[32px] w-[32px] rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 transition-colors flex items-center justify-center" title="Hủy đơn tiệc">
                                                 <i class="fa-solid fa-ban text-sm"></i>
                                             </button>
@@ -386,6 +395,31 @@
         </div>
     </div>
 
+</div>
+
+<div id="rescheduleBookingModal" class="fixed inset-0 hidden items-center justify-center bg-slate-950/75 p-3" style="z-index:100000">
+    <section class="bg-white w-full max-w-lg rounded-2xl border border-[#E5D5B8] shadow-2xl p-5 space-y-4" role="dialog" aria-modal="true" aria-labelledby="rescheduleTitle">
+        <h3 id="rescheduleTitle" class="font-serif text-lg font-bold text-slate-900">Đổi lịch booking</h3>
+        <label class="block text-xs font-semibold text-slate-700" for="rescheduleHall">Sảnh mới
+            <select id="rescheduleHall" class="mt-1 w-full rounded border border-slate-300 p-2"></select>
+        </label>
+        <label class="block text-xs font-semibold text-slate-700" for="rescheduleDate">Ngày mới
+            <input id="rescheduleDate" type="date" class="mt-1 w-full rounded border border-slate-300 p-2" />
+        </label>
+        <label class="block text-xs font-semibold text-slate-700" for="rescheduleShift">Ca mới
+            <select id="rescheduleShift" class="mt-1 w-full rounded border border-slate-300 p-2"><option>Ca trưa</option><option>Ca tối</option></select>
+        </label>
+        <label class="block text-xs font-semibold text-slate-700" for="rescheduleReason">Lý do
+            <textarea id="rescheduleReason" maxlength="500" class="mt-1 w-full rounded border border-slate-300 p-2"></textarea>
+        </label>
+        <button type="button" onclick="previewReschedule()" class="rounded bg-slate-800 px-3 py-2 text-sm text-white">Kiểm tra lịch và chênh lệch giá</button>
+        <div id="rescheduleQuote" class="text-sm text-slate-700" aria-live="polite"></div>
+        <label id="priceConfirmWrap" class="hidden text-sm"><input id="priceConfirm" type="checkbox" /> Tôi xác nhận chênh lệch giá hiển thị</label>
+        <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeRescheduleModal()" class="rounded border px-3 py-2 text-sm">Đóng</button>
+            <button type="button" id="submitReschedule" onclick="submitReschedule()" disabled class="rounded bg-[#B89758] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">Xác nhận đổi lịch</button>
+        </div>
+    </section>
 </div>
 
 <!-- ================= MODAL CHI TIẾT HỢP ĐỒNG & THANH TOÁN ================= -->
@@ -661,6 +695,12 @@
         let createBookingOptions = null;
         let currentBookings = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items ?? new List<HeThongDatTiecCuoi_WEB.Models.AdminBooking.BookingSummaryViewModel>()));
         const canManageContracts = document.querySelector('.booking-page-wrapper')?.dataset.canManageContracts === 'true';
+        const canManageBookingStatus = document.querySelector('.booking-page-wrapper')?.dataset.canManageBookingStatus === 'true';
+        let activeRescheduleQuote = null;
+
+        function antiforgeryHeaders() {
+            return { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || '' };
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             setMinimumBookingDate();
@@ -856,7 +896,7 @@
                 } else if (canManageContracts && statusCode === 'CONFIRMED') {
                     actionBtns += `<a href="/quan-ly/hop-dong-thanh-toan?bookingId=${id}&openCreate=true" class="h-[32px] px-2.5 rounded-lg bg-[#B89758]/15 hover:bg-[#B89758]/25 text-[#8C6D32] transition-colors flex items-center justify-center gap-1 text-[10px] font-bold" title="Tạo hợp đồng"><i class="fa-solid fa-file-circle-plus"></i>Tạo HĐ</a>`;
                 }
-                if (statusCode === 'PENDING') {
+                if (canManageBookingStatus && statusCode === 'PENDING') {
                     actionBtns += `
                         <button type="button" onclick="quickUpdateStatus(${id}, 'CONFIRMED')" class="h-[32px] w-[32px] rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center justify-center" title="Xác nhận đơn tiệc">
                             <i class="fa-solid fa-check text-sm"></i>
@@ -865,6 +905,7 @@
                 }
                 if (statusCode !== 'CANCELLED' && statusCode !== 'COMPLETED') {
                     actionBtns += `
+                        <button type="button" onclick="openRescheduleModal(${id})" class="h-[32px] w-[32px] rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors flex items-center justify-center" title="Đổi lịch booking"><i class="fa-regular fa-calendar"></i></button>
                         <button type="button" onclick="cancelBookingPrompt(${id})" class="h-[32px] w-[32px] rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 transition-colors flex items-center justify-center" title="Hủy đơn tiệc">
                             <i class="fa-solid fa-ban text-sm"></i>
                         </button>
@@ -1019,8 +1060,11 @@
                         link.className = 'px-4 py-2.5 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] text-white rounded-lg font-bold shadow-sm transition-all flex items-center gap-2';
                         link.textContent = 'Tạo hợp đồng';
                         btnGroup.appendChild(link);
-                    } else if (statusCode === 'PENDING') {
+                    } else if (canManageBookingStatus && statusCode === 'PENDING') {
                         btnGroup.innerHTML = `<button type="button" onclick="quickUpdateStatus(${id}, 'CONFIRMED')" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-sm transition-colors flex items-center gap-2"><i class="fa-solid fa-check text-xs"></i>Xác nhận Booking</button>`;
+                    }
+                    if (statusCode !== 'CANCELLED' && statusCode !== 'COMPLETED') {
+                        btnGroup.insertAdjacentHTML('beforeend', `<button type="button" onclick="openRescheduleModal(${id})" class="px-3 py-2 rounded border text-sm">Đổi lịch</button><button type="button" onclick="cancelBookingPrompt(${id})" class="px-3 py-2 rounded border border-rose-300 text-rose-700 text-sm">Hủy booking</button>`);
                     }
 
                     const modal = document.getElementById('bookingDetailModal');
@@ -1047,7 +1091,7 @@
             try {
                 const res = await fetch(`/AdminBooking/UpdateStatus/${id}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: antiforgeryHeaders(),
                     body: JSON.stringify({ statusCode: newStatus })
                 });
                 const result = await res.json();
@@ -1067,10 +1111,10 @@
             const reason = prompt("Nhập lý do hủy tiệc cưới (lịch sảnh sẽ tự động giải phóng):", "Khách hàng đổi kế hoạch");
             if (reason === null) return;
 
-            fetch(`/AdminBooking/UpdateStatus/${id}`, {
+            fetch(`/AdminBooking/Cancel/${id}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ statusCode: 'CANCELLED', cancellationReason: reason })
+                headers: antiforgeryHeaders(),
+                body: JSON.stringify({ reason })
             })
             .then(res => res.json())
             .then(result => {
@@ -1082,6 +1126,79 @@
                     showToast('Lỗi', result.message, false);
                 }
             });
+        }
+
+        async function openRescheduleModal(id) {
+            selectedBookingId = id;
+            activeRescheduleQuote = null;
+            document.getElementById('rescheduleQuote').textContent = '';
+            document.getElementById('priceConfirmWrap').classList.add('hidden');
+            document.getElementById('priceConfirm').checked = false;
+            document.getElementById('submitReschedule').disabled = true;
+            document.getElementById('rescheduleDate').value = '';
+            document.getElementById('rescheduleReason').value = '';
+            try {
+                const response = await fetch(`/AdminBooking/GetRescheduleOptions/${id}`);
+                const result = await response.json();
+                if (!result.success) throw new Error(result.message || 'Không thể tải danh sách sảnh.');
+                document.getElementById('rescheduleHall').innerHTML = result.data.map(h => `<option value="${h.hallId}">${escapeHtml(h.hallName)}</option>`).join('');
+                const modal = document.getElementById('rescheduleBookingModal');
+                modal.classList.remove('hidden'); modal.classList.add('flex');
+            } catch (error) { showToast('Lỗi', error.message, false); }
+        }
+
+        function closeRescheduleModal() {
+            const modal = document.getElementById('rescheduleBookingModal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        }
+
+        async function previewReschedule() {
+            const params = new URLSearchParams({
+                newDate: document.getElementById('rescheduleDate').value,
+                newShift: document.getElementById('rescheduleShift').value,
+                newHallId: document.getElementById('rescheduleHall').value
+            });
+            try {
+                const response = await fetch(`/AdminBooking/GetRescheduleQuote/${selectedBookingId}?${params}`);
+                const result = await response.json();
+                if (!result.success) throw new Error(result.message || 'Không thể xác minh lịch mới.');
+                activeRescheduleQuote = result.data;
+                const q = activeRescheduleQuote;
+                const difference = Number(q.priceDifference ?? q.PriceDifference ?? 0);
+                const saved = q.savedHallPrice ?? q.SavedHallPrice;
+                const live = q.currentHallPrice ?? q.CurrentHallPrice;
+                const capacity = q.capacityCheck ?? q.CapacityCheck;
+                const capacityMessage = q.capacityMessage ?? q.CapacityMessage;
+                const requires = q.requiresPriceConfirmation ?? q.RequiresPriceConfirmation;
+                document.getElementById('rescheduleQuote').textContent = `Giá sảnh đã lưu: ${saved == null ? 'không xác định' : formatNumber(saved) + ' ₫'}; giá hiện tại: ${formatNumber(live)} ₫; chênh lệch: ${formatNumber(difference)} ₫. Kiểm tra sức chứa: ${capacity === 'UNKNOWN' ? 'không xác định' : capacity}. ${capacityMessage || 'Không có số bàn dự phòng xác thực.'}`;
+                document.getElementById('priceConfirmWrap').classList.toggle('hidden', !requires);
+                document.getElementById('submitReschedule').disabled = (requires && saved == null) || capacity === 'FAIL' || (requires && !document.getElementById('priceConfirm').checked);
+            } catch (error) { activeRescheduleQuote = null; showToast('Không thể xác nhận', error.message, false); }
+        }
+
+        document.getElementById('priceConfirm')?.addEventListener('change', () => {
+            if (activeRescheduleQuote) document.getElementById('submitReschedule').disabled =
+                ((activeRescheduleQuote.requiresPriceConfirmation ?? activeRescheduleQuote.RequiresPriceConfirmation) && !document.getElementById('priceConfirm').checked) ||
+                (activeRescheduleQuote.capacityCheck ?? activeRescheduleQuote.CapacityCheck) === 'FAIL';
+        });
+
+        async function submitReschedule() {
+            if (!activeRescheduleQuote) return;
+            const q = activeRescheduleQuote;
+            const request = {
+                newDate: document.getElementById('rescheduleDate').value,
+                newShift: document.getElementById('rescheduleShift').value,
+                newHallId: Number(document.getElementById('rescheduleHall').value),
+                reason: document.getElementById('rescheduleReason').value,
+                priceDifferenceConfirmed: document.getElementById('priceConfirm').checked,
+                confirmedPriceDifference: q.priceDifference ?? q.PriceDifference
+            };
+            try {
+                const response = await fetch(`/AdminBooking/Reschedule/${selectedBookingId}`, { method: 'POST', headers: antiforgeryHeaders(), body: JSON.stringify(request) });
+                const result = await response.json();
+                if (!result.success) throw new Error(result.message || 'Không thể đổi lịch.');
+                closeRescheduleModal(); showToast('Thành công', result.message); executeFilter(currentFilter.pageIndex);
+            } catch (error) { showToast('Không thể đổi lịch', error.message, false); }
         }
 
         // ================= 4. TẠO MỚI ĐẶT TIỆC =================

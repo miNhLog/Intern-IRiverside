@@ -372,6 +372,11 @@ public interface IRiversideApiClient
         string? accessToken,
         CancellationToken cancellationToken = default);
 
+    Task<ApiCallResult<dynamic>> GetManagerBookingRescheduleQuoteAsync(int id, ManagerBookingRescheduleRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<List<ManagerBookingHallOptionViewModel>>> GetManagerBookingRescheduleOptionsAsync(int id, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<dynamic>> RescheduleManagerBookingAsync(int id, ManagerBookingRescheduleRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<dynamic>> CancelManagerBookingAsync(int id, ManagerBookingCancelRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default);
+
     // Thay thế đoạn cuối bằng:
     Task<ApiCallResult<RecommendationResponseViewModel>> GetTop3RecommendationsAsync(
         RecommendationRequestViewModel request,

@@ -1502,7 +1502,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         if (filter.ToDate.HasValue)
             queryParams.Add($"toDate={filter.ToDate.Value:yyyy-MM-dd}");
 
-        var uri = $"api/admin/bookings?{string.Join("&", queryParams)}";
+        var uri = $"api/manager/bookings?{string.Join("&", queryParams)}";
 
         return await SendJsonAsync<BookingListResponseViewModel>(
             HttpMethod.Get,
@@ -1517,7 +1517,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         string? accessToken,
         CancellationToken cancellationToken = default)
     {
-        var uri = $"api/admin/bookings/{id}";
+        var uri = $"api/manager/bookings/{id}";
         return await SendJsonAsync<BookingDetailViewModel>(
             HttpMethod.Get,
             uri,
@@ -1561,6 +1561,21 @@ public sealed class RiversideApiClient : IRiversideApiClient
             accessToken,
             cancellationToken);
     }
+
+    public async Task<ApiCallResult<dynamic>> GetManagerBookingRescheduleQuoteAsync(int id, ManagerBookingRescheduleRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default)
+    {
+        var uri = $"api/manager/bookings/{id}/reschedule-quote?newDate={request.NewDate:yyyy-MM-dd}&newShift={Uri.EscapeDataString(request.NewShift)}&newHallId={request.NewHallId}";
+        return await SendJsonAsync<dynamic>(HttpMethod.Get, uri, null, accessToken, cancellationToken);
+    }
+
+    public async Task<ApiCallResult<List<ManagerBookingHallOptionViewModel>>> GetManagerBookingRescheduleOptionsAsync(int id, string? accessToken, CancellationToken cancellationToken = default) =>
+        await SendJsonAsync<List<ManagerBookingHallOptionViewModel>>(HttpMethod.Get, $"api/manager/bookings/{id}/reschedule-options", null, accessToken, cancellationToken);
+
+    public async Task<ApiCallResult<dynamic>> RescheduleManagerBookingAsync(int id, ManagerBookingRescheduleRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default) =>
+        await SendJsonAsync<dynamic>(HttpMethod.Put, $"api/manager/bookings/{id}/reschedule", request, accessToken, cancellationToken);
+
+    public async Task<ApiCallResult<dynamic>> CancelManagerBookingAsync(int id, ManagerBookingCancelRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default) =>
+        await SendJsonAsync<dynamic>(HttpMethod.Post, $"api/manager/bookings/{id}/cancel", request, accessToken, cancellationToken);
 
     // Hệ thống khuyến nghị
     public async Task<ApiCallResult<RecommendationResponseViewModel>> GetTop3RecommendationsAsync(

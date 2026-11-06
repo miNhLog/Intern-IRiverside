@@ -260,6 +260,18 @@
                         </a>
                     </nav>
                 </section>
+                <section class="sidebar-section" aria-labelledby="hallManagerBookingMenuTitle">
+                    <h2 class="sidebar-section-title" id="hallManagerBookingMenuTitle">Đặt tiệc</h2>
+                    <nav class="sidebar-menu" aria-label="Đặt tiệc">
+                        <a asp-controller="AdminBooking" asp-action="Index"
+                           class="sidebar-item @(IsActive("AdminBooking") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("AdminBooking") ? "page" : null)"
+                           data-sidebar-tooltip="Booking">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-calendar-check"></i></span>
+                            <span class="sidebar-label">Booking</span>
+                        </a>
+                    </nav>
+                </section>
                 <section class="sidebar-section" aria-labelledby="hallManagerHallsMenuTitle">
                     <h2 class="sidebar-section-title" id="hallManagerHallsMenuTitle">Sảnh của tôi</h2>
                     <nav class="sidebar-menu" aria-label="Sảnh được phân công">
