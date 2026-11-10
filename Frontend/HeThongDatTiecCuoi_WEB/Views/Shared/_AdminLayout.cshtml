@@ -14,7 +14,7 @@
     var isHallManager = User.IsInRole(RoleNames.HallManager);
     var isCoordinator = User.IsInRole(RoleNames.Coordinator);
     var usesAdminKlcnTheme = isAdmin;
-    var usesManagerKlcnTheme = isManager;
+    var usesManagerKlcnTheme = isManager || isHallManager || isCoordinator;
     var usesKlcnTheme = usesAdminKlcnTheme || usesManagerKlcnTheme;
     var dashboardController = isAdmin ? "AdminAccount" : "Home";
     var vietnameseCulture = CultureInfo.GetCultureInfo("vi-VN");
@@ -71,8 +71,8 @@
     <link rel="stylesheet"
           href="~/css/admin-common.css"
           asp-append-version="true" />
-    @if (isManager) { <link rel="stylesheet" href="~/css/manager-theme.css" asp-append-version="true" /> }
-    @if (isAdmin || isManager) { <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" /> }
+    @if (usesManagerKlcnTheme) { <link rel="stylesheet" href="~/css/manager-theme.css" asp-append-version="true" /> }
+    @if (isAdmin || usesManagerKlcnTheme) { <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" /> }
 
     <link rel="stylesheet" href="~/css/ui-format.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
@@ -89,9 +89,11 @@
         <link rel="stylesheet" href="~/css/admin-metis.css" asp-append-version="true" />
         <link rel="stylesheet" href="~/css/manager-metis.css" asp-append-version="true" />
     }
+    @if (isCoordinator) { <link rel="stylesheet" href="~/css/coordinator-metis.css" asp-append-version="true" /> }
+    @if (isHallManager || isCoordinator) { <link rel="stylesheet" href="~/css/backoffice-toast.css" asp-append-version="true" /> }
 </head>
-<body class="backoffice-app @(isManager ? "manager-theme manager-metis-app" : string.Empty) @(usesKlcnTheme ? "admin-metis-app" : string.Empty)">
-    <div class="admin-layout backoffice-shell @(isManager ? "manager-theme-shell" : string.Empty)">
+<body class="backoffice-app @(usesManagerKlcnTheme ? "manager-theme manager-metis-app" : string.Empty) @(usesKlcnTheme ? "admin-metis-app" : string.Empty)">
+    <div class="admin-layout backoffice-shell @(usesManagerKlcnTheme ? "manager-theme-shell" : string.Empty)">
         <button type="button"
                 class="mobile-sidebar-toggle"
                 id="mobileSidebarToggle"
@@ -299,14 +301,6 @@
                         </a>
                     </nav>
                 </section>
-                <section class="sidebar-section" aria-labelledby="hallManagerHallsMenuTitle">
-                    <h2 class="sidebar-section-title" id="hallManagerHallsMenuTitle">Sảnh của tôi</h2>
-                    <nav class="sidebar-menu" aria-label="Sảnh được phân công">
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Sảnh được phân công"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-building"></i></span><span class="sidebar-label">Sảnh được phân công</span></button>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Lịch sảnh"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Lịch sảnh</span></button>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Tiệc sắp diễn ra"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-champagne-glasses"></i></span><span class="sidebar-label">Tiệc sắp diễn ra</span></button>
-                    </nav>
-                </section>
                 <section class="sidebar-section" aria-labelledby="hallManagerCoordinationMenuTitle">
                     <h2 class="sidebar-section-title" id="hallManagerCoordinationMenuTitle">Điều phối</h2>
                     <nav class="sidebar-menu" aria-label="Điều phối tiệc">
@@ -317,22 +311,25 @@
                             <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-user-check"></i></span>
                             <span class="sidebar-label">Phân công nhân viên điều phối</span>
                         </a>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Theo dõi điều phối"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-people-arrows"></i></span><span class="sidebar-label">Theo dõi điều phối</span></button>
+                        <a asp-controller="Checklist" asp-action="Index"
+                           class="sidebar-item @(IsActive("Checklist") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("Checklist") ? "page" : null)"
+                           data-sidebar-tooltip="Theo dõi điều phối">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-list-check"></i></span>
+                            <span class="sidebar-label">Theo dõi điều phối</span>
+                        </a>
                     </nav>
                 </section>
                 <section class="sidebar-section" aria-labelledby="hallManagerOperationsMenuTitle">
                     <h2 class="sidebar-section-title" id="hallManagerOperationsMenuTitle">Vận hành</h2>
                     <nav class="sidebar-menu" aria-label="Vận hành sảnh">
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Sự cố"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span><span class="sidebar-label">Sự cố</span></button>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Thay đổi lịch"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Thay đổi lịch</span></button>
-                    </nav>
-                </section>
-                <section class="sidebar-section" aria-labelledby="hallManagerReferenceMenuTitle">
-                    <h2 class="sidebar-section-title" id="hallManagerReferenceMenuTitle">Thông tin tham khảo</h2>
-                    <nav class="sidebar-menu" aria-label="Thông tin tham khảo">
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Thực đơn"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-utensils"></i></span><span class="sidebar-label">Thực đơn</span></button>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Decor &amp; Dịch vụ"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></span><span class="sidebar-label">Decor &amp; Dịch vụ</span></button>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Bảng giá / Chính sách"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-tags"></i></span><span class="sidebar-label">Bảng giá / Chính sách</span></button>
+                        <a asp-controller="HallManagerIncident" asp-action="Index"
+                           class="sidebar-item @(IsActive("HallManagerIncident") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("HallManagerIncident") ? "page" : null)"
+                           data-sidebar-tooltip="Sự cố">
+                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                            <span class="sidebar-label">Sự cố</span>
+                        </a>
                     </nav>
                 </section>
                 }
@@ -353,24 +350,26 @@
                 <section class="sidebar-section" aria-labelledby="coordinatorMyWorkMenuTitle">
                     <h2 class="sidebar-section-title" id="coordinatorMyWorkMenuTitle">Công việc của tôi</h2>
                     <nav class="sidebar-menu" aria-label="Công việc được giao">
-                        <a asp-controller="Home" asp-action="AssignedParties"
-                           class="sidebar-item @(IsActive("Home", "AssignedParties") ? "active" : string.Empty)"
-                           aria-current="@(IsActive("Home", "AssignedParties") ? "page" : null)"
-                           data-sidebar-tooltip="Tiệc được phân công">
-                            <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-champagne-glasses"></i></span>
-                            <span class="sidebar-label">Tiệc được phân công</span>
-                        </a>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Lịch làm việc">
+                        <a asp-controller="Home" asp-action="WorkSchedule"
+                           class="sidebar-item @(IsActive("Home", "WorkSchedule") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("Home", "WorkSchedule") ? "page" : null)"
+                           data-sidebar-tooltip="Lịch làm việc">
                             <span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></span>
                             <span class="sidebar-label">Lịch làm việc</span>
-                        </button>
+                        </a>
                     </nav>
                 </section>
                 <section class="sidebar-section" aria-labelledby="coordinatorOperationsMenuTitle">
                     <h2 class="sidebar-section-title" id="coordinatorOperationsMenuTitle">Vận hành tiệc</h2>
                     <nav class="sidebar-menu" aria-label="Vận hành tiệc">
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Theo dõi tiến độ"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-list-check"></i></span><span class="sidebar-label">Theo dõi tiến độ</span></button>
-                        <button type="button" class="sidebar-item developing" data-sidebar-tooltip="Sự cố"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span><span class="sidebar-label">Sự cố</span></button>
+                        <a asp-controller="Checklist" asp-action="Index"
+                           class="sidebar-item @(IsActive("Checklist") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("Checklist") ? "page" : null)"
+                           data-sidebar-tooltip="Theo dõi tiến độ"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-list-check"></i></span><span class="sidebar-label">Theo dõi tiến độ</span></a>
+                        <a asp-controller="CoordinatorIncident" asp-action="Index"
+                           class="sidebar-item @(IsActive("CoordinatorIncident") ? "active" : string.Empty)"
+                           aria-current="@(IsActive("CoordinatorIncident") ? "page" : null)"
+                           data-sidebar-tooltip="Sự cố"><span class="sidebar-icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span><span class="sidebar-label">Sự cố</span></a>
                     </nav>
                 </section>
                 }
@@ -428,7 +427,7 @@
                         <span>@currentDateText</span>
                     </div>
                     <span class="topbar-divider" aria-hidden="true"></span>
-                    @if (isAdmin || isManager)
+                    @if (isAdmin || isManager || isHallManager || isCoordinator)
                     {
                     <div class="topbar-notifications" data-notification-root>
                         <button type="button"
@@ -480,6 +479,10 @@
     <div class="sidebar-toast" id="globalToast" role="status" aria-live="polite">
         Chức năng đang được phát triển. Vui lòng quay lại sau.
     </div>
+    @if (isHallManager || isCoordinator)
+    {
+        <div class="rp-toast-container" id="rpToastContainer" aria-label="Thông báo kết quả thao tác"></div>
+    }
     @if (!string.IsNullOrWhiteSpace(passwordChangeSuccess))
     {
         <div class="sidebar-toast flash-toast is-success" id="flashToast" role="status" aria-live="polite" data-auto-show>
@@ -489,9 +492,10 @@
         </div>
     }
 
+    @if (isHallManager || isCoordinator) { <script src="~/js/backoffice-toast.js" asp-append-version="true"></script> }
     <script src="~/js/admin-sidebar.js" asp-append-version="true"></script>
     <script src="~/js/ui-format.js" asp-append-version="true"></script>
-    @if (isAdmin || isManager) { <script src="~/js/notifications.js" asp-append-version="true"></script> }
+    @if (isAdmin || isManager || isHallManager || isCoordinator) { <script src="~/js/notifications.js" asp-append-version="true"></script> }
     @if (usesKlcnTheme) { <script src="~/js/admin-metis.js" asp-append-version="true"></script> }
     @await RenderSectionAsync("Scripts", required: false)
 </body>

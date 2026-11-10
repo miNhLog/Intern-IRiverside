@@ -1,0 +1,92 @@
+@model HeThongDatTiecCuoi_WEB.Models.Incident.CoordinatorIncidentPageViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản lý sự cố";
+    string SeverityClass(string severity) => severity switch { "Nghiêm trọng" => "critical", "Thấp" => "low", _ => "normal" };
+    string StatusClass(string status) => status switch { "RESOLVED" => "resolved", "PROCESSING" => "processing", _ => "pending" };
+}
+@section Styles { <link rel="stylesheet" href="~/css/coordinator-incidents.css" asp-append-version="true" /> }
+
+<main class="incident-page" data-open-incident="@Context.Request.Query["incidentId"]" data-booking-id="@Context.Request.Query["bookingId"]">
+    <header class="incident-header">
+        <div><span class="incident-eyebrow">TRUNG TÂM VẬN HÀNH</span><h1>Quản lý sự cố</h1><p>Ghi nhận và theo dõi tình trạng xử lý sự cố tại những tiệc bạn được phân công.</p></div>
+        <button type="button" class="incident-primary" id="openCreateIncident" @(Model.BookingOptions.Count == 0 ? "disabled" : null)>
+            <i class="fa-solid fa-plus"></i><span>Báo cáo sự cố</span>
+        </button>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    { <div class="incident-alert error"><i class="fa-solid fa-circle-exclamation"></i><span>@Model.ErrorMessage</span></div> }
+
+    <section class="incident-kpis" aria-label="Tổng quan sự cố">
+        <article><span class="kpi-icon all"><i class="fa-solid fa-shield-halved"></i></span><div><small>Tổng sự cố</small><strong>@Model.Data.Kpi.Total</strong><span>Trong phạm vi được giao</span></div></article>
+        <article><span class="kpi-icon pending"><i class="fa-regular fa-clock"></i></span><div><small>Chờ xử lý</small><strong>@Model.Data.Kpi.Pending</strong><span>Cần được tiếp nhận</span></div></article>
+        <article><span class="kpi-icon processing"><i class="fa-solid fa-spinner"></i></span><div><small>Đang xử lý</small><strong>@Model.Data.Kpi.Processing</strong><span>Đang được khắc phục</span></div></article>
+        <article><span class="kpi-icon resolved"><i class="fa-solid fa-circle-check"></i></span><div><small>Đã xử lý</small><strong>@Model.Data.Kpi.Resolved</strong><span>Đã hoàn tất</span></div></article>
+    </section>
+
+    <section class="incident-panel">
+        <header class="incident-panel-head"><div><h2>Danh sách sự cố</h2><p>@Model.Data.TotalItems báo cáo được tìm thấy</p></div></header>
+        <form method="get" class="incident-filters" id="incidentFilters">
+            <label class="incident-search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="search" value="@Model.Search" placeholder="Tìm mã tiệc, sảnh, loại sự cố..." /></label>
+            <label><span>Trạng thái</span><select name="status"><option value="">Tất cả trạng thái</option><option value="PENDING" selected="@(Model.Status == "PENDING")">Chờ xử lý</option><option value="PROCESSING" selected="@(Model.Status == "PROCESSING")">Đang xử lý</option><option value="RESOLVED" selected="@(Model.Status == "RESOLVED")">Đã xử lý</option></select></label>
+            <label><span>Mức độ</span><select name="severity"><option value="">Tất cả mức độ</option><option value="Thấp" selected="@(Model.Severity == "Thấp")">Thấp</option><option value="Bình thường" selected="@(Model.Severity == "Bình thường")">Bình thường</option><option value="Nghiêm trọng" selected="@(Model.Severity == "Nghiêm trọng")">Nghiêm trọng</option></select></label>
+            <button type="submit" class="incident-filter-button"><i class="fa-solid fa-filter"></i>Lọc</button>
+            @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.Status) || !string.IsNullOrWhiteSpace(Model.Severity))
+            { <a asp-action="Index" class="incident-reset" aria-label="Xóa bộ lọc"><i class="fa-solid fa-rotate-left"></i></a> }
+        </form>
+
+        <div class="incident-table-wrap">
+            <table class="incident-table">
+                <thead><tr><th>Mã tiệc</th><th>Sảnh</th><th>Loại sự cố</th><th>Mức độ</th><th>Trạng thái</th><th>Phát sinh</th><th class="actions">Thao tác</th></tr></thead>
+                <tbody>
+                @if (Model.Data.Items.Count == 0)
+                {
+                    <tr><td colspan="7"><div class="incident-empty"><span><i class="fa-solid fa-clipboard-check"></i></span><h3>Chưa có sự cố</h3><p>Không có báo cáo phù hợp với bộ lọc hiện tại.</p></div></td></tr>
+                }
+                else
+                {
+                    foreach (var item in Model.Data.Items)
+                    {
+                        <tr>
+                            <td><button type="button" class="incident-code js-detail" data-id="@item.IncidentId" aria-label="Xem chi tiết sự cố của tiệc @item.BookingCode">@item.BookingCode</button></td>
+                            <td><span class="hall-cell"><i class="fa-regular fa-building"></i>@item.HallName</span></td>
+                            <td><strong class="incident-type">@item.IncidentType</strong></td>
+                            <td><span class="severity-badge @SeverityClass(item.Severity)"><i></i>@item.Severity</span></td>
+                            <td><span class="status-badge @StatusClass(item.StatusCode)">@item.StatusName</span></td>
+                            <td><time datetime="@item.OccurredAt.ToString("O")">@item.OccurredAt.ToString("dd/MM/yyyy")<small>@item.OccurredAt.ToString("HH:mm")</small></time></td>
+                            <td class="actions"><button type="button" class="icon-action js-detail" data-id="@item.IncidentId" title="Xem chi tiết" aria-label="Xem chi tiết sự cố"><i class="fa-regular fa-eye"></i></button>@if(item.CanEdit){<button type="button" class="icon-action edit js-edit" data-id="@item.IncidentId" title="Chỉnh sửa" aria-label="Chỉnh sửa báo cáo sự cố"><i class="fa-regular fa-pen-to-square"></i></button>}</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+        <footer class="incident-footer"><span>Hiển thị @Model.Data.Items.Count / @Model.Data.TotalItems sự cố</span>
+            @if (Model.Data.TotalPages > 1)
+            { <nav class="incident-pagination" aria-label="Phân trang">@if(Model.Data.Page > 1){<a class="pagination-edge" asp-action="Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-severity="@Model.Severity" asp-route-page="@(Model.Data.Page-1)">Trước</a>}else{<span class="pagination-edge disabled" aria-disabled="true">Trước</span>}@for(var p=1;p<=Model.Data.TotalPages;p++){<a asp-action="Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-severity="@Model.Severity" asp-route-page="@p" class="@(p == Model.Data.Page ? "active" : null)" aria-current="@(p == Model.Data.Page ? "page" : null)">@p</a>}@if(Model.Data.Page < Model.Data.TotalPages){<a class="pagination-edge" asp-action="Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-severity="@Model.Severity" asp-route-page="@(Model.Data.Page+1)">Sau</a>}else{<span class="pagination-edge disabled" aria-disabled="true">Sau</span>}</nav> }
+        </footer>
+    </section>
+</main>
+
+<div class="incident-modal" id="incidentFormModal" hidden>
+    <button type="button" class="modal-backdrop" data-close-modal aria-label="Đóng"></button>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="incidentFormTitle">
+        <header><div><span class="modal-icon"><i class="fa-solid fa-triangle-exclamation"></i></span><div><h2 id="incidentFormTitle">Báo cáo sự cố</h2><p>Cung cấp thông tin chính xác để bộ phận quản lý xử lý kịp thời.</p></div></div><button type="button" class="modal-close" data-close-modal aria-label="Đóng biểu mẫu báo cáo sự cố"><i class="fa-solid fa-xmark"></i></button></header>
+        <form id="incidentForm" method="post" novalidate>
+            @Html.AntiForgeryToken()<input type="hidden" id="incidentId" value="" />
+            <div class="form-alert" id="incidentFormError" hidden></div>
+            <div class="form-grid">
+                <label class="wide"><span>Tiệc được phân công <b>*</b></span><select name="BookingId" id="incidentBooking" required><option value="">Chọn tiệc</option>@foreach(var booking in Model.BookingOptions){<option value="@booking.BookingId">@booking.BookingCode · @booking.HallName · @booking.EventDate.ToString("dd/MM/yyyy") (@booking.Shift)</option>}</select></label>
+                <label><span>Loại sự cố <b>*</b></span><input name="IncidentType" id="incidentType" maxlength="100" placeholder="VD: Âm thanh, thiết bị, phục vụ..." required /></label>
+                <label><span>Mức độ nghiêm trọng <b>*</b></span><select name="Severity" id="incidentSeverity" required><option value="Bình thường">Bình thường</option><option value="Thấp">Thấp</option><option value="Nghiêm trọng">Nghiêm trọng</option></select></label>
+                <label class="wide"><span>Thời gian phát sinh <b>*</b></span><input type="datetime-local" name="OccurredAt" id="incidentOccurredAt" required /></label>
+                <label class="wide"><span>Mô tả chi tiết <b>*</b></span><textarea name="Description" id="incidentDescription" rows="5" maxlength="4000" placeholder="Mô tả diễn biến, vị trí và ảnh hưởng của sự cố..." required></textarea><small>Tối thiểu 10 ký tự</small></label>
+            </div>
+            <footer><button type="button" class="modal-secondary" data-close-modal>Hủy</button><button type="submit" class="incident-primary" id="saveIncident"><i class="fa-solid fa-paper-plane"></i><span>Gửi báo cáo</span></button></footer>
+        </form>
+    </section>
+</div>
+<div class="incident-modal" id="incidentDetailModal" hidden><button type="button" class="modal-backdrop" data-close-detail aria-label="Đóng"></button><section class="modal-card detail" role="dialog" aria-modal="true" aria-label="Chi tiết sự cố"><div id="incidentDetailBody" class="detail-loading"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải chi tiết...</div></section></div>
+
+@section Scripts { <script src="~/js/coordinator-incidents.js" asp-append-version="true"></script> }

@@ -1,0 +1,13 @@
+@using HeThongDatTiecCuoi_WEB.Constants
+@{ Layout = "_AdminLayout"; ViewData["Title"] = "Theo dõi điều phối"; }
+@section Styles { <link rel="stylesheet" href="~/css/party-checklist.css" asp-append-version="true" /> }
+<div id="checklistApp" data-url="@Url.Action("Data", "Checklist")" data-command-url="@Url.Action("Index", "Checklist")">
+<form id="checklistToken" hidden>@Html.AntiForgeryToken()</form><div class="page"><header class="heading"><div><div class="eyebrow">CHUẨN BỊ CHU ĐÁO · BÀN GIAO RÕ RÀNG</div><h1>Theo dõi điều phối</h1><p>Theo dõi tiến độ công việc và bàn giao của từng tiệc.</p></div><button id="refresh" class="btn">↻ Làm mới</button></header>
+<div id="loadError" class="callout gold" role="alert" hidden></div>
+<div class="stats" id="stats"></div>
+<div class="workspace"><section class="panel party-panel"><div class="panel-title"><h2 id="listTitle">Tiệc của tôi</h2><span class="count" id="partyCount"></span></div><label class="search"><span>⌕</span><input id="search" placeholder="Tìm mã tiệc, khách hàng..." aria-label="Tìm tiệc"></label><div id="partyList"></div><div class="list-tip" id="roleTip"></div></section>
+<section class="panel detail-panel"><div id="detail"></div></section></div>
+</div>
+<dialog id="modal"><form id="dialogForm"><header class="modal-head"><div><span class="eyebrow">CHECKLIST THEO TIỆC</span><h2 id="dialogTitle"></h2></div><button type="button" class="icon-btn" id="close" aria-label="Đóng">×</button></header><div id="dialogBody"></div><footer class="modal-foot"><button type="button" id="back" class="btn">Quay lại</button><button type="submit" class="btn primary" id="dialogSubmit">Xác nhận</button></footer></form></dialog>
+</div>
+@section Scripts { <script src="~/js/party-checklist.js" asp-append-version="true"></script> }

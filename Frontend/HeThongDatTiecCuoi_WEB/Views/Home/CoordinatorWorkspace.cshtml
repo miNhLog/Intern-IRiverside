@@ -1,0 +1,14 @@
+@model HeThongDatTiecCuoi_WEB.Models.Home.CoordinatorWorkspaceViewModel
+@using System.Text.Json
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = Model.Page == "schedule" ? "Lịch làm việc" : "Theo dõi tiến độ";
+}
+@section Styles { <link rel="stylesheet" href="~/css/coordinator-workspace.css" asp-append-version="true" /> }
+<section class="cw-page">
+    <partial name="_CoordinatorWorkspace" />
+</section>
+@section Scripts {
+    <script id="coordinatorWorkspaceData" type="application/json">@Html.Raw(JsonSerializer.Serialize(new { page = Model.Page, today = Model.Today.ToString("yyyy-MM-dd"), parties = Model.Parties, error = Model.ErrorMessage }, new JsonSerializerOptions(JsonSerializerDefaults.Web)))</script>
+    <script src="~/js/coordinator-workspace.js" asp-append-version="true"></script>
+}

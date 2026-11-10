@@ -1,0 +1,67 @@
+@model HeThongDatTiecCuoi_WEB.Models.Incident.HallManagerIncidentPageViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Điều hành sự cố sảnh";
+    string SeverityClass(string value) => value == "Nghiêm trọng" ? "critical" : value == "Thấp" ? "low" : "normal";
+    string StatusClass(string value) => value == "RESOLVED" ? "resolved" : value == "PROCESSING" ? "processing" : "pending";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/coordinator-incidents.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/hall-manager-incidents.css" asp-append-version="true" />
+}
+
+<main class="incident-page hall-incident-page" data-open-incident="@Context.Request.Query["incidentId"]">
+    <header class="incident-header">
+        <div><span class="incident-eyebrow">ĐIỀU HÀNH SẢNH</span><h1>Tiếp nhận &amp; xử lý sự cố</h1><p>Theo dõi và xử lý sự cố tại các sảnh thuộc phạm vi bạn đang phụ trách.</p></div>
+        <button type="button" class="incident-primary" id="hmOpenCreate" @(Model.BookingOptions.Count == 0 ? "disabled" : null)><i class="fa-solid fa-plus"></i><span>Ghi nhận sự cố</span></button>
+    </header>
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage)) { <div class="incident-alert error"><i class="fa-solid fa-circle-exclamation"></i><span>@Model.ErrorMessage</span></div> }
+
+    <section class="incident-kpis hall-kpis" aria-label="Tổng quan sự cố">
+        <article><span class="kpi-icon all"><i class="fa-solid fa-shield-halved"></i></span><div><small>Tổng sự cố</small><strong>@Model.Data.Kpi.Total</strong><span>Trong phạm vi sảnh</span></div></article>
+        <article><span class="kpi-icon pending"><i class="fa-regular fa-clock"></i></span><div><small>Chờ xử lý</small><strong>@Model.Data.Kpi.Pending</strong><span>Cần tiếp nhận</span></div></article>
+        <article><span class="kpi-icon processing"><i class="fa-solid fa-screwdriver-wrench"></i></span><div><small>Đang xử lý</small><strong>@Model.Data.Kpi.Processing</strong><span>Đang khắc phục</span></div></article>
+        <article><span class="kpi-icon resolved"><i class="fa-solid fa-circle-check"></i></span><div><small>Đã xử lý</small><strong>@Model.Data.Kpi.Resolved</strong><span>Đã hoàn tất</span></div></article>
+        <article class="critical-kpi"><span class="kpi-icon critical"><i class="fa-solid fa-triangle-exclamation"></i></span><div><small>Nghiêm trọng</small><strong>@Model.Data.Kpi.Critical</strong><span>Chưa hoàn tất</span></div></article>
+    </section>
+
+    <section class="incident-panel">
+        <header class="incident-panel-head"><div><h2>Danh sách sự cố thuộc sảnh phụ trách</h2><p>@Model.Data.TotalItems sự cố phù hợp</p></div><span class="scope-pill"><i class="fa-solid fa-lock"></i> Theo phân công sảnh</span></header>
+        <form method="get" class="incident-filters hall-filters">
+            <label class="incident-search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="search" value="@Model.Search" placeholder="Mã tiệc hoặc loại sự cố..." /></label>
+            <label><span>Sảnh</span><select name="hallId"><option value="">Tất cả sảnh phụ trách</option>@foreach(var hall in Model.Data.Halls){<option value="@hall.HallId" selected="@(Model.HallId == hall.HallId)">@hall.HallName</option>}</select></label>
+            <label><span>Trạng thái</span><select name="status"><option value="">Tất cả</option><option value="PENDING" selected="@(Model.Status == "PENDING")">Chờ xử lý</option><option value="PROCESSING" selected="@(Model.Status == "PROCESSING")">Đang xử lý</option><option value="RESOLVED" selected="@(Model.Status == "RESOLVED")">Đã xử lý</option></select></label>
+            <label><span>Mức độ</span><select name="severity"><option value="">Tất cả</option><option value="Thấp" selected="@(Model.Severity == "Thấp")">Thấp</option><option value="Bình thường" selected="@(Model.Severity == "Bình thường")">Bình thường</option><option value="Nghiêm trọng" selected="@(Model.Severity == "Nghiêm trọng")">Nghiêm trọng</option></select></label>
+            <label><span>Từ ngày</span><input type="date" name="fromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" /></label>
+            <label><span>Đến ngày</span><input type="date" name="toDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" /></label>
+            <button type="submit" class="incident-filter-button"><i class="fa-solid fa-filter"></i>Lọc</button>
+            <a asp-action="Index" class="incident-reset" title="Xóa bộ lọc"><i class="fa-solid fa-rotate-left"></i></a>
+        </form>
+        <div class="incident-table-wrap"><table class="incident-table hall-incident-table">
+            <thead><tr><th>Mã sự cố</th><th>Mã tiệc</th><th>Sảnh</th><th>Loại sự cố</th><th>Người báo cáo</th><th>Mức độ</th><th>Trạng thái</th><th>Phát sinh</th><th class="actions">Thao tác</th></tr></thead>
+            <tbody>
+            @if(Model.Data.Items.Count == 0){<tr><td colspan="9"><div class="incident-empty"><span><i class="fa-solid fa-clipboard-check"></i></span><h3>Không có sự cố phù hợp</h3><p>Hãy thay đổi bộ lọc hoặc ghi nhận sự cố mới.</p></div></td></tr>}
+            else { foreach(var item in Model.Data.Items){<tr class="@(item.Severity == "Nghiêm trọng" && item.StatusCode != "RESOLVED" ? "critical-row" : null)">
+                <td><button type="button" class="incident-code js-hm-detail" data-id="@item.IncidentId">#SC-@item.IncidentId.ToString("D4")</button></td>
+                <td><strong>@item.BookingCode</strong></td><td><span class="hall-cell"><i class="fa-regular fa-building"></i>@item.HallName</span></td>
+                <td><strong class="incident-type">@item.IncidentType</strong></td><td><span class="reporter-cell"><i class="fa-regular fa-user"></i>@item.ReporterName</span></td>
+                <td><span class="severity-badge @SeverityClass(item.Severity)"><i></i>@item.Severity</span></td><td><span class="status-badge @StatusClass(item.StatusCode)">@item.StatusName</span></td>
+                <td><time>@item.OccurredAt.ToString("dd/MM/yyyy")<small>@item.OccurredAt.ToString("HH:mm")</small></time></td>
+                <td class="actions"><button type="button" class="icon-action js-hm-detail" data-id="@item.IncidentId" title="Xem và xử lý"><i class="fa-regular fa-eye"></i></button>@if(item.CanEdit){<button type="button" class="icon-action edit js-hm-edit" data-id="@item.IncidentId" title="Sửa báo cáo"><i class="fa-regular fa-pen-to-square"></i></button>}</td>
+            </tr>}}
+            </tbody>
+        </table></div>
+        <footer class="incident-footer"><span>Hiển thị @Model.Data.Items.Count / @Model.Data.TotalItems sự cố</span>@if(Model.Data.TotalPages > 1){<nav class="incident-pagination" aria-label="Phân trang sự cố">@if(Model.Data.Page<=1){<span class="pagination-edge disabled" aria-disabled="true">Trước</span>}else{<a class="pagination-edge" asp-action="Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-severity="@Model.Severity" asp-route-hallId="@Model.HallId" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-page="@(Model.Data.Page-1)">Trước</a>}@for(var p=1;p<=Model.Data.TotalPages;p++){<a asp-action="Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-severity="@Model.Severity" asp-route-hallId="@Model.HallId" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-page="@p" class="@(p==Model.Data.Page?"active":null)" aria-current="@(p==Model.Data.Page?"page":null)">@p</a>}@if(Model.Data.Page>=Model.Data.TotalPages){<span class="pagination-edge disabled" aria-disabled="true">Sau</span>}else{<a class="pagination-edge" asp-action="Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-severity="@Model.Severity" asp-route-hallId="@Model.HallId" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-page="@(Model.Data.Page+1)">Sau</a>}</nav>}</footer>
+    </section>
+</main>
+
+<div class="incident-modal" id="hmIncidentFormModal" hidden><button type="button" class="modal-backdrop" data-hm-close-form></button><section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="hmFormTitle">
+    <header><div><span class="modal-icon"><i class="fa-solid fa-triangle-exclamation"></i></span><div><h2 id="hmFormTitle">Ghi nhận sự cố</h2><p>Báo cáo sự cố tại tiệc thuộc sảnh bạn phụ trách.</p></div></div><button type="button" class="modal-close" data-hm-close-form><i class="fa-solid fa-xmark"></i></button></header>
+    <form id="hmIncidentForm" novalidate>@Html.AntiForgeryToken()<input type="hidden" id="hmIncidentId"/><div class="form-alert" id="hmFormError" hidden></div><div class="form-grid">
+        <label class="wide"><span>Tiệc thuộc sảnh phụ trách <b>*</b></span><select name="BookingId" id="hmBooking" required><option value="">Chọn tiệc</option>@foreach(var b in Model.BookingOptions){<option value="@b.BookingId">@b.BookingCode · @b.HallName · @b.EventDate.ToString("dd/MM/yyyy") (@b.Shift)</option>}</select></label>
+        <label><span>Loại sự cố <b>*</b></span><input name="IncidentType" id="hmType" maxlength="100" placeholder="VD: Âm thanh, phục vụ..." required/></label><label><span>Mức độ <b>*</b></span><select name="Severity" id="hmSeverity"><option>Bình thường</option><option>Thấp</option><option>Nghiêm trọng</option></select></label>
+        <label class="wide"><span>Thời gian phát sinh <b>*</b></span><input type="datetime-local" name="OccurredAt" id="hmOccurred" required/></label><label class="wide"><span>Mô tả chi tiết <b>*</b></span><textarea name="Description" id="hmDescription" rows="5" minlength="10" maxlength="4000" required></textarea><small>Mô tả tối thiểu 10 ký tự</small></label>
+    </div><footer><button type="button" class="modal-secondary" data-hm-close-form>Hủy</button><button type="submit" class="incident-primary" id="hmSaveIncident"><i class="fa-solid fa-floppy-disk"></i><span>Lưu báo cáo</span></button></footer></form>
+</section></div>
+<div class="incident-modal" id="hmDetailModal" hidden><button type="button" class="modal-backdrop" data-hm-close-detail aria-label="Đóng chi tiết sự cố"></button><section class="modal-card detail hall-detail-card" role="dialog" aria-modal="true" aria-labelledby="hmDetailTitle" tabindex="-1"><div id="hmDetailBody" class="detail-loading"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</div></section></div>
+@section Scripts { <script src="~/js/hall-manager-incidents.js" asp-append-version="true"></script> }

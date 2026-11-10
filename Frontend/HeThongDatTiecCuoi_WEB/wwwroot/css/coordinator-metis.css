@@ -1,0 +1,811 @@
+/* Coordinator role: final Metis bridge loaded only for Coordinator accounts. */
+html body.manager-metis-app #adminMainContent :is(
+    .coordinator-dashboard, .cw-page, #checklistApp, .incident-page
+) {
+    color: var(--rp-text) !important;
+    background: var(--rp-bg) !important;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+html body.manager-metis-app #adminMainContent :is(
+    .coordinator-dashboard, .cw-page, #checklistApp, .incident-page
+) :is(h1, h2, h3, h4, strong) {
+    color: var(--rp-text) !important;
+    font-family: inherit !important;
+}
+
+html body.manager-metis-app #adminMainContent :is(
+    .coordinator-dashboard, .cw-page, #checklistApp, .incident-page
+) :is(input, select, textarea) {
+    border-color: var(--rp-border-strong) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface-muted) !important;
+    box-shadow: none !important;
+}
+
+html body.manager-metis-app #adminMainContent :is(
+    .coordinator-dashboard, .cw-page, #checklistApp, .incident-page
+) :is(input, textarea)::placeholder {
+    color: var(--rp-text-muted) !important;
+    opacity: 1;
+}
+
+html body.manager-metis-app #adminMainContent :is(
+    .coordinator-dashboard, .cw-page, #checklistApp, .incident-page
+) :is(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid var(--rp-gold-500) !important;
+    outline-offset: 2px !important;
+}
+
+/* Dashboard. */
+html body.manager-metis-app #adminMainContent .coordinator-page-header {
+    color: var(--rp-text) !important;
+}
+
+html body.manager-metis-app #adminMainContent > .coordinator-page-header {
+    margin: 28px 32px 22px !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-page-header__actions small {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface) !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .cd-alert {
+    border: 1px solid color-mix(in srgb, var(--metis-badge-warning) 38%, var(--rp-border)) !important;
+    border-radius: var(--metis-radius) !important;
+    color: var(--metis-badge-warning) !important;
+    background: color-mix(in srgb, var(--metis-badge-warning) 10%, var(--rp-surface)) !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .cd-alert :is(p, a) {
+    color: inherit !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .manager-kpi-card {
+    border-color: var(--rp-border) !important;
+    border-radius: var(--metis-radius-lg) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface) !important;
+    box-shadow: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .manager-kpi-card:hover {
+    border-color: var(--rp-border-strong) !important;
+    background: var(--rp-surface-hover) !important;
+    transform: translateY(-1px);
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .manager-kpi-card :is(small, em) {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .manager-kpi-icon {
+    color: #fff !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .manager-kpi-card:nth-child(1) .manager-kpi-icon { background: var(--metis-badge-primary) !important; }
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .manager-kpi-card:nth-child(2) .manager-kpi-icon { background: var(--metis-badge-purple) !important; }
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .manager-kpi-card:nth-child(3) .manager-kpi-icon { background: var(--metis-badge-warning) !important; }
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .manager-kpi-card:nth-child(4) .manager-kpi-icon { background: var(--metis-badge-danger) !important; }
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard :is(.cd-button, .cd-detail) {
+    border: 1px solid var(--rp-border-strong) !important;
+    border-radius: var(--metis-radius) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface) !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard :is(.cd-button, .cd-detail):hover {
+    border-color: var(--rp-gold-500) !important;
+    color: var(--rp-gold-700) !important;
+    background: var(--rp-gold-100) !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-page-header .manager-primary-action {
+    border-color: var(--rp-gold-500) !important;
+    color: #18181b !important;
+    background: var(--rp-gold-500) !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .hall-schedule-table-wrap {
+    border: 1px solid var(--rp-border) !important;
+    border-radius: var(--metis-radius-lg) !important;
+    background: var(--rp-surface) !important;
+    box-shadow: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .coordinator-work-table th {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .coordinator-work-table td {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface) !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard .coordinator-work-table tbody tr:hover td {
+    background: var(--rp-surface-hover) !important;
+}
+
+html body.manager-metis-app #adminMainContent .coordinator-dashboard :is(.cd-customer, .table-empty-state, .cd-empty span) {
+    color: var(--rp-text-secondary) !important;
+}
+
+/* Booking statuses used by dashboard and work-schedule list. */
+html body.manager-metis-app #adminMainContent :is(.cd-status, .cw-status) {
+    border: 0 !important;
+    border-radius: var(--metis-radius-sm) !important;
+    color: #fff !important;
+    background: var(--metis-badge-secondary) !important;
+    font-size: 10px !important;
+    font-weight: 650 !important;
+}
+
+html body.manager-metis-app #adminMainContent :is(
+    .cd-status.confirmed, .cd-status.completed, .cd-status.paid,
+    .cw-status.confirmed, .cw-status.completed, .cw-status.paid
+) { background: var(--metis-badge-success) !important; }
+
+html body.manager-metis-app #adminMainContent :is(
+    .cd-status.pending, .cd-status.deposit-pending, .cd-status.awaiting-confirmation,
+    .cw-status.pending, .cw-status.deposit-pending, .cw-status.awaiting-confirmation
+) { background: var(--metis-badge-warning) !important; }
+
+html body.manager-metis-app #adminMainContent :is(
+    .cd-status.preparing, .cd-status.processing, .cd-status.in-progress,
+    .cw-status.preparing, .cw-status.processing, .cw-status.in-progress
+) { background: var(--metis-badge-primary) !important; }
+
+html body.manager-metis-app #adminMainContent :is(
+    .cd-status.cancelled, .cd-status.rejected,
+    .cw-status.cancelled, .cw-status.rejected
+) { background: var(--metis-badge-danger) !important; }
+
+/* Work schedule. */
+html body.manager-metis-app #adminMainContent .cw-page {
+    --cw-accent: var(--rp-gold-500);
+    width: 100%;
+    max-width: none;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page :is(.cw-timezone, .cw-result, .cw-panel-footer) {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page :is(.cw-notice, .cw-progress-info, .cw-error) {
+    border-radius: var(--metis-radius) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-notice {
+    border-color: color-mix(in srgb, var(--metis-badge-warning) 40%, var(--rp-border)) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-progress-info {
+    border-color: color-mix(in srgb, var(--metis-badge-primary) 38%, var(--rp-border)) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-error {
+    border-color: color-mix(in srgb, var(--metis-badge-danger) 38%, var(--rp-border)) !important;
+    color: var(--metis-badge-danger) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page :is(.cw-scope-tabs, .cw-panel, .cw-stat, .cw-dialog) {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface) !important;
+    box-shadow: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-scope-tabs button {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-scope-tabs button.active {
+    color: #18181b !important;
+    background: var(--rp-gold-500) !important;
+    box-shadow: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-stat :is(small, em) {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page :is(.cw-toolbar, .cw-filters, .cw-panel-footer) {
+    border-color: var(--rp-border) !important;
+    background: var(--rp-surface) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-filters {
+    display: grid !important;
+    grid-template-columns: minmax(260px, 1.7fr) minmax(140px, .7fr) minmax(130px, .65fr) 170px auto minmax(80px, auto);
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-filters > * {
+    min-width: 0;
+    max-width: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page :is(.cw-search, .cw-date-filter, .cw-filters select, .cw-button, .cw-icon-button) {
+    min-height: 40px;
+    border-color: var(--rp-border-strong) !important;
+    border-radius: var(--metis-radius) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-search input {
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-date-filter {
+    box-sizing: border-box;
+    display: block;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 40px !important;
+    height: 40px;
+    padding: 0 10px !important;
+    border: 1px solid var(--rp-border-strong) !important;
+    border-radius: var(--metis-radius) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+    box-shadow: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-result {
+    margin-left: 0 !important;
+    text-align: right;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-segment {
+    background: var(--rp-surface-muted) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-segment button {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-segment button.active {
+    color: var(--rp-text) !important;
+    background: var(--rp-surface-hover) !important;
+    box-shadow: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page :is(.cw-day-heading, .cw-shift-label, .cw-table th) {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page :is(.cw-slot, .cw-slot.today, .cw-table td) {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-event {
+    border-color: color-mix(in srgb, var(--rp-gold-500) 42%, var(--rp-border)) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-gold-100) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-event small {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page :is(.cw-bottom-grid p, .cw-empty, .cw-party p, .cw-party small, .cw-task small) {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page :is(.cw-party, .cw-task, .cw-checklist-head, .cw-checklist-footer) {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-party.selected {
+    border-left-color: var(--rp-gold-500) !important;
+    background: var(--rp-gold-100) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page :is(.cw-bar, .cw-pill) {
+    background: var(--rp-surface-hover) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-bar > span {
+    background: var(--rp-gold-500) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-pill.done {
+    color: #fff !important;
+    background: var(--metis-badge-success) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-pill.pending {
+    color: #fff !important;
+    background: var(--metis-badge-warning) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-dialog :is(p, dt) {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-dialog-actions {
+    border-color: var(--rp-border) !important;
+}
+
+html body.manager-metis-app #adminMainContent .cw-page .cw-primary {
+    border-color: var(--rp-gold-500) !important;
+    color: #18181b !important;
+    background: var(--rp-gold-500) !important;
+}
+
+/* Checklist / progress. */
+html body.manager-metis-app #adminMainContent #checklistApp {
+    --navy: var(--rp-text);
+    --gold: var(--rp-gold-500);
+    --muted: var(--rp-text-secondary);
+    --border: var(--rp-border);
+    --bg: var(--rp-bg);
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp .page {
+    width: 100%;
+    max-width: none;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp :is(.panel, .stat, .flow, .party, dialog) {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface) !important;
+    box-shadow: none !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp :is(
+    .heading p, .stat small, .stat em, .party p, .party small, .party-bottom > span:last-child,
+    .list-tip, .detail-meta, .task-meta, .footnote, .timeline-item p, .timeline-item small,
+    .issue-card p, #dialogBody p, #dialogBody label
+) {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp :is(
+    .panel-title, .detail-head, .tabs, .task, .handover, .modal-head, .modal-foot,
+    .list-tip, .timeline-item
+) {
+    border-color: var(--rp-border) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp .search {
+    border-color: var(--rp-border-strong) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp .search input {
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    color: var(--rp-text) !important;
+    background: transparent !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp .party:hover {
+    background: var(--rp-surface-hover) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp .party.selected {
+    border-left-color: var(--rp-gold-500) !important;
+    background: var(--rp-gold-100) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp :is(.list-tip, .handover, .modal-foot, .task-note) {
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp :is(.btn, .icon-btn, .tab, .task select) {
+    border-color: var(--rp-border-strong) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp :is(.btn.primary, #refresh) {
+    border-color: var(--rp-gold-500) !important;
+    color: #18181b !important;
+    background: var(--rp-gold-500) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp .tab.active {
+    border-bottom-color: var(--rp-gold-500) !important;
+    color: var(--rp-gold-700) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp .bar {
+    background: var(--rp-surface-hover) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp .bar span {
+    background: var(--rp-gold-500) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp .pill {
+    border: 0 !important;
+    border-radius: var(--metis-radius-sm) !important;
+    color: #fff !important;
+    background: var(--metis-badge-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp .pill.active { background: var(--metis-badge-primary) !important; }
+html body.manager-metis-app #adminMainContent #checklistApp .pill.review { background: var(--metis-badge-warning) !important; }
+html body.manager-metis-app #adminMainContent #checklistApp .pill.approved { background: var(--metis-badge-success) !important; }
+html body.manager-metis-app #adminMainContent #checklistApp .pill.cancelled { background: var(--metis-badge-danger) !important; }
+
+html body.manager-metis-app #adminMainContent #checklistApp :is(.callout, .issue-card) {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp .callout.gold {
+    border-color: color-mix(in srgb, var(--metis-badge-warning) 36%, var(--rp-border)) !important;
+    color: var(--metis-badge-warning) !important;
+    background: color-mix(in srgb, var(--metis-badge-warning) 10%, var(--rp-surface)) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp dialog {
+    color: var(--rp-text) !important;
+    background: var(--rp-surface) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp .modal-head {
+    background: var(--rp-surface-muted) !important;
+}
+
+html body.manager-metis-app #adminMainContent #checklistApp #dialogBody :is(input:not([type="checkbox"]), select, textarea) {
+    border-color: var(--rp-border-strong) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface-muted) !important;
+}
+
+/* Coordinator incidents: list, form and detail modal. */
+html body.manager-metis-app #adminMainContent .incident-page {
+    width: 100%;
+    max-width: none;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-header p,
+html body.manager-metis-app #adminMainContent .incident-page .incident-panel-head p {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-primary {
+    border: 1px solid var(--rp-gold-500) !important;
+    border-radius: var(--metis-radius) !important;
+    color: #18181b !important;
+    background: var(--rp-gold-500) !important;
+    box-shadow: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-alert {
+    border-color: color-mix(in srgb, var(--metis-badge-danger) 38%, var(--rp-border)) !important;
+    color: var(--metis-badge-danger) !important;
+    background: color-mix(in srgb, var(--metis-badge-danger) 10%, var(--rp-surface)) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page :is(.incident-kpis article, .incident-panel) {
+    border-color: var(--rp-border) !important;
+    border-radius: var(--metis-radius-lg) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface) !important;
+    box-shadow: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-kpis article:hover {
+    border-color: var(--rp-border-strong) !important;
+    background: var(--rp-surface-hover) !important;
+    transform: translateY(-1px);
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-kpis :is(small, div span) {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-kpis .kpi-icon.all { color: #fff !important; background: var(--metis-badge-purple) !important; }
+html body.manager-metis-app #adminMainContent .incident-page .incident-kpis .kpi-icon.pending { color: #fff !important; background: var(--metis-badge-warning) !important; }
+html body.manager-metis-app #adminMainContent .incident-page .incident-kpis .kpi-icon.processing { color: #fff !important; background: var(--metis-badge-primary) !important; }
+html body.manager-metis-app #adminMainContent .incident-page .incident-kpis .kpi-icon.resolved { color: #fff !important; background: var(--metis-badge-success) !important; }
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-filters {
+    grid-template-columns: minmax(280px, 1.7fr) minmax(150px, .7fr) minmax(150px, .7fr) auto auto !important;
+    align-items: end !important;
+    border-color: var(--rp-border) !important;
+    background: var(--rp-surface) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-filters label > span {
+    color: var(--rp-text-secondary) !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page :is(
+    .incident-search, .incident-filters select, .incident-filter-button, .incident-reset
+) {
+    height: 40px !important;
+    min-height: 40px !important;
+    border-color: var(--rp-border-strong) !important;
+    border-radius: var(--metis-radius) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-search input {
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-filter-button {
+    border-color: var(--rp-gold-500) !important;
+    color: #18181b !important;
+    background: var(--rp-gold-500) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-table th {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-table td {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-table tbody tr:hover td {
+    background: var(--rp-surface-hover) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page :is(.incident-code, .incident-type, .incident-table time) {
+    color: var(--rp-text) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page :is(.hall-cell, .incident-table time small, .incident-footer) {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page :is(.severity-badge, .status-badge) {
+    border: 0 !important;
+    border-radius: var(--metis-radius-sm) !important;
+    color: #fff !important;
+    background: var(--metis-badge-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .severity-badge > i {
+    display: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page :is(.severity-badge.normal, .status-badge.pending) { background: var(--metis-badge-warning) !important; }
+html body.manager-metis-app #adminMainContent .incident-page :is(.severity-badge.low, .status-badge.resolved) { background: var(--metis-badge-success) !important; }
+html body.manager-metis-app #adminMainContent .incident-page .severity-badge.critical { background: var(--metis-badge-danger) !important; }
+html body.manager-metis-app #adminMainContent .incident-page .status-badge.processing { background: var(--metis-badge-primary) !important; }
+
+html body.manager-metis-app #adminMainContent .incident-page .icon-action {
+    border-color: var(--rp-border-strong) !important;
+    border-radius: var(--metis-radius-sm) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-empty :is(p) {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-empty > span {
+    color: var(--rp-gold-700) !important;
+    background: var(--rp-gold-100) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-footer {
+    border-color: var(--rp-border) !important;
+    background: var(--rp-surface-muted) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-pagination :is(a, span) {
+    width: auto;
+    min-width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    padding: 0 9px;
+    border: 1px solid var(--rp-border-strong) !important;
+    border-radius: var(--metis-radius-sm) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface) !important;
+    text-decoration: none;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-pagination a.active {
+    border-color: var(--rp-gold-500) !important;
+    color: #18181b !important;
+    background: var(--rp-gold-500) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-page .incident-pagination .disabled {
+    opacity: .45;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal .modal-card {
+    border-color: var(--rp-border) !important;
+    border-radius: var(--metis-radius-lg) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface) !important;
+    box-shadow: var(--metis-shadow-float) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal .incident-primary {
+    border: 1px solid var(--rp-gold-500) !important;
+    border-radius: var(--metis-radius) !important;
+    color: #18181b !important;
+    background: var(--rp-gold-500) !important;
+    box-shadow: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal :is(.modal-card > header, .incident-detail > header, .modal-card form > footer, .incident-detail > footer, .detail-section) {
+    border-color: var(--rp-border) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal :is(.modal-card h2, .incident-detail h2, .detail-summary strong, .detail-section h3, .reporter strong) {
+    color: var(--rp-text) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal :is(.modal-card header p, .detail-summary small, .detail-section > p, .reporter small, .reporter em, .resolution-empty, .detail-loading) {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal :is(.modal-close, .modal-secondary) {
+    border-color: var(--rp-border-strong) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal .modal-icon {
+    color: var(--rp-gold-700) !important;
+    background: var(--rp-gold-100) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal .form-grid label > span {
+    color: var(--rp-text) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal .form-grid label > small {
+    color: var(--rp-text-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal .form-grid :is(input, select, textarea) {
+    border-color: var(--rp-border-strong) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface-muted) !important;
+    box-shadow: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal .form-grid textarea::placeholder {
+    color: var(--rp-text-muted) !important;
+    opacity: 1;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal :is(.severity-badge, .status-badge) {
+    border: 0 !important;
+    border-radius: var(--metis-radius-sm) !important;
+    color: #fff !important;
+    background: var(--metis-badge-secondary) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal .severity-badge > i {
+    display: none !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal :is(.severity-badge.normal, .status-badge.pending) { background: var(--metis-badge-warning) !important; }
+html body.manager-metis-app #adminMainContent .incident-modal :is(.severity-badge.low, .status-badge.resolved) { background: var(--metis-badge-success) !important; }
+html body.manager-metis-app #adminMainContent .incident-modal .severity-badge.critical { background: var(--metis-badge-danger) !important; }
+html body.manager-metis-app #adminMainContent .incident-modal .status-badge.processing { background: var(--metis-badge-primary) !important; }
+
+html body.manager-metis-app #adminMainContent .incident-modal .detail-summary,
+html body.manager-metis-app #adminMainContent .incident-modal .resolution-empty {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal .reporter > span {
+    color: var(--metis-badge-primary) !important;
+    background: color-mix(in srgb, var(--metis-badge-primary) 12%, var(--rp-surface)) !important;
+}
+
+html body.manager-metis-app #adminMainContent .incident-modal .form-alert {
+    border-color: color-mix(in srgb, var(--metis-badge-danger) 38%, var(--rp-border)) !important;
+    color: var(--metis-badge-danger) !important;
+    background: color-mix(in srgb, var(--metis-badge-danger) 10%, var(--rp-surface)) !important;
+}
+
+html[data-admin-theme="dark"] body.manager-metis-app #adminMainContent :is(
+    .cw-page, #checklistApp, .incident-page
+) :is(input, select, textarea) {
+    color-scheme: dark;
+}
+
+@media (max-width: 1199.98px) {
+    html body.manager-metis-app #adminMainContent .cw-page .cw-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    html body.manager-metis-app #adminMainContent .cw-page .cw-search {
+        grid-column: 1 / -1;
+    }
+
+    html body.manager-metis-app #adminMainContent .incident-page .incident-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    html body.manager-metis-app #adminMainContent .incident-page .incident-search {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 767.98px) {
+    html body.manager-metis-app #adminMainContent > .coordinator-page-header {
+        margin: 20px 16px 18px !important;
+    }
+
+    html body.manager-metis-app #adminMainContent .coordinator-page-header,
+    html body.manager-metis-app #adminMainContent .incident-page .incident-header {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    html body.manager-metis-app #adminMainContent .cw-page .cw-filters,
+    html body.manager-metis-app #adminMainContent .incident-page .incident-filters {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    html body.manager-metis-app #adminMainContent .cw-page .cw-search,
+    html body.manager-metis-app #adminMainContent .incident-page .incident-search {
+        grid-column: auto;
+    }
+
+    html body.manager-metis-app #adminMainContent .cw-page .cw-result {
+        text-align: left;
+    }
+
+    html body.manager-metis-app #adminMainContent .incident-page .incident-primary {
+        width: 100%;
+    }
+
+    html body.manager-metis-app #adminMainContent #checklistApp .stats,
+    html body.manager-metis-app #adminMainContent .incident-page .incident-kpis {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+}

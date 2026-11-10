@@ -1,38 +1,115 @@
+@model HeThongDatTiecCuoi_WEB.Models.Coordination.HallManagerCoordinationPageViewModel
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Phân công nhân viên điều phối";
+    string StateLabel(string state) => state switch { "ASSIGNED" => "Đã phân công", "CONFLICT" => "Xung đột lịch", "CANCELLED" => "Đã hủy", "COMPLETED" => "Đã hoàn tất", "INELIGIBLE" => "Chưa đủ điều kiện", _ => "Chưa phân công" };
+    var filterCount = (string.IsNullOrWhiteSpace(Model.Search) ? 0 : 1) + (Model.HallId.HasValue ? 1 : 0) +
+        (Model.EventDate.HasValue ? 1 : 0) + (string.IsNullOrWhiteSpace(Model.CoordinationStatus) ? 0 : 1);
 }
+@section Styles { <link rel="stylesheet" href="~/css/coordination.css" asp-append-version="true" /> }
 
-<header class="top-header">
-    <div>
-        <div class="breadcrumb">Quản trị hệ thống <span>›</span> <strong>Phân công nhân viên điều phối</strong></div>
-        <h2>Phân công nhân viên điều phối</h2>
-    </div>
-</header>
-
-<section class="content coordination-page">
-    <div class="assignment-hero">
-        <div>
-            <span class="eyebrow">ĐIỀU PHỐI SẢNH</span>
-            <h1>Phân công điều phối cho tiệc</h1>
-            <p>Mỗi tiệc có một điều phối viên chính. Việc phân công chỉ áp dụng cho các tiệc thuộc sảnh bạn đang phụ trách.</p>
+<main class="coordination-page" data-coordination-page>
+    <header class="coord-hero">
+        <div class="coord-hero-copy">
+            <span class="coord-eyebrow"><i class="fa-solid fa-shield-halved"></i> PHẠM VI SẢNH ĐANG PHỤ TRÁCH</span>
+            <h1>Phân công nhân viên điều phối</h1>
+            <p>Sắp xếp điều phối viên phù hợp cho từng tiệc, kiểm soát trùng lịch theo ngày và ca tổ chức.</p>
         </div>
-        <button type="button" class="btn-add developing"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Phân công điều phối</button>
-    </div>
+        <button type="button" class="coord-primary" id="quickAssignButton">
+            <i class="fa-solid fa-user-plus" aria-hidden="true"></i><span>Phân công điều phối</span>
+        </button>
+    </header>
 
-    <div class="section-header"><div><h3>Danh sách tiệc cần điều phối</h3><p>Danh sách chỉ hiển thị tiệc thuộc các sảnh được phân công.</p></div></div>
-    <div class="hall-schedule-table-wrap">
-        <table class="hall-schedule-table coordination-table">
-            <thead><tr><th>Mã booking</th><th>Khách hàng</th><th>Sảnh</th><th>Ngày</th><th>Ca</th><th>Số bàn</th><th>Điều phối viên</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-            <tbody><tr><td colspan="9" class="table-empty-state"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Chưa có dữ liệu. Cần API trả về tiệc theo phạm vi sảnh và danh sách Nhân viên điều phối.</td></tr></tbody>
-        </table>
-    </div>
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="coord-alert error" role="alert"><i class="fa-solid fa-circle-exclamation"></i><span>@Model.ErrorMessage</span></div>
+    }
 
-    <div class="section-header"><div><h3>Thông tin phân công</h3><p>Danh sách điều phối viên chỉ bao gồm nhân sự có role Nhân viên điều phối và cần kiểm tra trùng lịch.</p></div></div>
-    <form class="assignment-form" aria-label="Biểu mẫu phân công điều phối">
-        <div class="assignment-field"><label for="coordinationBooking">Tiệc</label><select id="coordinationBooking" disabled><option>Đang chờ dữ liệu tiệc</option></select></div>
-        <div class="assignment-field"><label for="coordinationEmployee">Nhân viên điều phối</label><select id="coordinationEmployee" disabled><option>Đang chờ dữ liệu nhân sự</option></select></div>
-        <div class="assignment-field assignment-note"><label for="coordinationNote">Ghi chú</label><input id="coordinationNote" type="text" placeholder="Ghi chú phân công" disabled /></div>
-        <div class="assignment-actions"><button type="button" class="btn-add developing">Xác nhận phân công</button></div>
-    </form>
-</section>
+    <section class="coord-kpis" aria-label="Tổng quan điều phối">
+        <article><span class="coord-kpi-icon total"><i class="fa-solid fa-champagne-glasses"></i></span><div><small>Tổng tiệc cần điều phối</small><strong>@Model.Data.Kpi.TotalRequired</strong><em>Trong phạm vi quản lý</em></div></article>
+        <article><span class="coord-kpi-icon unassigned"><i class="fa-solid fa-user-clock"></i></span><div><small>Chưa phân công</small><strong>@Model.Data.Kpi.Unassigned</strong><em>Cần sắp xếp nhân sự</em></div></article>
+        <article><span class="coord-kpi-icon assigned"><i class="fa-solid fa-user-check"></i></span><div><small>Đã phân công</small><strong>@Model.Data.Kpi.Assigned</strong><em>Đang có hiệu lực</em></div></article>
+        <article><span class="coord-kpi-icon conflict"><i class="fa-solid fa-triangle-exclamation"></i></span><div><small>Xung đột lịch</small><strong>@Model.Data.Kpi.Conflicts</strong><em>Cần kiểm tra ngay</em></div></article>
+    </section>
+
+    <section class="coord-panel">
+        <header class="coord-panel-header">
+            <div><h2>Danh sách tiệc trong sảnh phụ trách</h2><p>@Model.Data.TotalItems tiệc phù hợp trong các sảnh bạn đang phụ trách. KPI chỉ tính tiệc đủ điều kiện cần điều phối; tiệc đã hủy/hoàn tất được giữ để tra cứu.</p></div>
+        </header>
+
+        <form method="get" class="coord-filters" id="coordinationFilters">
+            <label class="coord-search"><span class="visually-hidden">Tìm kiếm</span><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="search" value="@Model.Search" placeholder="Mã tiệc, khách hàng, điều phối viên..." autocomplete="off" /></label>
+            <label><span>Sảnh</span><select name="hallId"><option value="">Tất cả sảnh phụ trách</option>@foreach (var hall in Model.Data.Halls) { <option value="@hall.Value" selected="@(Model.HallId?.ToString() == hall.Value ? "selected" : null)">@hall.Label</option> }</select></label>
+            <label><span>Ngày tổ chức</span><input type="date" name="eventDate" value="@(Model.EventDate?.ToString("yyyy-MM-dd"))" /></label>
+            <label><span>Trạng thái</span><select name="coordinationStatus"><option value="">Tất cả trạng thái</option><option value="UNASSIGNED" selected="@(Model.CoordinationStatus == "UNASSIGNED" ? "selected" : null)">Chưa phân công</option><option value="ASSIGNED" selected="@(Model.CoordinationStatus == "ASSIGNED" ? "selected" : null)">Đã phân công</option><option value="CONFLICT" selected="@(Model.CoordinationStatus == "CONFLICT" ? "selected" : null)">Xung đột lịch</option><option value="CANCELLED" selected="@(Model.CoordinationStatus == "CANCELLED" ? "selected" : null)">Tiệc đã hủy</option><option value="COMPLETED" selected="@(Model.CoordinationStatus == "COMPLETED" ? "selected" : null)">Tiệc đã hoàn tất</option><option value="INELIGIBLE" selected="@(Model.CoordinationStatus == "INELIGIBLE" ? "selected" : null)">Chưa đủ điều kiện</option></select></label>
+            <button class="coord-filter-submit" type="submit"><i class="fa-solid fa-filter"></i><span>Lọc</span>@if (filterCount > 0) { <b>@filterCount</b> }</button>
+            <a class="coord-filter-reset" asp-action="CoordinationAssignments" title="Xóa bộ lọc" aria-label="Xóa bộ lọc"><i class="fa-solid fa-rotate-left"></i></a>
+        </form>
+
+        <div class="coord-table-wrap">
+            <table class="coord-table">
+                <thead><tr><th>Tiệc &amp; khách hàng</th><th>Sảnh</th><th>Ngày tổ chức</th><th>Ca</th><th>Số bàn</th><th>Điều phối viên</th><th>Trạng thái</th><th class="actions">Thao tác</th></tr></thead>
+                <tbody>
+                @if (Model.Data.Items.Count == 0)
+                {
+                    <tr><td colspan="8"><div class="coord-empty"><span><i class="fa-regular fa-calendar-xmark"></i></span><h3>Không tìm thấy tiệc phù hợp</h3><p>Hãy thử thay đổi bộ lọc hoặc kiểm tra lại phạm vi sảnh được phân công.</p>@if (filterCount > 0) { <a asp-action="CoordinationAssignments">Xóa tất cả bộ lọc</a> }</div></td></tr>
+                }
+                @foreach (var item in Model.Data.Items)
+                {
+                    <tr class="@(item.HasConflict ? "conflict-row" : null)">
+                        <td data-label="Tiệc"><button type="button" class="coord-booking-link js-open-history" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode"><strong>@item.BookingCode</strong><small>@item.CustomerName</small></button></td>
+                        <td data-label="Sảnh"><span class="coord-hall"><i class="fa-regular fa-building"></i>@item.HallName</span></td>
+                        <td data-label="Ngày"><time datetime="@item.EventDate.ToString("yyyy-MM-dd")"><strong>@item.EventDate.ToString("dd/MM/yyyy")</strong><small>@item.EventDate.ToString("dddd", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</small></time></td>
+                        <td data-label="Ca"><span class="coord-shift"><i class="fa-regular @(item.Shift.Contains("tối", StringComparison.OrdinalIgnoreCase) ? "fa-moon" : "fa-sun")"></i>@item.Shift</span></td>
+                        <td data-label="Số bàn"><strong>@item.TableCount</strong></td>
+                        <td data-label="Điều phối viên">@if (item.CoordinatorName is null) { <span class="coord-unassigned-person"><i class="fa-regular fa-user"></i> @(item.IneligibilityReason is null ? "Chưa có" : "Không áp dụng")</span> } else { <span class="coord-person"><strong>@item.CoordinatorName</strong></span> }</td>
+                        <td data-label="Trạng thái"><span class="coord-state @item.CoordinationState.ToLowerInvariant()">@StateLabel(item.CoordinationState)</span>@if (item.CoordinationState == "INELIGIBLE") { <small>@item.BookingStatusName</small> }@if (!string.IsNullOrWhiteSpace(item.IneligibilityReason)) { <small class="coord-ineligibility">@item.IneligibilityReason</small> }</td>
+                        <td data-label="Thao tác" class="actions"><div class="coord-row-actions">
+                            @if (item.CanAssign) { <button type="button" class="coord-action primary js-open-assignment" data-mode="assign" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" data-customer="@item.CustomerName" data-hall="@item.HallName" data-date="@item.EventDate.ToString("dd/MM/yyyy")" data-shift="@item.Shift" data-tables="@item.TableCount"><i class="fa-solid fa-user-plus"></i><span>Phân công</span></button> }
+                            @if (item.CanChangeOrCancel) { <button type="button" class="coord-action icon js-open-assignment" data-mode="change" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" data-customer="@item.CustomerName" data-hall="@item.HallName" data-date="@item.EventDate.ToString("dd/MM/yyyy")" data-shift="@item.Shift" data-tables="@item.TableCount" data-current-coordinator-id="@item.CoordinatorEmployeeId" title="Thay đổi điều phối viên" aria-label="Thay đổi điều phối viên"><i class="fa-solid fa-user-pen"></i></button><button type="button" class="coord-action icon danger js-open-cancel" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" data-coordinator="@item.CoordinatorName" title="Hủy phân công" aria-label="Hủy phân công"><i class="fa-solid fa-user-xmark"></i></button> }
+                            <button type="button" class="coord-action icon js-open-history" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" title="Xem chi tiết và lịch sử" aria-label="Xem chi tiết và lịch sử"><i class="fa-regular fa-eye"></i></button>
+                        </div></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <footer class="coord-list-footer"><span>Hiển thị <strong>@Model.Data.Items.Count</strong> trên <strong>@Model.Data.TotalItems</strong> tiệc</span>@if (Model.Data.TotalPages > 1) { <nav class="coord-pagination" aria-label="Phân trang"><a class="pagination-edge @(Model.Data.Page<=1?"disabled":"")" asp-action="CoordinationAssignments" asp-route-search="@Model.Search" asp-route-hallId="@Model.HallId" asp-route-eventDate="@(Model.EventDate?.ToString("yyyy-MM-dd"))" asp-route-coordinationStatus="@Model.CoordinationStatus" asp-route-page="@(Model.Data.Page-1)">Trước</a>@for (var p = 1; p <= Model.Data.TotalPages; p++) { <a class="@(p == Model.Data.Page ? "active" : null)" asp-action="CoordinationAssignments" asp-route-search="@Model.Search" asp-route-hallId="@Model.HallId" asp-route-eventDate="@(Model.EventDate?.ToString("yyyy-MM-dd"))" asp-route-coordinationStatus="@Model.CoordinationStatus" asp-route-page="@p" aria-current="@(p == Model.Data.Page ? "page" : null)">@p</a> }<a class="pagination-edge @(Model.Data.Page>=Model.Data.TotalPages?"disabled":"")" asp-action="CoordinationAssignments" asp-route-search="@Model.Search" asp-route-hallId="@Model.HallId" asp-route-eventDate="@(Model.EventDate?.ToString("yyyy-MM-dd"))" asp-route-coordinationStatus="@Model.CoordinationStatus" asp-route-page="@(Model.Data.Page+1)">Sau</a></nav> }</footer>
+    </section>
+</main>
+
+<form id="coordinationTokenForm" hidden>@Html.AntiForgeryToken()</form>
+
+<div id="assignmentModal" class="coord-modal" hidden>
+    <button type="button" class="coord-modal-backdrop" data-close-modal aria-label="Đóng hộp thoại"></button>
+    <section class="coord-modal-card assignment" role="dialog" aria-modal="true" aria-labelledby="assignmentTitle">
+        <header><div class="coord-modal-heading"><span class="coord-modal-icon"><i class="fa-solid fa-user-check"></i></span><div><h2 id="assignmentTitle">Phân công điều phối viên</h2><p>Chọn nhân sự phù hợp với ngày và ca tổ chức.</p></div></div><button type="button" class="coord-modal-close" data-close-modal aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button></header>
+        <form id="assignmentForm" novalidate>
+            <input type="hidden" id="assignmentBookingId" /><input type="hidden" id="assignmentCoordinatorId" />
+            <div class="coord-form-alert" id="assignmentError" hidden></div>
+            <label class="coord-booking-picker" id="bookingPickerGroup" hidden><span>Chọn tiệc cần phân công <b>*</b></span><select id="assignmentBookingSelect"><option value="">Đang tải danh sách tiệc...</option></select></label>
+            <div class="coord-booking-summary" id="assignmentBookingSummary" hidden><span class="summary-icon"><i class="fa-solid fa-champagne-glasses"></i></span><div><strong id="assignmentBooking"></strong><small id="assignmentCustomer"></small><p><span><i class="fa-regular fa-building"></i><b id="assignmentHall"></b></span><span><i class="fa-regular fa-calendar"></i><b id="assignmentDate"></b></span><span><i class="fa-regular fa-clock"></i><b id="assignmentShift"></b></span></p></div></div>
+            <fieldset class="coord-coordinator-fieldset"><legend>Điều phối viên <b>*</b></legend><p class="field-hint"><i class="fa-solid fa-circle-info"></i> Nhân viên bận cùng ngày và ca đã được khóa lựa chọn.</p><div id="coordinatorList" class="coord-people-list"><div class="coord-loading"><i class="fa-solid fa-spinner fa-spin"></i><span>Đang tải lịch nhân sự...</span></div></div></fieldset>
+            <label id="changeReasonGroup" class="coord-reason" hidden><span>Lý do thay đổi <b>*</b></span><textarea id="changeReason" rows="3" minlength="3" maxlength="500" placeholder="Nhập lý do thay đổi điều phối viên..."></textarea><small><span id="reasonCount">0</span>/500 ký tự</small></label>
+            <footer><button type="button" class="coord-secondary" data-close-modal>Hủy</button><button id="assignmentSubmit" class="coord-primary" type="submit" disabled><i class="fa-solid fa-check"></i><span>Xác nhận phân công</span></button></footer>
+        </form>
+    </section>
+</div>
+
+<div id="cancelModal" class="coord-modal" hidden>
+    <button type="button" class="coord-modal-backdrop" data-close-modal aria-label="Đóng hộp thoại"></button>
+    <section class="coord-modal-card cancel" role="dialog" aria-modal="true" aria-labelledby="cancelTitle">
+        <header><div class="coord-modal-heading"><span class="coord-modal-icon danger"><i class="fa-solid fa-user-xmark"></i></span><div><h2 id="cancelTitle">Hủy phân công</h2><p>Thao tác không xóa lịch sử đã ghi nhận.</p></div></div><button type="button" class="coord-modal-close" data-close-modal aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button></header>
+        <form id="cancelForm" novalidate><input type="hidden" id="cancelBookingId" /><div class="coord-cancel-warning"><i class="fa-solid fa-triangle-exclamation"></i><div><strong id="cancelBooking"></strong><p>Điều phối viên <b id="cancelCoordinator"></b> sẽ không còn phụ trách tiệc này.</p></div></div><label class="coord-reason"><span>Lý do hủy phân công <b>*</b></span><textarea id="cancelReason" rows="4" minlength="3" maxlength="500" placeholder="Nhập lý do để lưu vào lịch sử..." required></textarea><small><span id="cancelReasonCount">0</span>/500 ký tự</small></label><div class="coord-form-alert" id="cancelError" hidden></div><footer><button type="button" class="coord-secondary" data-close-modal>Quay lại</button><button id="cancelSubmit" class="coord-danger-button" type="submit"><i class="fa-solid fa-user-xmark"></i><span>Xác nhận hủy</span></button></footer></form>
+    </section>
+</div>
+
+<button type="button" class="coord-drawer-overlay" id="historyDrawerOverlay" hidden aria-label="Đóng chi tiết"></button>
+<aside class="coord-drawer" id="historyDrawer" aria-hidden="true" aria-labelledby="historyTitle">
+    <div id="historyContent" class="coord-drawer-loading"><i class="fa-solid fa-spinner fa-spin"></i><span>Đang tải chi tiết phân công...</span></div>
+</aside>
+
+@section Scripts {
+<script>window.coordinationUrls = { unassigned: '@Url.Action("CoordinationUnassignedOptions", "Home")', options: '@Url.Action("CoordinationOptions", "Home")', history: '@Url.Action("CoordinationHistory", "Home")', assign: '@Url.Action("AssignCoordinator", "Home")', change: '@Url.Action("ChangeCoordinator", "Home")', cancel: '@Url.Action("CancelCoordinator", "Home")' };</script>
+<script src="~/js/coordination-assignments.js" asp-append-version="true"></script>
+}
