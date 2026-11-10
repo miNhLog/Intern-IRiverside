@@ -1,4 +1,5 @@
 using HeThongDatTiecCuoi_WEB.Constants;
+using HeThongDatTiecCuoi_WEB.Models.Banners;
 using HeThongDatTiecCuoi_WEB.Models.Coordination;
 using HeThongDatTiecCuoi_WEB.Models.Home;
 using HeThongDatTiecCuoi_WEB.Services;
@@ -32,14 +33,51 @@ public sealed class HomeController : Controller
             return RedirectToAction(nameof(Dashboard));
         }
 
-        var result = await _apiClient.GetFeaturedHallsAsync(cancellationToken);
+        var hallsTask = _apiClient.GetFeaturedHallsAsync(cancellationToken);
+        var bannersTask = _apiClient.GetPublicBannersAsync(cancellationToken);
+        await Task.WhenAll(hallsTask, bannersTask);
+
+        var result = await hallsTask;
+        var bannerResult = await bannersTask;
+        var banners = bannerResult.Succeeded && bannerResult.Value is { Count: > 0 }
+            ? bannerResult.Value
+            : DefaultBanners();
+
+        foreach (var banner in banners)
+        {
+            banner.ImageUrl = BannerImageUrl(banner.ImagePath, banner.UpdatedAt);
+        }
+
         return View(new HomeViewModel
         {
             FeaturedHalls = result.Succeeded && result.Value is not null
                 ? result.Value
-                : []
+                : [],
+            Banners = banners
         });
     }
+
+    private static string BannerImageUrl(string? path, DateTime? updatedAt)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return "/images/home/hero-ballroom-8k.jpg";
+        }
+
+        if (!path.StartsWith("/uploads/banners/", StringComparison.Ordinal))
+        {
+            return path;
+        }
+
+        return $"/banner-images/{Uri.EscapeDataString(Path.GetFileName(path))}?v={(updatedAt ?? DateTime.UnixEpoch).Ticks}";
+    }
+
+    private static List<BannerViewModel> DefaultBanners() =>
+    [
+        new() { BannerId = -1, Title = "Kiệt Tác Sảnh Tiệc Hoàng Gia", Subtitle = "Khởi Đầu Trăm Năm Viên Mãn", Description = "9 đại sảnh phong cách châu Âu ven sông Bến Vân Đồn, mang đến ngày cưới trọn vẹn và đẳng cấp.", NavigationLabel = "09 Đại Sảnh Hoàng Gia", ImagePath = "/images/home/hero-ballroom-8k.jpg", ImageAlt = "Đại sảnh tiệc cưới hoàng gia Riverside Palace", PrimaryActionType = "SECTION", PrimaryButtonLabel = "Khám phá 9 sảnh tiệc", PrimaryLink = "#danh-sach-sanh", SecondaryActionType = "AI", SecondaryButtonLabel = "Tư vấn AI Concierge", SortOrder = 1, IsVisible = true },
+        new() { BannerId = -2, Title = "Thề Nguyện Lãng Mạn Ven Sông", Subtitle = "Hoàng Hôn Sài Gòn Độc Bản", Description = "Không gian lãng mạn cùng ánh hoàng hôn thi vị, tôn vinh khoảnh khắc hẹn ước trăm năm thiêng liêng.", NavigationLabel = "Lễ Đường Ven Sông", ImagePath = "/images/home/hero-riverfront-8k.jpg", ImageAlt = "Lễ đường cưới ven sông lãng mạn hoàng hôn Riverside Palace", PrimaryActionType = "INTERNAL", PrimaryButtonLabel = "Thiết kế tiệc trong mơ", PrimaryLink = "/Recommendation", SecondaryActionType = "SECTION", SecondaryButtonLabel = "Xem danh sách sảnh", SecondaryLink = "#danh-sach-sanh", SortOrder = 2, IsVisible = true },
+        new() { BannerId = -3, Title = "Mỹ Vị Yến Tiệc Đỉnh Cao", Subtitle = "Thăng Hoa Cùng Vị Giác", Description = "Hơn 300 món Fusion Á - Âu thượng hạng được chế tác tinh tế bởi đội ngũ bếp trưởng chuyên nghiệp.", NavigationLabel = "Ẩm Thực Chuẩn 5 Sao", ImagePath = "/images/home/hero-cuisine-8k.jpg", ImageAlt = "Đỉnh cao ẩm thực yến tiệc 5 sao Riverside Palace", PrimaryActionType = "INTERNAL", PrimaryButtonLabel = "Khám phá thực đơn", PrimaryLink = "/Menus", SecondaryActionType = "AI", SecondaryButtonLabel = "Gợi ý thực đơn cùng AI", SortOrder = 3, IsVisible = true }
+    ];
 
 
     [Authorize]

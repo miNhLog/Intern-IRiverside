@@ -1,0 +1,37 @@
+@model HeThongDatTiecCuoi_WEB.Models.ImageGalleryViewModel
+@{
+    var images = Model.Images.Where(url => !string.IsNullOrWhiteSpace(url)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    if (images.Count == 0) images.Add(Model.Placeholder);
+}
+<div class="hall-gallery" data-hall-gallery data-hall-name="@Model.Name">
+    <figure class="hall-detail-photo">
+        <button class="hall-gallery-main" type="button" data-gallery-open aria-label="Mở ảnh @Model.Name ở chế độ toàn màn hình">
+            <img src="@images[0]" alt="@Model.Name - ảnh 1" data-gallery-main-image data-fallback="@Model.Placeholder" />
+            <span class="hall-gallery-expand"><span class="material-symbols-outlined" aria-hidden="true">zoom_out_map</span> Xem ảnh</span>
+            <span class="hall-gallery-count"><span class="material-symbols-outlined" aria-hidden="true">photo_library</span> <b data-gallery-position>1</b>/@images.Count</span>
+        </button>
+        @if (images.Count > 1)
+        {
+            <button class="hall-gallery-arrow hall-gallery-arrow--previous" type="button" data-gallery-previous aria-label="Ảnh trước"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
+            <button class="hall-gallery-arrow hall-gallery-arrow--next" type="button" data-gallery-next aria-label="Ảnh tiếp theo"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+        }
+    </figure>
+    @if (images.Count > 1)
+    {
+        <div class="hall-gallery-thumbnails" role="list" aria-label="Các ảnh của @Model.Name">
+            @for (var index = 0; index < images.Count; index++)
+            {
+                <button type="button" role="listitem" class="hall-gallery-thumbnail @(index == 0 ? "active" : null)" data-gallery-thumbnail data-index="@index" aria-label="Xem ảnh @(index + 1)" aria-current="@(index == 0 ? "true" : "false")">
+                    <img src="@images[index]" alt="" loading="lazy" data-fallback="@Model.Placeholder" />
+                </button>
+            }
+        </div>
+    }
+    <script type="application/json" data-gallery-images>@Html.Raw(System.Text.Json.JsonSerializer.Serialize(images))</script>
+    <div class="hall-gallery-lightbox" data-gallery-lightbox hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Bộ ảnh @Model.Name">
+        <button class="hall-gallery-lightbox-close" type="button" data-gallery-close aria-label="Đóng bộ ảnh"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+        <button class="hall-gallery-lightbox-arrow hall-gallery-lightbox-arrow--previous" type="button" data-gallery-lightbox-previous aria-label="Ảnh trước"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
+        <figure><img src="@images[0]" alt="@Model.Name" data-gallery-lightbox-image data-fallback="@Model.Placeholder" /><figcaption><span data-gallery-lightbox-caption>1 / @images.Count</span> · @Model.Name</figcaption></figure>
+        <button class="hall-gallery-lightbox-arrow hall-gallery-lightbox-arrow--next" type="button" data-gallery-lightbox-next aria-label="Ảnh tiếp theo"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+    </div>
+</div>
