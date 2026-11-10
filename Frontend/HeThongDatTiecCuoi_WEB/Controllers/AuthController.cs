@@ -16,11 +16,13 @@ public sealed class AuthController : Controller
     public const string MustChangePasswordClaim = "must_change_password";
     private readonly IRiversideApiClient _apiClient;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IRiversideApiClient apiClient, IConfiguration configuration)
+    public AuthController(IRiversideApiClient apiClient, IConfiguration configuration, ILogger<AuthController> logger)
     {
         _apiClient = apiClient;
         _configuration = configuration;
+        _logger = logger;
     }
 
     [HttpGet("login")]
@@ -297,9 +299,22 @@ public sealed class AuthController : Controller
     [HttpPost("dang-xuat")]
     [Authorize]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
         TempData.Remove("PasswordChangeSuccess");
+        var accessToken = Request.Cookies[ApiTokenCookie];
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            try
+            {
+                var auditResult = await _apiClient.RecordLogoutAsync(accessToken, cancellationToken);
+                if (!auditResult.Succeeded) _logger.LogWarning("Backend không thể ghi nhận audit đăng xuất: {Error}", auditResult.Error);
+            }
+            catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(exception, "Không thể gọi API audit đăng xuất; phiên cục bộ vẫn sẽ được xóa.");
+            }
+        }
         await ClearLocalSessionAsync();
         return RedirectToAction(nameof(Login));
     }

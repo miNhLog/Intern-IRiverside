@@ -1,6 +1,9 @@
 @model LoginViewModel
 @{
     ViewData["Title"] = "Đăng nhập";
+    var loginErrorMessage = ViewData.ModelState.TryGetValue(string.Empty, out var loginErrors) && loginErrors.Errors.Count > 0
+        ? loginErrors.Errors[0].ErrorMessage
+        : null;
 }
 
 @section Styles {
@@ -12,51 +15,54 @@
 
 <main class="auth-shell login-page">
     <section class="auth-story" aria-label="Giới thiệu Riverside Palace">
-        <div class="brand-pill"><span></span> RIVERSIDE PALACE STAFF PORTAL</div>
+        <partial name="_AuthBrand" />
         <div class="story-content">
-        
-            <h1>Chào Mừng Trở Lại<br /><em>Riverside Palace</em></h1>
-            <p>Cổng truy cập dành cho Admin và nhân viên vận hành Riverside Palace.</p>
+            <span class="auth-story-kicker">CỔNG QUẢN LÝ NỘI BỘ</span>
+            <h1>Vận hành tinh tế.<br /><em>Trải nghiệm nhất quán.</em></h1>
+            <p>Không gian làm việc bảo mật dành cho đội ngũ vận hành Riverside Palace.</p>
             <ul>
-                <li><b><span class="material-symbols-outlined" aria-hidden="true">verified_user</span></b><span>Bảo mật thông tin hợp đồng &amp; thanh toán chuẩn quốc tế</span></li>
-                <li><b><span class="material-symbols-outlined" aria-hidden="true">smart_toy</span></b><span>Trợ lý AI tư vấn và theo dõi tiến độ sự kiện 24/7</span></li>
-                <li><b><span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span></b><span>Phân quyền truy cập theo vai trò công việc</span></li>
+                <li><b><i class="bi bi-shield-check" aria-hidden="true"></i></b><span>Bảo mật thông tin hợp đồng &amp; thanh toán</span></li>
+                <li><b><i class="bi bi-grid-1x2" aria-hidden="true"></i></b><span>Quản lý công việc tập trung và nhất quán</span></li>
+                <li><b><i class="bi bi-person-lock" aria-hidden="true"></i></b><span>Phân quyền truy cập theo vai trò công việc</span></li>
             </ul>
         </div>
-        <small>© 2026 Riverside Palace. All rights reserved. Tiêu chuẩn dịch vụ hội nghị &amp; yến tiệc 5 sao.</small>
+        <small>© 2026 Riverside Palace · Hệ thống quản lý hội nghị và yến tiệc.</small>
     </section>
 
     <section class="auth-form-side">
         <div class="auth-card">
-            <div class="crest"><span class="material-symbols-outlined" aria-hidden="true">login</span></div>
+            <div class="crest"><i class="bi bi-box-arrow-in-right" aria-hidden="true"></i></div>
+            <span class="auth-card-kicker">RIVERSIDE PALACE STAFF PORTAL</span>
             <h2>Đăng Nhập</h2>
             <p class="subtitle">Đăng nhập để truy cập khu vực quản trị và vận hành</p>
 
-            @if (TempData["Success"] is string successMessage)
-            {
-                <div class="auth-alert auth-alert-success" role="status"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><div><strong>Thành công</strong><p>@successMessage</p></div></div>
-            }
-            @if (TempData["Error"] is string errorMessage)
-            {
-                <div class="auth-alert auth-alert-error" role="alert"><span class="material-symbols-outlined" aria-hidden="true">error</span><div><strong>Không thể đăng nhập</strong><p>@errorMessage</p></div></div>
-            }
+            <div id="authInitialMessages" hidden>
+                @if (TempData["Success"] is string successMessage)
+                {
+                    <span data-auth-toast="success" data-auth-toast-title="Thành công">@successMessage</span>
+                }
+                @if (TempData["Error"] is string errorMessage)
+                {
+                    <span data-auth-toast="error" data-auth-toast-title="Không thể đăng nhập">@errorMessage</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(loginErrorMessage))
+                {
+                    <span data-auth-toast="error" data-auth-toast-title="Không thể đăng nhập">@loginErrorMessage</span>
+                }
+            </div>
 
             <form id="loginForm" asp-action="Login" asp-controller="Auth" method="post" novalidate>
                 <input asp-for="ReturnUrl" type="hidden" />
-                @if (ViewData.ModelState.TryGetValue(string.Empty, out var loginErrors) && loginErrors.Errors.Count > 0)
-                {
-                    <div class="auth-alert auth-alert-error auth-alert-single" role="alert"><span class="material-symbols-outlined" aria-hidden="true">error</span><span>@loginErrors.Errors[0].ErrorMessage</span></div>
-                }
 
                 <div class="field">
                     <label asp-for="Identifier">Email hoặc số điện thoại <i>*</i></label>
-                    <div class="input-wrap"><span class="material-symbols-outlined" aria-hidden="true">person</span><input asp-for="Identifier" autocomplete="username" /></div>
+                    <div class="input-wrap"><i class="bi bi-person" aria-hidden="true"></i><input asp-for="Identifier" autocomplete="username" placeholder="VD: admin@riversideplace.vn hoặc 0901234567" /></div>
                     <span asp-validation-for="Identifier" class="field-error"></span>
                 </div>
 
                 <div class="field">
                     <label asp-for="Password">Mật khẩu <i>*</i></label>
-                    <div class="input-wrap"><span class="material-symbols-outlined" aria-hidden="true">lock</span><input asp-for="Password" autocomplete="current-password" /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu"><span class="material-symbols-outlined" aria-hidden="true">visibility</span></button></div>
+                    <div class="input-wrap"><i class="bi bi-lock" aria-hidden="true"></i><input asp-for="Password" autocomplete="current-password" /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu"><i class="bi bi-eye" aria-hidden="true"></i></button></div>
                     <span asp-validation-for="Password" class="field-error"></span>
                 </div>
 
@@ -65,7 +71,7 @@
                     <button class="muted-link auth-link-button" id="openForgotPassword" type="button">Quên mật khẩu?</button>
                 </div>
 
-                <button class="primary-button" type="submit">Đăng Nhập</button>
+                <button class="primary-button" type="submit"><span>Đăng nhập</span><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
 
             </form>
 
@@ -79,7 +85,7 @@
                     <p class="password-reset-description">Nhập email của tài khoản để nhận mã OTP gồm 6 chữ số.</p>
                     <div class="field">
                         <label for="resetEmail">Địa chỉ email <i>*</i></label>
-                        <div class="input-wrap"><span class="material-symbols-outlined" aria-hidden="true">mail</span><input id="resetEmail" name="Email" type="email" autocomplete="email" required placeholder="example@email.com" /></div>
+                        <div class="input-wrap"><i class="bi bi-envelope" aria-hidden="true"></i><input id="resetEmail" name="Email" type="email" autocomplete="email" required placeholder="example@email.com" /></div>
                     </div>
                     <button class="primary-button" id="sendResetOtpButton" type="submit">Gửi mã OTP</button>
                 </form>
@@ -91,7 +97,7 @@
                     <input id="verifyResetEmail" name="Email" type="hidden" />
                     <div class="field">
                         <label for="resetOtpCode">Mã OTP <i>*</i></label>
-                        <div class="input-wrap otp-code-input"><span class="material-symbols-outlined" aria-hidden="true">pin</span><input id="resetOtpCode" name="OtpCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required placeholder="000000" /></div>
+                        <div class="input-wrap otp-code-input"><i class="bi bi-key" aria-hidden="true"></i><input id="resetOtpCode" name="OtpCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required placeholder="000000" /></div>
                     </div>
                     <button class="primary-button" type="submit">Xác minh mã</button>
                     <button class="password-reset-secondary" id="resendResetOtp" type="button" disabled>Gửi lại mã sau 60 giây</button>
@@ -102,14 +108,14 @@
                     <input id="resetGrant" name="ResetToken" type="hidden" />
                     <h3>Tạo mật khẩu mới</h3>
                     <p class="password-reset-description">Mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt.</p>
-                    <div class="field"><label for="resetNewPassword">Mật khẩu mới <i>*</i></label><div class="input-wrap"><span class="material-symbols-outlined" aria-hidden="true">password</span><input id="resetNewPassword" name="NewPassword" type="password" autocomplete="new-password" minlength="8" required /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu"><span class="material-symbols-outlined" aria-hidden="true">visibility</span></button></div></div>
-                    <div class="field"><label for="resetConfirmPassword">Xác nhận mật khẩu <i>*</i></label><div class="input-wrap"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><input id="resetConfirmPassword" name="ConfirmPassword" type="password" autocomplete="new-password" minlength="8" required /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu"><span class="material-symbols-outlined" aria-hidden="true">visibility</span></button></div></div>
+                    <div class="field"><label for="resetNewPassword">Mật khẩu mới <i>*</i></label><div class="input-wrap"><i class="bi bi-lock" aria-hidden="true"></i><input id="resetNewPassword" name="NewPassword" type="password" autocomplete="new-password" minlength="8" required /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu"><i class="bi bi-eye" aria-hidden="true"></i></button></div></div>
+                    <div class="field"><label for="resetConfirmPassword">Xác nhận mật khẩu <i>*</i></label><div class="input-wrap"><i class="bi bi-shield-check" aria-hidden="true"></i><input id="resetConfirmPassword" name="ConfirmPassword" type="password" autocomplete="new-password" minlength="8" required /><button class="toggle-password" type="button" aria-label="Hiện mật khẩu"><i class="bi bi-eye" aria-hidden="true"></i></button></div></div>
                     <button class="primary-button" type="submit">Cập nhật mật khẩu</button>
                 </form>
 
                 <button class="password-reset-back" id="backToLogin" type="button">Quay lại đăng nhập</button>
             </section>
-            <footer>Hotline hỗ trợ: <strong>0933 777 888</strong> <span>│</span> 360D Bến Vân Đồn, P.1, Q.4, TP.HCM</footer>
+            <footer><i class="bi bi-headset" aria-hidden="true"></i><span>Hỗ trợ nội bộ <strong>0933 777 888</strong></span><i></i><span>360D Bến Vân Đồn, Q.4, TP.HCM</span></footer>
         </div>
     </section>
 </main>
