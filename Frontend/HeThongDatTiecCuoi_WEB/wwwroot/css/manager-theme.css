@@ -135,7 +135,7 @@
 .manager-theme .manager-data-table td small { margin-top:5px; font-size:11px; }
 .manager-theme .manager-status { padding:6px 10px; font-size:11px; font-weight:700; }
 .manager-theme .manager-count-badge { min-width:30px; height:30px; color:#a3332c; background:#fff0ee; }
-.manager-theme .manager-incident-item { gap:13px; padding:16px 20px; border-top-color:#f2f4f7; transition:background 240ms ease; }
+.manager-theme .manager-incident-item { gap:13px; padding:16px 20px; border-top-color:#f2f4f7; color:inherit; text-decoration:none; transition:background 240ms ease; }
 .manager-theme .manager-incident-item:hover { background:#fffafb; }
 .manager-theme .manager-severity { width:38px; height:38px; flex-basis:38px; border-radius:11px; }
 .manager-theme .manager-incident-item strong { font-size:13px; }

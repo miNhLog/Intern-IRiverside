@@ -1,0 +1,93 @@
+@using System.Text.Json
+@model HeThongDatTiecCuoi_WEB.Models.Banners.BannerManagementViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản lý Banner";
+    var placements = new[]
+    {
+        new { Key = "HOME", Label = "Trang chủ", Description = "Cinematic hero và các slide nổi bật", Icon = "fa-house" },
+        new { Key = "HALLS", Label = "Sảnh tiệc", Description = "Ảnh bìa danh sách sảnh tiệc", Icon = "fa-building-columns" },
+        new { Key = "MENUS", Label = "Thực đơn", Description = "Ảnh bìa thư viện thực đơn", Icon = "fa-utensils" },
+        new { Key = "DECOR", Label = "Trang trí", Description = "Ảnh bìa gói trang trí", Icon = "fa-wand-magic-sparkles" },
+        new { Key = "RECOMMENDATION", Label = "Gợi ý tiệc", Description = "Ảnh bìa công cụ thiết kế tiệc", Icon = "fa-lightbulb" },
+        new { Key = "MY_BOOKING", Label = "Tiệc của tôi", Description = "Ảnh bìa khu vực quản lý tiệc", Icon = "fa-calendar-check" }
+    };
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/manager-banner.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/manager-banner-controls.css" asp-append-version="true" />
+}
+
+<section class="banner-page">
+    <header class="manager-section-header">
+        <div><span class="backoffice-hero__eyebrow"><i class="bi bi-images" aria-hidden="true"></i> QUẢN LÝ NỘI DUNG WEBSITE</span><h1>Quản lý Banner</h1><p>Quản lý tập trung banner trang chủ và ảnh bìa của các trang chức năng.</p></div>
+        <button class="backoffice-hero__primary-btn" type="button" data-banner-create data-placement="HOME"><i class="bi bi-plus-lg" aria-hidden="true"></i> Thêm Banner</button>
+    </header>
+    <div class="banner-kpis">
+        <article><span class="banner-kpi-icon"><i class="bi bi-images" aria-hidden="true"></i></span><div><small>Tổng banner</small><strong>@Model.Banners.Count</strong></div></article>
+        <article><span class="banner-kpi-icon visible"><i class="bi bi-eye" aria-hidden="true"></i></span><div><small>Đang hiển thị</small><strong>@Model.Banners.Count(x => x.IsVisible)</strong></div></article>
+        <article><span class="banner-kpi-icon hidden"><i class="bi bi-layers" aria-hidden="true"></i></span><div><small>Trang đã phủ banner</small><strong>@Model.Banners.Where(x => x.Placement != "HOME").Select(x => x.Placement).Distinct().Count()/5</strong></div></article>
+    </div>
+    <div class="banner-panel">
+        <div class="banner-panel-head"><div><h2>Thư viện banner theo vị trí</h2><p>Trang chủ có thể dùng nhiều slide; mỗi trang chức năng chỉ hiển thị một banner đang bật.</p></div></div>
+        <nav class="banner-placement-nav" aria-label="Chuyển nhanh đến nhóm banner">
+            @foreach (var placement in placements)
+            { <a href="#placement-@placement.Key"><i class="fa-solid @placement.Icon"></i>@placement.Label</a> }
+        </nav>
+        @foreach (var placement in placements)
+        {
+            var items = Model.Banners.Where(x => x.Placement == placement.Key).OrderBy(x => x.SortOrder).ToList();
+            <section class="banner-placement" id="placement-@placement.Key">
+                <header class="banner-placement__head">
+                    <div class="banner-placement__title"><span><i class="fa-solid @placement.Icon"></i></span><div><h3>@placement.Label</h3><p>@placement.Description</p></div></div>
+                    <div><span class="banner-placement__count">@items.Count banner</span><button type="button" class="banner-add-compact" data-banner-create data-placement="@placement.Key"><i class="fa-solid fa-plus"></i> Thêm</button></div>
+                </header>
+                @if (items.Count == 0)
+                { <div class="banner-empty banner-empty--compact"><i class="fa-regular fa-image"></i><p>Chưa có banner cho @placement.Label.ToLowerInvariant().</p><button type="button" data-banner-create data-placement="@placement.Key">Thêm banner ngay</button></div> }
+                else
+                {
+                <div class="banner-list">
+                @for (var i = 0; i < items.Count; i++)
+                {
+                    var item = items[i];
+                    <article class="banner-row">
+                        <img src="@item.ImageUrl" alt="@item.ImageAlt" loading="lazy" />
+                        <div class="banner-order"><small>Thứ tự</small><b>@item.SortOrder</b><span><form method="post" asp-action="Move"><input type="hidden" name="id" value="@item.BannerId"/><input type="hidden" name="placement" value="@item.Placement"/><input type="hidden" name="direction" value="-1"/><button title="Đưa lên" disabled="@(i == 0)"><i class="fa-solid fa-chevron-up"></i></button></form><form method="post" asp-action="Move"><input type="hidden" name="id" value="@item.BannerId"/><input type="hidden" name="placement" value="@item.Placement"/><input type="hidden" name="direction" value="1"/><button title="Đưa xuống" disabled="@(i == items.Count - 1)"><i class="fa-solid fa-chevron-down"></i></button></form></span></div>
+                        <div class="banner-copy"><span class="banner-status @(item.IsVisible ? "on" : "off")"><i class="fa-solid fa-circle"></i>@(item.IsVisible ? "Đang hiển thị" : "Đang ẩn")</span><h3>@item.Title</h3><p>@item.Subtitle</p><small>@item.NavigationLabel</small></div>
+                        <div class="banner-actions">
+                            <button type="button" class="icon-btn" title="Xem trước" data-banner-preview="@item.BannerId"><i class="fa-regular fa-eye"></i></button>
+                            <button type="button" class="icon-btn" title="Chỉnh sửa" data-banner-edit="@item.BannerId"><i class="fa-regular fa-pen-to-square"></i></button>
+                            <form method="post" asp-action="Toggle"><input type="hidden" name="id" value="@item.BannerId"/><input type="hidden" name="visible" value="@(item.IsVisible ? "false" : "true")"/><button class="icon-btn" title="@(item.IsVisible ? "Ẩn" : "Hiện")"><i class="fa-regular @(item.IsVisible ? "fa-eye-slash" : "fa-eye")"></i></button></form>
+                            <form method="post" asp-action="Delete" data-delete-banner><input type="hidden" name="id" value="@item.BannerId"/><button class="icon-btn danger" title="Xóa"><i class="fa-regular fa-trash-can"></i></button></form>
+                        </div>
+                    </article>
+                }
+                </div>
+                }
+            </section>
+        }
+    </div>
+</section>
+
+<dialog class="banner-dialog" id="bannerFormDialog">
+    <form method="post" asp-action="Save" enctype="multipart/form-data" id="bannerForm">
+        <input type="hidden" name="BannerId" value="0"/><input type="hidden" name="Version"/>
+        <header><div><span class="backoffice-hero__eyebrow">NỘI DUNG HÌNH ẢNH WEBSITE</span><h2 id="bannerFormTitle">Thêm Banner</h2></div><button type="button" data-dialog-close aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="banner-form-body">
+            <label class="banner-upload"><span class="banner-image-preview"><i class="fa-regular fa-image"></i></span><b>Ảnh banner <span>*</span></b><small>JPG, PNG, WebP · tối đa 5 MB · khuyến nghị 1920×1080.</small><input type="file" name="Image" accept="image/jpeg,image/png,image/webp" data-banner-image/></label>
+            <div class="banner-fields">
+                <label class="wide">Vị trí hiển thị *<select name="Placement" required><option value="HOME">Trang chủ</option><option value="HALLS">Sảnh tiệc</option><option value="MENUS">Thực đơn</option><option value="DECOR">Trang trí</option><option value="RECOMMENDATION">Gợi ý tiệc</option><option value="MY_BOOKING">Tiệc của tôi</option></select></label>
+                <label>Tiêu đề chính *<input name="Title" maxlength="150" required/></label><label>Tiêu đề phụ màu vàng *<input name="Subtitle" maxlength="150" required/></label>
+                <label class="wide">Mô tả *<textarea name="Description" maxlength="500" rows="3" required></textarea></label>
+                <label>Nhãn điều hướng *<input name="NavigationLabel" maxlength="100" required/></label><label>Alt text ảnh *<input name="ImageAlt" maxlength="250" required/></label>
+                <fieldset><legend>CTA chính</legend><select name="PrimaryActionType" data-action-type><option value="NONE">Không có</option><option value="INTERNAL">Liên kết nội bộ</option><option value="SECTION">Đi đến section</option><option value="AI">Mở trợ lý AI</option></select><input name="PrimaryButtonLabel" placeholder="Nhãn nút"/><input name="PrimaryLink" placeholder="/Menus hoặc #danh-sach-sanh"/></fieldset>
+                <fieldset><legend>CTA phụ</legend><select name="SecondaryActionType" data-action-type><option value="NONE">Không có</option><option value="INTERNAL">Liên kết nội bộ</option><option value="SECTION">Đi đến section</option><option value="AI">Mở trợ lý AI</option></select><input name="SecondaryButtonLabel" placeholder="Nhãn nút"/><input name="SecondaryLink" placeholder="/Menus hoặc #danh-sach-sanh"/></fieldset>
+                <label>Thứ tự trong nhóm *<input name="SortOrder" type="number" min="1" value="1" required/></label><label class="banner-switch"><input type="checkbox" name="IsVisible" value="true"/><span></span> Hiển thị trên website</label>
+            </div>
+        </div>
+        <footer><button type="button" class="banner-btn light" data-dialog-close>Hủy</button><button class="banner-btn gold"><i class="fa-regular fa-floppy-disk"></i> Lưu banner</button></footer>
+    </form>
+</dialog>
+<dialog class="banner-dialog preview" id="bannerPreviewDialog"><div class="preview-card"><img alt=""/><div><h2></h2><h3></h3><p></p></div><button type="button" data-dialog-close class="preview-close-btn" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button></div></dialog>
+<script type="application/json" id="bannerData">@Html.Raw(JsonSerializer.Serialize(Model.Banners, new JsonSerializerOptions(JsonSerializerDefaults.Web)))</script>
+@section Scripts { <script src="~/js/manager-banner.js" asp-append-version="true"></script> }

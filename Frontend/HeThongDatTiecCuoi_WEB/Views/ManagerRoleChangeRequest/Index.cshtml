@@ -9,15 +9,15 @@
 @section Styles { <link rel="stylesheet" href="~/css/manager-role-change.css" asp-append-version="true" /> }
 
 <main class="role-change-page">
-    <nav class="role-change-breadcrumb breadcrumb" aria-label="Breadcrumb">Quản trị hệ thống <i class="fa-solid fa-chevron-right"></i> <strong>Yêu cầu thay đổi vai trò</strong></nav>
     <header class="role-change-header">
+        <div>
+        <span class="backoffice-hero__eyebrow"><i class="fa-solid fa-user-pen" aria-hidden="true"></i> QUẢN LÝ NHÂN SỰ</span>
         <h1>Yêu cầu thay đổi vai trò</h1>
         <p>Gửi và theo dõi yêu cầu điều chỉnh vai trò của nhân sự nội bộ.</p>
+        </div>
     </header>
 
-    @if (TempData["RoleChangeSuccess"] is string success) { <div class="role-alert success"><i class="fa-solid fa-circle-check"></i> @success</div> }
-    @if (TempData["RoleChangeError"] is string error) { <div class="role-alert error"><i class="fa-solid fa-circle-exclamation"></i> @error</div> }
-    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage)) { <div class="role-alert error">@Model.ErrorMessage</div> }
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage)) { <div class="role-alert error" data-persistent>@Model.ErrorMessage</div> }
 
     <section class="role-change-card">
         <div class="role-card-heading"><div><h2>Gửi yêu cầu mới</h2><p>Chọn nhân viên để hệ thống xác định vai trò đề xuất phù hợp.</p></div></div>

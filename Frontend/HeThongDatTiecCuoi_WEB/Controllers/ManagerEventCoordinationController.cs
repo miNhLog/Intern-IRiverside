@@ -51,4 +51,31 @@ public sealed class ManagerEventCoordinationController : Controller
             return StatusCode(response.StatusCode ?? StatusCodes.Status502BadGateway, response.Error ?? "Không thể tải lịch điều phối.");
         return PartialView("_Calendar", response.Value);
     }
+
+    [HttpGet("available-coordinators/{bookingId:int}")]
+    public async Task<IActionResult> AvailableCoordinators(int bookingId, CancellationToken cancellationToken)
+    {
+        var token = Request.Cookies[TokenCookie];
+        if (string.IsNullOrWhiteSpace(token)) return Unauthorized("Phiên đăng nhập đã hết hạn.");
+        var response = await _api.GetManagerCoordinationAvailableCoordinatorsAsync(token, bookingId, cancellationToken);
+        if (!response.Succeeded || response.Value is null)
+            return StatusCode(response.StatusCode ?? StatusCodes.Status502BadGateway, new { message = response.Error ?? "Không thể tải danh sách điều phối viên." });
+        return Ok(response.Value);
+    }
+
+    [HttpPost("assign/{bookingId:int}")]
+    public async Task<IActionResult> Assign(int bookingId, [FromBody] ManagerEmergencyAssignRequestViewModel model, CancellationToken cancellationToken)
+    {
+        var token = Request.Cookies[TokenCookie];
+        if (string.IsNullOrWhiteSpace(token)) return Unauthorized("Phiên đăng nhập đã hết hạn.");
+        if (model == null || model.CoordinatorEmployeeId <= 0)
+            return BadRequest(new { message = "Vui lòng chọn điều phối viên." });
+        if (string.IsNullOrWhiteSpace(model.Reason) || model.Reason.Trim().Length < 3)
+            return BadRequest(new { message = "Vui lòng nhập lý do can thiệp (tối thiểu 3 ký tự)." });
+
+        var response = await _api.AssignManagerEventCoordinatorAsync(token, bookingId, model.CoordinatorEmployeeId, model.Reason.Trim(), cancellationToken);
+        if (!response.Succeeded || response.Value is null)
+            return StatusCode(response.StatusCode ?? StatusCodes.Status400BadRequest, new { message = response.Error ?? "Phân công điều phối viên thất bại." });
+        return Ok(response.Value);
+    }
 }
