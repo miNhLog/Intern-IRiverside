@@ -1,141 +1,684 @@
-/* UC10 — Trợ lý ảo AI Riverside Palace (đồng bộ gold #d4af37 / #B89758). */
-#aiChatFab {
-    position: fixed; right: 22px; bottom: 22px; z-index: 9990;
-    width: 76px; height: 76px; border: 0; border-radius: 22px;
-    background: transparent; color: #e0ad1f; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    filter: drop-shadow(0 12px 15px rgba(17, 24, 34, .28));
-    transition: transform .18s ease, filter .18s ease;
-}
-#aiChatFab:hover { transform: translateY(-3px) scale(1.04); filter: drop-shadow(0 16px 18px rgba(17, 24, 34, .34)); }
-#aiChatFab:focus-visible { outline: 3px solid rgba(127, 231, 255, .8); outline-offset: 4px; }
-#aiChatFab .ai-fab-badge {
-    position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
-    background: #111822; color: #fff4c7; font-size: 9px; font-weight: 800;
-    letter-spacing: .04em; padding: 3px 8px; border: 1px solid rgba(224, 173, 31, .7);
-    border-radius: 999px; white-space: nowrap;
-}
-#aiChatFab .ai-fab-dot {
-    position: absolute; top: 5px; right: 4px; width: 12px; height: 12px;
-    border-radius: 50%; background: #22c55e; border: 2px solid #fff;
-    box-shadow: 0 0 0 2px #111822;
+/* ============================================================
+   Riverside Palace — Trợ lý ảo AI Riverside Concierge (Luxury Redesign)
+   Sắc nét, nổi bật, độ tương phản cao, phong cách tiệc cưới hoàng gia 5 sao
+   ============================================================ */
+
+/* Bong bóng lời chào mời gọi (Speech Bubble Callout) */
+.ai-chat-bubble {
+    position: fixed;
+    right: 104px;
+    bottom: 34px;
+    z-index: 9989;
+    max-width: 280px;
+    background: #FFFFFF;
+    color: #1E293B;
+    border: 1.5px solid #D4AF37;
+    border-radius: 14px;
+    padding: 10px 14px;
+    box-shadow: 0 10px 30px rgba(22, 40, 57, 0.16), 0 2px 8px rgba(212, 175, 55, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: aiBubblePop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    cursor: pointer;
+    font-family: "Plus Jakarta Sans", Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
 }
 
-/* RobotHead — square / idle / mustard shell / silver trim / cyan screen. */
+.ai-chat-bubble::after {
+    content: "";
+    position: absolute;
+    right: -8px;
+    bottom: 20px;
+    width: 0;
+    height: 0;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    border-left: 8px solid #D4AF37;
+}
+
+.ai-chat-bubble::before {
+    content: "";
+    position: absolute;
+    right: -6px;
+    bottom: 21px;
+    width: 0;
+    height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 7px solid #FFFFFF;
+    z-index: 1;
+}
+
+.ai-bubble-content {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+}
+
+.ai-bubble-sparkle {
+    font-size: 16px;
+    color: #D4AF37;
+    flex: none;
+    animation: aiSparkleSpin 4s linear infinite;
+}
+
+.ai-bubble-text {
+    color: #1E293B;
+}
+
+.ai-bubble-text strong {
+    color: #96783E;
+    font-weight: 700;
+}
+
+.ai-bubble-close {
+    background: transparent;
+    border: none;
+    color: #94A3B8;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+    flex: none;
+}
+
+.ai-bubble-close:hover {
+    color: #1E293B;
+    background: #F1F5F9;
+}
+
+.ai-chat-bubble.hidden {
+    display: none !important;
+}
+
+@keyframes aiBubblePop {
+    0% { opacity: 0; transform: translateX(12px) scale(0.95); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes aiSparkleSpin {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.2) rotate(180deg); }
+}
+
+/* Nút nổi Trợ lý ảo AI FAB */
+/* Nút nổi Trợ lý ảo AI FAB với nền sẫm sang trọng & viền vàng hoàng gia */
+#aiChatFab {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 9990;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 2.5px solid #D4AF37;
+    background: radial-gradient(circle at 35% 35%, #1E293B 0%, #0F172A 70%, #080C14 100%);
+    color: #FFFFFF;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 0 3px rgba(212, 175, 55, 0.25);
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
+}
+
+#aiChatFab:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 0 5px rgba(212, 175, 55, 0.35);
+}
+
+#aiChatFab:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+#aiChatFab:focus-visible {
+    outline: 3px solid #00F2FE;
+    outline-offset: 4px;
+}
+
+/* Chấm trạng thái Online */
+#aiChatFab .ai-fab-dot {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #22C55E;
+    border: 2px solid #FFFFFF;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.9);
+}
+
+/* Huy hiệu AI Tư Vấn 24/7 */
+#aiChatFab .ai-fab-badge {
+    position: absolute;
+    bottom: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0F172A;
+    color: #F8FAFC;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2.5px 8px;
+    border: 1.5px solid #D4AF37;
+    border-radius: 9999px;
+    white-space: nowrap;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+
+.ai-fab-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================================================
+   Robot Head — Giữ nguyên hình dạng đầu robot đáng yêu ban đầu
+   nhưng màu sắc đậm đà, sắc nét, tương phản kim loại rõ ràng
+   ============================================================ */
+
 .robot-head {
-    --robot-shell: #e0ad1f;
-    --robot-shell-dark: #a97808;
-    --robot-trim: #c4c9d2;
-    --robot-screen: #7fe7ff;
-    position: relative; display: inline-flex; align-items: center; justify-content: center;
-    width: 68px; height: 62px; box-sizing: border-box; border-radius: 18px;
+    --robot-shell: #B8860B;           /* Vỏ kim loại vàng đồng đậm */
+    --robot-shell-dark: #6D4C0A;      /* Đổ bóng kim loại sẫm màu */
+    --robot-trim: #273549;            /* Viền thép xám sẫm cá tính */
+    --robot-screen: #00F2FE;          /* Mắt cyan phát sáng sắc nét */
+    --robot-screen-bg: #070B11;       /* Nền màn hình đen sâu OLED */
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 52px;
+    box-sizing: border-box;
+    border-radius: 16px;
     background:
-        linear-gradient(145deg, rgba(255,255,255,.48), transparent 28%),
-        linear-gradient(155deg, #f3ca3f 0%, var(--robot-shell) 55%, var(--robot-shell-dark) 100%);
-    border: 2px solid #b8850a;
-    box-shadow: inset 0 -5px 8px rgba(91,56,0,.22), inset 0 2px 3px rgba(255,255,255,.45);
+        linear-gradient(145deg, rgba(255, 255, 255, 0.45) 0%, transparent 32%),
+        linear-gradient(155deg, #DFB13D 0%, var(--robot-shell) 52%, var(--robot-shell-dark) 100%);
+    border: 2px solid #4D3305;
+    box-shadow: inset 0 -4px 6px rgba(0, 0, 0, 0.4), inset 0 2px 3px rgba(255, 255, 255, 0.45), 0 3px 8px rgba(0, 0, 0, 0.35);
 }
+
+.robot-head--fab {
+    animation: robotIdleFloat 3.4s ease-in-out infinite;
+}
+
 .robot-screen {
-    position: relative; display: flex; align-items: center; justify-content: center; gap: 10px;
-    width: 45px; height: 39px; box-sizing: border-box; overflow: hidden;
-    border: 4px solid var(--robot-trim); border-radius: 10px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 38px;
+    height: 33px;
+    box-sizing: border-box;
+    overflow: hidden;
+    border: 3.5px solid var(--robot-trim);
+    border-radius: 9px;
     background:
-        linear-gradient(rgba(127,231,255,.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(127,231,255,.035) 1px, transparent 1px),
-        #111820;
+        linear-gradient(rgba(0, 242, 254, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 242, 254, 0.05) 1px, transparent 1px),
+        var(--robot-screen-bg);
     background-size: 4px 4px;
-    box-shadow: inset 0 0 10px #000, 0 1px 2px rgba(68,48,0,.38);
+    box-shadow: inset 0 0 8px #000000, 0 1px 3px rgba(0, 0, 0, 0.5);
 }
+
 .robot-eye {
-    width: 7px; height: 13px; border-radius: 2px; background: var(--robot-screen);
-    box-shadow: 0 0 4px #fff, 0 0 9px var(--robot-screen);
-    animation: robotIdleBlink 4.8s ease-in-out infinite;
+    width: 6px;
+    height: 12px;
+    border-radius: 2px;
+    background: var(--robot-screen);
+    box-shadow: 0 0 5px #FFFFFF, 0 0 9px var(--robot-screen);
+    animation: robotIdleBlink 4.6s ease-in-out infinite;
 }
-.robot-eye:nth-child(2) { animation-delay: .06s; }
+
+.robot-eye:nth-child(2) {
+    animation-delay: 0.08s;
+}
+
 .robot-antenna {
-    position: absolute; left: 50%; top: -15px; width: 2px; height: 15px;
-    transform: translateX(-50%) rotate(-3deg); transform-origin: bottom;
-    background: var(--robot-trim); box-shadow: 1px 0 1px rgba(17,24,34,.3);
+    position: absolute;
+    left: 50%;
+    top: -13px;
+    width: 2.5px;
+    height: 13px;
+    transform: translateX(-50%) rotate(-3deg);
+    transform-origin: bottom;
+    background: #334155;
+    box-shadow: 1px 0 2px rgba(0, 0, 0, 0.4);
     animation: robotAntenna 3.6s ease-in-out infinite;
 }
+
 .robot-antenna > span {
-    position: absolute; left: 50%; top: -5px; width: 8px; height: 8px;
-    transform: translateX(-50%); border-radius: 50%; background: #edf1f6;
-    box-shadow: 0 0 8px rgba(127,231,255,.9), inset -2px -2px 2px #9da5b2;
+    position: absolute;
+    left: 50%;
+    top: -5px;
+    width: 7px;
+    height: 7px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: #00F2FE;
+    box-shadow: 0 0 8px #00F2FE, inset -2px -2px 2px #0E7490;
+    border: 1px solid #1E293B;
 }
-.robot-ear { position: absolute; top: 23px; width: 7px; height: 17px; border-radius: 5px; background: var(--robot-trim); box-shadow: inset -2px -2px 2px #8e96a3; }
-.robot-ear--left { left: -6px; }
-.robot-ear--right { right: -6px; }
-.robot-screw { position: absolute; bottom: 6px; width: 3px; height: 3px; border-radius: 50%; background: #6f5a1b; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
-.robot-screw--left { left: 9px; }
-.robot-screw--right { right: 9px; }
-.robot-head--fab { animation: robotIdleFloat 3.4s ease-in-out infinite; }
-@keyframes robotIdleBlink { 0%, 43%, 47%, 100% { transform: scaleY(1); } 45% { transform: scaleY(.12); } }
-@keyframes robotIdleFloat { 0%, 100% { transform: translateY(1px) rotate(-1deg); } 50% { transform: translateY(-3px) rotate(1deg); } }
-@keyframes robotAntenna { 0%, 100% { transform: translateX(-50%) rotate(-4deg); } 50% { transform: translateX(-50%) rotate(4deg); } }
+
+.robot-ear {
+    position: absolute;
+    top: 19px;
+    width: 6px;
+    height: 14px;
+    border-radius: 4px;
+    background: #334155;
+    border: 1px solid #1E293B;
+    box-shadow: inset -2px -2px 2px #0F172A;
+}
+
+.robot-ear--left {
+    left: -6px;
+}
+
+.robot-ear--right {
+    right: -6px;
+}
+
+.robot-screw {
+    position: absolute;
+    bottom: 4px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #4A3308;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.robot-screw--left {
+    left: 7px;
+}
+
+.robot-screw--right {
+    right: 7px;
+}
+
+/* Robot head trong Avatar Header */
+.robot-head--avatar {
+    width: 44px;
+    height: 38px;
+    border-radius: 12px;
+    border-width: 1.5px;
+    box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.robot-head--avatar .robot-screen {
+    width: 28px;
+    height: 24px;
+    border-width: 2.5px;
+    border-radius: 7px;
+    gap: 5px;
+}
+
+.robot-head--avatar .robot-eye {
+    width: 4px;
+    height: 8px;
+}
+
+.robot-head--avatar .robot-antenna {
+    top: -9px;
+    height: 9px;
+}
+
+.robot-head--avatar .robot-antenna > span {
+    width: 5px;
+    height: 5px;
+    top: -3px;
+}
+
+@keyframes robotIdleBlink {
+    0%, 43%, 47%, 100% { transform: scaleY(1); }
+    45% { transform: scaleY(0.12); }
+}
+
+@keyframes robotIdleFloat {
+    0%, 100% { transform: translateY(1px) rotate(-1deg); }
+    50% { transform: translateY(-3px) rotate(1deg); }
+}
+
+@keyframes robotAntenna {
+    0%, 100% { transform: translateX(-50%) rotate(-4deg); }
+    50% { transform: translateX(-50%) rotate(4deg); }
+}
+
+/* ============================================================
+   Khung Hộp Thoại Chat Panel
+   ============================================================ */
 #aiChatPanel {
-    position: fixed; right: 22px; bottom: 100px; z-index: 9991;
-    width: 380px; max-width: calc(100vw - 32px); max-height: min(600px, calc(100vh - 140px));
-    display: none; flex-direction: column; overflow: hidden;
-    background: #fff; border-radius: 16px; border: 1px solid #B89758;
-    box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    position: fixed;
+    right: 24px;
+    bottom: 105px;
+    z-index: 9991;
+    width: 410px;
+    max-width: calc(100vw - 32px);
+    max-height: min(650px, calc(100vh - 130px));
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    background: #FDFBF7;
+    border-radius: 18px;
+    border: 1.5px solid rgba(212, 175, 55, 0.4);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25), 0 6px 18px rgba(212, 175, 55, 0.15);
+    font-family: "Plus Jakarta Sans", Arial, sans-serif;
+    animation: aiPanelOpen 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-#aiChatPanel.open { display: flex; }
-.ai-chat-head { background: #111822; border-bottom: 2px solid #B89758; color: #fff; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+
+#aiChatPanel.open {
+    display: flex;
+}
+
+@keyframes aiPanelOpen {
+    0% { opacity: 0; transform: translateY(16px) scale(0.96); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Header sang trọng */
+.ai-chat-head {
+    background: linear-gradient(135deg, #0F172A 0%, #162839 100%);
+    border-bottom: 2px solid #D4AF37;
+    color: #FFFFFF;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .ai-chat-head .ai-avatar {
-    width: 48px; height: 44px; flex: 0 0 48px;
-    display: flex; align-items: center; justify-content: center;
+    flex: none;
 }
-.robot-head--avatar { width: 45px; height: 39px; border-radius: 12px; border-width: 1px; }
-.robot-head--avatar .robot-screen { width: 30px; height: 25px; border-width: 3px; border-radius: 7px; gap: 6px; }
-.robot-head--avatar .robot-eye { width: 4px; height: 8px; }
-.robot-head--avatar .robot-antenna { top: -9px; height: 9px; }
-.robot-head--avatar .robot-antenna > span { width: 5px; height: 5px; top: -3px;
+
+.ai-head-info {
+    flex: 1;
+    min-width: 0;
 }
-.ai-chat-head .ai-title { font-size: 13.5px; font-weight: 800; line-height: 1.3; }
-.ai-chat-head .ai-sub { font-size: 11px; color: #9fb0c7; display: flex; align-items: center; gap: 5px; }
-.ai-chat-head .ai-sub .on { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; display: inline-block; }
-.ai-chat-head .ai-close { margin-left: auto; background: transparent; border: 0; color: #d4af37; font-size: 22px; cursor: pointer; line-height: 1; }
-#aiChatMsgs { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: #f8f6f0; min-height: 220px; }
-.ai-msg { max-width: 88%; padding: 9px 12px; border-radius: 12px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
-.ai-msg.bot { align-self: flex-start; background: #fff; border: 1px solid #e7ddc4; border-left: 3px solid #B89758; color: #1f2937; }
-.ai-msg.user { align-self: flex-end; background: #111822; color: #fff; border-bottom-right-radius: 4px; }
-.ai-quick { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.ai-chat-head .ai-title {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: #FFFFFF;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ai-chat-head .ai-sub {
+    font-size: 11.5px;
+    color: #CBD5E1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
+}
+
+.ai-chat-head .ai-sub .on {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22C55E;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.9);
+    display: inline-block;
+}
+
+.ai-chat-head .ai-close {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #D4AF37;
+    font-size: 22px;
+    cursor: pointer;
+    line-height: 1;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.ai-chat-head .ai-close:hover {
+    color: #FFFFFF;
+    background: rgba(212, 175, 55, 0.3);
+    transform: rotate(90deg);
+}
+
+/* Danh sách tin nhắn */
+#aiChatMsgs {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #FDFBF7;
+    min-height: 250px;
+}
+
+.ai-msg {
+    max-width: 86%;
+    padding: 12px 15px;
+    border-radius: 14px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Tin nhắn của Bot: Rõ nét, nền trắng tinh, viền gold, đổ bóng nhẹ */
+.ai-msg.bot {
+    align-self: flex-start;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-left: 3.5px solid #D4AF37;
+    color: #1E293B;
+    box-shadow: 0 4px 14px rgba(22, 40, 57, 0.05);
+    border-bottom-left-radius: 4px;
+}
+
+/* Tin nhắn của User: Hoàng gia navy sang trọng */
+.ai-msg.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #162839 0%, #0F172A 100%);
+    color: #FFFFFF;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+/* Nút gợi ý nhanh */
+.ai-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
 .ai-quick button {
-    background: #fff; border: 1px solid #B89758; color: #6b5300; border-radius: 999px;
-    font-size: 11.5px; padding: 5px 10px; cursor: pointer;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    color: #334155;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 14px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.ai-quick button:hover { background: #faf3df; }
-.ai-typing { align-self: flex-start; background: #fff; border: 1px solid #e7ddc4; border-radius: 12px; padding: 10px 14px; display: none; gap: 4px; }
-.ai-typing.show { display: inline-flex; }
-.ai-typing span { width: 7px; height: 7px; border-radius: 50%; background: #B89758; animation: aiBlink 1.1s infinite; }
-.ai-typing span:nth-child(2) { animation-delay: .18s; } .ai-typing span:nth-child(3) { animation-delay: .36s; }
-@keyframes aiBlink { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+
+.ai-quick button:hover {
+    background: #162839;
+    border-color: #D4AF37;
+    color: #F7EFCF;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(22, 40, 57, 0.15);
+}
+
+/* Hiệu ứng đang gõ */
+.ai-typing {
+    align-self: flex-start;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 9999px;
+    padding: 9px 16px;
+    display: none;
+    gap: 5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.ai-typing.show {
+    display: inline-flex;
+}
+
+.ai-typing span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #D4AF37;
+    animation: aiBlink 1.1s infinite;
+}
+
+.ai-typing span:nth-child(2) { animation-delay: 0.18s; }
+.ai-typing span:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes aiBlink {
+    0%, 100% { opacity: 0.3; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Khung trích xuất tiêu chí (Extract Box) */
 #aiExtractBox {
-    display: none; margin: 0 12px 8px; padding: 10px 12px; border-radius: 12px;
-    background: #FFFBEB; border: 1px solid #F59E0B; font-size: 12.5px; color: #573d00;
+    display: none;
+    margin: 0 16px 12px;
+    padding: 13px 16px;
+    border-radius: 12px;
+    background: #FFFBEB;
+    border: 1.5px solid #F59E0B;
+    font-size: 13px;
+    color: #78350F;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
 }
-#aiExtractBox.show { display: block; }
-#aiExtractBox .ai-extract-title { font-weight: 800; margin-bottom: 4px; }
+
+#aiExtractBox.show {
+    display: block;
+}
+
+#aiExtractBox .ai-extract-title {
+    font-weight: 700;
+    color: #92400E;
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#aiExtractSummary {
+    color: #451A03;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
 #aiApplySurveyBtn {
-    margin-top: 8px; width: 100%; border: 0; border-radius: 10px; cursor: pointer;
-    background: linear-gradient(135deg, #d4af37, #B89758); color: #111822;
-    font-weight: 800; font-size: 12.5px; padding: 10px;
+    margin-top: 10px;
+    width: 100%;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #B89758 0%, #96783E 100%);
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+    padding: 11px 14px;
+    box-shadow: 0 3px 8px rgba(184, 151, 88, 0.35);
+    transition: all 0.2s ease;
 }
-#aiApplySurveyBtn:hover { filter: brightness(1.06); }
-.ai-chat-input { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid #eee3c6; background: #fff; }
-#aiChatText { flex: 1; border: 1px solid #ddd0ab; border-radius: 10px; padding: 9px 11px; font-size: 13px; resize: none; max-height: 90px; font-family: inherit; }
-#aiChatText:focus { outline: 2px solid rgba(212,175,55,.4); border-color: #B89758; }
+
+#aiApplySurveyBtn:hover {
+    background: linear-gradient(135deg, #D4AF37 0%, #B89758 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(184, 151, 88, 0.45);
+}
+
+/* Thanh nhập tin nhắn */
+.ai-chat-input {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    align-items: center;
+}
+
+#aiChatText {
+    flex: 1;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-size: 13.5px;
+    resize: none;
+    max-height: 90px;
+    font-family: inherit;
+    background: #F8FAFC;
+    color: #1E293B;
+    transition: all 0.2s ease;
+}
+
+#aiChatText:focus {
+    outline: none;
+    border-color: #D4AF37;
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+}
+
 #aiChatSendBtn {
-    border: 0; border-radius: 10px; cursor: pointer; padding: 0 14px;
-    background: #111822; color: #d4af37; font-size: 16px;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    background: linear-gradient(135deg, #DFCA9B 0%, #C5A880 50%, #96783E 100%);
+    color: #FFFFFF;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 8px rgba(184, 151, 88, 0.35);
+    transition: all 0.2s ease;
+    flex: none;
 }
-#aiChatSendBtn:disabled { opacity: .55; cursor: wait; }
+
+#aiChatSendBtn:hover:not(:disabled) {
+    transform: scale(1.08);
+    background: linear-gradient(135deg, #F7EFCF 0%, #D4AF37 60%, #96783E 100%);
+    box-shadow: 0 6px 14px rgba(184, 151, 88, 0.45);
+}
+
+#aiChatSendBtn:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+/* Responsive */
 @media (max-width: 480px) {
-    #aiChatFab { right: 14px; bottom: 14px; width: 68px; height: 68px; }
-    .robot-head--fab { transform: scale(.9); }
-    #aiChatPanel { right: 8px; left: 8px; bottom: 84px; width: auto; max-height: calc(100vh - 110px); }
+    #aiChatFab { right: 16px; bottom: 16px; width: 62px; height: 62px; }
+    .ai-chat-bubble { right: 85px; bottom: 24px; max-width: calc(100vw - 120px); font-size: 12px; }
+    #aiChatPanel { right: 10px; left: 10px; bottom: 85px; width: auto; max-height: calc(100vh - 105px); }
 }
+
 @media (prefers-reduced-motion: reduce) {
-    .robot-head--fab, .robot-antenna, .robot-eye { animation: none; }
+    #aiChatFab, .ai-fab-pulse, .ai-eye, .ai-sparkle-star, .ai-chat-bubble { animation: none; }
 }

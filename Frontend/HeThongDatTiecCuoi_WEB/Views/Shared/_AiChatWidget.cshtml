@@ -1,15 +1,29 @@
 @* UC10 — Widget Trợ lý ảo AI Riverside Palace (nút nổi + popup). Render toàn site từ _Layout. *@
-<button id="aiChatFab" type="button" aria-label="Mở trợ lý ảo Riverside Palace" title="Trợ lý ảo Riverside Palace">
-    <span class="robot-head robot-head--fab" aria-hidden="true">
-        <span class="robot-antenna"><span></span></span>
-        <span class="robot-ear robot-ear--left"></span>
-        <span class="robot-ear robot-ear--right"></span>
-        <span class="robot-screen"><span class="robot-eye"></span><span class="robot-eye"></span></span>
-        <span class="robot-screw robot-screw--left"></span>
-        <span class="robot-screw robot-screw--right"></span>
-    </span>
+
+<!-- Bong bóng lời chào mời gọi tương tác (Speech Bubble) -->
+<div id="aiChatBubble" class="ai-chat-bubble" role="status" aria-live="polite">
+    <div class="ai-bubble-content">
+        <span class="ai-bubble-sparkle" aria-hidden="true">✨</span>
+        <span class="ai-bubble-text">Cần dự toán chi phí hay tìm sảnh trống? <strong>Chat cùng AI nhé!</strong></span>
+    </div>
+    <button type="button" class="ai-bubble-close" id="aiBubbleCloseBtn" aria-label="Đóng lời chào">×</button>
+</div>
+
+<!-- Nút nổi Trợ lý ảo AI Hoàng Gia Riverside -->
+<button id="aiChatFab" type="button" aria-label="Mở trợ lý ảo Riverside Palace" title="Trợ lý ảo Riverside Palace - Tư vấn tiệc cưới 24/7">
+    <div class="ai-fab-icon-wrap" aria-hidden="true">
+        <!-- Robot Head nguyên bản, đường nét kim loại sắc sảo & màu sắc đậm đà -->
+        <span class="robot-head robot-head--fab">
+            <span class="robot-antenna"><span></span></span>
+            <span class="robot-ear robot-ear--left"></span>
+            <span class="robot-ear robot-ear--right"></span>
+            <span class="robot-screen"><span class="robot-eye"></span><span class="robot-eye"></span></span>
+            <span class="robot-screw robot-screw--left"></span>
+            <span class="robot-screw robot-screw--right"></span>
+        </span>
+    </div>
     <span class="ai-fab-dot" aria-hidden="true"></span>
-    <span class="ai-fab-badge">Tư vấn 24/7</span>
+    <span class="ai-fab-badge">AI Tư Vấn 24/7</span>
 </button>
 
 <div id="aiChatPanel" role="dialog" aria-label="Trợ lý ảo Riverside Palace" aria-hidden="true">
@@ -20,16 +34,16 @@
                 <span class="robot-screen"><span class="robot-eye"></span><span class="robot-eye"></span></span>
             </span>
         </div>
-        <div>
-            <div class="ai-title">Trợ Lý Ảo Riverside Palace - Tư Vấn Tiệc Cưới Thông Minh</div>
-            <div class="ai-sub"><span class="on"></span> Đang trực tuyến • phản hồi trong giây lát</div>
+        <div class="ai-head-info">
+            <div class="ai-title">Trợ Lý Ảo Riverside Concierge</div>
+            <div class="ai-sub"><span class="on"></span> Đang trực tuyến • Tư vấn tiệc cưới tức thì</div>
         </div>
-        <button class="ai-close" type="button" aria-label="Đóng trợ lý ảo">×</button>
+        <button class="ai-close" id="aiChatCloseBtn" type="button" aria-label="Đóng trợ lý ảo">×</button>
     </div>
     <div id="aiChatMsgs" aria-live="polite"></div>
     <div class="ai-typing" id="aiChatTyping" aria-hidden="true"><span></span><span></span><span></span></div>
     <div id="aiExtractBox" aria-live="polite">
-        <div class="ai-extract-title">✦ Đã nhận diện tiêu chí tiệc cưới</div>
+        <div class="ai-extract-title"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:-2px;">auto_awesome</span> Đã nhận diện tiêu chí tiệc cưới</div>
         <div id="aiExtractSummary"></div>
         <button id="aiApplySurveyBtn" type="button">✦ Áp Dụng Thông Tin Vào Khảo Sát &amp; Xem Top 3 Combo (1-Click)</button>
     </div>

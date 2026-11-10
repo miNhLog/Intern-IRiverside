@@ -47,16 +47,16 @@ public sealed class Uc11RecommendationWebTests
     }
 
     [Fact]
-    public void AiAutofill_UnsupportedStyleDoesNotSelectFallback()
+    public void AiAutofill_MapsKlcnStylesAndUsesSafeFallback()
     {
         var js = File.ReadAllText(Path.Combine(RepositoryRoot(), "Frontend", "HeThongDatTiecCuoi_WEB", "wwwroot", "js", "ai-chat.js"));
         var start = js.IndexOf("function mapStyle(v)", StringComparison.Ordinal);
         var end = js.IndexOf("function fillSurvey(e)", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
         var mapping = js[start..end];
-        Assert.DoesNotContain("'Hoàng gia'", mapping);
-        Assert.Contains("return null;", mapping);
-        Assert.DoesNotContain("return 'Hiện đại / lãng mạn'", mapping);
+        Assert.Contains("'Hoàng gia'", mapping);
+        Assert.Contains("return 'Sân vườn / lãng mạn'", mapping);
+        Assert.Contains("return 'Hiện đại / lãng mạn'", mapping);
         Assert.Contains("if (style && mapped) { style.value = mapped; }", js);
     }
 
