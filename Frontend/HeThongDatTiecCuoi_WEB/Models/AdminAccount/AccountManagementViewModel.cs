@@ -27,6 +27,7 @@ public sealed class AccountManagementViewModel
 {
     public AccountDto? AdminAccount { get; set; }
     public List<AccountDto> Accounts { get; set; } = [];
+    public List<AccountDto> AllAccounts { get; set; } = [];
     public List<RoleDto> Roles { get; set; } = [];
     public string? Keyword { get; set; }
     public int? RoleId { get; set; }
@@ -64,30 +65,54 @@ public sealed class AuditLogViewModel
     public string Actor { get; set; } = "Hệ thống";
     public string ActorName { get; set; } = "Hệ thống";
     public string? ActorEmail { get; set; }
+    public string? ActorRole { get; set; }
     public string Action { get; set; } = string.Empty;
-    public long TargetUserId { get; set; }
+    public long? TargetUserId { get; set; }
     public string Target { get; set; } = string.Empty;
+    public string? TargetRole { get; set; }
     public string EntityName { get; set; } = string.Empty;
     public long EntityId { get; set; }
     public string? OldData { get; set; }
     public string? NewData { get; set; }
     public string? Notes { get; set; }
+    public string? IpAddress { get; set; }
+    public string? UserAgent { get; set; }
+    public string? AuthMethod { get; set; }
+    public string? Outcome { get; set; }
+    public string? CorrelationId { get; set; }
+    public string Group { get; set; } = string.Empty;
+    public string Source { get; set; } = "Internal";
 }
 
 public sealed class AuditLogPageViewModel
 {
     public List<AuditLogViewModel> Items { get; set; } = [];
+    public AuditLogStatisticsViewModel Statistics { get; set; } = new();
+    public List<string> AvailableActions { get; set; } = [];
     public int Page { get; set; }
     public int PageSize { get; set; }
     public int TotalItems { get; set; }
     public int TotalPages { get; set; }
     public string? Keyword { get; set; }
     public string? Action { get; set; }
-    public string? EntityNameFilter { get; set; }
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
     public string? ErrorMessage { get; set; }
-    public bool IsLoadError { get; set; }
+    public string? Group { get; set; }
+    public string? Outcome { get; set; }
+    public string? AuthMethod { get; set; }
+    public string Mode { get; set; } = "important";
+    public string? ImportantGroup { get; set; }
+    public DateTime? EffectiveFromDate { get; set; }
+    public DateTime? EffectiveToDate { get; set; }
+    public bool AppliedDefaultPeriod { get; set; }
+}
+
+public sealed class AuditLogStatisticsViewModel
+{
+    public int NeedsReview { get; set; }
+    public int RoleChanges { get; set; }
+    public int FinancialEvents { get; set; }
 }
 
 public sealed class RoleDistributionViewModel

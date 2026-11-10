@@ -1,4 +1,4 @@
-﻿@model HeThongDatTiecCuoi_WEB.Models.AdminBooking.BookingListResponseViewModel
+@model HeThongDatTiecCuoi_WEB.Models.AdminBooking.BookingListResponseViewModel
 @{
     ViewData["Title"] = "Quản Lý Đặt Tiệc";
     Layout = "_AdminLayout";
@@ -38,12 +38,12 @@
 
 <style>
     .booking-page-wrapper {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        color: #1E293B;
+        font-family: 'Inter', sans-serif;
+        color: var(--rp-text);
     }
 
         .booking-page-wrapper .font-serif {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Inter', sans-serif;
         }
 
     .card-shadow {
@@ -90,8 +90,8 @@
     }
 
         .booking-row:hover {
-            background-color: #FAF8F5;
-            box-shadow: inset 3px 0 0 #B89758;
+            background-color: var(--rp-surface-hover);
+            box-shadow: inset 3px 0 0 var(--rp-gold-600);
         }
 
     /* Avatar khách hàng */
@@ -108,18 +108,257 @@
         font-size: 12px;
         flex-shrink: 0;
     }
-</style>
 
-<!-- TOAST THÔNG BÁO TỰ ĐỘNG -->
-<div id="bookingToast" class="fixed top-5 right-5 z-[999999] transform translate-x-full transition-transform duration-300 flex items-center gap-3 bg-white border border-[#E5D5B8] shadow-2xl px-4 py-3 rounded-xl">
-    <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs" id="toastIcon">
-        <i class="fa-solid fa-circle-check"></i>
-    </div>
-    <div>
-        <p class="text-xs font-bold text-slate-900" id="toastTitle">Thông báo</p>
-        <p class="text-[11px] text-slate-500" id="toastMsg">Nội dung</p>
-    </div>
-</div>
+    .booking-action-trigger {
+        width: 72px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 11px;
+        border: 1px solid var(--rp-border);
+        border-radius: var(--metis-radius);
+        color: var(--rp-text-secondary);
+        background: var(--rp-surface);
+        cursor: pointer;
+        transition: border-color .18s ease, color .18s ease, background .18s ease;
+    }
+
+    .booking-action-trigger:hover,
+    .booking-action-trigger[aria-expanded="true"] {
+        border-color: var(--rp-gold-600);
+        color: var(--rp-gold-700);
+        background: var(--rp-surface-hover);
+    }
+
+    .booking-action-popover {
+        position: fixed;
+        inset: auto;
+        width: 210px;
+        margin: 0;
+        padding: 6px;
+        border: 1px solid var(--rp-border);
+        border-radius: 12px;
+        color: var(--rp-text);
+        background: var(--rp-surface);
+        box-shadow: var(--metis-shadow-float);
+        z-index: 100000;
+    }
+
+    .booking-action-popover::backdrop {
+        background: transparent;
+    }
+
+    .booking-action-item {
+        width: 100%;
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border: 0;
+        border-radius: 8px;
+        color: var(--rp-text);
+        background: transparent;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 650;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .booking-action-item:hover {
+        background: var(--rp-surface-hover);
+    }
+
+    .booking-action-item i {
+        width: 18px;
+        color: var(--rp-gold-600);
+        text-align: center;
+    }
+
+    .booking-action-item.danger {
+        color: #dc3355;
+    }
+
+    .booking-action-item.danger i {
+        color: inherit;
+    }
+
+    .booking-status {
+        display: inline-flex;
+        min-height: 26px;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 4px 9px !important;
+        border: 0 !important;
+        border-radius: var(--metis-radius-sm) !important;
+        color: #fff !important;
+        background: var(--metis-badge-secondary) !important;
+        font-size: 10.5px !important;
+        font-weight: 650 !important;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .booking-status--pending { background: var(--metis-badge-warning) !important; }
+    .booking-status--confirmed { background: var(--metis-badge-primary) !important; }
+    .booking-status--preparing { background: #d97706 !important; }
+    .booking-status--completed { background: var(--metis-badge-success) !important; }
+    .booking-status--cancelled { background: var(--metis-badge-danger) !important; }
+
+    .booking-page-wrapper .status-tab-btn.active {
+        color: #211806 !important;
+        background: var(--rp-gold-500) !important;
+        box-shadow: none !important;
+    }
+
+    .booking-page-wrapper .status-tab-btn:not(.active) {
+        color: var(--rp-text-secondary) !important;
+        background: transparent !important;
+    }
+
+    .booking-page-wrapper .status-tab-btn:not(.active):hover {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface-hover) !important;
+        transform: none;
+    }
+
+    .booking-page-wrapper .status-tab-btn:not(.active) > span:last-child {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface-hover) !important;
+    }
+
+    .booking-page-wrapper .status-tab-btn.active > span:last-child {
+        color: #211806 !important;
+        background: rgba(255, 255, 255, .42) !important;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app :is(.booking-page-wrapper, #bookingDetailModal, #createBookingModal) {
+        color: var(--rp-text);
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app .booking-page-wrapper :is(
+        .bg-white, .bg-slate-50, .bg-slate-100, [class*="bg-[#FAF8F5]"]
+    ),
+    html[data-admin-theme="dark"] .manager-metis-app :is(#bookingDetailModal, #createBookingModal) :is(
+        .bg-white, [class*="from-slate-50"], [class*="from-[#FAF8F5]"], [class*="to-[#F5EFE3]"]
+    ) {
+        background: var(--rp-surface) !important;
+        background-image: none !important;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app .booking-page-wrapper :is(.bg-slate-50\/60, .bg-slate-50\/70),
+    html[data-admin-theme="dark"] .manager-metis-app :is(#bookingDetailModal, #createBookingModal) :is(.bg-slate-50\/60, .bg-slate-50\/70) {
+        background: var(--rp-surface-muted) !important;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app :is(.booking-page-wrapper, #bookingDetailModal, #createBookingModal) :is(
+        .text-slate-950, .text-slate-900, .text-slate-800, .text-slate-700
+    ) { color: var(--rp-text) !important; }
+
+    html[data-admin-theme="dark"] .manager-metis-app :is(.booking-page-wrapper, #bookingDetailModal, #createBookingModal) :is(
+        .text-slate-600, .text-slate-500, .text-slate-400, .text-slate-300
+    ) { color: var(--rp-text-secondary) !important; }
+
+    html[data-admin-theme="dark"] .manager-metis-app :is(.booking-page-wrapper, #bookingDetailModal, #createBookingModal) :is(
+        .border-slate-100, .border-slate-200, .border-slate-200\/70, .border-slate-300, [class*="border-[#E5D5B8]"]
+    ) { border-color: var(--rp-border) !important; }
+
+    html[data-admin-theme="dark"] .manager-metis-app :is(.booking-page-wrapper, #bookingDetailModal, #createBookingModal) :is(
+        .divide-slate-100, .divide-slate-200
+    ) > :not([hidden]) ~ :not([hidden]) {
+        border-color: var(--rp-border) !important;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app .booking-page-wrapper :is(input, select),
+    html[data-admin-theme="dark"] .manager-metis-app #createBookingModal :is(input:not([type="checkbox"]), select, textarea) {
+        border-color: var(--rp-border) !important;
+        color: var(--rp-text) !important;
+        background: var(--rp-surface-muted) !important;
+        color-scheme: dark;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app :is(.booking-page-wrapper, #createBookingModal) :is(input, textarea)::placeholder {
+        color: var(--rp-text-muted) !important;
+        opacity: 1;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app :is(.booking-page-wrapper, #createBookingModal) select option {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface) !important;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app :is(.booking-page-wrapper, #createBookingModal) :is(input, select, textarea):focus {
+        border-color: var(--rp-gold-500) !important;
+        outline: 0 !important;
+        box-shadow: 0 0 0 2px rgba(198, 161, 91, .18) !important;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app #createBookingModal :is(input, select, textarea):disabled {
+        color: var(--rp-text-muted) !important;
+        background: var(--rp-surface-hover) !important;
+        opacity: .72;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app #createBookingModal input[type="checkbox"] {
+        accent-color: var(--metis-badge-primary);
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app .booking-page-wrapper thead,
+    html[data-admin-theme="dark"] .manager-metis-app #bookingDetailModal :is(thead, tfoot) {
+        border-color: var(--rp-border) !important;
+        color: var(--rp-text) !important;
+        background: var(--metis-heading-bg) !important;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app .booking-page-wrapper tbody,
+    html[data-admin-theme="dark"] .manager-metis-app #bookingDetailModal tbody {
+        border-color: var(--rp-border) !important;
+        color: var(--rp-text) !important;
+        background: var(--rp-surface) !important;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app .booking-row:hover,
+    html[data-admin-theme="dark"] .manager-metis-app #bookingDetailModal tbody tr:hover {
+        background: var(--rp-surface-hover) !important;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app :is(#bookingDetailModal, #createBookingModal) > div {
+        border-color: var(--rp-border) !important;
+        color: var(--rp-text);
+        background: var(--rp-surface) !important;
+        box-shadow: var(--metis-shadow-float) !important;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app :is(#bookingDetailModal, #createBookingModal) :is(header, footer) {
+        border-color: var(--rp-border) !important;
+        background: var(--rp-surface) !important;
+        background-image: none !important;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app #bookingDetailModal #mdReviewQrImage {
+        border-radius: var(--metis-radius-sm);
+        background: #fff;
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app .booking-action-popover {
+        border-color: var(--rp-border);
+        color: var(--rp-text);
+        background: var(--rp-surface);
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app .custom-scrollbar::-webkit-scrollbar-track {
+        background: var(--rp-surface-muted);
+    }
+
+    html[data-admin-theme="dark"] .manager-metis-app .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: var(--rp-border-strong);
+    }
+</style>
 
 <!-- CONTAINER CHÍNH: Căn chỉnh padding và căn giữa đồng bộ với các trang khác -->
 <div class="booking-page-wrapper p-6 lg:p-8 space-y-6 w-full max-w-[1600px] mx-auto" data-can-manage-contracts="@isManager.ToString().ToLowerInvariant()">
@@ -127,11 +366,7 @@
     <!-- ================= 1. HEADER TRANG ================= -->
     <div class="manager-section-header flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                <span>Quản trị hệ thống</span>
-                <i class="fa-solid fa-chevron-right text-[9px] text-slate-400"></i>
-                <span class="text-[#B89758] font-semibold">Đặt tiệc</span>
-            </nav>
+            <span class="backoffice-hero__eyebrow"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> QUẢN LÝ ĐẶT TIỆC</span>
             <h2 class="font-serif text-2xl font-bold text-slate-900 tracking-tight">
                 Quản lý đặt tiệc cưới
             </h2>
@@ -139,7 +374,7 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5">
-            <button type="button" onclick="exportBookingsExcel()" class="flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 focus-ring min-h-[40px] shadow-2xs cursor-pointer">
+            <button type="button" onclick="exportBookingsExcel()" class="excel-export-button flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 focus-ring min-h-[40px] shadow-2xs cursor-pointer">
                 <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i>
                 <span>Xuất Excel</span>
             </button>
@@ -162,7 +397,7 @@
             <button type="button" onclick="filterByStatus(event, 'PENDING')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-700 shrink-0 text-xs flex items-center gap-1.5">
                 <i class="fa-regular fa-clock text-[10px]"></i>
                 <span>Chờ xác nhận</span>
-                <span class="px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 font-bold" id="countPending">@Model.PendingConfirmationCount</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 font-bold" id="countPending">@(Model.PendingCount > 0 ? Model.PendingCount : Model.PendingConfirmationCount)</span>
             </button>
             <button type="button" onclick="filterByStatus(event, 'CONFIRMED')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 shrink-0 text-xs flex items-center gap-1.5">
                 <i class="fa-solid fa-check-double text-[10px]"></i>
@@ -172,7 +407,7 @@
             <button type="button" onclick="filterByStatus(event, 'PREPARING')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-amber-50 hover:text-amber-700 shrink-0 text-xs flex items-center gap-1.5">
                 <i class="fa-solid fa-list-check text-[10px]"></i>
                 <span>Đang chuẩn bị</span>
-                <span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800 font-bold" id="countDeposited">@Model.DepositedCount</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800 font-bold" id="countDeposited">@(Model.PreparingCount > 0 ? Model.PreparingCount : Model.DepositedCount)</span>
             </button>
             <button type="button" onclick="filterByStatus(event, 'COMPLETED')" class="status-tab-btn px-3.5 py-2 rounded-lg font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 shrink-0 text-xs flex items-center gap-1.5">
                 <i class="fa-solid fa-circle-check text-[10px]"></i>
@@ -197,7 +432,7 @@
             </div>
 
             <!-- Lọc theo sảnh -->
-            <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 min-h-[42px] min-w-[200px]">
+            <div class="backoffice-filter-control flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 min-h-[42px] min-w-[200px]">
                 <i class="fa-solid fa-building-columns text-slate-500 mr-2 text-xs"></i>
                 <label for="filterHallId" class="text-xs text-slate-500 mr-1.5 whitespace-nowrap font-medium">Sảnh:</label>
                 <select id="filterHallId" onchange="executeFilter(1)" class="w-full bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer pr-1">
@@ -215,13 +450,19 @@
             </div>
 
             <!-- Lọc theo khoảng ngày -->
-            <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 min-h-[42px] text-xs">
+            <div class="backoffice-filter-control flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 min-h-[42px] text-xs">
                 <i class="fa-regular fa-calendar text-slate-500 text-xs"></i>
                 <span class="text-slate-500 font-medium">Từ:</span>
-                <input type="date" id="filterFromDate" class="bg-transparent text-xs text-slate-800 focus:outline-none cursor-pointer">
+                <input type="date"
+                       id="filterFromDate"
+                       class="bg-transparent text-xs text-slate-800 focus:outline-none cursor-pointer"
+                       style="min-height:0 !important; border:0 !important; border-radius:0 !important; outline:0 !important; background:transparent !important; box-shadow:none !important; padding:0 !important;">
                 <span class="text-slate-300">|</span>
                 <span class="text-slate-500 font-medium">Đến:</span>
-                <input type="date" id="filterToDate" class="bg-transparent text-xs text-slate-800 focus:outline-none cursor-pointer">
+                <input type="date"
+                       id="filterToDate"
+                       class="bg-transparent text-xs text-slate-800 focus:outline-none cursor-pointer"
+                       style="min-height:0 !important; border:0 !important; border-radius:0 !important; outline:0 !important; background:transparent !important; box-shadow:none !important; padding:0 !important;">
             </div>
 
             <button type="button" onclick="executeFilter(1)" class="px-4 py-2 bg-[#1E293B] hover:bg-[#0F172A] text-white rounded-lg text-xs font-bold transition-colors cursor-pointer min-h-[42px] flex items-center gap-1.5">
@@ -298,65 +539,65 @@
                                     <span class="text-[10px] text-slate-500 ml-0.5">bàn</span>
                                 </td>
                                 <td class="py-3.5 px-4 text-right font-serif font-bold text-slate-900">
-                                    @b.EstimatedTotal.ToString("N0") <span class="text-[10px] font-sans text-slate-500 font-normal">đ</span>
+                                    @((b.EstimatedTotal ?? 0m).ToString("N0")) <span class="text-[10px] font-sans text-slate-500 font-normal">đ</span>
                                 </td>
                                 <td class="py-3.5 px-3 text-center">
                                     @if (b.Status == "Hoàn tất")
                                     {
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
-                                            <i class="fa-solid fa-circle-check text-[9px]"></i> Hoàn tất
+                                        <span class="booking-status booking-status--completed">
+                                            Hoàn tất
                                         </span>
                                     }
                                     else if (b.StatusCode == "PREPARING")
                                     {
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
-                                            <i class="fa-solid fa-list-check text-[9px]"></i> Đang chuẩn bị
+                                        <span class="booking-status booking-status--preparing">
+                                            Đang chuẩn bị
                                         </span>
                                     }
                                     else if (b.Status == "Đã xác nhận")
                                     {
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                            <i class="fa-solid fa-check-double text-[9px]"></i> Đã xác nhận
+                                        <span class="booking-status booking-status--confirmed">
+                                            Đã xác nhận
                                         </span>
                                     }
                                     else if (b.Status == "Đã hủy")
                                     {
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                            <i class="fa-solid fa-ban text-[9px]"></i> Đã hủy
+                                        <span class="booking-status booking-status--cancelled">
+                                            Đã hủy
                                         </span>
                                     }
                                     else
                                     {
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                                            <i class="fa-regular fa-clock text-[9px]"></i> Chờ xác nhận
+                                        <span class="booking-status booking-status--pending">
+                                            Chờ xác nhận
                                         </span>
                                     }
                                 </td>
                                 <td class="py-3.5 px-4 text-center">
-                                    <div class="inline-flex items-center gap-1.5">
-                                        <button type="button" onclick="viewBookingDetail(@b.BookingId)" class="h-[32px] w-[32px] rounded-lg bg-slate-100 hover:bg-[#B89758]/15 text-[#8C6D32] hover:text-[#B89758] transition-colors flex items-center justify-center" title="Xem chi tiết booking">
-                                            <i class="fa-regular fa-eye text-sm"></i>
+                                    <div class="inline-flex">
+                                        <button type="button" class="booking-action-trigger" onclick="toggleBookingActions(event, 'bookingActions-@b.BookingId')" aria-controls="bookingActions-@b.BookingId" aria-expanded="false" aria-label="Mở thao tác cho booking @b.BookingCode" title="Thao tác">
+                                            <i class="bi bi-three-dots"></i>
+                                            <i class="bi bi-chevron-down text-[10px]" aria-hidden="true"></i>
                                         </button>
+                                        <div id="bookingActions-@b.BookingId" class="booking-action-popover" popover="auto" role="menu">
+                                            <button type="button" class="booking-action-item" onclick="closeBookingActions(); viewBookingDetail(@b.BookingId)" role="menuitem"><i class="fa-regular fa-eye"></i><span>Xem chi tiết</span></button>
                                         @if (isManager && b.HasContract)
                                         {
-                                            <a href="/quan-ly/hop-dong-thanh-toan?contractId=@b.ContractId" class="h-[32px] px-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors flex items-center justify-center gap-1 text-[10px] font-bold" title="Xem hợp đồng @b.ContractCode"><i class="fa-solid fa-file-contract"></i>@b.ContractCode</a>
+                                            <a href="/quan-ly/hop-dong-thanh-toan?contractId=@b.ContractId" class="booking-action-item" role="menuitem"><i class="fa-solid fa-file-contract"></i><span>Xem hợp đồng</span></a>
                                         }
                                         else if (isManager && b.StatusCode == "CONFIRMED")
                                         {
-                                            <a href="/quan-ly/hop-dong-thanh-toan?bookingId=@b.BookingId&amp;openCreate=true" class="h-[32px] px-2.5 rounded-lg bg-[#B89758]/15 hover:bg-[#B89758]/25 text-[#8C6D32] transition-colors flex items-center justify-center gap-1 text-[10px] font-bold" title="Tạo hợp đồng"><i class="fa-solid fa-file-circle-plus"></i>Tạo HĐ</a>
+                                            <a href="/quan-ly/hop-dong-thanh-toan?bookingId=@b.BookingId&amp;openCreate=true" class="booking-action-item" role="menuitem"><i class="fa-solid fa-file-circle-plus"></i><span>Tạo hợp đồng</span></a>
                                         }
                                         @if (b.StatusCode == "PENDING")
                                         {
-                                            <button type="button" onclick="quickUpdateStatus(@b.BookingId, 'CONFIRMED')" class="h-[32px] w-[32px] rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center justify-center" title="Xác nhận đơn tiệc">
-                                                <i class="fa-solid fa-check text-sm"></i>
-                                            </button>
+                                            <button type="button" class="booking-action-item" onclick="closeBookingActions(); quickUpdateStatus(@b.BookingId, 'CONFIRMED')" role="menuitem"><i class="fa-solid fa-check"></i><span>Xác nhận đơn tiệc</span></button>
                                         }
                                         @if (b.StatusCode != "CANCELLED" && b.StatusCode != "COMPLETED")
                                         {
-                                            <button type="button" onclick="cancelBookingPrompt(@b.BookingId)" class="h-[32px] w-[32px] rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 transition-colors flex items-center justify-center" title="Hủy đơn tiệc">
-                                                <i class="fa-solid fa-ban text-sm"></i>
-                                            </button>
+                                            <button type="button" class="booking-action-item danger" onclick="closeBookingActions(); cancelBookingPrompt(@b.BookingId)" role="menuitem"><i class="fa-solid fa-ban"></i><span>Hủy đơn tiệc</span></button>
                                         }
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -389,7 +630,7 @@
 </div>
 
 <!-- ================= MODAL CHI TIẾT HỢP ĐỒNG & THANH TOÁN ================= -->
-<div id="bookingDetailModal" class="fixed inset-0 hidden items-center justify-center bg-slate-950/75 backdrop-blur-xs p-2 sm:p-4 md:p-6 transition-all duration-300" style="z-index: 99999; font-family: 'Plus Jakarta Sans', sans-serif;">
+<div id="bookingDetailModal" class="fixed inset-0 hidden items-center justify-center bg-slate-950/75 backdrop-blur-xs p-2 sm:p-4 md:p-6 transition-all duration-300" style="z-index: 99999; font-family: 'Inter', sans-serif;">
     <div class="bg-white w-full max-w-4xl max-h-[92vh] rounded-2xl shadow-2xl flex flex-col border border-[#E5D5B8] overflow-hidden">
 
         <!-- Header Modal -->
@@ -399,7 +640,7 @@
                     <i class="fa-solid fa-file-invoice-dollar text-base"></i>
                 </div>
                 <div>
-                    <h3 class="font-serif font-bold text-base sm:text-lg text-slate-900 flex items-center gap-2">
+                    <h3 class="font-bold text-base sm:text-lg text-slate-900 flex items-center gap-2">
                         <span>Hồ Sơ Đặt Tiệc:</span>
                         <span id="mdBookingCode" class="font-mono text-[#8C6D32]">DT-XXXX</span>
                     </h3>
@@ -499,6 +740,26 @@
             </div>
 
             <!-- Liên kết nghiệp vụ hợp đồng; thanh toán không được ghi nhận thủ công tại Booking. -->
+            <div id="mdReviewQrSection" class="hidden bg-slate-50/60 rounded-xl p-4 border border-slate-200/70">
+                <h4 class="font-bold text-xs text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5"><i class="fa-solid fa-qrcode text-[#B89758]"></i> QR Đánh Giá Buổi Tiệc</h4>
+                <div class="flex flex-col sm:flex-row gap-4 sm:items-center">
+                    <div class="w-32 h-32 bg-white rounded-xl border border-slate-200 p-2 shrink-0"><img id="mdReviewQrImage" class="w-full h-full object-contain" alt="QR đánh giá khách mời" /></div>
+                    <div class="min-w-0 flex-1 text-xs">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                            <p><span class="text-slate-500">Trạng thái:</span> <strong id="mdReviewQrState" class="text-slate-800">---</strong></p>
+                            <p><span class="text-slate-500">Lượt đánh giá:</span> <strong id="mdReviewCount" class="text-slate-800">0</strong></p>
+                            <p><span class="text-slate-500">Bắt đầu:</span> <strong id="mdReviewOpensAt" class="text-slate-800">---</strong></p>
+                            <p><span class="text-slate-500">Hết hạn:</span> <strong id="mdReviewExpiresAt" class="text-slate-800">---</strong></p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" onclick="copyReviewLink()" class="px-3 py-2 bg-white border border-slate-200 hover:border-[#B89758] text-slate-700 rounded-lg font-semibold transition-colors"><i class="fa-regular fa-copy mr-1"></i>Sao chép link</button>
+                            <a id="mdReviewQrDownload" download class="px-3 py-2 bg-white border border-slate-200 hover:border-[#B89758] text-slate-700 rounded-lg font-semibold transition-colors"><i class="fa-solid fa-download mr-1"></i>Tải QR</a>
+                            <button type="button" onclick="printReviewQr()" class="px-3 py-2 bg-[#1E293B] hover:bg-slate-900 text-white rounded-lg font-semibold transition-colors"><i class="fa-solid fa-print mr-1"></i>In QR</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-gradient-to-br from-[#FAF8F5] to-[#F5EFE3] border border-[#E5D5B8] p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <div>
                     <span class="font-bold text-slate-800 flex items-center gap-1.5">
@@ -516,7 +777,7 @@
         <footer class="p-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
             <span class="text-slate-500 flex items-center gap-1.5">
                 Trạng thái hiện tại:
-                <strong id="mdStatusBadge" class="text-slate-800">---</strong>
+                <strong id="mdStatusBadge" class="booking-status">---</strong>
             </span>
             <button type="button" onclick="closeDetailModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-semibold cursor-pointer transition-colors">
                 Đóng
@@ -527,7 +788,7 @@
 </div>
 
 <!-- ================= MODAL TẠO MỚI ĐẶT TIỆC (CREATE BOOKING) ================= -->
-<div id="createBookingModal" class="fixed inset-0 hidden items-center justify-center bg-slate-950/75 backdrop-blur-xs p-2 sm:p-4 transition-all duration-300" style="z-index: 99999; font-family: 'Plus Jakarta Sans', sans-serif;">
+<div id="createBookingModal" class="fixed inset-0 hidden items-center justify-center bg-slate-950/75 backdrop-blur-xs p-2 sm:p-4 transition-all duration-300" style="z-index: 99999; font-family: 'Inter', sans-serif;">
     <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col border border-[#E5D5B8] overflow-hidden max-h-[92vh]">
         <header class="p-4 sm:p-5 border-b border-slate-200 bg-gradient-to-r from-[#FAF8F5] via-white to-[#FAF8F5] flex items-center justify-between shrink-0">
             <div class="flex items-center gap-3">
@@ -658,6 +919,8 @@
         };
 
         let selectedBookingId = null;
+        let selectedReviewUrl = '';
+        let selectedReviewQrImage = '';
         let createBookingOptions = null;
         let currentBookings = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items ?? new List<HeThongDatTiecCuoi_WEB.Models.AdminBooking.BookingSummaryViewModel>()));
         const canManageContracts = document.querySelector('.booking-page-wrapper')?.dataset.canManageContracts === 'true';
@@ -679,22 +942,52 @@
             renderPagination(@Model.TotalCount, 1, 10);
         });
 
-        function showToast(title, msg, isSuccess = true) {
-            const toast = document.getElementById('bookingToast');
-            const icon = document.getElementById('toastIcon');
-            document.getElementById('toastTitle').innerText = title;
-            document.getElementById('toastMsg').innerText = msg;
+        document.addEventListener('toggle', event => {
+            if (!event.target.classList?.contains('booking-action-popover')) return;
+            const trigger = document.querySelector(`[aria-controls="${event.target.id}"]`);
+            if (trigger) trigger.setAttribute('aria-expanded', event.newState === 'open' ? 'true' : 'false');
+        }, true);
 
-            if (isSuccess) {
-                icon.className = "w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs";
-                icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
-            } else {
-                icon.className = "w-7 h-7 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs";
-                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+        window.addEventListener('resize', closeBookingActions);
+        window.addEventListener('scroll', closeBookingActions, true);
+
+        function closeBookingActions(exceptMenu = null) {
+            document.querySelectorAll('.booking-action-popover:popover-open').forEach(menu => {
+                if (menu !== exceptMenu) menu.hidePopover();
+            });
+        }
+
+        function toggleBookingActions(event, menuId) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const trigger = event.currentTarget;
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+
+            const isOpen = menu.matches(':popover-open');
+            closeBookingActions(menu);
+            if (isOpen) {
+                menu.hidePopover();
+                return;
             }
 
-            toast.classList.remove('translate-x-full');
-            setTimeout(() => toast.classList.add('translate-x-full'), 3000);
+            menu.showPopover();
+            const triggerRect = trigger.getBoundingClientRect();
+            const menuRect = menu.getBoundingClientRect();
+            const edgeGap = 12;
+            const left = Math.max(edgeGap, Math.min(window.innerWidth - menuRect.width - edgeGap, triggerRect.right - menuRect.width));
+            const top = triggerRect.bottom + menuRect.height + 6 <= window.innerHeight - edgeGap
+                ? triggerRect.bottom + 6
+                : Math.max(edgeGap, triggerRect.top - menuRect.height - 6);
+
+            menu.style.left = `${left}px`;
+            menu.style.top = `${top}px`;
+        }
+
+        function showToast(title, msg, isSuccess = true) {
+            if (isSuccess) window.RiversideToast?.success(msg, { title });
+            else window.RiversideToast?.error(msg, { title });
         }
 
         function escapeHtml(value) {
@@ -798,9 +1091,9 @@
 
             // Cập nhật số liệu tabs
             document.getElementById('countTotal').innerText = data.totalCount ?? data.TotalCount ?? 0;
-            document.getElementById('countPending').innerText = data.pendingConfirmationCount ?? data.PendingConfirmationCount ?? 0;
+            document.getElementById('countPending').innerText = data.pendingCount ?? data.pendingConfirmationCount ?? data.PendingCount ?? data.PendingConfirmationCount ?? 0;
             document.getElementById('countConfirmed').innerText = data.confirmedCount ?? data.ConfirmedCount ?? 0;
-            document.getElementById('countDeposited').innerText = data.depositedCount ?? data.DepositedCount ?? 0;
+            document.getElementById('countDeposited').innerText = data.preparingCount ?? data.depositedCount ?? data.PreparingCount ?? data.DepositedCount ?? 0;
             document.getElementById('countCompleted').innerText = data.completedCount ?? data.CompletedCount ?? 0;
             document.getElementById('countCancelled').innerText = data.cancelledCount ?? data.CancelledCount ?? 0;
 
@@ -822,7 +1115,7 @@
                 const monthYear = String(eventDate.getMonth() + 1).padStart(2, '0') + '/' + eventDate.getFullYear();
                 const tables = b.tableCount ?? b.TableCount ?? 0;
                 const total = Number(b.estimatedTotal ?? b.EstimatedTotal ?? 0).toLocaleString('vi-VN');
-                const status = b.status || b.Status;
+                const status = b.statusName || b.StatusName || b.status || b.Status || 'Chưa xác định';
                 const statusCode = b.statusCode || b.StatusCode || '';
                 const hasContract = b.hasContract ?? b.HasContract ?? false;
                 const contractId = b.contractId ?? b.ContractId;
@@ -836,38 +1129,34 @@
                 const safeInitial = escapeHtml(initial);
                 const safeContractCode = escapeHtml(contractCode);
 
-                let badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-blue-50 text-blue-700 border border-blue-200"><i class="fa-regular fa-clock text-[9px]"></i> Chờ xác nhận</span>`;
-                if (statusCode === 'COMPLETED') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300"><i class="fa-solid fa-circle-check text-[9px]"></i> Hoàn tất</span>`;
-                else if (statusCode === 'PREPARING') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-300"><i class="fa-solid fa-list-check text-[9px]"></i> Đang chuẩn bị</span>`;
-                else if (statusCode === 'CONFIRMED') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"><i class="fa-solid fa-check-double text-[9px]"></i> Đã xác nhận</span>`;
-                else if (statusCode === 'CANCELLED') badge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-rose-50 text-rose-700 border border-rose-200"><i class="fa-solid fa-ban text-[9px]"></i> Đã hủy</span>`;
+                let badge = `<span class="booking-status booking-status--pending">Chờ xác nhận</span>`;
+                if (statusCode === 'COMPLETED') badge = `<span class="booking-status booking-status--completed">Hoàn tất</span>`;
+                else if (statusCode === 'PREPARING') badge = `<span class="booking-status booking-status--preparing">Đang chuẩn bị</span>`;
+                else if (statusCode === 'CONFIRMED') badge = `<span class="booking-status booking-status--confirmed">Đã xác nhận</span>`;
+                else if (statusCode === 'CANCELLED') badge = `<span class="booking-status booking-status--cancelled">Đã hủy</span>`;
 
                 let shiftIcon = shift === 'Ca tối'
                     ? '<i class="fa-regular fa-moon text-indigo-500 mr-1"></i>'
                     : '<i class="fa-regular fa-sun text-amber-500 mr-1"></i>';
 
                 let actionBtns = `
-                    <button type="button" onclick="viewBookingDetail(${id})" class="h-[32px] w-[32px] rounded-lg bg-slate-100 hover:bg-[#B89758]/15 text-[#8C6D32] hover:text-[#B89758] transition-colors flex items-center justify-center" title="Xem chi tiết booking">
-                        <i class="fa-regular fa-eye text-sm"></i>
+                    <button type="button" class="booking-action-item" onclick="closeBookingActions(); viewBookingDetail(${id})" role="menuitem">
+                        <i class="fa-regular fa-eye"></i><span>Xem chi tiết</span>
                     </button>
                 `;
                 if (canManageContracts && hasContract) {
-                    actionBtns += `<a href="/quan-ly/hop-dong-thanh-toan?contractId=${Number(contractId)}" class="h-[32px] px-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors flex items-center justify-center gap-1 text-[10px] font-bold" title="Xem hợp đồng"><i class="fa-solid fa-file-contract"></i>${safeContractCode}</a>`;
+                    actionBtns += `<a href="/quan-ly/hop-dong-thanh-toan?contractId=${Number(contractId)}" class="booking-action-item" role="menuitem"><i class="fa-solid fa-file-contract"></i><span>Xem hợp đồng</span></a>`;
                 } else if (canManageContracts && statusCode === 'CONFIRMED') {
-                    actionBtns += `<a href="/quan-ly/hop-dong-thanh-toan?bookingId=${id}&openCreate=true" class="h-[32px] px-2.5 rounded-lg bg-[#B89758]/15 hover:bg-[#B89758]/25 text-[#8C6D32] transition-colors flex items-center justify-center gap-1 text-[10px] font-bold" title="Tạo hợp đồng"><i class="fa-solid fa-file-circle-plus"></i>Tạo HĐ</a>`;
+                    actionBtns += `<a href="/quan-ly/hop-dong-thanh-toan?bookingId=${id}&openCreate=true" class="booking-action-item" role="menuitem"><i class="fa-solid fa-file-circle-plus"></i><span>Tạo hợp đồng</span></a>`;
                 }
                 if (statusCode === 'PENDING') {
                     actionBtns += `
-                        <button type="button" onclick="quickUpdateStatus(${id}, 'CONFIRMED')" class="h-[32px] w-[32px] rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center justify-center" title="Xác nhận đơn tiệc">
-                            <i class="fa-solid fa-check text-sm"></i>
-                        </button>
+                        <button type="button" class="booking-action-item" onclick="closeBookingActions(); quickUpdateStatus(${id}, 'CONFIRMED')" role="menuitem"><i class="fa-solid fa-check"></i><span>Xác nhận đơn tiệc</span></button>
                     `;
                 }
                 if (statusCode !== 'CANCELLED' && statusCode !== 'COMPLETED') {
                     actionBtns += `
-                        <button type="button" onclick="cancelBookingPrompt(${id})" class="h-[32px] w-[32px] rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 transition-colors flex items-center justify-center" title="Hủy đơn tiệc">
-                            <i class="fa-solid fa-ban text-sm"></i>
-                        </button>
+                        <button type="button" class="booking-action-item danger" onclick="closeBookingActions(); cancelBookingPrompt(${id})" role="menuitem"><i class="fa-solid fa-ban"></i><span>Hủy đơn tiệc</span></button>
                     `;
                 }
 
@@ -909,7 +1198,12 @@
                             ${total} <span class="text-[10px] font-sans text-slate-500 font-normal">đ</span>
                         </td>
                         <td class="py-3.5 px-3 text-center">${badge}</td>
-                        <td class="py-3.5 px-4 text-center"><div class="inline-flex items-center gap-1.5">${actionBtns}</div></td>
+                        <td class="py-3.5 px-4 text-center">
+                            <div class="inline-flex">
+                                <button type="button" class="booking-action-trigger" onclick="toggleBookingActions(event, 'bookingActions-${id}')" aria-controls="bookingActions-${id}" aria-expanded="false" aria-label="Mở thao tác cho booking ${safeCode}" title="Thao tác"><i class="bi bi-three-dots"></i><i class="bi bi-chevron-down text-[10px]" aria-hidden="true"></i></button>
+                                <div id="bookingActions-${id}" class="booking-action-popover" popover="auto" role="menu">${actionBtns}</div>
+                            </div>
+                        </td>
                     </tr>
                 `;
             });
@@ -935,8 +1229,8 @@
             // Nút Previous
             const prevBtn = document.createElement('button');
             prevBtn.type = 'button';
-            prevBtn.className = `px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-medium ${currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 cursor-pointer'}`;
-            prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left text-[10px]"></i>';
+            prevBtn.className = `pagination-edge ${currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`;
+            prevBtn.textContent = 'Trước';
             if (currentPage > 1) prevBtn.onclick = () => executeFilter(currentPage - 1);
             wrapper.appendChild(prevBtn);
 
@@ -950,9 +1244,9 @@
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 if (i === currentPage) {
-                    btn.className = 'px-3 py-1.5 rounded-lg bg-[#B89758] text-white font-bold border border-[#B89758] cursor-pointer';
+                    btn.className = 'active cursor-pointer';
                 } else {
-                    btn.className = 'px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-100 cursor-pointer';
+                    btn.className = 'cursor-pointer';
                 }
                 btn.innerText = i;
                 btn.onclick = () => executeFilter(i);
@@ -962,8 +1256,8 @@
             // Nút Next
             const nextBtn = document.createElement('button');
             nextBtn.type = 'button';
-            nextBtn.className = `px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-medium ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-100 cursor-pointer'}`;
-            nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right text-[10px]"></i>';
+            nextBtn.className = `pagination-edge ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`;
+            nextBtn.textContent = 'Sau';
             if (currentPage < totalPages) nextBtn.onclick = () => executeFilter(currentPage + 1);
             wrapper.appendChild(nextBtn);
         }
@@ -972,18 +1266,32 @@
         async function viewBookingDetail(id) {
             selectedBookingId = id;
             try {
-                const res = await fetch(`/AdminBooking/GetDetail/${id}`);
+                const res = await fetch(`/AdminBooking/GetDetail/${id}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const contentType = res.headers.get('content-type') || '';
+
+                if (!contentType.includes('application/json')) {
+                    throw new Error(res.redirected
+                        ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+                        : `Máy chủ trả về dữ liệu không hợp lệ (HTTP ${res.status}).`);
+                }
+
                 const result = await res.json();
 
-                if (result.success && result.data) {
-                    const b = result.data;
+                if (!res.ok || !result.success || !result.data) {
+                    throw new Error(result.message || 'Không thể lấy thông tin chi tiết đơn tiệc.');
+                }
+
+                const b = result.data;
                     document.getElementById('mdBookingCode').innerText = b.bookingCode || b.BookingCode;
                     document.getElementById('mdCustomerName').innerText = b.customerName || b.CustomerName;
                     document.getElementById('mdCustomerPhone').innerText = b.customerPhone || b.CustomerPhone || 'Chưa có SĐT';
                     document.getElementById('mdHallAndShift').innerText = `${b.hallName || b.HallName} • ${b.shift || b.Shift}`;
                     document.getElementById('mdEventDate').innerText = new Date(b.eventDate || b.EventDate).toLocaleDateString('vi-VN');
 
-                    const tables = b.tableCount ?? b.TableCount ?? 0;
+                    const guestCount = b.guestCount ?? b.GuestCount ?? 0;
+                    const tables = b.tableCount ?? b.TableCount ?? Math.ceil(Number(guestCount) / 10);
                     const menuUnit = b.finalMenuPrice ?? b.FinalMenuPrice ?? 0;
                     const hallPrice = b.finalHallPrice ?? b.FinalHallPrice ?? 0;
                     const decorPrice = b.finalDecorationPrice ?? b.FinalDecorationPrice ?? 0;
@@ -998,12 +1306,44 @@
                     document.getElementById('mdDecorSubtotal').innerText = `${Number(decorPrice).toLocaleString('vi-VN')} đ`;
                     document.getElementById('mdTotalAmount').innerText = `${Number(total).toLocaleString('vi-VN')} VNĐ`;
 
-                    const status = b.status || b.Status;
+                    const status = b.statusName || b.StatusName || b.status || b.Status || 'Chưa xác định';
                     const statusCode = b.statusCode || b.StatusCode || '';
                     const hasContract = b.hasContract ?? b.HasContract ?? false;
                     const contractId = b.contractId ?? b.ContractId;
                     const contractCode = b.contractCode || b.ContractCode || '';
-                    document.getElementById('mdStatusBadge').innerText = status;
+                    const detailStatusBadge = document.getElementById('mdStatusBadge');
+                    detailStatusBadge.innerText = status;
+                    const detailStatusClass = {
+                        PENDING: 'booking-status--pending',
+                        CONFIRMED: 'booking-status--confirmed',
+                        PREPARING: 'booking-status--preparing',
+                        COMPLETED: 'booking-status--completed',
+                        CANCELLED: 'booking-status--cancelled'
+                    }[statusCode] || '';
+                    detailStatusBadge.className = `booking-status ${detailStatusClass}`.trim();
+                    document.getElementById('mdMenuName').innerText = b.menuName || b.MenuName || 'Chưa chọn thực đơn';
+                    document.getElementById('mdDecorName').innerText = b.decorationPackageName || b.DecorationPackageName || 'Chưa chọn gói trang trí';
+
+                    const hasReviewQr = b.hasReviewQr ?? b.HasReviewQr ?? false;
+                    const qrSection = document.getElementById('mdReviewQrSection');
+                    qrSection.classList.toggle('hidden', !hasReviewQr);
+                    selectedReviewUrl = '';
+                    selectedReviewQrImage = '';
+                    if (hasReviewQr) {
+                        const token = b.reviewQrToken || b.ReviewQrToken;
+                        selectedReviewUrl = `${window.location.origin}/danh-gia/khach-moi/${encodeURIComponent(token)}`;
+                        selectedReviewQrImage = `/danh-gia/quan-ly/${id}/qr.png`;
+                        document.getElementById('mdReviewQrImage').src = selectedReviewQrImage;
+                        document.getElementById('mdReviewQrDownload').href = `${selectedReviewQrImage}?download=true`;
+                        const state = b.reviewQrState || b.ReviewQrState || 'Pending';
+                        const stateLabels = { Pending: 'Chờ kích hoạt', Active: 'Đang hoạt động', Expired: 'Hết hạn', Locked: 'Bị khóa' };
+                        document.getElementById('mdReviewQrState').innerText = stateLabels[state] || state;
+                        document.getElementById('mdReviewCount').innerText = b.reviewCount ?? b.ReviewCount ?? 0;
+                        const opensAt = b.reviewOpensAt || b.ReviewOpensAt;
+                        const expiresAt = b.reviewExpiresAt || b.ReviewExpiresAt;
+                        document.getElementById('mdReviewOpensAt').innerText = opensAt ? new Date(opensAt).toLocaleString('vi-VN') : '---';
+                        document.getElementById('mdReviewExpiresAt').innerText = expiresAt ? new Date(expiresAt).toLocaleString('vi-VN') : '---';
+                    }
 
                     const btnGroup = document.getElementById('mdActionBtnGroup');
                     btnGroup.innerHTML = '';
@@ -1011,7 +1351,7 @@
                         const link = document.createElement('a');
                         link.href = `/quan-ly/hop-dong-thanh-toan?contractId=${contractId}`;
                         link.className = 'px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-sm transition-colors flex items-center gap-2';
-                        link.textContent = `Xem hợp đồng ${contractCode}`;
+                        link.textContent = 'Xem hợp đồng';
                         btnGroup.appendChild(link);
                     } else if (canManageContracts && statusCode === 'CONFIRMED') {
                         const link = document.createElement('a');
@@ -1026,11 +1366,46 @@
                     const modal = document.getElementById('bookingDetailModal');
                     modal.classList.remove('hidden');
                     modal.classList.add('flex');
-                }
             } catch (e) {
                 console.error(e);
-                showToast('Lỗi', 'Không thể lấy chi tiết hợp đồng.', false);
+                showToast(
+                    'Lỗi',
+                    e instanceof Error ? e.message : 'Không thể lấy thông tin chi tiết đơn tiệc.',
+                    false
+                );
             }
+        }
+
+        async function copyReviewLink() {
+            if (!selectedReviewUrl) return;
+            await navigator.clipboard.writeText(selectedReviewUrl);
+            showToast('Đã sao chép', 'Đường dẫn đánh giá khách mời đã được sao chép.');
+        }
+
+        function printReviewQr() {
+            if (!selectedReviewQrImage) return;
+            const popup = window.open('', '_blank', 'width=520,height=680');
+            if (!popup) return;
+            const bookingCode = document.getElementById('mdBookingCode').innerText;
+            const popupDocument = popup.document;
+            popupDocument.title = `QR đánh giá ${bookingCode}`;
+            popupDocument.body.replaceChildren();
+            popupDocument.body.style.cssText = 'font-family:Arial;text-align:center;padding:40px';
+
+            const heading = popupDocument.createElement('h2');
+            heading.textContent = 'Đánh giá buổi tiệc';
+            const code = popupDocument.createElement('p');
+            code.textContent = bookingCode;
+            const qrImage = popupDocument.createElement('img');
+            qrImage.src = selectedReviewQrImage;
+            qrImage.alt = `QR đánh giá ${bookingCode}`;
+            qrImage.style.cssText = 'width:320px;height:320px';
+            qrImage.addEventListener('load', () => {
+                popup.print();
+                popup.close();
+            }, { once: true });
+
+            popupDocument.body.append(heading, code, qrImage);
         }
 
         function closeDetailModal() {
@@ -1129,10 +1504,33 @@
         function renderAvailableHalls() {
             if (!createBookingOptions) return;
             const shift = document.getElementById('newShift').value;
+            const dateStr = document.getElementById('newEventDate').value;
+            let isWeekend = false;
+            if (dateStr) {
+                const parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                    isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                }
+            }
+            const isDinner = (shift || '').toLowerCase().includes('tối');
+
             const select = document.getElementById('newHallId');
             const current = select.value;
             const halls = createBookingOptions.halls.filter(x => shift === 'Ca trưa' ? x.isNoonAvailable : x.isEveningAvailable);
-            select.innerHTML = '<option value="">Chọn sảnh còn trống</option>' + halls.map(x => `<option value="${x.hallId}" data-price="${x.rentalPrice}">${escapeHtml(x.hallName)} — ${x.minimumCapacity || 0}-${x.maximumCapacity} khách</option>`).join('');
+            select.innerHTML = '<option value="">Chọn sảnh còn trống</option>' + halls.map(x => {
+                const base = Number(x.rentalPrice || 0);
+                let eff = base;
+                let policyTag = 'Ca trưa (giá gốc)';
+                if (isWeekend) {
+                    eff = Math.round(base * 1.25);
+                    policyTag = 'Cuối tuần (+25%)';
+                } else if (isDinner) {
+                    eff = Math.round(base * 1.15);
+                    policyTag = 'Ca tối (+15%)';
+                }
+                return `<option value="${x.hallId}" data-price="${eff}">${escapeHtml(x.hallName)} — ${x.minimumCapacity || 0}-${x.maximumCapacity} khách [${formatNumber(eff)} ₫ • ${policyTag}]</option>`;
+            }).join('');
             if (halls.some(x => String(x.hallId) === current)) select.value = current;
             updateCreateEstimate();
         }

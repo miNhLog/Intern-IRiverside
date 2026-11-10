@@ -25,6 +25,7 @@ public sealed class ManagerMenuItemViewModel
     public string MenuName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal PricePerTable { get; set; }
+    public string? ImageUrl { get; set; }
     public string Status { get; set; } = string.Empty;
     public int DishCount { get; set; }
     public bool IsInUse { get; set; }

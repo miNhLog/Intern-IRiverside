@@ -17,4 +17,7 @@ public sealed class MailSettings
     public bool EnableSsl { get; set; } = true;
     /// <summary>URL gốc của Frontend để tạo link tra cứu MyBooking. Nạp từ config hoặc biến môi trường.</summary>
     public string? ClientAppBaseUrl { get; set; } = "https://localhost:7102";
+
+    /// <summary>URL công khai tùy chọn của website (nếu khác ClientAppBaseUrl) để gán vào liên kết trong email.</summary>
+    public string? PublicSiteUrl { get; set; }
 }

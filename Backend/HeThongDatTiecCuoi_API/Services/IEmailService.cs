@@ -2,6 +2,14 @@ namespace HeThongDatTiecCuoi_API.Services;
 
 public interface IEmailService
 {
+    Task SendScheduleChangeOtpEmailAsync(
+        string recipientEmail,
+        string customerName,
+        string bookingCode,
+        string otpCode,
+        int lifetimeMinutes,
+        CancellationToken cancellationToken = default);
+
     Task SendPasswordResetOtpEmailAsync(
         string recipientEmail,
         string otpCode,
@@ -42,49 +50,78 @@ public interface IEmailService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// FR15 / UC16: Gửi email cho khách khi hợp đồng đổi trạng thái (kích hoạt/hoàn tất/hủy).
-    /// Fault-tolerant: caller phải try-catch sau khi transaction đã commit.
+    /// Gửi email xác nhận đặt cọc thành công qua VietQR PayOS (20%).
+    /// Lịch sảnh đã được khóa chính thức trên hệ thống Riverside Palace.
+    /// Đính kèm hóa đơn / biên lai điện tử có chữ ký số (PAdES).
     /// </summary>
-    Task SendContractStatusChangedAsync(
+    Task SendDepositPaymentSuccessEmailAsync(
         string recipientEmail,
         string customerName,
+        string bookingCode,
+        long orderCode,
+        decimal depositAmount,
+        decimal remainingAmount,
+        DateTime eventDate,
+        string shift,
+        string hallName,
+        string? phoneNumber = null,
+        byte[]? invoicePdfBytes = null,
+        string? invoiceFileName = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gửi email xác nhận hoàn tất 100% thanh toán tiệc cưới (Quyết toán).
+    /// Đính kèm hóa đơn điện tử giá trị gia tăng có chữ ký số (PAdES).
+    /// </summary>
+    Task SendFullPaymentSuccessEmailAsync(
+        string recipientEmail,
+        string customerName,
+        string bookingCode,
         string contractCode,
-        string bookingCode,
-        string statusName,
-        decimal totalValue,
-        decimal paidAmount,
+        decimal totalAmount,
         DateTime eventDate,
         string shift,
         string hallName,
+        string? phoneNumber = null,
+        byte[]? invoicePdfBytes = null,
+        string? invoiceFileName = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// UC15 / FR17: Gửi email xác nhận khách đã hủy giữ chỗ trực tuyến.
-    /// Fault-tolerant: caller phải try-catch sau khi transaction đã commit.
+    /// Gửi email thông báo / yêu cầu thanh toán hợp đồng (Đợt 2 hoặc Quyết toán) kèm liên kết PayOS thanh toán từ xa.
     /// </summary>
-    Task SendBookingCancelledAsync(
+    Task SendContractPaymentRequestEmailAsync(
         string recipientEmail,
         string customerName,
         string bookingCode,
+        string contractCode,
+        string paymentType,
+        decimal amount,
+        string checkoutUrl,
+        DateTime? paymentDeadline,
         DateTime eventDate,
         string shift,
         string hallName,
-        string cancellationReason,
+        string? phoneNumber = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// UC15 / FR17: Gửi email xác nhận đổi ngày/ca (giữ nguyên sảnh).
-    /// Fault-tolerant: caller phải try-catch sau khi transaction đã commit.
+    /// Gửi email xác nhận thanh toán hợp đồng (Đợt 2 hoặc Quyết toán) thành công qua VietQR PayOS.
+    /// Đính kèm hóa đơn điện tử có chữ ký số điện tử (PAdES).
     /// </summary>
-    Task SendBookingRescheduledAsync(
+    Task SendContractPaymentSuccessEmailAsync(
         string recipientEmail,
         string customerName,
         string bookingCode,
-        DateTime oldEventDate,
-        string oldShift,
-        string oldHallName,
-        DateTime newEventDate,
-        string newShift,
-        string newHallName,
+        string contractCode,
+        string paymentType,
+        decimal amountPaid,
+        decimal remainingDebt,
+        DateTime eventDate,
+        string shift,
+        string hallName,
+        string? phoneNumber = null,
+        byte[]? invoicePdfBytes = null,
+        string? invoiceFileName = null,
         CancellationToken cancellationToken = default);
 }

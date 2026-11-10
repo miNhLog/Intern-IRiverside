@@ -52,8 +52,8 @@
     }
 
     .custom-row-hover:hover {
-        background-color: #FAF8F5;
-        border-color: rgba(184, 151, 88, 0.4);
+        background-color: var(--rp-surface-hover);
+        border-color: var(--rp-gold-500);
     }
 
     .focus-ring:focus-visible {
@@ -66,16 +66,16 @@
     }
 
     .custom-scrollbar::-webkit-scrollbar-track {
-        background: #F7F4EE;
+        background: var(--rp-surface-muted);
     }
 
     .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #C5A880;
+        background: var(--rp-border-strong);
         border-radius: 4px;
     }
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #B89758;
+            background: var(--rp-gold-500);
         }
 
     /* Ẩn scrollbar ngang cho tabs trên mobile */
@@ -86,6 +86,556 @@
     .scrollbar-hide {
         -ms-overflow-style: none;
         scrollbar-width: none;
+    }
+
+    /* Đồng bộ Decor & Dịch vụ với design token Metis/Riverside. */
+    .decor-page-wrapper {
+        min-width: 0;
+        color: var(--rp-text) !important;
+        background: var(--rp-bg) !important;
+        color-scheme: light;
+    }
+
+    html[data-admin-theme="dark"] .decor-page-wrapper,
+    html[data-admin-theme="dark"] #decorModal,
+    html[data-admin-theme="dark"] #detailModal {
+        color-scheme: dark;
+    }
+
+    .decor-page-wrapper .font-serif,
+    #decorModal .font-serif,
+    #detailModal .font-serif {
+        font-family: inherit !important;
+    }
+
+    .decor-page-wrapper .bg-white {
+        color: var(--rp-text);
+        background-color: var(--rp-surface) !important;
+    }
+
+    .decor-page-wrapper :is(.bg-slate-50, .bg-slate-100) {
+        color: var(--rp-text);
+        background-color: var(--rp-surface-muted) !important;
+    }
+
+    .decor-page-wrapper :is(.border-slate-100, .border-slate-200, .border-slate-300) {
+        border-color: var(--rp-border) !important;
+    }
+
+    .decor-page-wrapper :is(.text-slate-900, .text-slate-800, .text-slate-700) {
+        color: var(--rp-text) !important;
+    }
+
+    .decor-page-wrapper :is(.text-slate-600, .text-slate-500, .text-slate-400) {
+        color: var(--rp-text-secondary) !important;
+    }
+
+    .decor-page-wrapper :is(input, select, textarea) {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface-muted) !important;
+        border-color: var(--rp-border) !important;
+    }
+
+    .decor-page-wrapper select option,
+    #decorModal select option {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface) !important;
+    }
+
+    .decor-page-wrapper :is(input, textarea)::placeholder {
+        color: var(--rp-text-muted) !important;
+        opacity: 1;
+    }
+
+    #decorModal,
+    #detailModal {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 2147483000 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        box-sizing: border-box;
+        padding: clamp(12px, 2vw, 28px) !important;
+        overflow: hidden !important;
+    }
+
+    #decorModal .decor-modal-dialog,
+    #detailModal .decor-detail-dialog {
+        width: min(100%, 1040px) !important;
+        max-width: min(1040px, calc(100vw - 24px)) !important;
+        max-height: calc(100dvh - 24px) !important;
+        margin: 0 !important;
+        color: var(--rp-text) !important;
+        background: var(--rp-surface) !important;
+        border: 1px solid var(--rp-border) !important;
+        border-radius: 16px !important;
+        overflow: hidden !important;
+    }
+
+    #detailModal .decor-detail-dialog {
+        width: min(100%, 680px) !important;
+        max-width: min(680px, calc(100vw - 24px)) !important;
+    }
+
+    #decorModal .decor-modal-header,
+    #detailModal .decor-detail-header,
+    #detailModal .decor-detail-footer {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface) !important;
+        border-color: var(--rp-border) !important;
+    }
+
+    #decorModal .decor-modal-body,
+    #detailModal .decor-detail-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        color: var(--rp-text) !important;
+        background: var(--rp-bg) !important;
+        overflow-x: hidden !important;
+        overscroll-behavior: contain;
+    }
+
+    #decorModal .decor-modal-section,
+    #detailModal .decor-detail-panel {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface) !important;
+        border-color: var(--rp-border) !important;
+        box-shadow: none !important;
+    }
+
+    #decorModal :is(.decor-modal-header, .decor-modal-section) [class*="bg-[#B89758]"] {
+        color: var(--rp-gold-700) !important;
+        background: var(--rp-gold-100) !important;
+        border-color: var(--rp-gold-500) !important;
+    }
+
+    html[data-admin-theme="dark"] #decorModal :is(.decor-modal-header, .decor-modal-section) [class*="bg-[#B89758]"] {
+        color: var(--manager-gold-readable, #f4cf7a) !important;
+    }
+
+    #decorModal :is(h2, h3, label, .text-slate-900, .text-slate-800, .text-slate-700),
+    #detailModal :is(h3, h4, .text-slate-900, .text-slate-800, .text-slate-700) {
+        color: var(--rp-text) !important;
+    }
+
+    #decorModal .bg-white {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface) !important;
+    }
+
+    #decorModal :is(.bg-slate-50, .bg-slate-100) {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface-muted) !important;
+    }
+
+    #decorModal :is(.border-slate-100, .border-slate-200, .border-slate-300) {
+        border-color: var(--rp-border) !important;
+    }
+
+    #decorModal :is(p, .text-slate-600, .text-slate-500, .text-slate-400),
+    #detailModal :is(p, .text-slate-600, .text-slate-500, .text-slate-400) {
+        color: var(--rp-text-secondary) !important;
+    }
+
+    #decorModal :is(input, select, textarea) {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface-muted) !important;
+        border-color: var(--rp-border) !important;
+    }
+
+    #decorModal input[readonly] {
+        color: var(--rp-text-secondary) !important;
+        background: var(--rp-surface-hover) !important;
+    }
+
+    #decorModal :is(input[type="checkbox"], input[type="radio"]) {
+        accent-color: var(--rp-gold-500);
+    }
+
+    html[data-admin-theme="dark"] body.backoffice-app #decorModal :is(
+        input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+        select,
+        textarea
+    ) {
+        color: var(--rp-text) !important;
+        background-color: var(--rp-surface-muted) !important;
+        background-image: none !important;
+        border-color: var(--rp-border) !important;
+        box-shadow: none !important;
+    }
+
+    html[data-admin-theme="dark"] body.backoffice-app #decorModal :is(
+        .decor-choice,
+        .decor-upload,
+        .decor-preview,
+        .decor-modal-section
+    ) {
+        color: var(--rp-text) !important;
+        background-color: var(--rp-surface) !important;
+        background-image: none !important;
+        border-color: var(--rp-border) !important;
+    }
+
+    .decor-tabs-bar {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface) !important;
+        border: 1px solid var(--rp-border) !important;
+        border-radius: 12px !important;
+        overflow: hidden;
+    }
+
+    /* Ghi đè selector legacy trong backoffice-page-header.css đang ép tab thành #fff. */
+    html body.backoffice-app #adminMainContent .decor-page-wrapper
+    .backoffice-function-header-shell > .decor-tabs-bar {
+        color: var(--rp-text) !important;
+        background-color: var(--rp-surface) !important;
+        background-image: none !important;
+        border-color: var(--rp-border) !important;
+        box-shadow: var(--rp-shadow-sm) !important;
+    }
+
+    html[data-admin-theme="dark"] body.backoffice-app #adminMainContent
+    .decor-page-wrapper .backoffice-function-header-shell > .decor-tabs-bar {
+        color: #f4f4f5 !important;
+        background-color: #18181b !important;
+        border-color: #3f3f46 !important;
+        box-shadow: none !important;
+    }
+
+    .decor-tabs-bar button {
+        color: var(--rp-text-secondary) !important;
+    }
+
+    html[data-admin-theme="dark"] body.backoffice-app #adminMainContent
+    .decor-tabs-bar button {
+        color: #a1a1aa !important;
+    }
+
+    html[data-admin-theme="dark"] body.backoffice-app #adminMainContent
+    .decor-tabs-bar button.border-\[\#B89758\] {
+        color: #f4f4f5 !important;
+        border-bottom-color: #c6a15b !important;
+    }
+
+    .decor-tabs-bar button.border-\[\#B89758\] {
+        color: var(--rp-text) !important;
+    }
+
+    .decor-tabs-bar button.border-\[\#B89758\] > i,
+    .decor-tabs-bar button.border-\[\#B89758\] > span:last-child {
+        color: var(--rp-gold-700) !important;
+    }
+
+    html[data-admin-theme="dark"] .decor-tabs-bar button.border-\[\#B89758\] > i,
+    html[data-admin-theme="dark"] .decor-tabs-bar button.border-\[\#B89758\] > span:last-child {
+        color: var(--manager-gold-readable, #f4cf7a) !important;
+    }
+
+    #decorModal :is(input, textarea)::placeholder {
+        color: var(--rp-text-muted) !important;
+        opacity: 1;
+    }
+
+    #decorModal .decor-choice,
+    #decorModal .decor-upload,
+    #decorModal .decor-preview,
+    #detailModal .decor-detail-panel {
+        background: var(--rp-surface-muted) !important;
+        border-color: var(--rp-border) !important;
+    }
+
+    #decorModal .decor-choice:hover,
+    #decorModal .decor-upload:hover {
+        background: var(--rp-surface-hover) !important;
+        border-color: var(--rp-gold-500) !important;
+    }
+
+    #decorModal .decor-upload > div:first-of-type {
+        color: var(--rp-gold-700) !important;
+        background: var(--rp-gold-100) !important;
+        border-color: var(--rp-gold-500) !important;
+    }
+
+    #decorModal [class*="border-[#E5D5B8]"],
+    #detailModal [class*="border-[#E5D5B8]"] {
+        border-color: var(--rp-border) !important;
+    }
+
+    .decor-page-wrapper .admin-create-button,
+    #decorModal button[type="submit"] {
+        color: #18181b !important;
+        background: var(--rp-gold-500) !important;
+        border-color: var(--rp-gold-500) !important;
+        background-image: none !important;
+    }
+
+    .decor-page-wrapper [class*="text-[#8C6D32]"],
+    #decorModal [class*="text-[#8C6D32]"] {
+        color: var(--rp-gold-700) !important;
+    }
+
+    html[data-admin-theme="dark"] .decor-page-wrapper [class*="text-[#8C6D32]"],
+    html[data-admin-theme="dark"] #decorModal [class*="text-[#8C6D32]"] {
+        color: var(--rp-gold-500) !important;
+    }
+
+    /* Các khối tĩnh và khối sinh từ JavaScript đều dùng cùng token giao diện. */
+    .decor-workspace-card,
+    .decor-card,
+    .decor-empty-state,
+    .decor-pagination,
+    #container-service-tab {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface) !important;
+        border-color: var(--rp-border) !important;
+        box-shadow: var(--rp-shadow-sm, none) !important;
+    }
+
+    .decor-filter-bar {
+        display: flex;
+        min-width: 0;
+    }
+
+    .decor-filter-bar :is(label, i),
+    .decor-metrics {
+        color: var(--rp-text-secondary) !important;
+    }
+
+    .decor-filter-bar input:focus,
+    .decor-filter-bar select:focus {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface) !important;
+        border-color: var(--rp-gold-500) !important;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--rp-gold-500) 18%, transparent) !important;
+    }
+
+    .decor-metrics strong,
+    .decor-pagination strong,
+    #metric-title-label {
+        color: var(--rp-text) !important;
+    }
+
+    #metric-showing,
+    .decor-tab-badge,
+    .decor-code-badge,
+    .decor-category-badge {
+        color: var(--rp-gold-700) !important;
+        background: var(--rp-gold-100) !important;
+        border-color: color-mix(in srgb, var(--rp-gold-500) 42%, var(--rp-border)) !important;
+    }
+
+    html[data-admin-theme="dark"] :is(#metric-showing, .decor-tab-badge, .decor-code-badge, .decor-category-badge) {
+        color: var(--manager-gold-readable, #f4cf7a) !important;
+    }
+
+    .decor-card {
+        isolation: isolate;
+    }
+
+    .decor-card:hover {
+        border-color: var(--rp-gold-500) !important;
+        box-shadow: 0 14px 30px color-mix(in srgb, var(--rp-gold-500) 12%, transparent) !important;
+    }
+
+    .decor-card-body,
+    .decor-card-meta,
+    .decor-card-price {
+        color: var(--rp-text) !important;
+        border-color: var(--rp-border) !important;
+    }
+
+    .decor-card-body p,
+    .decor-card-meta span:first-child,
+    .decor-card-price > span:first-child {
+        color: var(--rp-text-secondary) !important;
+    }
+
+    .decor-card-meta span:last-child,
+    .decor-card-price strong,
+    .decor-card-price .font-bold {
+        color: var(--rp-text) !important;
+    }
+
+    .decor-action {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface-muted) !important;
+        border-color: var(--rp-border) !important;
+    }
+
+    .decor-action:hover {
+        color: var(--rp-gold-700) !important;
+        background: var(--rp-gold-100) !important;
+        border-color: var(--rp-gold-500) !important;
+    }
+
+    html[data-admin-theme="dark"] .decor-action:hover {
+        color: var(--manager-gold-readable, #f4cf7a) !important;
+    }
+
+    .decor-action--danger:hover {
+        color: #ef4444 !important;
+        background: color-mix(in srgb, #ef4444 12%, var(--rp-surface)) !important;
+        border-color: #ef4444 !important;
+    }
+
+    .decor-status-badge {
+        border-width: 1px;
+        border-style: solid;
+    }
+
+    .decor-status-badge--active {
+        color: #087443 !important;
+        background: #dcfce7 !important;
+        border-color: #86efac !important;
+    }
+
+    .decor-status-badge--inactive {
+        color: var(--rp-text-secondary) !important;
+        background: var(--rp-surface-muted) !important;
+        border-color: var(--rp-border-strong) !important;
+    }
+
+    .decor-service-image-placeholder {
+        color: var(--rp-text-secondary) !important;
+        background: var(--rp-surface-muted) !important;
+        border-color: var(--rp-border-strong) !important;
+    }
+
+    .decor-media-badge {
+        color: var(--rp-text) !important;
+        background: color-mix(in srgb, var(--rp-surface) 90%, transparent) !important;
+        border-color: var(--rp-border) !important;
+    }
+
+    html[data-admin-theme="dark"] .decor-media-badge {
+        color: var(--manager-gold-readable, #f4cf7a) !important;
+        background: rgba(9, 9, 11, .82) !important;
+        border-color: rgba(198, 161, 91, .42) !important;
+    }
+
+    html[data-admin-theme="dark"] .decor-status-badge--active {
+        color: #86efac !important;
+        background: rgba(22, 101, 52, .28) !important;
+        border-color: rgba(74, 222, 128, .42) !important;
+    }
+
+    #container-service-tab table {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface) !important;
+    }
+
+    #container-service-tab thead tr {
+        color: var(--rp-text) !important;
+        background: var(--rp-table-head, var(--rp-surface-muted)) !important;
+        border-color: var(--rp-border) !important;
+    }
+
+    #container-service-tab tbody,
+    #container-service-tab tbody tr,
+    #container-service-tab tbody td {
+        color: var(--rp-text) !important;
+        background: transparent !important;
+        border-color: var(--rp-border) !important;
+    }
+
+    #container-service-tab tbody tr:hover {
+        background: var(--rp-surface-hover) !important;
+    }
+
+    #container-service-tab tbody :is(p, .text-slate-600, .text-slate-500, .text-slate-400) {
+        color: var(--rp-text-secondary) !important;
+    }
+
+    .decor-empty-state {
+        color: var(--rp-text-secondary) !important;
+    }
+
+    .decor-pagination button {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface-muted) !important;
+        border-color: var(--rp-border) !important;
+    }
+
+    .decor-pagination button:not(:disabled):hover {
+        color: var(--rp-gold-700) !important;
+        border-color: var(--rp-gold-500) !important;
+    }
+
+    .decor-pagination button:disabled {
+        color: var(--rp-text-muted) !important;
+        opacity: .72 !important;
+    }
+
+    .decor-pagination > div:last-child > span {
+        color: #18181b !important;
+        background: var(--rp-gold-500) !important;
+        border-color: var(--rp-gold-500) !important;
+    }
+
+    #decorModal .decor-modal-body > div:last-child button[type="button"],
+    #detailModal .decor-detail-close-button {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface-muted) !important;
+        border-color: var(--rp-border) !important;
+    }
+
+    #decorModal .decor-modal-body > div:last-child button[type="button"]:hover,
+    #detailModal .decor-detail-close-button:hover {
+        color: var(--rp-gold-700) !important;
+        background: var(--rp-gold-100) !important;
+        border-color: var(--rp-gold-500) !important;
+    }
+
+    #detailModal .decor-detail-body strong,
+    #detailModal .decor-detail-body .font-semibold,
+    #detailModal .decor-detail-body .font-bold {
+        color: var(--rp-text) !important;
+    }
+
+    #detailModal .decor-detail-body [class*="text-[#B89758]"] {
+        color: var(--rp-gold-700) !important;
+    }
+
+    html[data-admin-theme="dark"] #detailModal .decor-detail-body [class*="text-[#B89758]"] {
+        color: var(--manager-gold-readable, #f4cf7a) !important;
+    }
+
+    #decorModal .decor-close,
+    #detailModal .decor-close,
+    #detailModal .decor-detail-close-button {
+        color: var(--rp-text) !important;
+        background: var(--rp-surface-muted) !important;
+        border: 1px solid var(--rp-border) !important;
+    }
+
+    #decorModal .decor-close:hover,
+    #detailModal .decor-close:hover,
+    #detailModal .decor-detail-close-button:hover {
+        color: var(--rp-gold-700) !important;
+        border-color: var(--rp-gold-500) !important;
+    }
+
+    body.decor-modal-open {
+        overflow: hidden;
+    }
+
+    @@media (max-width: 767px) {
+        #decorModal,
+        #detailModal {
+            align-items: flex-end !important;
+            padding: 0 !important;
+        }
+
+        #decorModal .decor-modal-dialog,
+        #detailModal .decor-detail-dialog {
+            max-width: 100% !important;
+            max-height: 94dvh !important;
+            border-radius: 16px 16px 0 0 !important;
+        }
+
+        .decor-filter-bar {
+            flex-direction: column;
+        }
     }
 </style>
 
@@ -98,11 +648,7 @@
         <!-- Top Title & Controls Header -->
         <header class="manager-section-header px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 border-b border-slate-100">
             <div class="min-w-0">
-                <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-500 mb-1 flex-wrap">
-                    <span class="breadcrumb-root">Quản trị hệ thống</span>
-                    <i class="fa-solid fa-chevron-right text-[9px] text-slate-400"></i>
-                    <span id="breadcrumb-current-tab" class="breadcrumb-current text-[#B89758] font-semibold">Gói decor tiệc cưới</span>
-                </nav>
+                <span class="backoffice-hero__eyebrow"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> DECOR &amp; DỊCH VỤ</span>
                 <h2 id="header-page-title" class="font-serif text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                     Quản lý gói decor tiệc cưới
                 </h2>
@@ -111,28 +657,33 @@
 
             <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
                 <!-- Export Excel Button -->
-                <button onclick="exportDataExcel()" class="flex items-center gap-2 px-3 sm:px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 focus-ring min-h-[42px] shadow-2xs">
+                <button onclick="exportDataExcel()" class="excel-export-button flex items-center gap-2 px-3 sm:px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 focus-ring min-h-[42px] shadow-2xs">
                     <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i>
                     <span class="hidden sm:inline">Xuất Excel</span>
+                </button>
+
+                <button onclick="openCreateModal()" class="admin-create-button px-5 py-2.5 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all focus-ring min-h-[42px] cursor-pointer">
+                    <i class="fa-solid fa-plus text-xs" aria-hidden="true"></i>
+                    <span id="btn-create-label">Thêm gói Decor</span>
                 </button>
             </div>
         </header>
 
         <!-- Two-Tab Catalog Workspace Header - Scroll ngang trên mobile -->
-        <div class="px-4 sm:px-6 lg:px-8 bg-white">
+        <div class="decor-tabs-bar px-4 sm:px-6 lg:px-8 bg-white">
             <div class="flex gap-5 sm:gap-8 overflow-x-auto scrollbar-hide" role="tablist">
                 <!-- Tab 1 Button -->
                 <button id="tab-btn-decor" onclick="switchMainTab('decor')" class="py-3 sm:py-4 font-bold text-xs sm:text-sm border-b-2 border-[#B89758] text-slate-900 flex items-center gap-2 flex-shrink-0 whitespace-nowrap focus-ring transition-colors">
                     <i class="fa-solid fa-wand-magic-sparkles text-[#B89758]"></i>
                     <span>Gói Decor Tiệc Cưới</span>
-                    <span id="badge-decor-active" class="bg-[#B89758]/15 text-[#8C6D32] text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full ml-1 border border-[#B89758]/30">Đang chọn</span>
+                    <span id="badge-decor-active" class="decor-tab-badge bg-[#B89758]/15 text-[#8C6D32] text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full ml-1 border border-[#B89758]/30">Đang chọn</span>
                 </button>
 
                 <!-- Tab 2 Button -->
                 <button id="tab-btn-service" onclick="switchMainTab('service')" class="py-3 sm:py-4 font-medium text-xs sm:text-sm text-slate-500 hover:text-slate-800 flex items-center gap-2 flex-shrink-0 whitespace-nowrap transition-colors border-b-2 border-transparent focus-ring">
                     <i class="fa-solid fa-people-arrows text-slate-400"></i>
                     <span>Dịch Vụ Đi Kèm</span>
-                    <span id="badge-service-count" class="text-[10px] sm:text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">6 dịch vụ</span>
+                    <span id="badge-service-count" class="decor-tab-badge text-[10px] sm:text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">6 dịch vụ</span>
                 </button>
             </div>
         </div>
@@ -142,7 +693,7 @@
     <div class="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 flex-1 w-full max-w-[1600px] mx-auto">
 
         <!-- Master Filter & Action Controls Bar -->
-        <section class="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 custom-card-shadow flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <section class="decor-workspace-card decor-filter-bar bg-white rounded-xl p-3 sm:p-4 border border-slate-200 custom-card-shadow flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5 flex-1 w-full">
                 <!-- Search Input -->
                 <div class="relative w-full sm:flex-1 sm:min-w-[240px] sm:max-w-sm">
@@ -155,7 +706,7 @@
                 </div>
 
                 <!-- Category / Style Filter Dropdown -->
-                <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 min-h-[42px] w-full sm:w-auto">
+                <div class="backoffice-filter-control flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 min-h-[42px] w-full sm:w-auto">
                     <i id="icon-filter-cat" class="fa-solid fa-palette text-slate-500 mr-2 text-xs flex-shrink-0"></i>
                     <label for="filter-category" id="label-filter-category" class="text-xs text-slate-500 mr-1.5 whitespace-nowrap">Phong cách:</label>
                     <select id="filter-category" onchange="applyFilters()" class="w-full bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer pr-1 min-w-0">
@@ -164,7 +715,7 @@
                 </div>
 
                 <!-- Status Filter Dropdown -->
-                <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 min-h-[42px] w-full sm:w-auto">
+                <div class="backoffice-filter-control flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 min-h-[42px] w-full sm:w-auto">
                     <i class="fa-solid fa-toggle-on text-slate-500 mr-2 text-xs flex-shrink-0"></i>
                     <label for="filter-status" class="text-xs text-slate-500 mr-1.5 whitespace-nowrap">Trạng thái:</label>
                     <select id="filter-status" onchange="applyFilters()" class="w-full bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer pr-1 min-w-0">
@@ -181,15 +732,10 @@
                 </button>
             </div>
 
-            <!-- Primary Action CTA Button -->
-            <button onclick="openCreateModal()" class="admin-create-button px-5 py-2.5 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all focus-ring min-h-[42px] w-full lg:w-auto lg:flex-shrink-0 cursor-pointer">
-                <i class="fa-solid fa-plus text-xs"></i>
-                <span id="btn-create-label">Thêm gói Decor</span>
-            </button>
         </section>
 
         <!-- Status Summary Metrics Bar -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 text-xs text-slate-500 px-1">
+        <div class="decor-metrics flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 text-xs text-slate-500 px-1">
             <div class="flex items-center gap-2 flex-wrap">
                 <span id="metric-title-label" class="font-medium text-slate-700">Danh mục Gói Decor đang quản lý:</span>
                 <span id="metric-showing" class="px-2.5 py-0.5 rounded-full bg-slate-200/80 font-bold text-slate-800 text-[11px]">Hiển thị 6 gói</span>
@@ -210,7 +756,7 @@
         </div>
 
         <!-- VIEW CONTAINER 2: TAB 2 (DỊCH VỤ - BẢNG VẬN HÀNH) -->
-        <div id="container-service-tab" class="bg-white rounded-xl border border-slate-200 custom-card-shadow overflow-hidden hidden">
+        <div id="container-service-tab" class="decor-workspace-card bg-white rounded-xl border border-slate-200 custom-card-shadow overflow-hidden hidden">
             <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full border-collapse text-left min-w-[800px]">
                     <thead>
@@ -232,11 +778,9 @@
         </div>
 
         <!-- Pagination / Summary Bar -->
-        <div class="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 custom-card-shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-600">
+        <div class="decor-pagination bg-white rounded-xl p-3 sm:p-4 border border-slate-200 custom-card-shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-600">
             <div class="flex flex-wrap items-center gap-2">
                 <span id="pagination-summary">Hiển thị <strong>1 – 6</strong> trong tổng số <strong>6</strong> gói Decor</span>
-                <span class="text-slate-300 hidden sm:inline">|</span>
-                <span class="text-slate-500">Quy chuẩn: Master Data Spec MD-RP-2026</span>
             </div>
             <div class="flex items-center gap-2 justify-end">
                 <button class="px-3 sm:px-3.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium focus-ring disabled:opacity-50" disabled>
@@ -249,44 +793,17 @@
             </div>
         </div>
 
-        <!-- Master Data Guidelines & Technical Policy Banner -->
-        <div class="p-3 sm:p-4 rounded-xl bg-amber-50/50 border border-[#B89758]/30 flex items-start gap-3 text-xs">
-            <div class="w-6 h-6 rounded-full bg-[#B89758]/20 flex items-center justify-center text-[#967638] flex-shrink-0 mt-0.5">
-                <i class="fa-solid fa-circle-info text-xs"></i>
-            </div>
-            <div class="space-y-1 min-w-0">
-                <h5 class="font-bold text-[#1E242B]">Quy định cấu hình Danh mục Master Data Riverside Palace:</h5>
-                <p class="text-slate-600 leading-relaxed">
-                    Theo quy chuẩn vận hành, hệ thống không cho phép xóa vĩnh viễn dữ liệu gói decor và dịch vụ đã từng phát sinh giao dịch trên các hợp đồng tiệc cưới. Quản trị viên sử dụng thao tác <strong>Khóa (Tạm ngưng)</strong> để bảo toàn toàn vẹn dữ liệu kế toán và lịch sử kiểm toán hợp đồng.
-                </p>
-            </div>
-        </div>
-
     </div>
-
-    <!-- Admin Footer -->
-    <footer class="mt-auto bg-white border-t border-slate-200 px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-slate-500 gap-2">
-        <div>
-            © 2026 Riverside Palace Convention &amp; Wedding Center. Quản Trị Hệ Thống Master Data v4.2.
-        </div>
-        <div class="flex flex-wrap items-center gap-2 sm:gap-4">
-            <span class="flex items-center gap-1 text-slate-600">
-                <i class="fa-solid fa-shield-halved text-[#B89758]"></i> Phân quyền: Administrator Level 1
-            </span>
-            <span class="hidden sm:inline text-slate-300">•</span>
-            <span>Hotline Kỹ thuật &amp; IT nội bộ: Ext 888</span>
-        </div>
-    </footer>
 </div>
 
 <!-- ========================================================================= -->
 <!-- ================= MODAL CHÍNH: THÊM GÓI DECOR MỚI ======================== -->
 <!-- ========================================================================= -->
-<div id="decorModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-3 sm:p-6 overflow-y-auto">
-    <div class="bg-white border border-[#E5D5B8] rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[92vh] overflow-hidden my-auto">
+<div id="decorModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="decor-modal-title">
+    <div class="decor-modal-dialog bg-white rounded-2xl w-full shadow-2xl flex flex-col overflow-hidden">
 
         <!-- Modal Header -->
-        <div class="px-4 sm:px-8 py-4 sm:py-5 border-b border-slate-200 bg-[#FAF8F5] flex items-center justify-between flex-shrink-0">
+        <div class="decor-modal-header px-4 sm:px-8 py-4 sm:py-5 border-b flex items-center justify-between flex-shrink-0">
             <div class="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
                 <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#B89758]/15 border border-[#E5D5B8] flex items-center justify-center text-[#B89758] flex-shrink-0">
                     <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
@@ -294,22 +811,21 @@
                 <div class="min-w-0">
                     <div class="flex items-center space-x-2 sm:space-x-2.5 flex-wrap">
                         <h2 id="decor-modal-title" class="font-serif text-base sm:text-xl font-bold text-slate-900 truncate">Thêm gói Decor mới</h2>
-                        <span class="hidden sm:inline-block px-2 py-0.5 rounded-full bg-[#B89758]/15 border border-[#B89758]/30 text-[10px] font-bold text-[#8C6D32] tracking-wider uppercase">MASTER DATA</span>
                     </div>
                     <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 line-clamp-1">Cấu hình thông tin danh mục, định mức giá và hình ảnh nhận diện gói trang trí tiệc cưới.</p>
                 </div>
             </div>
-            <button onclick="closeDecorModal()" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-200 transition-colors focus-ring flex-shrink-0" type="button" aria-label="Đóng">
+            <button onclick="closeDecorModal()" class="decor-close w-9 h-9 rounded-lg flex items-center justify-center transition-colors focus-ring flex-shrink-0" type="button" aria-label="Đóng">
                 <i class="fa-solid fa-xmark text-base"></i>
             </button>
         </div>
 
         <!-- Modal Body -->
-        <form id="decorForm" onsubmit="handleDecorFormSubmit(event)" class="p-4 sm:p-6 lg:p-8 overflow-y-auto custom-scrollbar space-y-4 sm:space-y-6 bg-[#FDFBF7] text-xs">
+        <form id="decorForm" onsubmit="handleDecorFormSubmit(event)" class="decor-modal-body p-4 sm:p-6 lg:p-8 overflow-y-auto custom-scrollbar space-y-4 sm:space-y-6 text-xs">
             <input type="hidden" id="decor-form-id" value="0" />
 
             <!-- PHẦN 1: THÔNG TIN CƠ BẢN & ĐỊNH MỨC KINH DOANH -->
-            <div class="bg-white rounded-xl p-4 sm:p-6 border border-[#E5D5B8] shadow-xs space-y-4 sm:space-y-5">
+            <div class="decor-modal-section bg-white rounded-xl p-4 sm:p-6 border shadow-xs space-y-4 sm:space-y-5">
                 <div class="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
                     <div class="flex items-center space-x-2">
                         <i class="fa-solid fa-sliders text-[#B89758] text-sm"></i>
@@ -322,7 +838,7 @@
                     <!-- Mã gói decor (Tự động) -->
                     <div class="md:col-span-3">
                         <label class="block font-semibold text-slate-700 mb-1" for="decor-code">
-                            Mã gói decor <span class="text-slate-400 font-normal">(Tự động)</span>
+                            <span id="decor-code-label">Mã gói decor</span> <span class="text-slate-400 font-normal">(Tự động)</span>
                         </label>
                         <div class="relative">
                             <input id="decor-code" class="w-full bg-slate-100 border border-slate-200 text-slate-700 font-mono font-bold rounded-lg px-3 py-2 text-xs cursor-not-allowed select-all focus:outline-none" readonly type="text" value="DC-ROY-07" />
@@ -333,7 +849,7 @@
                     <!-- Tên gói Decor* -->
                     <div class="md:col-span-5">
                         <label class="block font-semibold text-slate-800 mb-1" for="decor-name">
-                            Tên gói Decor <span class="text-red-500">*</span>
+                            <span id="decor-name-label">Tên gói Decor</span> <span class="text-red-500">*</span>
                         </label>
                         <input id="decor-name" required class="w-full bg-[#FAF8F5] border border-slate-200 focus:border-[#B89758] focus:bg-white focus:ring-1 focus:ring-[#B89758] rounded-lg px-3 py-2 text-xs text-slate-800 font-medium outline-none transition-all" placeholder="Nhập tên gói sang trọng..." type="text" value="Hoàng Kim Dạ Yến" />
                     </div>
@@ -341,7 +857,7 @@
                     <!-- Phong cách decor* Dropdown -->
                     <div class="md:col-span-4">
                         <label class="block font-semibold text-slate-800 mb-1" for="decor-style">
-                            Phong cách decor <span class="text-red-500">*</span>
+                            <span id="decor-style-label">Phong cách decor</span> <span class="text-red-500">*</span>
                         </label>
                         <select id="decor-style" class="w-full bg-[#FAF8F5] border border-slate-200 focus:border-[#B89758] focus:bg-white focus:ring-1 focus:ring-[#B89758] rounded-lg px-3 py-2 text-xs text-slate-800 outline-none cursor-pointer">
                             <option selected>Hoàng gia (Royal Luxury)</option>
@@ -354,28 +870,28 @@
                     </div>
 
                     <!-- Hạng mục chính bao gồm (5 Checkboxes) -->
-                    <div class="md:col-span-12">
+                    <div id="decor-items-field" class="md:col-span-12">
                         <label class="block font-semibold text-slate-800 mb-2">
                             Hạng mục chính đi kèm <span class="text-slate-500 font-normal">(Được tích hợp mặc định trong gói)</span>
                         </label>
                         <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
-                            <label class="flex items-center space-x-2 p-2 rounded-lg border border-slate-200 bg-[#FAF8F5] hover:border-[#B89758] cursor-pointer transition-colors">
+                            <label class="decor-choice flex items-center space-x-2 p-2 rounded-lg border cursor-pointer transition-colors">
                                 <input id="chk-backdrop" type="checkbox" checked class="w-3.5 h-3.5 text-[#B89758] focus:ring-[#B89758] rounded border-slate-300 flex-shrink-0">
                                 <span class="text-xs text-slate-700 font-medium">Backdrop sân khấu</span>
                             </label>
-                            <label class="flex items-center space-x-2 p-2 rounded-lg border border-slate-200 bg-[#FAF8F5] hover:border-[#B89758] cursor-pointer transition-colors">
+                            <label class="decor-choice flex items-center space-x-2 p-2 rounded-lg border cursor-pointer transition-colors">
                                 <input id="chk-loidi" type="checkbox" checked class="w-3.5 h-3.5 text-[#B89758] focus:ring-[#B89758] rounded border-slate-300 flex-shrink-0">
                                 <span class="text-xs text-slate-700 font-medium">Lối đi hoa tươi</span>
                             </label>
-                            <label class="flex items-center space-x-2 p-2 rounded-lg border border-slate-200 bg-[#FAF8F5] hover:border-[#B89758] cursor-pointer transition-colors">
+                            <label class="decor-choice flex items-center space-x-2 p-2 rounded-lg border cursor-pointer transition-colors">
                                 <input id="chk-gallery" type="checkbox" checked class="w-3.5 h-3.5 text-[#B89758] focus:ring-[#B89758] rounded border-slate-300 flex-shrink-0">
                                 <span class="text-xs text-slate-700 font-medium">Bàn gallery đón khách</span>
                             </label>
-                            <label class="flex items-center space-x-2 p-2 rounded-lg border border-slate-200 bg-[#FAF8F5] hover:border-[#B89758] cursor-pointer transition-colors">
+                            <label class="decor-choice flex items-center space-x-2 p-2 rounded-lg border cursor-pointer transition-colors">
                                 <input id="chk-conghoa" type="checkbox" checked class="w-3.5 h-3.5 text-[#B89758] focus:ring-[#B89758] rounded border-slate-300 flex-shrink-0">
                                 <span class="text-xs text-slate-700 font-medium">Cổng hoa vòm LED</span>
                             </label>
-                            <label class="flex items-center space-x-2 p-2 rounded-lg border border-slate-200 bg-[#FAF8F5] hover:border-[#B89758] cursor-pointer transition-colors">
+                            <label class="decor-choice flex items-center space-x-2 p-2 rounded-lg border cursor-pointer transition-colors">
                                 <input id="chk-phale" type="checkbox" checked class="w-3.5 h-3.5 text-[#B89758] focus:ring-[#B89758] rounded border-slate-300 flex-shrink-0">
                                 <span class="text-xs text-slate-700 font-medium">Đèn chùm pha lê</span>
                             </label>
@@ -412,22 +928,22 @@
                         <div class="flex items-center space-x-3 pt-1 flex-wrap gap-y-2">
                             <label class="flex items-center space-x-1.5 cursor-pointer">
                                 <input id="radio-decor-active" checked name="decor_status" type="radio" value="Áp dụng" class="w-3.5 h-3.5 text-[#B89758] focus:ring-[#B89758] border-slate-300">
-                                <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold flex items-center space-x-1">
+                                <span class="decor-status-badge decor-status-badge--active px-2 py-0.5 rounded-full text-[11px] font-semibold flex items-center space-x-1">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                                     <span>Áp dụng ngay</span>
                                 </span>
                             </label>
                             <label class="flex items-center space-x-1.5 cursor-pointer">
                                 <input id="radio-decor-draft" name="decor_status" type="radio" value="Ngừng áp dụng" class="w-3.5 h-3.5 text-[#B89758] focus:ring-[#B89758] border-slate-300">
-                                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-medium">Bản nháp lưu trữ</span>
+                                <span class="decor-status-badge decor-status-badge--inactive px-2 py-0.5 rounded-full text-[11px] font-medium">Bản nháp lưu trữ</span>
                             </label>
                         </div>
                     </div>
 
-                    <!-- Mô tả chi tiết concept & Quy chuẩn vật liệu -->
+                    <!-- Mô tả chi tiết concept -->
                     <div class="md:col-span-12">
                         <label class="block font-semibold text-slate-800 mb-1" for="decor-desc">
-                            Mô tả chi tiết concept &amp; Quy chuẩn vật liệu
+                            Mô tả chi tiết concept
                         </label>
                         <textarea id="decor-desc" rows="3" class="w-full bg-[#FAF8F5] border border-slate-200 focus:border-[#B89758] focus:bg-white rounded-lg p-3 text-xs text-slate-800 leading-relaxed outline-none resize-none" placeholder="Tóm tắt phong cách thiết kế, sắc độ hoa chủ đạo, hệ đèn chiếu...">Gói trang trí Hoàng Kim Dạ Yến sử dụng gam màu vàng Champagne kết hợp trắng ngà thanh thoát, hoa lan hồ điệp tươi kết hợp hoa hồng nhập khẩu. Điểm nhấn là vòm cổng pha lê cao cấp và hệ đèn chandelier lộng lẫy kiến tạo không gian đại sảnh đẳng cấp quý tộc.</textarea>
                     </div>
@@ -435,7 +951,7 @@
             </div>
 
             <!-- PHẦN 2: HÌNH ẢNH ĐẠI DIỆN (COVER PHOTO) -->
-            <div class="bg-white rounded-xl p-4 sm:p-6 border border-[#E5D5B8] shadow-xs space-y-4">
+            <div class="decor-modal-section bg-white rounded-xl p-4 sm:p-6 border shadow-xs space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
                     <div class="min-w-0">
                         <div class="flex items-center space-x-2">
@@ -448,7 +964,7 @@
                 </div>
 
                 <!-- Dropzone Kéo Thả Ảnh -->
-                <div id="decor-dropzone" onclick="document.getElementById('decor-file-input').click()" class="border-2 border-dashed border-[#E5D5B8] hover:border-[#B89758] rounded-xl p-4 sm:p-6 text-center bg-[#FAF8F5]/80 hover:bg-white transition-all cursor-pointer flex flex-col items-center justify-center">
+                <div id="decor-dropzone" onclick="document.getElementById('decor-file-input').click()" class="decor-upload border-2 border-dashed rounded-xl p-4 sm:p-6 text-center transition-all cursor-pointer flex flex-col items-center justify-center">
                     <input type="file" id="decor-file-input" accept="image/*" class="hidden" onchange="handleImageSelected(event)" />
                     <div class="w-12 h-12 rounded-full bg-white border border-[#E5D5B8] flex items-center justify-center text-[#B89758] shadow-xs mb-2">
                         <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
@@ -458,7 +974,7 @@
                 </div>
 
                 <!-- Card Xem Trước Ảnh (Preview Card) -->
-                <div id="decor-image-preview-card" class="bg-[#FAF8F5] rounded-xl border border-[#E5D5B8] p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+                <div id="decor-image-preview-card" class="decor-preview rounded-xl border p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
                     <div class="flex items-center space-x-3 w-full sm:w-auto min-w-0">
                         <div class="relative w-24 h-16 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 bg-slate-900 shadow-inner">
                             <img id="decor-preview-img" src="https://lh3.googleusercontent.com/aida/AEtjO1UlG53VliMfYaOPGWYTFo5zD5pEzc698JZZ3xtxh3ZJzk9TH4CKxNGW6GRCm35bJ5pSfaMfASYwgstAXnJfCb4pb8Ri73BetKzuyD9A1ZBVRo0tyUm1tOg7LoWxE_EwngYzmPNjYi7IYvP3Zxc0rUiuzJwCq8CIR3R327AKzJ6fz-C8v6WzJjdkOdsvUKVODnM21hg2IkUq4BQYQeXrPz_QG7aMOPFALohu5Lp2kFCu2PsDU5TivtSPHqU" class="w-full h-full object-cover" alt="Preview" />
@@ -467,7 +983,7 @@
                         <div class="space-y-0.5 min-w-0">
                             <div class="flex items-center space-x-2 flex-wrap gap-y-1">
                                 <p id="decor-preview-filename" class="font-semibold text-xs text-slate-800 truncate max-w-[180px]">hoang-kim-da-yen-cover-4k.jpg</p>
-                                <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold flex items-center space-x-1 whitespace-nowrap">
+                                <span class="decor-status-badge decor-status-badge--active px-2 py-0.5 rounded-full text-[10px] font-semibold flex items-center space-x-1 whitespace-nowrap">
                                     <i class="fa-solid fa-circle-check text-[10px]"></i>
                                     <span>Hợp lệ</span>
                                 </span>
@@ -498,7 +1014,7 @@
                     </button>
                     <button type="submit" class="h-10 px-6 rounded-lg bg-gradient-to-r from-[#B89758] to-[#9E7E3F] hover:from-[#A8884A] hover:to-[#8E7035] text-white font-bold tracking-wide shadow-sm flex items-center justify-center space-x-2 transition-all focus-ring w-full sm:w-auto">
                         <i class="fa-solid fa-check text-xs"></i>
-                        <span>LƯU GÓI DECOR</span>
+                        <span id="decor-submit-label">LƯU GÓI DECOR</span>
                     </button>
                 </div>
             </div>
@@ -507,22 +1023,22 @@
 </div>
 
 <!-- ================= MODAL CHI TIẾT GÓI DECOR / DỊCH VỤ ================= -->
-<div id="detailModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-3 sm:p-4">
-    <div class="bg-white rounded-2xl w-full max-w-lg border border-[#E5D5B8] shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
-        <div class="bg-[#FAF8F5] px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
+<div id="detailModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+    <div class="decor-detail-dialog bg-white rounded-2xl w-full shadow-2xl overflow-hidden flex flex-col">
+        <div class="decor-detail-header px-4 sm:px-6 py-3 sm:py-4 border-b flex items-center justify-between flex-shrink-0">
             <h3 class="font-serif font-bold text-base sm:text-lg text-slate-900 flex items-center gap-2 min-w-0">
                 <i class="fa-solid fa-crown text-[#B89758] text-sm flex-shrink-0"></i>
                 <span id="detail-title" class="truncate">Chi Tiết Hạng Mục</span>
             </h3>
-            <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200 transition-colors flex-shrink-0">
+            <button onclick="closeDetailModal()" class="decor-close w-9 h-9 flex items-center justify-center rounded-lg transition-colors flex-shrink-0" aria-label="Đóng">
                 <i class="fa-solid fa-xmark text-base"></i>
             </button>
         </div>
-        <div id="detail-content" class="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto custom-scrollbar flex-1">
+        <div id="detail-content" class="decor-detail-body p-4 sm:p-6 space-y-4 text-xs overflow-y-auto custom-scrollbar flex-1">
             <!-- Rendered by JS -->
         </div>
-        <div class="bg-slate-50 px-4 sm:px-6 py-3 border-t border-slate-100 text-right flex-shrink-0">
-            <button onclick="closeDetailModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-semibold transition-colors">Đóng Cửa Sổ</button>
+        <div class="decor-detail-footer px-4 sm:px-6 py-3 border-t text-right flex-shrink-0">
+            <button onclick="closeDetailModal()" class="decor-detail-close-button px-4 py-2 rounded-lg font-semibold transition-colors">Đóng</button>
         </div>
     </div>
 </div>
@@ -532,6 +1048,24 @@
     <script>
         // 1. DỮ LIỆU ĐỒNG BỘ 100% CSDL SQL VÀ MẪU
         let currentTab = 'decor';
+        const decorProjectImages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ProjectImages.GetImages("DecorPackages")));
+        const serviceFallbackImages = {
+            'DV-SND-01': '/images/home/hero-ballroom-8k.jpg',
+            'DV-LGT-02': '/images/home/hero-ballroom-8k.jpg',
+            'DV-BND-03': '/images/home/hero-riverfront-8k.jpg',
+            'DV-LED-01': '/images/recommendation/romantic-wedding-banner.jpg',
+            'DV-BND-05': '/images/home/hero-riverfront-8k.jpg',
+            'DV001': '/images/home/hero-cuisine-8k.jpg',
+            'DV002': '/images/home/hero-riverfront-8k.jpg',
+            'DV003': '/images/home/hero-ballroom-8k.jpg',
+            'DV004': '/images/recommendation/romantic-wedding-banner.jpg',
+            'DV005': '/images/home/hero-wedding.jpg'
+        };
+        const isUploadedImage = value => {
+            if (!value) return false;
+            try { return new URL(value, window.location.origin).pathname.toLowerCase().startsWith('/uploads/'); }
+            catch { return false; }
+        };
 
         let decorData = [
             {
@@ -619,7 +1153,7 @@
                 moTa: 'Hệ thống loa Line Array 8 module, sub kép công suất lớn, mixer Yamaha 32 kênh, 4 mic Shure không dây chống hú rít.',
                 spec1: '2 kỹ thuật viên âm thanh',
                 spec2: 'Setup trước ca 2.5h',
-                hinhAnh: '',
+                hinhAnh: '/images/home/hero-ballroom-8k.jpg',
                 trangThai: 'Áp dụng'
             },
             {
@@ -631,7 +1165,7 @@
                 moTa: 'Gồm 12 đèn Moving Head Beam 380W sắc nét, 16 đèn Par LED 54 bóng nhuộm màu, 2 máy tạo khói lạnh Haze cao cấp.',
                 spec1: '1 kỹ sư lập trình DMX',
                 spec2: 'Setup trước ca 3.0h',
-                hinhAnh: '',
+                hinhAnh: '/images/home/hero-ballroom-8k.jpg',
                 trangThai: 'Áp dụng'
             },
             {
@@ -655,7 +1189,7 @@
                 moTa: 'Gồm 2 Violin, 1 Viola, 1 Cello biểu diễn các bản tình ca cổ điển và pop cover lãng mạn suốt 60 phút đón khách tại Foyer.',
                 spec1: '4 nhạc công Nhạc viện TP.HCM',
                 spec2: 'Tổng thời lượng 90 phút',
-                hinhAnh: '',
+                hinhAnh: '/images/home/hero-riverfront-8k.jpg',
                 trangThai: 'Áp dụng'
             },
             {
@@ -667,7 +1201,7 @@
                 moTa: 'Mật độ điểm ảnh siêu mịn P2.5, kích thước 7.5m x 4.0m, quét 3840Hz, xử lý tín hiệu trực tiếp từ camera live stream.',
                 spec1: 'Bộ vi xử lý NovaStar cao cấp',
                 spec2: '1 VJ trực visual sân khấu',
-                hinhAnh: '',
+                hinhAnh: '/images/recommendation/romantic-wedding-banner.jpg',
                 trangThai: 'Áp dụng'
             },
             {
@@ -679,7 +1213,7 @@
                 moTa: 'Biểu diễn trọn gói nghi thức thính phòng hoàng gia. Tạm ngưng để thẩm định lại danh mục nhân sự và phối khí 2026.',
                 spec1: 'Dàn nhạc 12 nghệ sĩ chuyên nghiệp',
                 spec2: 'Tạm dừng tiếp nhận hợp đồng mới',
-                hinhAnh: '',
+                hinhAnh: '/images/home/hero-riverfront-8k.jpg',
                 trangThai: 'Ngừng áp dụng'
             }
         ];
@@ -711,7 +1245,9 @@
                     moTa: item.description || '',
                     spec1: 'Theo cấu hình gói',
                     spec2: 'Theo kế hoạch vận hành',
-                    hinhAnh: item.imageUrl || '',
+                    hinhAnh: isUploadedImage(item.imageUrl)
+                        ? item.imageUrl
+                        : (decorProjectImages[item.packageName] || item.imageUrl || ''),
                     trangThai: item.statusCode === 'ACTIVE' ? 'Áp dụng' : 'Ngừng áp dụng'
                 }));
                 serviceData = (servicePayload.data || []).map(item => ({
@@ -723,7 +1259,9 @@
                     moTa: item.description || '',
                     spec1: 'Theo cấu hình dịch vụ',
                     spec2: 'Theo kế hoạch vận hành',
-                    hinhAnh: '',
+                    hinhAnh: isUploadedImage(item.imageUrl)
+                        ? item.imageUrl
+                        : (serviceFallbackImages[item.serviceCode] || item.imageUrl || '/images/home/hero-wedding.jpg'),
                     trangThai: item.statusCode === 'ACTIVE' ? 'Áp dụng' : 'Ngừng áp dụng'
                 }));
             } catch (error) {
@@ -732,8 +1270,31 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            const decorModal = document.getElementById('decorModal');
+            const detailModal = document.getElementById('detailModal');
+            if (decorModal?.parentElement !== document.body) document.body.appendChild(decorModal);
+            if (detailModal?.parentElement !== document.body) document.body.appendChild(detailModal);
+
             await loadCatalogData();
             switchMainTab('decor');
+
+            decorModal?.addEventListener('click', event => {
+                if (event.target === event.currentTarget) closeDecorModal();
+            });
+            detailModal?.addEventListener('click', event => {
+                if (event.target === event.currentTarget) closeDetailModal();
+            });
+        });
+
+        document.addEventListener('keydown', event => {
+            if (event.key !== 'Escape') return;
+            if (!document.getElementById('detailModal')?.classList.contains('hidden')) {
+                closeDetailModal();
+                return;
+            }
+            if (!document.getElementById('decorModal')?.classList.contains('hidden')) {
+                closeDecorModal();
+            }
         });
 
         // 3. CHUYỂN ĐỔI TAB
@@ -743,7 +1304,6 @@
             const btnService = document.getElementById('tab-btn-service');
             const containerDecor = document.getElementById('container-decor-tab');
             const containerService = document.getElementById('container-service-tab');
-            const breadcrumbTab = document.getElementById('breadcrumb-current-tab');
             const headerTitle = document.getElementById('header-page-title');
             const btnCreateLabel = document.getElementById('btn-create-label');
             const inputSearch = document.getElementById('input-search-keyword');
@@ -753,15 +1313,14 @@
 
             if (tab === 'decor') {
                 btnDecor.className = 'py-3 sm:py-4 font-bold text-xs sm:text-sm border-b-2 border-[#B89758] text-slate-900 flex items-center gap-2 flex-shrink-0 whitespace-nowrap focus-ring transition-colors';
-                btnDecor.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-[#B89758]"></i><span>Gói Decor Tiệc Cưới</span><span class="bg-[#B89758]/15 text-[#8C6D32] text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full ml-1 border border-[#B89758]/30">Đang chọn</span>`;
+                btnDecor.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-[#B89758]"></i><span>Gói Decor Tiệc Cưới</span><span class="decor-tab-badge bg-[#B89758]/15 text-[#8C6D32] text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full ml-1 border border-[#B89758]/30">Đang chọn</span>`;
 
                 btnService.className = 'py-3 sm:py-4 font-medium text-xs sm:text-sm text-slate-500 hover:text-slate-800 flex items-center gap-2 flex-shrink-0 whitespace-nowrap transition-colors border-b-2 border-transparent focus-ring';
-                btnService.innerHTML = `<i class="fa-solid fa-people-arrows text-slate-400"></i><span>Dịch Vụ Đi Kèm</span><span class="text-[10px] sm:text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">${serviceData.length} dịch vụ</span>`;
+                btnService.innerHTML = `<i class="fa-solid fa-people-arrows text-slate-400"></i><span>Dịch Vụ Đi Kèm</span><span class="decor-tab-badge text-[10px] sm:text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">${serviceData.length} dịch vụ</span>`;
 
                 containerDecor.classList.remove('hidden');
                 containerService.classList.add('hidden');
 
-                breadcrumbTab.innerText = 'Gói decor tiệc cưới';
                 headerTitle.innerText = 'Quản lý gói decor tiệc cưới';
                 btnCreateLabel.innerText = 'Thêm gói Decor';
                 inputSearch.placeholder = 'Tìm mã gói, tên chủ đề decor...';
@@ -770,15 +1329,14 @@
                 metricTitleLabel.innerText = 'Danh mục Gói Decor đang quản lý:';
             } else {
                 btnService.className = 'py-3 sm:py-4 font-bold text-xs sm:text-sm border-b-2 border-[#B89758] text-slate-900 flex items-center gap-2 flex-shrink-0 whitespace-nowrap focus-ring transition-colors';
-                btnService.innerHTML = `<i class="fa-solid fa-people-arrows text-[#B89758]"></i><span>Dịch Vụ Đi Kèm</span><span class="bg-[#B89758]/15 text-[#8C6D32] text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full ml-1 border border-[#B89758]/30">Đang chọn</span>`;
+                btnService.innerHTML = `<i class="fa-solid fa-people-arrows text-[#B89758]"></i><span>Dịch Vụ Đi Kèm</span><span class="decor-tab-badge bg-[#B89758]/15 text-[#8C6D32] text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full ml-1 border border-[#B89758]/30">Đang chọn</span>`;
 
                 btnDecor.className = 'py-3 sm:py-4 font-medium text-xs sm:text-sm text-slate-500 hover:text-slate-800 flex items-center gap-2 flex-shrink-0 whitespace-nowrap transition-colors border-b-2 border-transparent focus-ring';
-                btnDecor.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-slate-400"></i><span>Gói Decor Tiệc Cưới</span><span class="bg-slate-100 text-slate-600 text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full ml-1">${decorData.length} gói</span>`;
+                btnDecor.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-slate-400"></i><span>Gói Decor Tiệc Cưới</span><span class="decor-tab-badge bg-slate-100 text-slate-600 text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full ml-1">${decorData.length} gói</span>`;
 
                 containerService.classList.remove('hidden');
                 containerDecor.classList.add('hidden');
 
-                breadcrumbTab.innerText = 'Dịch vụ đi kèm';
                 headerTitle.innerText = 'Quản lý dịch vụ đi kèm';
                 btnCreateLabel.innerText = 'Thêm dịch vụ mới';
                 inputSearch.placeholder = 'Tìm mã DV, tên dịch vụ, nhân sự...';
@@ -851,7 +1409,7 @@
             container.innerHTML = '';
 
             if (list.length === 0) {
-                container.innerHTML = `<div class="col-span-full bg-white rounded-xl p-8 sm:p-12 text-center text-slate-400 border border-slate-200"><i class="fa-regular fa-folder-open text-3xl mb-2 text-slate-300"></i><p>Không tìm thấy gói Decor nào phù hợp với bộ lọc hiện tại.</p></div>`;
+                container.innerHTML = `<div class="decor-empty-state col-span-full bg-white rounded-xl p-8 sm:p-12 text-center text-slate-400 border border-slate-200"><i class="fa-regular fa-folder-open text-3xl mb-2"></i><p>Không tìm thấy gói Decor nào phù hợp với bộ lọc hiện tại.</p></div>`;
                 return;
             }
 
@@ -914,7 +1472,7 @@
                                 <span class="px-2 py-0.5 rounded-md text-[10.5px] font-mono font-semibold bg-slate-700/60 text-slate-200 backdrop-blur-sm border border-slate-500/30">${item.ma}</span>
                             </div>
                             <div class="absolute bottom-3 left-3">
-                                <span class="px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/90 text-slate-700 shadow-sm border border-slate-200 flex items-center gap-1">
+                                <span class="decor-media-badge px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/90 text-slate-700 shadow-sm border border-slate-200 flex items-center gap-1">
                                     <i class="fa-solid fa-landmark text-[10px] text-slate-500"></i> ${item.phanLoai}
                                 </span>
                             </div>
@@ -922,17 +1480,17 @@
                 }
 
                 const card = document.createElement('div');
-                card.className = `bg-white rounded-xl border border-slate-200 shadow-sm hover:border-[#B89758]/50 hover:shadow-md transition-all flex flex-col overflow-hidden group ${isInactive ? 'opacity-90' : ''}`;
+                card.className = `decor-card bg-white rounded-xl border border-slate-200 shadow-sm hover:border-[#B89758]/50 hover:shadow-md transition-all flex flex-col overflow-hidden group ${isInactive ? 'opacity-90' : ''}`;
                 card.innerHTML = `
                     ${mediaBlock}
-                    <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3 sm:space-y-4">
+                    <div class="decor-card-body p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3 sm:space-y-4">
                         <div>
                             <h3 class="font-serif font-bold text-base sm:text-lg text-slate-900 group-hover:text-[#8C6D32] transition-colors leading-snug">
                                 ${item.ten}
                             </h3>
                             <p class="text-xs text-slate-600 mt-2 leading-relaxed line-clamp-2">${item.moTa}</p>
 
-                            <div class="mt-3 pt-3 border-t border-dashed border-slate-200 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
+                            <div class="decor-card-meta mt-3 pt-3 border-t border-dashed border-slate-200 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
                                 <div class="min-w-0">
                                     <span class="block text-[10px] uppercase font-semibold tracking-wider text-slate-400">Hạng mục:</span>
                                     <span class="text-slate-700 font-medium truncate block">${item.spec1 || 'Toàn bộ sảnh tiệc'}</span>
@@ -944,7 +1502,7 @@
                             </div>
                         </div>
 
-                        <div class="pt-3 border-t border-slate-100 flex items-baseline justify-between gap-2">
+                        <div class="decor-card-price pt-3 border-t border-slate-100 flex items-baseline justify-between gap-2">
                             <span class="text-xs text-slate-500 font-medium whitespace-nowrap">${isInactive ? 'Đơn giá lưu trữ:' : 'Đơn giá niêm yết:'}</span>
                             <div class="text-right truncate">
                                 <span class="text-base sm:text-lg font-bold text-slate-900 font-serif tracking-tight">${Number(item.gia).toLocaleString('vi-VN')}</span>
@@ -953,13 +1511,13 @@
                         </div>
 
                         <div class="pt-1 grid grid-cols-3 gap-1.5 sm:gap-2">
-                            <button onclick="viewDetail(${item.id})" class="min-h-[40px] px-1.5 sm:px-2 py-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] sm:text-xs font-semibold border border-slate-200 transition-colors flex items-center justify-center gap-1 sm:gap-1.5 focus-ring" title="Xem chi tiết">
+                            <button onclick="viewDetail(${item.id})" class="decor-action min-h-[40px] px-1.5 sm:px-2 py-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] sm:text-xs font-semibold border border-slate-200 transition-colors flex items-center justify-center gap-1 sm:gap-1.5 focus-ring" title="Xem chi tiết">
                                 <i class="fa-regular fa-eye text-slate-500"></i><span class="hidden sm:inline">Chi tiết</span><span class="sm:hidden">Xem</span>
                             </button>
-                            <button onclick="editDecorItem(${item.id})" class="min-h-[40px] px-1.5 sm:px-2 py-2 rounded-lg bg-slate-50 hover:bg-[#B89758]/10 text-slate-800 hover:text-[#8C6D32] text-[11px] sm:text-xs font-semibold border border-slate-200 hover:border-[#B89758]/50 transition-colors flex items-center justify-center gap-1 sm:gap-1.5 focus-ring" title="Chỉnh sửa">
+                            <button onclick="editDecorItem(${item.id})" class="decor-action min-h-[40px] px-1.5 sm:px-2 py-2 rounded-lg bg-slate-50 hover:bg-[#B89758]/10 text-slate-800 hover:text-[#8C6D32] text-[11px] sm:text-xs font-semibold border border-slate-200 hover:border-[#B89758]/50 transition-colors flex items-center justify-center gap-1 sm:gap-1.5 focus-ring" title="Chỉnh sửa">
                                 <i class="fa-regular fa-pen-to-square text-[#B89758]"></i><span>Sửa</span>
                             </button>
-                            <button onclick="toggleStatus(${item.id})" class="min-h-[40px] px-1.5 sm:px-2 py-2 rounded-lg ${isInactive ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border-slate-200'} text-[11px] sm:text-xs font-semibold border transition-colors flex items-center justify-center gap-1 sm:gap-1.5 focus-ring" title="Thay đổi trạng thái">
+                            <button onclick="toggleStatus(${item.id})" class="decor-action ${isInactive ? '' : 'decor-action--danger'} min-h-[40px] px-1.5 sm:px-2 py-2 rounded-lg ${isInactive ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border-slate-200'} text-[11px] sm:text-xs font-semibold border transition-colors flex items-center justify-center gap-1 sm:gap-1.5 focus-ring" title="Thay đổi trạng thái">
                                 <i class="fa-solid ${isInactive ? 'fa-rotate-left text-emerald-600' : 'fa-lock text-slate-400'}"></i>
                                 <span class="hidden sm:inline">${isInactive ? 'Mở lại' : 'Khóa'}</span>
                                 <span class="sm:hidden">${isInactive ? 'Mở' : 'Khóa'}</span>
@@ -977,7 +1535,7 @@
             tbody.innerHTML = '';
 
             if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-slate-400 italic">Không tìm thấy dịch vụ nào phù hợp với bộ lọc.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="decor-empty-state text-center py-10 text-slate-400 italic">Không tìm thấy dịch vụ nào phù hợp với bộ lọc.</td></tr>`;
                 return;
             }
 
@@ -987,20 +1545,20 @@
                 tr.className = `custom-row-hover transition-colors ${isInactive ? 'bg-slate-50/40' : ''}`;
 
                 const badgeStatus = !isInactive
-                    ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Đang áp dụng</span>`
-                    : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-300"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Tạm ngưng</span>`;
+                    ? `<span class="decor-status-badge decor-status-badge--active inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Đang áp dụng</span>`
+                    : `<span class="decor-status-badge decor-status-badge--inactive inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Tạm ngưng</span>`;
 
                 const lockBtn = !isInactive
-                    ? `<button onclick="toggleStatus(${item.id})" class="h-[36px] px-2.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold flex items-center gap-1 border border-amber-200 transition-colors" title="Khóa tạm ngưng"><i class="fa-solid fa-ban text-[11px]"></i><span>Khóa</span></button>`
-                    : `<button onclick="toggleStatus(${item.id})" class="h-[36px] px-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold flex items-center gap-1 border border-emerald-200 transition-colors" title="Kích hoạt lại"><i class="fa-solid fa-rotate-left text-[11px]"></i><span>Mở lại</span></button>`;
+                    ? `<button onclick="toggleStatus(${item.id})" class="decor-action decor-action--danger h-[36px] px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1 border transition-colors" title="Khóa tạm ngưng"><i class="fa-solid fa-ban text-[11px]"></i><span>Khóa</span></button>`
+                    : `<button onclick="toggleStatus(${item.id})" class="decor-action h-[36px] px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1 border transition-colors" title="Kích hoạt lại"><i class="fa-solid fa-rotate-left text-[11px]"></i><span>Mở lại</span></button>`;
 
                 const imageThumbnail = item.hinhAnh
                     ? `<div class="w-32 h-20 rounded-lg overflow-hidden border border-gray-200 relative bg-slate-900 group"><img src="${item.hinhAnh}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /><span class="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded">16:10</span></div>`
-                    : `<div class="w-32 h-20 rounded-lg border border-dashed border-slate-300 bg-[#F5F3EF] flex flex-col items-center justify-center text-slate-400 p-2 text-center"><i class="fa-regular fa-image text-lg mb-1"></i><span class="text-[9px] text-slate-500 font-medium">Chưa có ảnh</span><span class="text-[8px] text-slate-400">Đang cập nhật</span></div>`;
+                    : `<div class="decor-service-image-placeholder w-32 h-20 rounded-lg border border-dashed border-slate-300 bg-[#F5F3EF] flex flex-col items-center justify-center text-slate-400 p-2 text-center"><i class="fa-regular fa-image text-lg mb-1"></i><span class="text-[9px] text-slate-500 font-medium">Chưa có ảnh</span><span class="text-[8px] text-slate-400">Đang cập nhật</span></div>`;
 
                 tr.innerHTML = `
                     <td class="py-4 px-4 text-center">
-                        <span class="font-mono text-[11px] font-bold px-2 py-1 rounded bg-slate-100 text-slate-800 border border-slate-200">${item.ma}</span>
+                        <span class="decor-code-badge font-mono text-[11px] font-bold px-2 py-1 rounded bg-slate-100 text-slate-800 border border-slate-200">${item.ma}</span>
                     </td>
                     <td class="py-4 px-4">${imageThumbnail}</td>
                     <td class="py-4 px-5 align-middle">
@@ -1014,7 +1572,7 @@
                         </div>
                     </td>
                     <td class="py-4 px-4">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50/80 text-amber-900 border border-[#B89758]/30 text-xs font-medium">
+                        <span class="decor-category-badge inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50/80 text-amber-900 border border-[#B89758]/30 text-xs font-medium">
                             <i class="fa-solid fa-tag text-[10px] text-[#B89758]"></i> ${item.phanLoai}
                         </span>
                     </td>
@@ -1025,10 +1583,10 @@
                     <td class="py-4 px-4 text-center">${badgeStatus}</td>
                     <td class="py-4 px-4 text-center">
                         <div class="flex items-center justify-center gap-1.5">
-                            <button onclick="viewDetail(${item.id})" class="h-[36px] px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1 border border-slate-200 transition-colors" title="Xem chi tiết">
+                            <button onclick="viewDetail(${item.id})" class="decor-action h-[36px] px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1 border transition-colors" title="Xem chi tiết">
                                 <i class="fa-regular fa-eye text-slate-500"></i><span>Xem</span>
                             </button>
-                            <button onclick="editDecorItem(${item.id})" class="h-[36px] px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1 border border-slate-200 transition-colors" title="Chỉnh sửa">
+                            <button onclick="editDecorItem(${item.id})" class="decor-action h-[36px] px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1 border transition-colors" title="Chỉnh sửa">
                                 <i class="fa-regular fa-pen-to-square text-[#B89758]"></i><span>Sửa</span>
                             </button>
                             ${lockBtn}
@@ -1040,12 +1598,49 @@
         }
 
         // 9. KHÓA / MỞ TRẠNG THÁI RECORD
-        function toggleStatus(id) {
+        async function toggleStatus(id) {
             const list = currentTab === 'decor' ? decorData : serviceData;
             const target = list.find(x => x.id === id);
-            if (target) {
-                target.trangThai = target.trangThai === 'Áp dụng' ? 'Ngừng áp dụng' : 'Áp dụng';
+            if (!target) return;
+
+            const isDecor = currentTab === 'decor';
+            const nextStatusCode = target.trangThai === 'Áp dụng' ? 'INACTIVE' : 'ACTIVE';
+            const endpoint = isDecor
+                ? `/AdminDecorService/data/decor/${id}`
+                : `/AdminDecorService/data/service/${id}`;
+            const payload = isDecor
+                ? {
+                    packageCode: target.ma,
+                    packageName: target.ten,
+                    style: target.phanLoai,
+                    description: target.moTa,
+                    price: target.gia,
+                    statusCode: nextStatusCode
+                }
+                : {
+                    serviceCode: target.ma,
+                    serviceName: target.ten,
+                    serviceType: target.phanLoai,
+                    description: target.moTa,
+                    price: target.gia,
+                    statusCode: nextStatusCode
+                };
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Không thể cập nhật trạng thái.');
+                }
+
+                await loadCatalogData();
                 applyFilters();
+            } catch (error) {
+                alert(error.message || 'Không thể cập nhật trạng thái danh mục.');
             }
         }
 
@@ -1057,7 +1652,7 @@
 
             document.getElementById('detail-title').innerText = currentTab === 'decor' ? `Chi Tiết Gói Decor: ${item.ma}` : `Chi Tiết Dịch Vụ: ${item.ma}`;
             document.getElementById('detail-content').innerHTML = `
-                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center gap-3 flex-wrap">
+                <div class="decor-detail-panel p-3 rounded-lg border flex justify-between items-center gap-3 flex-wrap">
                     <div class="min-w-0">
                         <h4 class="font-bold text-sm text-slate-800">${item.ten}</h4>
                         <span class="text-[11px] text-[#B89758] font-semibold">${item.phanLoai}</span>
@@ -1068,35 +1663,66 @@
                 </div>
                 <div>
                     <span class="font-bold text-slate-700 block mb-1">Mô tả cấu hình:</span>
-                    <p class="text-slate-600 leading-relaxed bg-white p-3 rounded-lg border border-slate-100">${item.moTa}</p>
+                    <p class="decor-detail-panel text-slate-600 leading-relaxed p-3 rounded-lg border">${item.moTa}</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                    <div class="decor-detail-panel p-2.5 rounded-lg border">
                         <span class="text-[10px] uppercase font-bold text-slate-400 block">${currentTab === 'decor' ? 'Hạng mục chính' : 'Nhân sự vận hành'}</span>
                         <span class="font-semibold text-slate-800">${item.spec1 || 'Tiêu chuẩn'}</span>
                     </div>
-                    <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                    <div class="decor-detail-panel p-2.5 rounded-lg border">
                         <span class="text-[10px] uppercase font-bold text-slate-400 block">${currentTab === 'decor' ? 'Thời gian set-up' : 'Thời gian phục vụ'}</span>
                         <span class="font-semibold text-slate-800">${item.spec2 || 'Theo ca tiệc'}</span>
                     </div>
                 </div>
-                <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 flex-wrap gap-2">
+                <div class="flex items-center text-[11px] text-slate-500 pt-2 flex-wrap gap-2">
                     <span>Tình trạng niêm yết: <strong class="${item.trangThai === 'Áp dụng' ? 'text-emerald-600' : 'text-slate-500'} font-bold">${item.trangThai}</strong></span>
-                    <span>Mã quy chuẩn: <strong>MD-RP-2026</strong></span>
                 </div>
             `;
             document.getElementById('detailModal').classList.remove('hidden');
+            document.body.classList.add('decor-modal-open');
         }
 
         function closeDetailModal() {
             document.getElementById('detailModal').classList.add('hidden');
+            document.body.classList.remove('decor-modal-open');
         }
 
         // 11. MODAL THÊM MỚI / CHỈNH SỬA
+        function configureCatalogForm(isDecor) {
+            document.getElementById('decor-code-label').textContent = isDecor ? 'Mã gói decor' : 'Mã dịch vụ';
+            document.getElementById('decor-name-label').textContent = isDecor ? 'Tên gói Decor' : 'Tên dịch vụ';
+            document.getElementById('decor-style-label').textContent = isDecor ? 'Phong cách decor' : 'Phân loại dịch vụ';
+            document.getElementById('decor-submit-label').textContent = isDecor ? 'LƯU GÓI DECOR' : 'LƯU DỊCH VỤ';
+            document.getElementById('decor-items-field').classList.toggle('hidden', !isDecor);
+
+            const decorStyles = [
+                'Hoàng gia (Royal Luxury)',
+                'Tối giản & Hiện đại (Minimalist)',
+                'Cổ điển (Vintage Romance)',
+                'Dạ khúc Ánh sao (Celestial)',
+                'Sang trọng bờ sông (Riverside Luxe)',
+                'Venice Lãng mạn'
+            ];
+            const serviceTypes = [...new Set([
+                ...serviceData.map(item => item.phanLoai).filter(Boolean),
+                'Âm thanh', 'Ánh sáng', 'Nhân sự', 'Thiết bị', 'Khác'
+            ])];
+            const select = document.getElementById('decor-style');
+            select.replaceChildren(...(isDecor ? decorStyles : serviceTypes).map(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                return option;
+            }));
+        }
+
         function openCreateModal() {
             document.getElementById('decorForm').reset();
+            document.getElementById('decor-file-input').value = '';
             document.getElementById('decor-form-id').value = '0';
             document.getElementById('decor-modal-title').innerText = currentTab === 'decor' ? 'Thêm gói Decor mới' : 'Thêm Dịch Vụ Mới';
+            configureCatalogForm(currentTab === 'decor');
 
             if (currentTab === 'decor') {
                 document.getElementById('decor-code').value = 'DC-' + Date.now();
@@ -1113,8 +1739,9 @@
             }
 
             document.getElementById('radio-decor-active').checked = true;
-            document.getElementById('decor-image-preview-card').classList.remove('hidden');
+            document.getElementById('decor-image-preview-card').classList.add('hidden');
             document.getElementById('decorModal').classList.remove('hidden');
+            document.body.classList.add('decor-modal-open');
         }
 
         function editDecorItem(id) {
@@ -1122,10 +1749,14 @@
             const item = list.find(x => x.id === id);
             if (!item) return;
 
+            configureCatalogForm(currentTab === 'decor');
             document.getElementById('decor-form-id').value = item.id;
             document.getElementById('decor-modal-title').innerText = currentTab === 'decor' ? 'Chỉnh sửa gói Decor' : 'Chỉnh sửa Dịch vụ';
             document.getElementById('decor-code').value = item.ma;
             document.getElementById('decor-name').value = item.ten;
+            if (![...document.getElementById('decor-style').options].some(option => option.value === item.phanLoai)) {
+                document.getElementById('decor-style').add(new Option(item.phanLoai, item.phanLoai));
+            }
             document.getElementById('decor-style').value = item.phanLoai;
             document.getElementById('decor-price').value = item.gia;
             document.getElementById('decor-setup-time').value = item.spec2 || '4.0 giờ trước ca tiệc';
@@ -1141,13 +1772,20 @@
                 document.getElementById('decor-preview-img').src = item.hinhAnh;
                 document.getElementById('decor-preview-filename').innerText = item.ma + '-cover-image.jpg';
                 document.getElementById('decor-image-preview-card').classList.remove('hidden');
+            } else {
+                document.getElementById('decor-image-preview-card').classList.add('hidden');
             }
 
             document.getElementById('decorModal').classList.remove('hidden');
+            document.body.classList.add('decor-modal-open');
         }
 
         function closeDecorModal() {
             document.getElementById('decorModal').classList.add('hidden');
+            document.body.classList.remove('decor-modal-open');
+            const form = document.getElementById('decorForm');
+            if (form) form.reset();
+            removeImagePreview();
         }
 
         // 12. UPLOAD & PREVIEW ẢNH
@@ -1207,6 +1845,22 @@
             if (!response.ok || !result.success) {
                 alert(result.message || 'Không thể lưu danh mục.');
                 return;
+            }
+
+            const imageFile = document.getElementById('decor-file-input').files[0];
+            const savedId = id === 0 ? parseInt(result.id || 0) : id;
+            if (imageFile && savedId > 0) {
+                const imageData = new FormData();
+                imageData.append('file', imageFile);
+                const imageResponse = await fetch(`${endpoint}/${savedId}/image`, {
+                    method: 'POST',
+                    body: imageData
+                });
+                const imageResult = await imageResponse.json();
+                if (!imageResponse.ok || !imageResult.success) {
+                    alert('Đã lưu thông tin nhưng tải ảnh thất bại: ' + (imageResult.message || 'Lỗi không xác định.'));
+                    return;
+                }
             }
 
             closeDecorModal();

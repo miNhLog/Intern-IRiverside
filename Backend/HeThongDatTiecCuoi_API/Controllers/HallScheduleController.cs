@@ -7,6 +7,8 @@ using HeThongDatTiecCuoi_API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace HeThongDatTiecCuoi_API.Controllers;
 
@@ -144,7 +146,7 @@ public sealed class HallScheduleController : ControllerBase
     {
         var statusCode = request.Status?.Trim().ToUpperInvariant();
 
-        var hallSchedule = await _context.HallSchedules.SingleOrDefaultAsync(
+        var hallSchedule = await _context.HallSchedules.Include(schedule => schedule.Status).Include(schedule => schedule.Hall).SingleOrDefaultAsync(
             schedule => schedule.HallScheduleId == hallScheduleId &&
                 schedule.DataStatus.DataStatusCode == DataStatusCodes.Existing &&
                 schedule.Hall.DataStatus.DataStatusCode == DataStatusCodes.Existing,
@@ -187,7 +189,21 @@ public sealed class HallScheduleController : ControllerBase
             cancellationToken) ?? throw new InvalidOperationException(
                 $"Thiếu trạng thái lịch sảnh {statusCode}.");
 
+        var oldStatus = hallSchedule.Status.StatusCode;
+        if (oldStatus == status.StatusCode)
+            return Ok(new { message = "Trạng thái lịch sảnh không thay đổi.", hallScheduleId, status = status.StatusCode, statusName = status.StatusName });
+
         hallSchedule.StatusId = status.StatusId;
+        var actorId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedActorId) ? parsedActorId : (int?)null;
+        _context.AuditLogs.Add(new AuditLog
+        {
+            UserId = actorId, Action = AuditActions.HallScheduleStatusChanged,
+            EntityName = AuditEntityNames.HallSchedule, EntityId = hallSchedule.HallScheduleId,
+            OldData = JsonSerializer.Serialize(new { hallSchedule.HallId, hallSchedule.Date, hallSchedule.Shift, Status = oldStatus }),
+            NewData = JsonSerializer.Serialize(new { hallSchedule.HallId, hallSchedule.Date, hallSchedule.Shift, Status = status.StatusCode }),
+            Timestamp = DateTime.Now, Outcome = AuditOutcomes.Success,
+            Notes = $"Cập nhật lịch sảnh {hallSchedule.Hall.HallCode} ngày {hallSchedule.Date:dd/MM/yyyy} {hallSchedule.Shift}: {oldStatus} → {status.StatusCode}."
+        });
 
         await _context.SaveChangesAsync(cancellationToken);
 

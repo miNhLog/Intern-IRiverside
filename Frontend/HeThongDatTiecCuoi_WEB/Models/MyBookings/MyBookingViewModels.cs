@@ -23,4 +23,10 @@ public class MyBookingViewModel
     public string Status { get; set; } = string.Empty;
     public DateTime BookedAt { get; set; }
     public string? SpecialRequests { get; set; }
+
+    public int? ContractId { get; set; }
+    public string? ContractCode { get; set; }
+    public string? ContractStatusCode { get; set; }
+    public string? ContractStatusName { get; set; }
+    public bool HasContract => ContractId.HasValue;
 }

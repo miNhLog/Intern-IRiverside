@@ -8,31 +8,34 @@ public sealed class RecommendationRequestDto
     [Range(typeof(decimal), "100000000", "3000000000", ErrorMessage = "Ngân sách tối thiểu 100 triệu (chi phí tối thiểu ~103,3 triệu cho 150 khách) đến 3 tỷ VNĐ.")]
     public decimal ExpectedBudget { get; set; }
 
-    [Range(1, int.MaxValue, ErrorMessage = "Số lượng khách phải lớn hơn 0.")]
+    [Range(50, 1400, ErrorMessage = "Số lượng khách phải từ 50 đến 1400 khách (tương đương 5 đến 140 bàn phù hợp năng lực sảnh tiệc của Riverside Palace).")]
     public int GuestCount { get; set; }
 
     /// <summary>Số bàn chính thức quy đổi từ GuestCount (ceil(GuestCount/10)). Optional để tương thích JS cũ.</summary>
-    [Range(0, 500, ErrorMessage = "Số bàn chính thức không hợp lệ.")]
+    [Range(0, 500)]
     public int OfficialTableCount { get; set; }
 
     /// <summary>Số bàn dự phòng. Optional.</summary>
-    [Range(0, 50, ErrorMessage = "Bàn dự phòng từ 0 đến 50 bàn.")]
+    [Range(0, 50)]
     public int SpareTableCount { get; set; }
 
     /// <summary>Tổng bàn = Official + Spare. Optional, Backend tự tính lại nếu <= 0.</summary>
-    [Range(0, 500, ErrorMessage = "Tổng số bàn không hợp lệ.")]
+    [Range(0, 500)]
     public int TableCount { get; set; }
 
     public DateTime DesiredDate { get; set; }
 
-    [Required(ErrorMessage = "Vui lòng chọn ca tổ chức."), MaxLength(20)]
+    [Required, MaxLength(20)]
     public string DesiredShift { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Vui lòng chọn phong cách bài trí."), MaxLength(100)]
+    [Required, MaxLength(100)]
     public string DesiredStyle { get; set; } = string.Empty;
 
-    [MaxLength(500, ErrorMessage = "Nhu cầu dịch vụ tối đa 500 ký tự.")]
+    [MaxLength(500)]
     public string? ServiceNeeds { get; set; }
+
+    /// <summary>VĐ2: CustomerId nullable từ FE (anonymous=null) → BE forward user_id sang AI hybrid/rank để CF cá nhân hóa. DTO-only, không đụng DB.</summary>
+    public int? UserId { get; set; }
 }
 
 public sealed class ComboSuggestionDto
@@ -47,13 +50,9 @@ public sealed class ComboSuggestionDto
     public string ComboName { get; set; } = string.Empty;
     public string PackageName { get; set; } = string.Empty;
     public double OverallMatchScore { get; set; }
-    [JsonIgnore]
-    public double WsmScore { get; set; }
     public double BudgetMatchScore { get; set; }
     public double SpaceFitScore { get; set; }
     public double StyleThemeScore { get; set; }
-    /// <summary>Actual fourth WSM criterion: fraction of requested active services matched.</summary>
-    public double ServiceMatchScore { get; set; }
     public double RatingCredibilityScore { get; set; }
     public int HallScheduleId { get; set; }
     public int HallId { get; set; }
@@ -117,13 +116,14 @@ public sealed class SuggestedDateDto
 
 public sealed class SuggestedNextDto
 {
-    public decimal? MinRequiredBudget { get; set; }
+    public decimal MinRequiredBudget { get; set; }
     public List<SuggestedDateDto> SuggestedDates { get; set; } = [];
     public string Reason { get; set; } = string.Empty;
 }
 
 public sealed class RegisterPublicBookingDto
 {
+    public int? UserId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
     // Email validate thủ công trong action để trả message tiếng Việt {success,message}
@@ -148,11 +148,11 @@ public sealed class RegisterPublicBookingDto
     public string? SpecialRequests { get; set; }
     /// <summary>Tên thực đơn tùy chỉnh do khách tự chọn món (vd "Thực đơn tùy chỉnh 1"). Optional.</summary>
     public string? CustomMenuName { get; set; }
-    /// <summary>Giá mỗi bàn do client gửi lên — chỉ giữ để tương thích payload cũ, API không dùng để tính tiền.</summary>
+    /// <summary>Giá mỗi bàn của thực đơn tùy chỉnh (= tổng giá món đã chọn). Optional.</summary>
     public decimal? CustomMenuPricePerTable { get; set; }
-    /// <summary>Danh sách món trong thực đơn tùy chỉnh ("Tên món (giá)") — chỉ để tham khảo, API dựng lại từ DB.</summary>
+    /// <summary>Danh sách món trong thực đơn tùy chỉnh ("Tên món (giá)") để lưu vào SpecialRequests. Optional.</summary>
     public List<string>? CustomMenuItems { get; set; }
-    /// <summary>Mã món khách đã chọn cho thực đơn tùy chỉnh; API dùng để tra giá tin cậy từ bảng Dish.</summary>
+    /// <summary>Mã món khách chọn. Backend dùng các mã này để tải lại tên và giá chính thức từ database.</summary>
     public List<int>? CustomMenuDishIds { get; set; }
     /// <summary>Mã dịch vụ khách đã chọn ở form (DV001...) để lưu BookingServices + cộng vào EstimatedTotal.</summary>
     public List<string>? ServiceCodes { get; set; }
@@ -176,6 +176,9 @@ public sealed class HallAvailabilityItemDto
     [JsonPropertyName("capacity_min_tables")] public int CapacityMinTables { get; set; }
     [JsonPropertyName("capacity_max_tables")] public int CapacityMaxTables { get; set; }
     [JsonPropertyName("rentalPrice")] public decimal RentalPrice { get; set; }
+    [JsonPropertyName("rentalPriceNoon")] public decimal RentalPriceNoon { get; set; }
+    [JsonPropertyName("rentalPriceEvening")] public decimal RentalPriceEvening { get; set; }
+    [JsonPropertyName("isWeekend")] public bool IsWeekend { get; set; }
     [JsonPropertyName("isNoonAvailable")] public bool IsNoonAvailable { get; set; }
     [JsonPropertyName("isEveningAvailable")] public bool IsEveningAvailable { get; set; }
 }

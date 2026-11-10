@@ -8,5 +8,6 @@ public sealed class CreateHallRequest
     public int MaximumCapacity { get; set; }
     public decimal RentalPrice { get; set; }
     public string? Description { get; set; }
+    public string? ImageUrl { get; set; }
     public string Status { get; set; } = string.Empty;
 }

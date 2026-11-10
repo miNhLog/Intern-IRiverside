@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -8,30 +8,26 @@ namespace HeThongDatTiecCuoi_WEB.Models.Recommendation;
 public class RecommendationRequestViewModel
 {
     [Required(ErrorMessage = "Vui lòng nhập họ tên cặp đôi")]
-    [StringLength(150, MinimumLength = 2, ErrorMessage = "Họ tên phải từ 2 đến 150 ký tự")]
     [Display(Name = "Họ tên cặp đôi / Người đại diện")]
     public string CoupleName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập số điện thoại")]
-    [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng 0")]
     [Display(Name = "Số điện thoại")]
     public string PhoneNumber { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Vui lòng nhập email")]
     [EmailAddress(ErrorMessage = "Email không hợp lệ")]
-    [StringLength(255, ErrorMessage = "Email tối đa 255 ký tự")]
     public string? Email { get; set; }
 
     [Required(ErrorMessage = "Vui lòng chọn ngày dự kiến")]
     public DateTime EventDate { get; set; } = DateTime.Today.AddMonths(2);
 
-    [Required(ErrorMessage = "Vui lòng chọn ca tổ chức")]
+    [Required]
     public string Shift { get; set; } = "Ca tối";
 
     public bool IsDateFlexible { get; set; } = false;
 
     [Required(ErrorMessage = "Vui lòng nhập số lượng khách dự kiến")]
-    [Range(150, 2000, ErrorMessage = "Số lượng khách từ 150 đến 2000 (quy chuẩn 10 khách/bàn)")]
+    [Range(150, 1400, ErrorMessage = "Số lượng khách từ 150 đến 1400 (quy chuẩn 10 khách/bàn)")]
     public int GuestCount { get; set; } = 300;
 
     [Range(0, 500)]
@@ -53,8 +49,6 @@ public class RecommendationRequestViewModel
 
     public string? PreferredSpaceType { get; set; }
 
-    [Required(ErrorMessage = "Vui lòng chọn phong cách bài trí")]
-    [StringLength(100, ErrorMessage = "Phong cách tối đa 100 ký tự")]
     public string? DesiredStyle { get; set; }
 
     public string? MainColorTone { get; set; }
@@ -66,6 +60,9 @@ public class RecommendationRequestViewModel
     public List<string> SelectedServiceCodes { get; set; } = new();
 
     public string? SpecialRequests { get; set; }
+
+    /// <summary>VĐ2: CustomerId nullable (anonymous=null) → FE gửi userId sang BE suggest-top3-hybrid → AI hybrid/rank.</summary>
+    public int? CustomerId { get; set; }
 }
 
 public class ComboSuggestionViewModel
@@ -83,7 +80,6 @@ public class ComboSuggestionViewModel
     public double SpaceFitScore { get; set; }
     public double StyleThemeScore { get; set; }
     public double RatingCredibilityScore { get; set; }
-    public double ServiceMatchScore { get; set; }
 
     public int HallId { get; set; }
     public string HallName { get; set; } = string.Empty;
@@ -151,6 +147,14 @@ public class RecommendationResponseViewModel
     public int Count { get; set; }
     public List<ComboSuggestionViewModel>? Data { get; set; }
     public SuggestedNextViewModel? SuggestedNext { get; set; }
+
+    /// <summary>VĐ2: nguồn gợi ý từ BE envelope (ai-service-hybrid / ai-service-wsm-fallback / fallback-internal / heuristic). Null-safe.</summary>
+    [JsonPropertyName("source")]
+    public string? Source { get; set; }
+
+    /// <summary>VĐ2: nguồn trọng số hybrid từ AI (learned:... / default-unlearned). Null-safe, thiếu field không vỡ.</summary>
+    [JsonPropertyName("weights_source")]
+    public string? WeightsSource { get; set; }
 }
 
 public class SuggestedDateViewModel
@@ -166,7 +170,7 @@ public class SuggestedDateViewModel
 public class SuggestedNextViewModel
 {
     [JsonPropertyName("minRequiredBudget")]
-    public decimal? MinRequiredBudget { get; set; }
+    public decimal MinRequiredBudget { get; set; }
     [JsonPropertyName("suggestedDates")]
     public List<SuggestedDateViewModel> SuggestedDates { get; set; } = new();
     [JsonPropertyName("reason")]
@@ -216,6 +220,15 @@ public class HallSlotItemViewModel
     [JsonPropertyName("rentalPrice")]
     public decimal RentalPrice { get; set; }
 
+    [JsonPropertyName("rentalPriceNoon")]
+    public decimal RentalPriceNoon { get; set; }
+
+    [JsonPropertyName("rentalPriceEvening")]
+    public decimal RentalPriceEvening { get; set; }
+
+    [JsonPropertyName("isWeekend")]
+    public bool IsWeekend { get; set; }
+
     [JsonPropertyName("isNoonAvailable")]
     public bool IsNoonAvailable { get; set; }
 
@@ -225,6 +238,7 @@ public class HallSlotItemViewModel
 
 public class PublicBookingRequestViewModel
 {
+    public int? UserId { get; set; } // Thêm trường này
     public string CustomerName { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
     public string? Email { get; set; }
@@ -247,9 +261,13 @@ public class PublicBookingRequestViewModel
     public List<string>? ServiceCodes { get; set; }
 }
 
-public class PublicBookingRegistrationResultViewModel
+public sealed class PublicBookingRegistrationResultViewModel
 {
-    public string BookingCode { get; set; } = string.Empty;
+    public string? BookingCode { get; set; }
+    public string? Code { get; set; }
+    public string? Message { get; set; }
+    public decimal? OfficialMenuPricePerTable { get; set; }
+    public decimal? OfficialEstimatedTotal { get; set; }
     public string StatusCode { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
     public DateTime? HoldExpiresAt { get; set; }

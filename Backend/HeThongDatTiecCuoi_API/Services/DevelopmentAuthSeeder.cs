@@ -101,6 +101,26 @@ public sealed class DevelopmentAuthSeeder
             .Include(x => x.Employee)
             .SingleOrDefaultAsync(x => x.Email == normalizedEmail, cancellationToken);
 
+        // The database permits only one active Admin and one active Manager. When a
+        // development account email changes, reuse that singleton account instead of
+        // trying to insert a second row and violating UX_TaiKhoan_*_Active.
+        if (user is null && (role.RoleName == RoleNames.Admin || role.RoleName == RoleNames.Manager))
+        {
+            user = await _db.Users
+                .Include(x => x.Customer)
+                .Include(x => x.Employee)
+                .SingleOrDefaultAsync(
+                    x => x.RoleId == role.RoleId
+                        && x.StatusId == accountStatusId
+                        && x.DataStatusId == existingDataStatus.DataStatusId,
+                    cancellationToken);
+
+            if (user is not null)
+            {
+                user.Email = normalizedEmail;
+            }
+        }
+
         if (user is null)
         {
             user = new User
@@ -113,6 +133,7 @@ public sealed class DevelopmentAuthSeeder
                 DataStatusId = existingDataStatus.DataStatusId,
                 MustChangePassword = false
             };
+            user.PasswordHash = _hasher.HashPassword(user, password);
             _db.Users.Add(user);
         }
         else
@@ -124,8 +145,6 @@ public sealed class DevelopmentAuthSeeder
             user.MustChangePassword = false;
             user.UpdatedAt = DateTime.Now;
         }
-
-        user.PasswordHash = _hasher.HashPassword(user, password);
 
         // Admin không cần hồ sơ NhanVien; 3 role nhân viên còn lại bắt buộc có Employee để login hợp lệ.
         if (role.RoleName != RoleNames.Admin && !string.IsNullOrWhiteSpace(employeeCode) && user.Employee is null)

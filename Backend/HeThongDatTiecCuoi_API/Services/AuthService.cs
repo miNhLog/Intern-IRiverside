@@ -62,6 +62,13 @@ public sealed partial class AuthService : IAuthService
                 Notes = $"Nhân viên {user.Employee?.FullName ?? user.Email} đã hoàn tất đổi mật khẩu lần đầu."
             });
         }
+        else
+        {
+            _db.AuditLogs.Add(_auditLogs.Create(
+                AuditActions.PasswordChanged, user.UserId, user.UserId,
+                AuditAuthMethods.Password, AuditOutcomes.Success,
+                "Nhân viên đã thay đổi mật khẩu tài khoản."));
+        }
         await _db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         if (wasFirstPasswordChange && user.Role.RoleName != RoleNames.Admin)
@@ -99,6 +106,7 @@ public sealed partial class AuthService : IAuthService
     private readonly ILogger<AuthService> _logger;
     private readonly AccountProvisioningOptions _accountProvisioningOptions;
     private readonly IFirstPasswordOtpService _firstPasswordOtpService;
+    private readonly IAuditLogService _auditLogs;
 
     public AuthService(
         ApplicationDbContext db,
@@ -109,7 +117,8 @@ public sealed partial class AuthService : IAuthService
         INotificationService notifications,
         IFirstPasswordOtpService firstPasswordOtpService,
         IOptions<AccountProvisioningOptions> accountProvisioningOptions,
-        ILogger<AuthService> logger)
+        ILogger<AuthService> logger,
+        IAuditLogService? auditLogs = null)
     {
         _db = db;
         _passwordHasher = passwordHasher;
@@ -119,6 +128,8 @@ public sealed partial class AuthService : IAuthService
         _notifications = notifications;
         _firstPasswordOtpService = firstPasswordOtpService;
         _accountProvisioningOptions = accountProvisioningOptions.Value;
+        _auditLogs = auditLogs ?? new AuditLogService(db, new HttpContextAccessor(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<AuditLogService>.Instance);
         _logger = logger;
     }
 
@@ -287,6 +298,8 @@ public sealed partial class AuthService : IAuthService
 
         if (user.Status.StatusCode != AccountStatusCodes.Active)
         {
+            await _auditLogs.TrySaveAsync(_auditLogs.Create(AuditActions.LoginBlocked, null, user.UserId,
+                AuditAuthMethods.Password, AuditOutcomes.Blocked, "Đăng nhập bị từ chối do trạng thái tài khoản."), cancellationToken);
             return ServiceResult<AuthResponse>.Failure(
                 "Tài khoản đang bị khóa hoặc đã ngừng hoạt động.",
                 StatusCodes.Status403Forbidden);
@@ -298,6 +311,8 @@ public sealed partial class AuthService : IAuthService
             (user.Customer is not null &&
              user.Customer.DataStatusId != user.DataStatusId))
         {
+            await _auditLogs.TrySaveAsync(_auditLogs.Create(AuditActions.LoginBlocked, null, user.UserId,
+                AuditAuthMethods.Password, AuditOutcomes.Blocked, "Đăng nhập bị từ chối do tài khoản hoặc hồ sơ không còn đủ điều kiện truy cập."), cancellationToken);
             return ServiceResult<AuthResponse>.Failure(
                 "Tài khoản hoặc hồ sơ hiện không được phép đăng nhập.",
                 StatusCodes.Status403Forbidden);
@@ -311,10 +326,14 @@ public sealed partial class AuthService : IAuthService
         }
         catch (FormatException)
         {
+            await _auditLogs.TrySaveAsync(_auditLogs.Create(AuditActions.LoginFailed, null, user.UserId,
+                AuditAuthMethods.Password, AuditOutcomes.Failed, "Đăng nhập thất bại do thông tin xác thực không hợp lệ."), cancellationToken);
             return InvalidCredentials();
         }
         if (verification == PasswordVerificationResult.Failed)
         {
+            await _auditLogs.TrySaveAsync(_auditLogs.Create(AuditActions.LoginFailed, null, user.UserId,
+                AuditAuthMethods.Password, AuditOutcomes.Failed, "Đăng nhập thất bại do thông tin xác thực không hợp lệ."), cancellationToken);
             return InvalidCredentials();
         }
 
@@ -325,6 +344,8 @@ public sealed partial class AuthService : IAuthService
         }
 
         var token = _jwtTokenService.CreateAccessToken(user, request.RememberMe);
+        await _auditLogs.TrySaveAsync(_auditLogs.Create(AuditActions.LoginSuccess, user.UserId, user.UserId,
+            AuditAuthMethods.Password, AuditOutcomes.Success, "Đăng nhập bằng mật khẩu thành công."), cancellationToken);
         return ServiceResult<AuthResponse>.Success(
             new AuthResponse(token.Token, token.ExpiresAtUtc, ToCurrentUser(user)));
     }
@@ -378,11 +399,17 @@ public sealed partial class AuthService : IAuthService
             user.DataStatus.DataStatusCode != DataStatusCodes.Existing ||
             (user.Employee is not null && user.Employee.DataStatus.DataStatusCode != DataStatusCodes.Existing) ||
             (user.Customer is not null && user.Customer.DataStatusId != user.DataStatusId))
+        {
+            await _auditLogs.TrySaveAsync(_auditLogs.Create(AuditActions.LoginBlocked, null, user.UserId,
+                AuditAuthMethods.Google, AuditOutcomes.Blocked, "Đăng nhập Google bị từ chối do tài khoản hoặc hồ sơ không còn đủ điều kiện truy cập."), cancellationToken);
             return ServiceResult<AuthResponse>.Failure(
                 "Tài khoản hoặc hồ sơ hiện không được phép đăng nhập.",
                 StatusCodes.Status403Forbidden);
+        }
 
         var token = _jwtTokenService.CreateAccessToken(user, request.RememberMe);
+        await _auditLogs.TrySaveAsync(_auditLogs.Create(AuditActions.LoginSuccess, user.UserId, user.UserId,
+            AuditAuthMethods.Google, AuditOutcomes.Success, "Đăng nhập bằng Google thành công."), cancellationToken);
         return ServiceResult<AuthResponse>.Success(
             new AuthResponse(token.Token, token.ExpiresAtUtc, ToCurrentUser(user)));
     }

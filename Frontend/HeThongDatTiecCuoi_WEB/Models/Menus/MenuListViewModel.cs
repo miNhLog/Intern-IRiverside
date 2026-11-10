@@ -3,10 +3,12 @@ namespace HeThongDatTiecCuoi_WEB.Models.Menus;
 public sealed class PublicMenuDto
 {
     public int MenuId { get; set; }
+    public string MenuCode { get; set; } = string.Empty;
     public string MenuName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal PricePerTable { get; set; }
     public int DishCount { get; set; }
+    public string? ImageUrl { get; set; }
 }
 
 public sealed class PublicMenuListResponse

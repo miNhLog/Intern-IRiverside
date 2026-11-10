@@ -11,6 +11,11 @@ public sealed class AuditLog
     public string? NewData { get; set; }
     public DateTime Timestamp { get; set; }
     public string? Notes { get; set; }
+    public string? IpAddress { get; set; }
+    public string? UserAgent { get; set; }
+    public string? AuthMethod { get; set; }
+    public string? Outcome { get; set; }
+    public string? CorrelationId { get; set; }
 
     public User? User { get; set; }
 }

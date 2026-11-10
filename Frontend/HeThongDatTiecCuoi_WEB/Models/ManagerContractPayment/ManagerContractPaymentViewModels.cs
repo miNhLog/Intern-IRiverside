@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment;
 
@@ -46,8 +45,6 @@ public sealed class ManagerContractListItemViewModel
 
 public sealed class ManagerContractDetailViewModel
 {
-    public decimal? RequiredDepositAmount { get; set; }
-    public decimal DepositPaidAmount { get; set; }
     public int ContractId { get; set; }
     public string ContractCode { get; set; } = string.Empty;
     public DateTime CreatedDate { get; set; }
@@ -105,7 +102,6 @@ public sealed class EligibleBookingViewModel
 
 public sealed class CreateContractViewModel
 {
-    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)] public decimal? RequiredDepositAmount { get; set; }
     [Range(1, int.MaxValue)] public int BookingId { get; set; }
     [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal? TotalValue { get; set; }
@@ -115,7 +111,6 @@ public sealed class CreateContractViewModel
 
 public sealed class UpdateDraftContractViewModel
 {
-    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)] public decimal? RequiredDepositAmount { get; set; }
     [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal TotalValue { get; set; }
     public string? ContractContent { get; set; }
@@ -164,3 +159,41 @@ public sealed class ContractAuditEventViewModel
 }
 
 public sealed record PdfDownloadViewModel(byte[] Content, string FileName, string ContentType);
+
+public sealed class RecordPaymentViewModel
+{
+    public int ContractId { get; set; }
+    public string PaymentType { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public string? Note { get; set; }
+}
+
+// Kept for the existing manager flow while the Admin surface follows KLCN.
+public sealed class ConfirmDepositViewModel
+{
+    public decimal RequiredDepositAmount { get; set; }
+}
+
+public sealed class CreateContractPayOsLinkViewModel
+{
+    public int ContractId { get; set; }
+    public string PaymentType { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+}
+
+public sealed class ContractPayOsLinkResultViewModel
+{
+    public long OrderCode { get; set; }
+    public string QrCode { get; set; } = string.Empty;
+    public string CheckoutUrl { get; set; } = string.Empty;
+    public string? AccountNumber { get; set; }
+    public string? AccountName { get; set; }
+    public string? BankBin { get; set; }
+    public string? BankName { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public decimal BusinessAmount { get; set; }
+    public decimal Amount => BusinessAmount;
+    public int ActualAmount { get; set; }
+    public bool IsDemoMode { get; set; }
+    public DateTime ExpiresAt { get; set; }
+}

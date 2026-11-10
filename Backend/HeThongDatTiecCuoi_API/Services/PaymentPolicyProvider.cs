@@ -46,14 +46,6 @@ public sealed class PaymentPolicyProvider : IPaymentPolicyProvider
             CanCu = "Bồi thường hợp đồng kinh tế",
             MoTa = "Hủy trước 60 ngày: phạt 50% tiền cọc Đợt 1; Hủy từ 30 đến 59 ngày: phạt 100% tiền cọc Đợt 1; Hủy dưới 30 ngày: bồi hoàn 50% toàn bộ giá trị hợp đồng.",
             TrangThai = "Hiệu lực"
-        },
-        new()
-        {
-            Id = 5, MaQuyDinh = "POL-CHG-05", TenDieuKhoan = "Chính sách dời ngày & chuyển sảnh tiệc",
-            PhanLoai = "Thay đổi lịch trình", DinhMuc = "Miễn phí / Phụ thu lệch giá", ThoiHan = "Báo trước 45 ngày",
-            CanCu = "Biến động lịch tiệc",
-            MoTa = "Báo trước từ 45 ngày: miễn phí chuyển ngày hoặc sảnh lần đầu (chỉ thanh toán chênh lệch giá sảnh mới). Báo dưới 30 ngày phụ thu 5.000.000 VNĐ phí vận hành.",
-            TrangThai = "Hiệu lực"
         }
     ];
 

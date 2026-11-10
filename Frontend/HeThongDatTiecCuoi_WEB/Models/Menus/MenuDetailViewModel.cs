@@ -8,6 +8,7 @@ public sealed class PublicMenuDetailDto
     public string? Description { get; set; }
     public decimal PricePerTable { get; set; }
     public int DishCount { get; set; }
+    public string? ImageUrl { get; set; }
     public IReadOnlyList<PublicMenuDishDto> Dishes { get; set; } = [];
 }
 

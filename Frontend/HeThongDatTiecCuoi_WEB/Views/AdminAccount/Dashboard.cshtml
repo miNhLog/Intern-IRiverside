@@ -27,31 +27,93 @@
 
 <section class="admin-dashboard-page">
     <header class="dashboard-page-header">
-        <div><div class="breadcrumb">Quản trị hệ thống <span>›</span> <strong>Tổng quan hệ thống</strong></div><h1>Tổng quan hệ thống</h1><p>Theo dõi tài khoản và trạng thái vận hành hệ thống</p></div>
+        <div><span class="backoffice-hero__eyebrow"><i class="bi bi-speedometer2" aria-hidden="true"></i> QUẢN TRỊ HỆ THỐNG</span><h1>Tổng quan hệ thống</h1><p>Theo dõi tài khoản và trạng thái vận hành hệ thống</p></div>
     </header>
-    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage)) { <div class="error-box"><i class="fa-solid fa-circle-exclamation"></i> @Model.ErrorMessage</div> }
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage)) { <div class="error-box"><i class="bi bi-exclamation-circle"></i> @Model.ErrorMessage</div> }
 
     <div class="dashboard-stat-grid" aria-label="Thống kê tài khoản hiện tại">
-        <a asp-action="Index" class="dashboard-stat-card"><span class="dashboard-stat-icon"><i class="fa-solid fa-users"></i></span><span><small>Tổng tài khoản</small><strong>@Model.TotalAccounts</strong><em>Tất cả tài khoản hệ thống</em></span></a>
-        <a asp-action="Index" asp-route-status="@AccountStatusCodes.Active" class="dashboard-stat-card"><span class="dashboard-stat-icon is-active"><i class="fa-solid fa-circle-check"></i></span><span><small>Đang hoạt động</small><strong>@Model.ActiveAccounts</strong><em>Trạng thái hiện tại</em></span></a>
-        <a asp-action="Index" asp-route-status="@AccountStatusCodes.Locked" class="dashboard-stat-card"><span class="dashboard-stat-icon is-locked"><i class="fa-solid fa-lock"></i></span><span><small>Bị khóa</small><strong>@Model.LockedAccounts</strong><em>Cần được kiểm tra</em></span></a>
-        <a asp-action="Index" asp-route-mustChangePassword="true" class="dashboard-stat-card"><span class="dashboard-stat-icon is-password"><i class="fa-solid fa-key"></i></span><span><small>Chờ đổi mật khẩu</small><strong>@Model.MustChangePasswordEmployees</strong><em>Nhân viên nội bộ</em></span></a>
+        <a asp-action="Index" class="dashboard-stat-card"><span class="dashboard-stat-icon"><i class="bi bi-people"></i></span><span><small>Tổng tài khoản</small><strong>@Model.TotalAccounts</strong><em>Tất cả tài khoản hệ thống</em></span></a>
+        <a asp-action="Index" asp-route-status="@AccountStatusCodes.Active" class="dashboard-stat-card"><span class="dashboard-stat-icon is-active"><i class="bi bi-check-circle"></i></span><span><small>Đang hoạt động</small><strong>@Model.ActiveAccounts</strong><em>Trạng thái hiện tại</em></span></a>
+        <a asp-action="Index" asp-route-status="@AccountStatusCodes.Locked" class="dashboard-stat-card"><span class="dashboard-stat-icon is-locked"><i class="bi bi-lock"></i></span><span><small>Bị khóa</small><strong>@Model.LockedAccounts</strong><em>Cần được kiểm tra</em></span></a>
+        <a asp-action="Index" asp-route-mustChangePassword="true" class="dashboard-stat-card"><span class="dashboard-stat-icon is-password"><i class="bi bi-key"></i></span><span><small>Chờ đổi mật khẩu</small><strong>@Model.MustChangePasswordEmployees</strong><em>Nhân viên nội bộ</em></span></a>
     </div>
 
     <div class="dashboard-insight-grid">
-        <section class="dashboard-panel role-chart-panel"><div class="dashboard-panel-header"><div><h2><i class="fa-solid fa-chart-pie"></i> Phân bố nhân sự theo vai trò</h2><p>Chỉ tính tài khoản nhân viên nội bộ.</p></div></div><div class="role-chart-content"><div class="role-chart-wrap"><canvas id="roleDistributionChart"></canvas><div class="role-chart-center"><strong>@Model.TotalInternalEmployees</strong><span>nhân sự</span></div></div><div class="role-chart-legend">@foreach (var role in Model.RoleDistribution) { var percent = Model.TotalInternalEmployees == 0 ? 0 : Math.Round(role.Count * 100m / Model.TotalInternalEmployees, 1); <div><span class="role-legend-dot"></span><strong>@role.RoleName</strong><b>@role.Count</b><em>@percent%</em></div> }</div></div></section>
-        <section class="dashboard-panel account-status-panel"><div class="dashboard-panel-header"><div><h2><i class="fa-solid fa-shield-halved"></i> Trạng thái tài khoản</h2><p>Các chỉ số phản ánh trạng thái hiện tại.</p></div></div><div class="account-status-list"><div><div class="account-status-label"><span>Đang hoạt động</span><strong>@Model.ActiveAccounts / @Model.TotalAccounts</strong></div><div class="account-status-progress"><span class="is-active" style="width:@activePercent.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></span></div><small>@activePercent%</small></div><div><div class="account-status-label"><span>Bị khóa</span><strong>@Model.LockedAccounts / @Model.TotalAccounts</strong></div><div class="account-status-progress"><span class="is-locked" style="width:@lockedPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></span></div><small>@lockedPercent%</small></div><div class="password-waiting"><span class="dashboard-stat-icon is-password"><i class="fa-solid fa-key"></i></span><div><strong>@Model.MustChangePasswordEmployees nhân viên</strong><small>đang chờ đổi mật khẩu</small></div></div></div></section>
+        <section class="dashboard-panel role-chart-panel"><div class="dashboard-panel-header"><div><h2><i class="bi bi-pie-chart"></i> Phân bố nhân sự theo vai trò</h2><p>Chỉ tính tài khoản nhân viên nội bộ.</p></div></div><div class="role-chart-content"><div class="role-chart-wrap"><canvas id="roleDistributionChart"></canvas><div class="role-chart-center"><strong>@Model.TotalInternalEmployees</strong><span>nhân sự</span></div></div><div class="role-chart-legend">@foreach (var role in Model.RoleDistribution) { var percent = Model.TotalInternalEmployees == 0 ? 0 : Math.Round(role.Count * 100m / Model.TotalInternalEmployees, 1); <div><span class="role-legend-dot"></span><strong>@role.RoleName</strong><b>@role.Count</b><em>@percent%</em></div> }</div></div></section>
+        <section class="dashboard-panel account-status-panel"><div class="dashboard-panel-header"><div><h2><i class="bi bi-shield-check"></i> Trạng thái tài khoản</h2><p>Các chỉ số phản ánh trạng thái hiện tại.</p></div></div><div class="account-status-list"><div><div class="account-status-label"><span>Đang hoạt động</span><strong>@Model.ActiveAccounts / @Model.TotalAccounts</strong></div><div class="account-status-progress"><span class="is-active" style="width:@activePercent.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></span></div><small>@activePercent%</small></div><div><div class="account-status-label"><span>Bị khóa</span><strong>@Model.LockedAccounts / @Model.TotalAccounts</strong></div><div class="account-status-progress"><span class="is-locked" style="width:@lockedPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></span></div><small>@lockedPercent%</small></div><div class="password-waiting"><span class="dashboard-stat-icon is-password"><i class="bi bi-key"></i></span><div><strong>@Model.MustChangePasswordEmployees nhân viên</strong><small>đang chờ đổi mật khẩu</small></div></div></div></section>
     </div>
 
     <div class="dashboard-table-grid">
-        <section class="dashboard-panel"><div class="dashboard-panel-header"><div><h2><i class="fa-solid fa-user-plus"></i> Tài khoản mới gần đây</h2><p>Trong tháng hiện tại.</p></div><a asp-action="Index">Xem tất cả <i class="fa-solid fa-arrow-right"></i></a></div>@if (Model.RecentInternalAccounts.Count == 0) { <div class="dashboard-empty-state">Không có tài khoản nhân viên mới trong tháng hiện tại.</div> } else { <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Mã tài khoản</th><th>Họ tên</th><th>Vai trò</th><th>Ngày tạo</th></tr></thead><tbody>@foreach (var account in Model.RecentInternalAccounts) { <tr><td>#@account.UserId.ToString("D4")</td><td>@account.FullName</td><td>@account.RoleName</td><td>@account.CreatedAt.ToString("dd/MM/yyyy")</td></tr> }</tbody></table></div> }</section>
-        <section class="dashboard-panel"><div class="dashboard-panel-header"><div><h2><i class="fa-solid fa-triangle-exclamation"></i> Tài khoản cần chú ý</h2><p>Ưu tiên các tài khoản đang bị khóa.</p></div><a asp-action="Index">Xem tất cả <i class="fa-solid fa-arrow-right"></i></a></div>@if (Model.AttentionAccounts.Count == 0) { <div class="dashboard-empty-state">Không có tài khoản cần chú ý.</div> } else { <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Mã tài khoản</th><th>Họ tên</th><th>Vấn đề</th><th>Cập nhật</th></tr></thead><tbody>@foreach (var account in Model.AttentionAccounts) { <tr><td>#@account.UserId.ToString("D4")</td><td>@account.FullName</td><td><span class="attention-badge @(account.Issue == "Bị khóa" ? "is-locked" : "is-password")">@account.Issue</span></td><td>@((account.UpdatedAt ?? account.CreatedAt).ToString("dd/MM/yyyy"))</td></tr> }</tbody></table></div> }</section>
+        <section class="dashboard-panel"><div class="dashboard-panel-header"><div><h2><i class="bi bi-person-plus"></i> Tài khoản mới gần đây</h2><p>Trong tháng hiện tại.</p></div><a asp-action="Index">Xem tất cả <i class="bi bi-arrow-right"></i></a></div>@if (Model.RecentInternalAccounts.Count == 0) { <div class="dashboard-empty-state">Không có tài khoản nhân viên mới trong tháng hiện tại.</div> } else { <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Mã tài khoản</th><th>Họ tên</th><th>Vai trò</th><th>Ngày tạo</th></tr></thead><tbody>@foreach (var account in Model.RecentInternalAccounts) { <tr><td>#@account.UserId.ToString("D4")</td><td>@account.FullName</td><td>@account.RoleName</td><td>@account.CreatedAt.ToString("dd/MM/yyyy")</td></tr> }</tbody></table></div> }</section>
+        <section class="dashboard-panel"><div class="dashboard-panel-header"><div><h2><i class="bi bi-exclamation-triangle"></i> Tài khoản cần chú ý</h2><p>Ưu tiên các tài khoản đang bị khóa.</p></div><a asp-action="Index">Xem tất cả <i class="bi bi-arrow-right"></i></a></div>@if (Model.AttentionAccounts.Count == 0) { <div class="dashboard-empty-state">Không có tài khoản cần chú ý.</div> } else { <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>Mã tài khoản</th><th>Họ tên</th><th>Vấn đề</th><th>Cập nhật</th></tr></thead><tbody>@foreach (var account in Model.AttentionAccounts) { <tr><td>#@account.UserId.ToString("D4")</td><td>@account.FullName</td><td><span class="attention-badge @(account.Issue == "Bị khóa" ? "is-locked" : "is-password")">@account.Issue</span></td><td>@((account.UpdatedAt ?? account.CreatedAt).ToString("dd/MM/yyyy"))</td></tr> }</tbody></table></div> }</section>
     </div>
     <section class="dashboard-panel dashboard-activity-panel">
-        <div class="dashboard-panel-header"><div><h2><i class="fa-solid fa-clock-rotate-left"></i> Hoạt động hệ thống gần đây</h2><p>8 thao tác quản trị mới nhất trong tháng hiện tại.</p></div><a asp-controller="AdminAuditLog" asp-action="Index">Xem tất cả <i class="fa-solid fa-arrow-right"></i></a></div>
+        <div class="dashboard-panel-header"><div><h2><i class="bi bi-clock-history"></i> Hoạt động hệ thống gần đây</h2><p>8 thao tác quản trị mới nhất trong tháng hiện tại.</p></div><a asp-controller="AdminAuditLog" asp-action="Index">Xem tất cả <i class="bi bi-arrow-right"></i></a></div>
         @if (Model.RecentAuditLogs.Count == 0) { <div class="dashboard-empty-state">Không có hoạt động hệ thống trong tháng hiện tại.</div> }
         else { <div class="dashboard-table-wrap"><table class="dashboard-table dashboard-audit-table"><thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Hành động</th><th>Đối tượng</th><th>Chi tiết</th></tr></thead><tbody>@foreach (var log in Model.RecentAuditLogs) { <tr><td>@log.Timestamp.ToString("dd/MM/yyyy HH:mm")</td><td>@log.Actor</td><td><span class="dashboard-audit-badge action-@log.Action.ToLowerInvariant()">@auditLabels.GetValueOrDefault(log.Action, log.Action)</span></td><td>@log.Target</td><td>@(log.Notes ?? "—")</td></tr> }</tbody></table></div> }
     </section>
 </section>
 
-@section Scripts { <script src="https://cdn.jsdelivr.net/npm/chart.js"></script><script>(() => { const canvas = document.getElementById('roleDistributionChart'); if (!canvas || !window.Chart) return; new Chart(canvas, { type: 'doughnut', data: { labels: @Html.Raw(JsonSerializer.Serialize(chartLabels)), datasets: [{ data: @Html.Raw(JsonSerializer.Serialize(chartValues)), backgroundColor: ['#b78a3b', '#d4ad63', '#e8cf9c', '#718096'], borderColor: '#fff', borderWidth: 3 }] }, options: { cutout: '72%', plugins: { legend: { display: false } }, maintainAspectRatio: false } }); })();</script> }
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(() => {
+    const canvas = document.getElementById('roleDistributionChart');
+    if (!canvas || !window.Chart) return;
+
+    const themeColors = () => {
+        const styles = getComputedStyle(document.body);
+        const read = name => styles.getPropertyValue(name).trim();
+        return {
+            palette: [1, 2, 3, 4].map(index => read(`--chart-role-${index}`)),
+            panel: read('--rp-surface'),
+            text: read('--rp-text'),
+            muted: read('--rp-text-secondary'),
+            tooltip: read('--chart-tooltip-bg'),
+            tooltipText: read('--chart-tooltip-text')
+        };
+    };
+
+    const colors = themeColors();
+    const chart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: @Html.Raw(JsonSerializer.Serialize(chartLabels)),
+            datasets: [{
+                data: @Html.Raw(JsonSerializer.Serialize(chartValues)),
+                backgroundColor: colors.palette,
+                borderColor: colors.panel,
+                borderWidth: 3,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            cutout: '72%',
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: colors.tooltip,
+                    titleColor: colors.tooltipText,
+                    bodyColor: colors.tooltipText,
+                    borderColor: colors.muted,
+                    borderWidth: 1,
+                    padding: 10
+                }
+            }
+        }
+    });
+
+    window.addEventListener('admin-theme-change', () => {
+        const next = themeColors();
+        chart.data.datasets[0].backgroundColor = next.palette;
+        chart.data.datasets[0].borderColor = next.panel;
+        chart.options.plugins.tooltip.backgroundColor = next.tooltip;
+        chart.options.plugins.tooltip.titleColor = next.tooltipText;
+        chart.options.plugins.tooltip.bodyColor = next.tooltipText;
+        chart.options.plugins.tooltip.borderColor = next.muted;
+        chart.update();
+    });
+})();
+</script>
+}

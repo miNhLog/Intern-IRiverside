@@ -84,7 +84,7 @@
     border-radius: 9px;
     color: #263449;
     background: #fff;
-    font: 400 13px/1.55 "Be Vietnam Pro", sans-serif;
+    font: 400 13px/1.55 "Plus Jakarta Sans", sans-serif;
     resize: vertical;
     transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
@@ -112,7 +112,7 @@
     min-height: 40px;
     padding: 0 15px;
     border-radius: 8px;
-    font-family: "Be Vietnam Pro", sans-serif;
+    font-family: "Plus Jakarta Sans", sans-serif;
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;

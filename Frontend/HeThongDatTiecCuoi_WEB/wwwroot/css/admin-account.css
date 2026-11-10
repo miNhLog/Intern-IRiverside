@@ -1,4 +1,4 @@
-﻿.account-content {
+.account-content {
     padding: 28px 30px 40px;
 }
 
@@ -960,7 +960,59 @@
 
 #resetPasswordForm { padding: 0 28px; }
 
-.dashboard-audit-table{min-width:820px}.dashboard-audit-badge{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap}.dashboard-audit-badge.action-create_account,.dashboard-audit-badge.action-unlock_account,.dashboard-audit-badge.action-role_change_approved{color:#18794e;background:#e8f7ef}.dashboard-audit-badge.action-update_account{color:#2867a7;background:#eaf2fb}.dashboard-audit-badge.action-lock_account,.dashboard-audit-badge.action-role_change_rejected{color:#b33a3a;background:#fdecec}.dashboard-audit-badge.action-change_role{color:#896016;background:#fbf1dd}.dashboard-audit-badge.action-reset_password,.dashboard-audit-badge.action-first_password_changed,.dashboard-audit-badge.action-admin_password_changed{color:#a85d16;background:#fff0df}.dashboard-audit-badge.action-role_change_requested{color:#6941c6;background:#f4f3ff}
+.dashboard-audit-table { min-width: 820px; }
+.dashboard-audit-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 5px 10px;
+    border: 0;
+    border-radius: 7px;
+    color: #fff;
+    background: var(--metis-badge-secondary, #52525b);
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.25;
+    white-space: nowrap;
+    box-shadow: none;
+}
+.dashboard-audit-badge.action-create_account,
+.dashboard-audit-badge.action-unlock_account,
+.dashboard-audit-badge.action-role_change_approved { background: var(--metis-badge-success, #16a34a); }
+.dashboard-audit-badge.action-update_account { background: var(--metis-badge-primary, #2563eb); }
+.dashboard-audit-badge.action-lock_account,
+.dashboard-audit-badge.action-role_change_rejected { background: var(--metis-badge-danger, #dc2626); }
+.dashboard-audit-badge.action-change_role,
+.dashboard-audit-badge.action-reset_password,
+.dashboard-audit-badge.action-first_password_changed,
+.dashboard-audit-badge.action-admin_password_changed { background: var(--metis-badge-warning, #b45309); }
+.dashboard-audit-badge.action-role_change_requested { background: var(--metis-badge-purple, #7c3aed); }
+
+/* Đồng bộ trạng thái tài khoản cần chú ý với badge của Quản lý tài khoản. */
+.admin-dashboard-page .attention-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 5px 10px;
+    border: 0;
+    border-radius: 7px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.25;
+    white-space: nowrap;
+    box-shadow: none;
+}
+.admin-dashboard-page .attention-badge.is-locked {
+    color: #fff;
+    background: var(--metis-badge-secondary, #52525b);
+}
+.admin-dashboard-page .attention-badge.is-password {
+    color: #fff;
+    background: var(--metis-badge-warning, #b45309);
+}
 
 /* Quản lý tài khoản: content theo bố cục navy / champagne của Riverside Palace. */
 .account-management-page {
@@ -1008,23 +1060,17 @@
 .account-page-error { margin: -4px 0 16px; }
 
 .system-admin-panel {
-    overflow: hidden;
-    padding: 0 16px 16px;
-    border: 1px solid #b3bdc5;
-    border-radius: 14px;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
     color: #f6f8fb;
-    background: #1d2e40;
-    box-shadow: 0 8px 22px rgba(15, 27, 43, .12);
+    background: transparent;
+    box-shadow: none;
 }
 
 .system-admin-heading {
-    min-height: 72px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 0 -16px 16px;
-    padding: 0 28px;
-    border-bottom: 1px solid rgba(204, 161, 37, .42);
+    display: none;
 }
 
 .system-admin-heading-icon {
@@ -1127,6 +1173,8 @@
 .employee-search:focus-within { border-color: #d4af37; box-shadow: 0 0 0 3px rgba(212, 175, 55, .1); }
 .employee-search input { width: 100%; min-width: 0; border: 0; outline: 0; color: #334155; background: transparent; font-size: 13px; }
 .employee-search input::placeholder { color: #94a3b8; }
+.employee-search button { border: 0; background: transparent; color: #8a97a8; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: color .15s ease; }
+.employee-search button:hover { color: #b58a3b; }
 
 .employee-filter {
     height: 42px;

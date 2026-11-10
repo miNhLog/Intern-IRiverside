@@ -1,4 +1,4 @@
-﻿namespace HeThongDatTiecCuoi_API.DTOs.Report;
+namespace HeThongDatTiecCuoi_API.DTOs.Report;
 
 public class RevenueBiReportDto
 {
@@ -14,8 +14,14 @@ public class RevenueBiReportDto
 public class KpiSummaryDto
 {
     public decimal TotalRevenue { get; set; }
+    public decimal EstimatedTotalRevenue { get; set; }
     public int TotalBookings { get; set; }
+    public int ConfirmedBookings { get; set; }
+    public int TotalContracts { get; set; }
+    public decimal TotalContractValue { get; set; }
+    public decimal OutstandingReceivables { get; set; }
     public decimal AverageRevenuePerTable { get; set; }
+    public decimal AverageMenuPricePerTable { get; set; }
     public int TotalTables { get; set; }
     public double AverageOccupancyRate { get; set; }
 }
@@ -25,7 +31,9 @@ public class MonthlyRevenueDto
     public int Month { get; set; }
     public string MonthName { get; set; } = string.Empty;
     public decimal TotalRevenue { get; set; }
+    public decimal EstimatedRevenue { get; set; }
     public int BookingCount { get; set; }
+    public int ContractCount { get; set; }
 }
 
 public class RevenueStructureDto
@@ -88,6 +96,7 @@ public class HallMatrixSlotDto
     public DateTime Date { get; set; }
     public string Shift { get; set; } = string.Empty; // "Ca trưa" hoặc "Ca tối"
     public int StatusId { get; set; }
+    public string StatusCode { get; set; } = "AVAILABLE"; // "AVAILABLE", "BOOKED", "LOCKED"
     public string StatusText { get; set; } = "Trống";
     public string? BookingCode { get; set; }
     public string? CustomerName { get; set; }

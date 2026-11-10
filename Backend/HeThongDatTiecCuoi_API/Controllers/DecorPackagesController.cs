@@ -1,4 +1,4 @@
-using HeThongDatTiecCuoi_API.Constants;
+﻿using HeThongDatTiecCuoi_API.Constants;
 using HeThongDatTiecCuoi_API.Constants.StatusCodes;
 using HeThongDatTiecCuoi_API.Data;
 using HeThongDatTiecCuoi_API.DTOs.DecorService;
@@ -49,10 +49,12 @@ public sealed class DecorPackagesController : ControllerBase
         var normalizedSort = string.IsNullOrWhiteSpace(sort)
             ? "name-asc"
             : sort.Trim().ToLowerInvariant();
+
         if (normalizedSort is not ("name-asc" or "price-asc" or "price-desc"))
             return BadRequest(new { message = "Tùy chọn sắp xếp không hợp lệ." });
 
         var query = GetPublicPackages();
+
         if (!string.IsNullOrWhiteSpace(normalizedKeyword))
         {
             query = query.Where(package =>
@@ -61,14 +63,17 @@ public sealed class DecorPackagesController : ControllerBase
         }
 
         var totalItems = await query.CountAsync(cancellationToken);
+
         var orderedQuery = normalizedSort switch
         {
             "price-asc" => query.OrderBy(package => package.Gia)
                 .ThenBy(package => package.TenGoi)
                 .ThenBy(package => package.GoiTrangTriID),
+
             "price-desc" => query.OrderByDescending(package => package.Gia)
                 .ThenBy(package => package.TenGoi)
                 .ThenBy(package => package.GoiTrangTriID),
+
             _ => query.OrderBy(package => package.TenGoi)
                 .ThenBy(package => package.GoiTrangTriID)
         };
@@ -102,7 +107,9 @@ public sealed class DecorPackagesController : ControllerBase
             Page = page,
             PageSize = pageSize,
             TotalItems = totalItems,
-            TotalPages = totalItems == 0 ? 0 : (int)Math.Ceiling(totalItems / (double)pageSize)
+            TotalPages = totalItems == 0
+                ? 0
+                : (int)Math.Ceiling(totalItems / (double)pageSize)
         });
     }
 
@@ -135,6 +142,7 @@ public sealed class DecorPackagesController : ControllerBase
             return NotFound(new { message = "Không tìm thấy gói trang trí." });
 
         package.ImageUrl = ToSafePublicImageUrl(package.ImageUrl);
+
         return Ok(package);
     }
 
@@ -152,6 +160,7 @@ public sealed class DecorPackagesController : ControllerBase
             return null;
 
         var value = imageUrl.Trim();
+
         if (Uri.TryCreate(value, UriKind.Absolute, out var absoluteUri))
         {
             return absoluteUri.Scheme is "http" or "https" &&
@@ -161,16 +170,20 @@ public sealed class DecorPackagesController : ControllerBase
                 : null;
         }
 
-        if (value.Contains('\\') || value.Contains('?') || value.Contains('#') ||
+        if (value.Contains('\\') ||
+            value.Contains('?') ||
+            value.Contains('#') ||
             value.StartsWith("//", StringComparison.Ordinal) ||
             value.Any(char.IsControl))
             return null;
 
         var path = value.TrimStart('/');
+
         if (!path.StartsWith("uploads/", StringComparison.OrdinalIgnoreCase))
             return null;
 
         var decodedPath = Uri.UnescapeDataString(path);
+
         return decodedPath.Split('/').Any(segment => segment is "." or "..")
             ? null
             : value;

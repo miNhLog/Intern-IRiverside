@@ -9,6 +9,7 @@ public sealed class MenuDto
     public int? CustomerId { get; set; }
     public string? Description { get; set; }
     public decimal PricePerTable { get; set; }
+    public string? ImageUrl { get; set; }
     public string Status { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
 }

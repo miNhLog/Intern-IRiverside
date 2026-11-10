@@ -201,13 +201,13 @@ public sealed class EventCoordinationBusinessRulesTests
     private static async Task<EventCoordinationListResponseDto> GetList(ApplicationDbContext db,
         string? search = null, string? coordinationStatus = null, int page = 1, int pageSize = 10)
     {
-        var action = await new ManagerEventCoordinationController(db).GetList(search, null, coordinationStatus, null, null, page, pageSize);
+        var action = await new ManagerEventCoordinationController(db, new FakeNotificationService()).GetList(search, null, coordinationStatus, null, null, page, pageSize);
         return Assert.IsType<EventCoordinationListResponseDto>(Assert.IsType<OkObjectResult>(action.Result).Value);
     }
 
     private static async Task<EventCoordinationDetailDto> GetDetail(ApplicationDbContext db, int id)
     {
-        var action = await new ManagerEventCoordinationController(db).GetDetail(id, CancellationToken.None);
+        var action = await new ManagerEventCoordinationController(db, new FakeNotificationService()).GetDetail(id, CancellationToken.None);
         return Assert.IsType<EventCoordinationDetailDto>(Assert.IsType<OkObjectResult>(action.Result).Value);
     }
 
@@ -266,7 +266,6 @@ public sealed class EventCoordinationBusinessRulesTests
             AssignedByHallManagerEmployeeId = coordinatorId, StatusId = 1101, AssignedAt = DateTime.Now
         });
 }
-
 public sealed class EventCoordinationAuthorizationTests
 {
     [Fact]
@@ -306,4 +305,16 @@ public sealed class EventCoordinationAuthorizationTests
         var actualStatus = result.Succeeded ? 200 : result.Challenged ? 401 : 403;
         Assert.Equal(expectedStatus, actualStatus);
     }
+
+    }
+
+internal sealed class FakeNotificationService : HeThongDatTiecCuoi_API.Services.INotificationService
+{
+    public Task<bool> AddAsync(int recipientUserId, int? actorUserId, string type, string title, string message, string? relatedEntityType, int? relatedEntityId, CancellationToken cancellationToken) => Task.FromResult(true);
+    public Task<int?> FindActiveAdminUserIdAsync(CancellationToken cancellationToken) => Task.FromResult<int?>(null);
+    public Task<List<HeThongDatTiecCuoi_API.DTOs.Notification.NotificationDto>> GetRecentAsync(int userId, int limit, CancellationToken cancellationToken) => Task.FromResult(new List<HeThongDatTiecCuoi_API.DTOs.Notification.NotificationDto>());
+    public Task<int> GetUnreadCountAsync(int userId, CancellationToken cancellationToken) => Task.FromResult(0);
+    public Task<HeThongDatTiecCuoi_API.DTOs.Notification.NotificationPageDto> GetPageAsync(int userId, int page, int pageSize, bool? isRead, CancellationToken cancellationToken) => Task.FromResult(new HeThongDatTiecCuoi_API.DTOs.Notification.NotificationPageDto());
+    public Task<bool> MarkReadAsync(int userId, int notificationId, CancellationToken cancellationToken) => Task.FromResult(true);
+    public Task<int> MarkAllReadAsync(int userId, CancellationToken cancellationToken) => Task.FromResult(0);
 }

@@ -22,6 +22,9 @@ public sealed class ContractPdfGenerator : IContractPdfGenerator
         {
             page.Size(PageSizes.A4);
             page.Margin(36);
+            // TODO-3: QuestPDF font tieng Viet — giu FontFamily("Lato") vi QuestPDF 2026.9
+            // chi dang ky san Lato (QuestPDF.Fonts.Lato.br) va nem ngoai le neu them
+            // fallback chua deploy (DejaVu Sans/Arial). Lato ho tro day du glyph Viet.
             page.DefaultTextStyle(style => style.FontFamily("Lato").FontSize(10).FontColor("#17233A"));
 
             page.Header().Column(header =>

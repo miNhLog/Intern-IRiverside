@@ -1,8 +1,11 @@
+using System.Security.Claims;
+using System.Text.Json;
 using HeThongDatTiecCuoi_API.Constants;
 using HeThongDatTiecCuoi_API.Constants.StatusCodes;
 using HeThongDatTiecCuoi_API.Data;
 using HeThongDatTiecCuoi_API.DTOs.EventCoordination;
 using HeThongDatTiecCuoi_API.Models;
+using HeThongDatTiecCuoi_API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,8 +23,13 @@ public sealed class ManagerEventCoordinationController : ControllerBase
     private const string StateConflict = "CONFLICT";
     private const string StateNotApplicable = "NOT_APPLICABLE";
     private readonly ApplicationDbContext _context;
+    private readonly INotificationService _notifications;
 
-    public ManagerEventCoordinationController(ApplicationDbContext context) => _context = context;
+    public ManagerEventCoordinationController(ApplicationDbContext context, INotificationService notifications)
+    {
+        _context = context;
+        _notifications = notifications;
+    }
 
     [HttpGet]
     public async Task<ActionResult<EventCoordinationListResponseDto>> GetList(
@@ -167,7 +175,7 @@ public sealed class ManagerEventCoordinationController : ControllerBase
                 Reason = c.Reason, StatusName = c.Status.StatusName, RequestedAt = c.RequestedAt, ProcessedAt = c.ProcessedAt }).ToListAsync(cancellationToken);
         result.Incidents = await _context.Incidents.AsNoTracking().Where(i => i.BookingId == bookingId)
             .OrderByDescending(i => i.OccurredAt).Select(i => new EventIncidentDto
-            { IncidentType = i.IncidentType, Description = i.Description, Severity = i.Severity,
+            { IncidentId = i.IncidentId, IncidentType = i.IncidentType, Description = i.Description, Severity = i.Severity,
                 StatusCode = i.Status.StatusCode, StatusName = i.Status.StatusName,
                 ReportedByName = i.ReportedByEmployee != null ? i.ReportedByEmployee.FullName : null,
                 Resolution = i.Resolution, OccurredAt = i.OccurredAt, ResolvedAt = i.ResolvedAt }).ToListAsync(cancellationToken);
@@ -209,6 +217,228 @@ public sealed class ManagerEventCoordinationController : ControllerBase
                 CoordinatorEmployeeId = x.Coordinator?.Id, CoordinatorName = x.Coordinator?.Name,
                 HasConflict = x.HasConflict, CoordinationState = ResolveState(x.BookingStatusCode, x.Coordinator is not null, x.HasConflict)
             }).ToList()
+        });
+    }
+
+    [HttpGet("{bookingId:int}/available-coordinators")]
+    public async Task<ActionResult<List<ManagerAvailableCoordinatorDto>>> GetAvailableCoordinators(int bookingId, CancellationToken cancellationToken)
+    {
+        var booking = await _context.WeddingBookings
+            .AsNoTracking()
+            .Include(b => b.HallSchedule)
+            .Include(b => b.CoordinationAssignments).ThenInclude(a => a.Status)
+            .FirstOrDefaultAsync(b => b.BookingId == bookingId, cancellationToken);
+
+        if (booking is null)
+            return NotFound(new { message = "Không tìm thấy tiệc cưới." });
+
+        var targetDate = booking.HallSchedule.Date;
+        var targetShift = booking.HallSchedule.Shift;
+
+        var coordinators = await _context.Employees
+            .AsNoTracking()
+            .Where(e => e.User.Role.RoleName == RoleNames.Coordinator &&
+                        e.User.Status.StatusCode == AccountStatusCodes.Active &&
+                        e.User.DataStatus.DataStatusCode == DataStatusCodes.Existing &&
+                        e.DataStatus.DataStatusCode == DataStatusCodes.Existing)
+            .OrderBy(e => e.FullName)
+            .ToListAsync(cancellationToken);
+
+        var busyAssignments = await _context.CoordinationAssignments
+            .AsNoTracking()
+            .Where(a => a.BookingId != bookingId &&
+                        a.Status.StatusCode == CoordinationAssigned &&
+                        a.Booking.Status.StatusCode != BookingStatusCodes.Cancelled &&
+                        a.Booking.Status.StatusCode != BookingStatusCodes.Completed &&
+                        a.Booking.HallSchedule.Date == targetDate &&
+                        a.Booking.HallSchedule.Shift == targetShift)
+            .Select(a => new
+            {
+                a.CoordinatorEmployeeId,
+                a.Booking.BookingCode,
+                HallName = a.Booking.HallSchedule.Hall.HallName
+            })
+            .ToListAsync(cancellationToken);
+
+        var currentAssignedId = booking.CoordinationAssignments
+            .Where(a => (a.Status != null && a.Status.StatusCode == CoordinationAssigned) || a.StatusId == 1101)
+            .Select(a => (int?)a.CoordinatorEmployeeId)
+            .FirstOrDefault();
+
+        var result = coordinators.Select(c =>
+        {
+            var busy = busyAssignments.FirstOrDefault(b => b.CoordinatorEmployeeId == c.EmployeeId);
+            var isCurrent = currentAssignedId.HasValue && currentAssignedId.Value == c.EmployeeId;
+            return new ManagerAvailableCoordinatorDto
+            {
+                EmployeeId = c.EmployeeId,
+                EmployeeCode = c.EmployeeCode,
+                FullName = c.FullName,
+                PhoneNumber = c.PhoneNumber,
+                IsAvailable = busy == null,
+                IsCurrent = isCurrent,
+                StatusNote = isCurrent ? "Đang phụ trách tiệc này" : (busy != null ? $"Bận tiệc #{busy.BookingCode} ({busy.HallName})" : "Sẵn sàng phân công")
+            };
+        }).ToList();
+
+        return Ok(result);
+    }
+
+    [HttpPost("{bookingId:int}/assign")]
+    public async Task<ActionResult<ManagerAssignResultDto>> EmergencyAssign(
+        int bookingId,
+        [FromBody] ManagerEmergencyAssignRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (request == null || request.CoordinatorEmployeeId <= 0)
+            return BadRequest(new { message = "Vui lòng chọn nhân viên điều phối hợp lệ." });
+
+        var reason = request.Reason?.Trim();
+        if (string.IsNullOrWhiteSpace(reason) || reason.Length < 3)
+            return BadRequest(new { message = "Vui lòng nhập lý do can thiệp phân công (tối thiểu 3 ký tự)." });
+
+        var booking = await _context.WeddingBookings
+            .Include(b => b.Status)
+            .Include(b => b.HallSchedule).ThenInclude(s => s.Hall)
+            .Include(b => b.CoordinationAssignments).ThenInclude(a => a.Status)
+            .Include(b => b.CoordinationAssignments).ThenInclude(a => a.Coordinator)
+            .FirstOrDefaultAsync(b => b.BookingId == bookingId, cancellationToken);
+
+        if (booking is null)
+            return NotFound(new { message = "Không tìm thấy thông tin tiệc cưới." });
+
+        if (booking.Status.StatusCode is BookingStatusCodes.Cancelled or BookingStatusCodes.Completed)
+            return BadRequest(new { message = "Không thể phân công điều phối cho tiệc đã hoàn tất hoặc đã bị hủy." });
+
+        var coordinator = await _context.Employees
+            .Include(e => e.User)
+            .FirstOrDefaultAsync(e => e.EmployeeId == request.CoordinatorEmployeeId &&
+                                      e.User.Role.RoleName == RoleNames.Coordinator &&
+                                      e.DataStatus.DataStatusCode == DataStatusCodes.Existing, cancellationToken);
+
+        if (coordinator is null)
+            return BadRequest(new { message = "Nhân viên điều phối không tồn tại hoặc không hợp lệ." });
+
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        int.TryParse(userIdStr, out var currentUserId);
+
+        var actorEmployeeId = await _context.Employees
+            .Where(e => e.UserId == currentUserId)
+            .Select(e => (int?)e.EmployeeId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (!actorEmployeeId.HasValue)
+        {
+            actorEmployeeId = await _context.HallManagerAssignments
+                .Where(a => a.HallId == booking.HallSchedule.HallId && a.FromDate <= booking.HallSchedule.Date && (!a.ToDate.HasValue || a.ToDate.Value >= booking.HallSchedule.Date))
+                .OrderByDescending(a => a.FromDate)
+                .Select(a => (int?)a.HallManagerEmployeeId)
+                .FirstOrDefaultAsync(cancellationToken)
+                ?? await _context.Employees.Select(e => (int?)e.EmployeeId).FirstOrDefaultAsync(cancellationToken)
+                ?? 1;
+        }
+
+        var activeAssignment = booking.CoordinationAssignments
+            .FirstOrDefault(a => (a.Status != null && a.Status.StatusCode == CoordinationAssigned) || a.StatusId == 1101);
+
+        if (activeAssignment != null)
+        {
+            if (activeAssignment.CoordinatorEmployeeId == request.CoordinatorEmployeeId)
+            {
+                return Ok(new ManagerAssignResultDto
+                {
+                    Success = true,
+                    Message = $"Điều phối viên {coordinator.FullName} hiện đã phụ trách tiệc này.",
+                    BookingId = bookingId,
+                    AssignmentId = activeAssignment.CoordinationAssignmentId
+                });
+            }
+
+            var cancelledStatusId = await _context.Statuses
+                .Where(s => s.StatusCode == CoordinationAssignmentStatusCodes.Cancelled)
+                .Select(s => s.StatusId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            activeAssignment.StatusId = cancelledStatusId != 0 ? cancelledStatusId : 1103;
+
+            if (activeAssignment.Coordinator?.UserId > 0)
+            {
+                await _notifications.AddAsync(
+                    activeAssignment.Coordinator.UserId,
+                    currentUserId > 0 ? currentUserId : null,
+                    NotificationTypeCodes.CoordinationChanged,
+                    "Điều chỉnh phân công",
+                    $"Quản lý đã thay đổi phân công tiệc {booking.BookingCode}. Lý do: {reason}",
+                    AuditEntityNames.CoordinationAssignment,
+                    bookingId,
+                    cancellationToken);
+            }
+        }
+
+        var assignedStatusId = await _context.Statuses
+            .Where(s => s.StatusCode == CoordinationAssigned)
+            .Select(s => s.StatusId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var newAssignment = new CoordinationAssignment
+        {
+            BookingId = bookingId,
+            CoordinatorEmployeeId = request.CoordinatorEmployeeId,
+            AssignedByHallManagerEmployeeId = actorEmployeeId.Value,
+            StatusId = assignedStatusId != 0 ? assignedStatusId : 1101,
+            AssignedAt = DateTime.Now
+        };
+
+        _context.CoordinationAssignments.Add(newAssignment);
+
+        _context.AuditLogs.Add(new AuditLog
+        {
+            UserId = currentUserId > 0 ? currentUserId : null,
+            Action = "MANAGER_EMERGENCY_ASSIGN",
+            EntityName = AuditEntityNames.CoordinationAssignment,
+            EntityId = bookingId,
+            OldData = activeAssignment != null ? JsonSerializer.Serialize(new { activeAssignment.CoordinatorEmployeeId, Status = "ASSIGNED" }) : null,
+            NewData = JsonSerializer.Serialize(new { request.CoordinatorEmployeeId, Status = "ASSIGNED" }),
+            Notes = $"Quản lý can thiệp/phân công khẩn cấp: {reason}",
+            Timestamp = DateTime.Now
+        });
+
+        await ChecklistLifecycle.EnsureAsync(_context, bookingId, currentUserId > 0 ? currentUserId : null, "Quản lý hệ thống", cancellationToken);
+        await ChecklistLifecycle.RecordAsync(
+            _context,
+            bookingId,
+            currentUserId > 0 ? currentUserId : null,
+            "Quản lý hệ thống",
+            activeAssignment == null ? "MANAGER_ASSIGNED" : "MANAGER_REASSIGNED",
+            activeAssignment == null
+                ? $"Quản lý phân công khẩn cấp {coordinator.FullName} phụ trách tiệc. Lý do: {reason}"
+                : $"Quản lý đổi điều phối viên sang {coordinator.FullName}. Giữ nguyên checklist. Lý do: {reason}",
+            null,
+            cancellationToken);
+
+        if (coordinator.UserId > 0)
+        {
+            await _notifications.AddAsync(
+                coordinator.UserId,
+                currentUserId > 0 ? currentUserId : null,
+                NotificationTypeCodes.CoordinationAssigned,
+                "Phân công điều phối khẩn cấp từ Quản lý",
+                $"Quản lý đã phân công bạn phụ trách tiệc {booking.BookingCode} ({booking.HallSchedule.Shift} ngày {booking.HallSchedule.Date:dd/MM/yyyy} tại {booking.HallSchedule.Hall.HallName}). Lý do: {reason}",
+                AuditEntityNames.CoordinationAssignment,
+                bookingId,
+                cancellationToken);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Ok(new ManagerAssignResultDto
+        {
+            Success = true,
+            Message = activeAssignment == null
+                ? $"Phân công điều phối viên {coordinator.FullName} thành công."
+                : $"Đã chuyển giao điều phối viên cho {coordinator.FullName} thành công.",
+            BookingId = bookingId,
+            AssignmentId = newAssignment.CoordinationAssignmentId
         });
     }
 

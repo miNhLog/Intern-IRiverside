@@ -15,6 +15,8 @@ public sealed class WeddingBooking
     public decimal? EstimatedTotal { get; set; }
     public string? SpecialRequests { get; set; }
     public int StatusId { get; set; }
+    public decimal? DepositAmount { get; set; }
+    public decimal PaidAmount { get; set; }
     public string? CancellationReason { get; set; }
     public DateTime BookedAt { get; set; }
 
@@ -29,4 +31,5 @@ public sealed class WeddingBooking
     public ICollection<Incident> Incidents { get; set; } = [];
     public ICollection<WeddingScheduleChange> ScheduleChanges { get; set; } = [];
     public ReviewQrCode? ReviewQrCode { get; set; }
+    public ICollection<PaymentTransaction> PaymentTransactions { get; set; } = [];
 }

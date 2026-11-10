@@ -1,10 +1,9 @@
-using HeThongDatTiecCuoi_WEB.Models.AdminAccount;
+﻿using HeThongDatTiecCuoi_WEB.Models.AdminAccount;
 using HeThongDatTiecCuoi_WEB.Models.AdminHall;
 using HeThongDatTiecCuoi_WEB.Models.Auth;
 using HeThongDatTiecCuoi_WEB.Models.Common;
 using HeThongDatTiecCuoi_WEB.Models.Halls;
 using HeThongDatTiecCuoi_WEB.Models.Menus;
-using HeThongDatTiecCuoi_WEB.Models.DecorPackages;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -19,23 +18,128 @@ using HeThongDatTiecCuoi_WEB.Models.Home;
 using HeThongDatTiecCuoi_WEB.Models.ManagerHr;
 using HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment;
 using HeThongDatTiecCuoi_WEB.Models.ManagerEventCoordination;
+using HeThongDatTiecCuoi_WEB.Models.Incident;
+using HeThongDatTiecCuoi_WEB.Models.Coordination;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
+using HeThongDatTiecCuoi_WEB.Models.DecorPackages;
+using HeThongDatTiecCuoi_WEB.Models.ScheduleChange;
+using HeThongDatTiecCuoi_WEB.Models.Banners;
+using HeThongDatTiecCuoi_WEB.Options;
+using Microsoft.Extensions.Options;
 
 public sealed class RiversideApiClient : IRiversideApiClient
 {
+    public Task<ApiCallResult<ContractActionResponseViewModel>> ConfirmManagerDepositAsync(
+        string accessToken, int id, ConfirmDepositViewModel model, CancellationToken cancellationToken) =>
+        SendAsync<ContractActionResponseViewModel>(HttpMethod.Post, $"api/manager/contracts/{id}/deposit-commitment", model, accessToken, cancellationToken);
+
+    public async Task<ApiCallResult<string>> ReschedulePublicBookingAsync(
+        int bookingId, string bookingCode, string phoneNumber, DateTime newDate, string newShift, string? reason,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var response = await _httpClient.PostAsJsonAsync(
+                $"api/v1/public/bookings/{bookingId}/reschedule",
+                new
+                {
+                    bookingCode = (bookingCode ?? string.Empty).Trim().ToUpperInvariant(),
+                    phoneNumber = (phoneNumber ?? string.Empty).Trim(),
+                    newDate = newDate.ToString("yyyy-MM-dd"),
+                    newShift = (newShift ?? string.Empty).Trim(),
+                    reason
+                }, cancellationToken);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            var message = ExtractApiMessage(json, response.StatusCode);
+            return response.IsSuccessStatusCode
+                ? ApiCallResult<string>.Success(message)
+                : ApiCallResult<string>.Failure(message, (int)response.StatusCode);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiCallResult<string>.Failure("Không thể kết nối Backend API. Hãy kiểm tra API đã chạy hay chưa.");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return ApiCallResult<string>.Failure("Backend API phản hồi quá lâu.");
+        }
+    }
+    public Task<ApiCallResult<List<BannerViewModel>>> GetPublicBannersAsync(CancellationToken cancellationToken) =>
+        SendAsync<List<BannerViewModel>>(HttpMethod.Get, "api/banners/public", null, null, cancellationToken);
+    public Task<ApiCallResult<List<BannerViewModel>>> GetPublicBannersAsync(string placement, CancellationToken cancellationToken) =>
+        SendAsync<List<BannerViewModel>>(HttpMethod.Get, $"api/banners/public?placement={Uri.EscapeDataString(placement)}", null, null, cancellationToken);
+    public Task<ApiCallResult<JsonElement>> GetChecklistsAsync(string token, CancellationToken ct) =>
+        SendAsync<JsonElement>(HttpMethod.Get, "api/checklists", null, token, ct);
+    public Task<ApiCallResult<JsonElement>> ExecuteChecklistAsync(string token, int bookingId, string action, JsonElement command, CancellationToken ct) =>
+        SendAsync<JsonElement>(HttpMethod.Post, $"api/checklists/{bookingId}/{Uri.EscapeDataString(action)}", command, token, ct);
+    public Task<ApiCallResult<ChecklistSummaryViewModel>> GetChecklistSummaryAsync(string token, CancellationToken ct) =>
+        SendAsync<ChecklistSummaryViewModel>(HttpMethod.Get, "api/checklists/summary", null, token, ct);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         PropertyNameCaseInsensitive = true
     };
     private readonly HttpClient _httpClient;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ProjectImageCatalog _projectImages;
+    private readonly RecommendationOptions _recOptions;
+    private readonly ILogger<RiversideApiClient>? _recLogger;
 
-    public RiversideApiClient(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
+    public RiversideApiClient(
+        HttpClient httpClient,
+        ProjectImageCatalog projectImages,
+        IOptions<RecommendationOptions>? recommendationOptions = null,
+        ILogger<RiversideApiClient>? logger = null)
     {
         _httpClient = httpClient;
-        _httpContextAccessor = httpContextAccessor;
+        _projectImages = projectImages;
+        _recOptions = recommendationOptions?.Value ?? new RecommendationOptions();
+        _recLogger = logger;
     }
+
+    public Task<ApiCallResult<IncidentListResponseViewModel>> GetIncidentsAsync(string accessToken,
+        string? search, string? status, string? severity, int? hallId, DateTime? fromDate, DateTime? toDate,
+        int page, int pageSize, CancellationToken cancellationToken)
+    {
+        var query = new List<string> { $"page={Math.Max(1, page)}", $"pageSize={Math.Clamp(pageSize, 1, 50)}" };
+        AddQueryParameter(query, "search", search);
+        AddQueryParameter(query, "status", status);
+        AddQueryParameter(query, "severity", severity);
+        if (hallId.HasValue) query.Add($"hallId={hallId.Value}");
+        if (fromDate.HasValue) query.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+        if (toDate.HasValue) query.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+        return SendAsync<IncidentListResponseViewModel>(HttpMethod.Get, $"api/incidents?{string.Join('&', query)}",
+            null, accessToken, cancellationToken);
+    }
+
+    public Task<ApiCallResult<List<IncidentBookingOptionViewModel>>> GetIncidentBookingOptionsAsync(
+        string accessToken, CancellationToken cancellationToken) =>
+        SendAsync<List<IncidentBookingOptionViewModel>>(HttpMethod.Get, "api/incidents/booking-options", null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IncidentDetailViewModel>> GetIncidentAsync(string accessToken, int id,
+        CancellationToken cancellationToken) => SendAsync<IncidentDetailViewModel>(HttpMethod.Get,
+            $"api/incidents/{id}", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IncidentDetailViewModel>> CreateIncidentAsync(string accessToken,
+        IncidentFormViewModel model, CancellationToken cancellationToken) =>
+        SendAsync<IncidentDetailViewModel>(HttpMethod.Post, "api/incidents", model, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IncidentDetailViewModel>> UpdateIncidentAsync(string accessToken, int id,
+        IncidentFormViewModel model, CancellationToken cancellationToken) =>
+        SendAsync<IncidentDetailViewModel>(HttpMethod.Put, $"api/incidents/{id}", model, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IncidentDetailViewModel>> UpdateIncidentStatusAsync(string accessToken, int id,
+        string status, string? resolution, CancellationToken cancellationToken) =>
+        SendAsync<IncidentDetailViewModel>(HttpMethod.Patch, $"api/incidents/{id}/status",
+            new { status, resolution }, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IncidentDetailViewModel>> UpdateIncidentResolutionAsync(string accessToken, int id,
+        string resolution, CancellationToken cancellationToken) =>
+        SendAsync<IncidentDetailViewModel>(HttpMethod.Patch, $"api/incidents/{id}/resolution",
+            new { resolution }, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<List<IncidentHistoryItemViewModel>>> GetIncidentHistoryAsync(string accessToken, int id,
+        CancellationToken cancellationToken) => SendAsync<List<IncidentHistoryItemViewModel>>(HttpMethod.Get,
+            $"api/incidents/{id}/history", null, accessToken, cancellationToken);
 
     public Task<ApiCallResult<EventCoordinationListResponseViewModel>> GetManagerEventCoordinationAsync(
         string accessToken, string? search, string? bookingStatus, string? coordinationStatus,
@@ -65,6 +169,61 @@ public sealed class RiversideApiClient : IRiversideApiClient
         return SendAsync<EventCoordinationCalendarViewModel>(HttpMethod.Get,
             $"api/manager/event-coordination/calendar?{string.Join('&', query)}", null, accessToken, cancellationToken);
     }
+
+    public Task<ApiCallResult<List<ManagerAvailableCoordinatorViewModel>>> GetManagerCoordinationAvailableCoordinatorsAsync(
+        string accessToken, int bookingId, CancellationToken cancellationToken) =>
+        SendAsync<List<ManagerAvailableCoordinatorViewModel>>(HttpMethod.Get,
+            $"api/manager/event-coordination/{bookingId}/available-coordinators", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ManagerAssignResultViewModel>> AssignManagerEventCoordinatorAsync(
+        string accessToken, int bookingId, int coordinatorEmployeeId, string reason, CancellationToken cancellationToken) =>
+        SendAsync<ManagerAssignResultViewModel>(HttpMethod.Post,
+            $"api/manager/event-coordination/{bookingId}/assign",
+            new { CoordinatorEmployeeId = coordinatorEmployeeId, Reason = reason },
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<HallManagerCoordinationListViewModel>> GetHallManagerCoordinationAsync(
+        string accessToken, string? search, int? hallId, DateTime? eventDate, string? coordinationStatus,
+        int page, int pageSize, CancellationToken cancellationToken)
+    {
+        var query = new List<string> { $"page={Math.Max(1, page)}", $"pageSize={Math.Clamp(pageSize, 1, 50)}" };
+        AddQueryParameter(query, "search", search);
+        if (hallId.HasValue) query.Add($"hallId={hallId.Value}");
+        if (eventDate.HasValue) query.Add($"eventDate={eventDate.Value:yyyy-MM-dd}");
+        AddQueryParameter(query, "coordinationStatus", coordinationStatus);
+        return SendAsync<HallManagerCoordinationListViewModel>(HttpMethod.Get,
+            $"api/hall-manager/coordination-assignments?{string.Join('&', query)}", null, accessToken, cancellationToken);
+    }
+
+    public Task<ApiCallResult<List<CoordinatorAvailabilityViewModel>>> GetCoordinatorAvailabilityAsync(
+        string accessToken, int bookingId, CancellationToken cancellationToken) =>
+        SendAsync<List<CoordinatorAvailabilityViewModel>>(HttpMethod.Get,
+            $"api/hall-manager/coordination-assignments/{bookingId}/coordinators", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<HallManagerCoordinationDetailViewModel>> GetHallManagerCoordinationDetailAsync(
+        string accessToken, int bookingId, CancellationToken cancellationToken) =>
+        SendAsync<HallManagerCoordinationDetailViewModel>(HttpMethod.Get,
+            $"api/hall-manager/coordination-assignments/{bookingId}", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<CoordinationMutationViewModel>> AssignCoordinatorAsync(string accessToken,
+        int bookingId, int coordinatorEmployeeId, CancellationToken cancellationToken) =>
+        SendAsync<CoordinationMutationViewModel>(HttpMethod.Post,
+            $"api/hall-manager/coordination-assignments/{bookingId}", new { coordinatorEmployeeId }, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<CoordinationMutationViewModel>> ChangeCoordinatorAsync(string accessToken,
+        int bookingId, int coordinatorEmployeeId, string reason, CancellationToken cancellationToken) =>
+        SendAsync<CoordinationMutationViewModel>(HttpMethod.Put,
+            $"api/hall-manager/coordination-assignments/{bookingId}", new { coordinatorEmployeeId, reason }, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<CoordinationMutationViewModel>> CancelCoordinatorAssignmentAsync(string accessToken,
+        int bookingId, string reason, CancellationToken cancellationToken) =>
+        SendAsync<CoordinationMutationViewModel>(HttpMethod.Patch,
+            $"api/hall-manager/coordination-assignments/{bookingId}/cancel", new { reason }, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<List<CoordinatorAssignedPartyViewModel>>> GetCoordinatorAssignedPartiesAsync(
+        string accessToken, CancellationToken cancellationToken) =>
+        SendAsync<List<CoordinatorAssignedPartyViewModel>>(HttpMethod.Get,
+            "api/coordinator/assigned-parties", null, accessToken, cancellationToken);
 
     public Task<ApiCallResult<ManagerContractListResponseViewModel>> GetManagerContractsAsync(
         string accessToken, string? keyword, string? status, DateTime? fromDate, DateTime? toDate,
@@ -102,14 +261,6 @@ public sealed class RiversideApiClient : IRiversideApiClient
     public Task<ApiCallResult<ContractActionResponseViewModel>> ActivateManagerContractAsync(
         string accessToken, int id, CancellationToken cancellationToken) =>
         SendAsync<ContractActionResponseViewModel>(HttpMethod.Post, $"api/manager/contracts/{id}/activate", null, accessToken, cancellationToken);
-
-    public Task<ApiCallResult<PaymentActionResponseViewModel>> RecordManagerPaymentAsync(
-        string accessToken, RecordPaymentViewModel model, CancellationToken cancellationToken) =>
-        SendAsync<PaymentActionResponseViewModel>(HttpMethod.Post, "api/manager/payments", model, accessToken, cancellationToken);
-
-    public Task<ApiCallResult<ContractActionResponseViewModel>> ConfirmManagerDepositAsync(
-        string accessToken, int id, ConfirmDepositViewModel model, CancellationToken cancellationToken) =>
-        SendAsync<ContractActionResponseViewModel>(HttpMethod.Post, $"api/manager/contracts/{id}/deposit-commitment", model, accessToken, cancellationToken);
 
     public Task<ApiCallResult<ContractActionResponseViewModel>> CompleteManagerContractAsync(
         string accessToken, int id, CancellationToken cancellationToken) =>
@@ -153,6 +304,46 @@ public sealed class RiversideApiClient : IRiversideApiClient
         catch (HttpRequestException)
         {
             return ApiCallResult<PdfDownloadViewModel>.Failure("Không thể kết nối Backend API. Hãy kiểm tra API đã chạy hay chưa.");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return ApiCallResult<PdfDownloadViewModel>.Failure("Backend API phản hồi quá lâu.");
+        }
+    }
+
+    public Task<ApiCallResult<object>> RecordManagerPaymentAsync(
+        string accessToken, RecordPaymentViewModel model, CancellationToken cancellationToken) =>
+        SendAsync<object>(HttpMethod.Post, "api/manager/payments/record-cash", model, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ContractPayOsLinkResultViewModel>> CreateManagerPayOsPaymentLinkAsync(
+        string accessToken, CreateContractPayOsLinkViewModel model, CancellationToken cancellationToken) =>
+        SendAsync<ContractPayOsLinkResultViewModel>(HttpMethod.Post, "api/manager/payments/create-payos-link", model, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>> CheckManagerPayOsPaymentStatusAsync(
+        string accessToken, long orderCode, CancellationToken cancellationToken) =>
+        SendAsync<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>(
+            HttpMethod.Get, $"api/manager/payments/check-payos/{orderCode}", null, accessToken, cancellationToken);
+
+    public async Task<ApiCallResult<PdfDownloadViewModel>> DownloadPublicContractPdfAsync(
+        string bookingCode, string phone, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var url = $"api/v1/public/bookings/{Uri.EscapeDataString(bookingCode)}/contract/pdf?phone={Uri.EscapeDataString(phone)}";
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return ApiCallResult<PdfDownloadViewModel>.Failure(await ReadErrorAsync(response, cancellationToken), (int)response.StatusCode);
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+                ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+                ?? $"HopDong_{bookingCode}.pdf";
+            return ApiCallResult<PdfDownloadViewModel>.Success(new PdfDownloadViewModel(
+                bytes, fileName, response.Content.Headers.ContentType?.MediaType ?? "application/pdf"));
+        }
+        catch (HttpRequestException)
+        {
+            return ApiCallResult<PdfDownloadViewModel>.Failure("Không thể kết nối Backend API.");
         }
         catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -248,27 +439,8 @@ public sealed class RiversideApiClient : IRiversideApiClient
             {
                 foreach (var hall in result.Value)
                 {
-                    if (string.IsNullOrWhiteSpace(hall.ImageUrl))
-                    {
-                        continue;
-                    }
-
-                    if (Uri.TryCreate(hall.ImageUrl, UriKind.Absolute, out var absoluteImageUrl))
-                    {
-                        if (absoluteImageUrl.Scheme is not ("http" or "https"))
-                        {
-                            hall.ImageUrl = null;
-                        }
-                    }
-                    else
-                    {
-                        hall.ImageUrl = Uri.TryCreate(
-                            _httpClient.BaseAddress,
-                            hall.ImageUrl.TrimStart('/'),
-                            out var resolvedImageUrl)
-                            ? resolvedImageUrl.ToString()
-                            : null;
-                    }
+                    hall.ImageUrl = ResolvePublicImageUrl(hall.ImageUrl)
+                        ?? _projectImages.GetImage("HallCovers", hall.HallName);
                 }
             }
 
@@ -308,7 +480,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
             if (result.Value is not null)
             {
                 foreach (var hall in result.Value.Items)
-                    hall.ImageUrl = ResolvePublicImageUrl(hall.ImageUrl);
+                    hall.ImageUrl = ResolvePublicImageUrl(hall.ImageUrl) ?? _projectImages.GetImage("HallCovers", hall.HallName);
             }
 
             return result;
@@ -330,7 +502,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
 
             if (result.Value is not null)
             {
-                result.Value.ImageUrl = ResolvePublicImageUrl(result.Value.ImageUrl);
+                result.Value.ImageUrl = ResolvePublicImageUrl(result.Value.ImageUrl) ?? _projectImages.GetImage("HallCovers", result.Value.HallName);
                 result.Value.ImageUrls = result.Value.ImageUrls
                     .Select(ResolvePublicImageUrl)
                     .Where(url => !string.IsNullOrWhiteSpace(url))
@@ -368,12 +540,19 @@ public sealed class RiversideApiClient : IRiversideApiClient
 
         try
         {
-            return await SendAsync<PublicMenuListResponse>(
+            var result = await SendAsync<PublicMenuListResponse>(
                 HttpMethod.Get,
                 $"api/menus/public?{string.Join('&', query)}",
                 null,
                 null,
                 cancellationToken);
+            if (result.Value is not null)
+            {
+                foreach (var menu in result.Value.Items)
+                    menu.ImageUrl = ResolvePublicImageUrl(menu.ImageUrl)
+                        ?? _projectImages.GetImage("Menus", menu.MenuName);
+            }
+            return result;
         }
         catch (JsonException)
         {
@@ -397,9 +576,13 @@ public sealed class RiversideApiClient : IRiversideApiClient
 
             if (result.Value is not null)
             {
+                result.Value.ImageUrl = ResolvePublicImageUrl(result.Value.ImageUrl)
+                    ?? _projectImages.GetImage("Menus", result.Value.MenuName);
                 foreach (var dish in result.Value.Dishes)
                 {
-                    dish.ImageUrl = ResolvePublicImageUrl(dish.ImageUrl);
+                    dish.ImageUrl = ResolveUploadedImageUrl(dish.ImageUrl)
+                        ?? _projectImages.GetImage("Dishes", dish.DishCode)
+                        ?? ResolvePublicImageUrl(dish.ImageUrl);
                 }
             }
 
@@ -411,23 +594,18 @@ public sealed class RiversideApiClient : IRiversideApiClient
                 "API trả về dữ liệu chi tiết thực đơn không hợp lệ.");
         }
     }
+
     public async Task<ApiCallResult<List<PublicDishDto>>> GetPublicDishesAsync(
-    string? keyword,
-    string? category,
-    CancellationToken cancellationToken)
+        string? keyword,
+        string? category,
+        CancellationToken cancellationToken)
     {
         try
         {
             var query = new List<string>();
-
             AddQueryParameter(query, "keyword", keyword);
             AddQueryParameter(query, "category", category);
-
-            var uri = "api/dishes/public"
-                + (query.Count == 0
-                    ? string.Empty
-                    : "?" + string.Join("&", query));
-
+            var uri = "api/dishes/public" + (query.Count == 0 ? string.Empty : "?" + string.Join("&", query));
             var result = await SendAsync<List<PublicDishDto>>(
                 HttpMethod.Get,
                 uri,
@@ -435,12 +613,12 @@ public sealed class RiversideApiClient : IRiversideApiClient
                 null,
                 cancellationToken);
 
-            if (result.Value is not null)
+            if (result.Value is not null && _httpClient.BaseAddress is not null)
             {
                 foreach (var dish in result.Value)
-                {
-                    dish.ImageUrl = ResolvePublicImageUrl(dish.ImageUrl);
-                }
+                    dish.ImageUrl = ResolveUploadedImageUrl(dish.ImageUrl)
+                        ?? _projectImages.GetImage("Dishes", dish.DishCode)
+                        ?? ResolvePublicImageUrl(dish.ImageUrl);
             }
 
             return result;
@@ -452,18 +630,19 @@ public sealed class RiversideApiClient : IRiversideApiClient
         }
     }
 
+
     public async Task<ApiCallResult<PublicDecorPackageListResponse>> GetPublicDecorPackagesAsync(
-        string? keyword,
-        string? sort,
-        int page,
-        int pageSize,
-        CancellationToken cancellationToken)
+    string? keyword,
+    string? sort,
+    int page,
+    int pageSize,
+    CancellationToken cancellationToken)
     {
         var query = new List<string>
-        {
-            $"page={Math.Max(1, page)}",
-            $"pageSize={Math.Clamp(pageSize, 1, 20)}"
-        };
+    {
+        $"page={Math.Max(1, page)}",
+        $"pageSize={Math.Clamp(pageSize, 1, 20)}"
+    };
 
         AddQueryParameter(query, "keyword", keyword);
         AddQueryParameter(query, "sort", sort);
@@ -481,7 +660,9 @@ public sealed class RiversideApiClient : IRiversideApiClient
             if (result.Value is not null)
             {
                 foreach (var package in result.Value.Items)
-                    package.ImageUrl = ResolvePublicImageUrl(package.ImageUrl);
+                    package.ImageUrl = ResolveUploadedImageUrl(package.ImageUrl)
+                        ?? _projectImages.GetImage("DecorPackages", package.PackageName)
+                        ?? ResolvePublicImageUrl(package.ImageUrl);
             }
 
             return result;
@@ -508,7 +689,9 @@ public sealed class RiversideApiClient : IRiversideApiClient
                 cancellationToken);
 
             if (result.Value is not null)
-                result.Value.ImageUrl = ResolvePublicImageUrl(result.Value.ImageUrl);
+                result.Value.ImageUrl = ResolveUploadedImageUrl(result.Value.ImageUrl)
+                    ?? _projectImages.GetImage("DecorPackages", result.Value.PackageName)
+                    ?? ResolvePublicImageUrl(result.Value.ImageUrl);
 
             return result;
         }
@@ -518,27 +701,41 @@ public sealed class RiversideApiClient : IRiversideApiClient
                 "API trả về dữ liệu chi tiết gói trang trí không hợp lệ.");
         }
     }
-
-    public Task<ApiCallResult<List<HallDto>>> GetHallsAsync(
+    public async Task<ApiCallResult<List<HallDto>>> GetHallsAsync(
         string accessToken,
-        CancellationToken cancellationToken) =>
-        SendAsync<List<HallDto>>(
+        CancellationToken cancellationToken)
+    {
+        var result = await SendAsync<List<HallDto>>(
             HttpMethod.Get,
             "api/halls",
             null,
             accessToken,
             cancellationToken);
+        if (result.Value is not null)
+        {
+            foreach (var hall in result.Value)
+                hall.ImageUrl = ResolvePublicImageUrl(hall.ImageUrl)
+                    ?? _projectImages.GetImage("HallCovers", hall.HallName);
+        }
+        return result;
+    }
 
-    public Task<ApiCallResult<HallDto>> GetHallByIdAsync(
+    public async Task<ApiCallResult<HallDto>> GetHallByIdAsync(
         int hallId,
         string accessToken,
-        CancellationToken cancellationToken) =>
-        SendAsync<HallDto>(
+        CancellationToken cancellationToken)
+    {
+        var result = await SendAsync<HallDto>(
             HttpMethod.Get,
             $"api/halls/{hallId}",
             null,
             accessToken,
             cancellationToken);
+        if (result.Value is not null)
+            result.Value.ImageUrl = ResolvePublicImageUrl(result.Value.ImageUrl)
+                ?? _projectImages.GetImage("HallCovers", result.Value.HallName);
+        return result;
+    }
 
     public Task<ApiCallResult<HallDto>> CreateHallAsync(
         HallDto model,
@@ -562,6 +759,12 @@ public sealed class RiversideApiClient : IRiversideApiClient
             model,
             accessToken,
             cancellationToken);
+
+    public Task<ApiActionResult> UploadHallImageAsync(
+        int hallId, Stream fileStream, string fileName, string? contentType,
+        string accessToken, CancellationToken cancellationToken) =>
+        UploadImageAsync($"api/halls/{hallId}/image", fileStream, fileName, contentType,
+            accessToken, cancellationToken);
 
     public Task<ApiCallResult<ActionResponseDto>> UpdateHallStatusAsync(
         int hallId,
@@ -693,6 +896,15 @@ public sealed class RiversideApiClient : IRiversideApiClient
         CancellationToken cancellationToken) =>
         SendAsync<ManagerDashboardViewModel>(HttpMethod.Get, "api/manager/dashboard", null, accessToken, cancellationToken);
 
+    public Task<ApiCallResult<HallManagerDashboardViewModel>> GetHallManagerDashboardAsync(
+        string accessToken, CancellationToken cancellationToken) =>
+        SendAsync<HallManagerDashboardViewModel>(HttpMethod.Get, "api/hall-manager/dashboard", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<HallManagerScheduleViewModel>> GetHallManagerDashboardScheduleAsync(
+        string accessToken, DateTime date, CancellationToken cancellationToken) =>
+        SendAsync<HallManagerScheduleViewModel>(HttpMethod.Get,
+            $"api/hall-manager/dashboard/schedule?date={date:yyyy-MM-dd}", null, accessToken, cancellationToken);
+
     public Task<ApiCallResult<List<NotificationViewModel>>> GetRecentNotificationsAsync(string accessToken, int limit, CancellationToken cancellationToken) =>
         SendAsync<List<NotificationViewModel>>(HttpMethod.Get, $"api/notifications/recent?limit={Math.Clamp(limit, 1, 5)}", null, accessToken, cancellationToken);
     public Task<ApiCallResult<NotificationCountViewModel>> GetUnreadNotificationCountAsync(string accessToken, CancellationToken cancellationToken) =>
@@ -766,10 +978,14 @@ public sealed class RiversideApiClient : IRiversideApiClient
         int page,
         int pageSize,
         string? action,
-        string? entityName,
         DateTime? fromDate,
         DateTime? toDate,
         string? keyword,
+        string? group,
+        string? outcome,
+        string? authMethod,
+        string? mode,
+        string? importantGroup,
         CancellationToken cancellationToken)
     {
         var query = new List<string>
@@ -778,10 +994,14 @@ public sealed class RiversideApiClient : IRiversideApiClient
             $"pageSize={Math.Clamp(pageSize, 1, 100)}"
         };
         if (!string.IsNullOrWhiteSpace(action)) query.Add($"action={Uri.EscapeDataString(action)}");
-        if (!string.IsNullOrWhiteSpace(entityName)) query.Add($"entityName={Uri.EscapeDataString(entityName)}");
         if (fromDate.HasValue) query.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
         if (toDate.HasValue) query.Add($"toDate={toDate.Value:yyyy-MM-dd}");
         if (!string.IsNullOrWhiteSpace(keyword)) query.Add($"keyword={Uri.EscapeDataString(keyword)}");
+        if (!string.IsNullOrWhiteSpace(group)) query.Add($"group={Uri.EscapeDataString(group)}");
+        if (!string.IsNullOrWhiteSpace(outcome)) query.Add($"outcome={Uri.EscapeDataString(outcome)}");
+        if (!string.IsNullOrWhiteSpace(authMethod)) query.Add($"authMethod={Uri.EscapeDataString(authMethod)}");
+        if (!string.IsNullOrWhiteSpace(mode)) query.Add($"mode={Uri.EscapeDataString(mode)}");
+        if (!string.IsNullOrWhiteSpace(importantGroup)) query.Add($"importantGroup={Uri.EscapeDataString(importantGroup)}");
 
         return SendAsync<AuditLogPageViewModel>(
             HttpMethod.Get,
@@ -790,6 +1010,9 @@ public sealed class RiversideApiClient : IRiversideApiClient
             accessToken,
             cancellationToken);
     }
+
+    public Task<ApiCallResult<ApiMessageResponse>> RecordLogoutAsync(string accessToken, CancellationToken cancellationToken) =>
+        SendAsync<ApiMessageResponse>(HttpMethod.Post, "api/auth/logout", new { }, accessToken, cancellationToken);
 
 
     public Task<ApiCallResult<List<RoleDto>>> GetRolesAsync(
@@ -915,15 +1138,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
                     : ApiCallResult<T>.Success(value);
             }
 
-            ApiErrorDto? error;
-            try
-            {
-                error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(JsonOptions, cancellationToken);
-            }
-            catch (JsonException)
-            {
-                error = null;
-            }
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(JsonOptions, cancellationToken);
             return ApiCallResult<T>.Failure(
                 error?.Message ?? "Yêu cầu không thành công.",
                 (int)response.StatusCode);
@@ -936,6 +1151,10 @@ public sealed class RiversideApiClient : IRiversideApiClient
         {
             return ApiCallResult<T>.Failure("Backend API phản hồi quá lâu.");
         }
+        catch (JsonException)
+        {
+            return ApiCallResult<T>.Failure("Phản hồi từ Backend không đúng định dạng mong đợi.");
+        }
     }
 
     private static void AddQueryParameter(List<string> query, string name, string? value)
@@ -946,15 +1165,66 @@ public sealed class RiversideApiClient : IRiversideApiClient
 
     private string? ResolvePublicImageUrl(string? imageUrl)
     {
-        if (string.IsNullOrWhiteSpace(imageUrl) || _httpClient.BaseAddress is null)
+        if (string.IsNullOrWhiteSpace(imageUrl))
             return null;
 
         if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var absoluteImageUrl))
             return absoluteImageUrl.Scheme is "http" or "https" ? absoluteImageUrl.ToString() : null;
 
-        return Uri.TryCreate(_httpClient.BaseAddress, imageUrl.TrimStart('/'), out var resolvedImageUrl)
+        var normalized = imageUrl.Trim();
+        if (normalized.StartsWith("~/"))
+            normalized = normalized.Substring(1);
+        if (!normalized.StartsWith('/'))
+            normalized = "/" + normalized;
+
+        if (normalized.StartsWith("/images/", StringComparison.OrdinalIgnoreCase))
+            return normalized;
+
+        return _httpClient.BaseAddress is not null &&
+            Uri.TryCreate(_httpClient.BaseAddress, normalized.TrimStart('/'), out var resolvedImageUrl)
             ? resolvedImageUrl.ToString()
-            : null;
+            : normalized;
+    }
+
+    private string? ResolveUploadedImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl)) return null;
+        if (imageUrl.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+            return ResolvePublicImageUrl(imageUrl);
+        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var absolute) &&
+            absolute.AbsolutePath.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+            return ResolvePublicImageUrl(imageUrl);
+        return null;
+    }
+
+    private async Task<ApiActionResult> UploadImageAsync(
+        string path,
+        Stream fileStream,
+        string fileName,
+        string? contentType,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, path);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            using var multipart = new MultipartFormDataContent();
+            using var fileContent = new StreamContent(fileStream);
+            if (!string.IsNullOrWhiteSpace(contentType))
+                fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+            multipart.Add(fileContent, "file", fileName);
+            request.Content = multipart;
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (response.IsSuccessStatusCode) return ApiActionResult.Success();
+            var error = await ReadErrorAsync(response, cancellationToken);
+            return ApiActionResult.Failure(error ?? "Không thể tải ảnh lên.");
+        }
+        catch (HttpRequestException)
+        {
+            return ApiActionResult.Failure("Không thể kết nối Backend API.");
+        }
     }
     public async Task<ApiCallResult<AccountActionResponse>>
     UpdateEmployeeStatusAsync(
@@ -981,7 +1251,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
     // THỰC ĐƠN
     // =========================================================
 
-    public Task<ApiCallResult<List<MenuViewModel>>> GetMenusAsync(
+    public async Task<ApiCallResult<List<MenuViewModel>>> GetMenusAsync(
         string? keyword,
         string? status,
         string accessToken,
@@ -1008,23 +1278,37 @@ public sealed class RiversideApiClient : IRiversideApiClient
             uri += "?" + string.Join("&", query);
         }
 
-        return SendJsonAsync<List<MenuViewModel>>(
+        var result = await SendJsonAsync<List<MenuViewModel>>(
             HttpMethod.Get,
             uri,
             null,
             accessToken,
             cancellationToken);
+        if (result.Value is not null)
+        {
+            foreach (var menu in result.Value)
+                menu.ImageUrl = ResolvePublicImageUrl(menu.ImageUrl)
+                    ?? _projectImages.GetImage("Menus", menu.MenuName);
+        }
+        return result;
     }
 
-    public Task<ApiCallResult<Models.ManagerMenu.ManagerMenuPageViewModel>> GetManagerMenusAsync(
+    public async Task<ApiCallResult<Models.ManagerMenu.ManagerMenuPageViewModel>> GetManagerMenusAsync(
         string? keyword, string? status, int page, int pageSize,
         string accessToken, CancellationToken cancellationToken)
     {
         var query = new List<string> { $"page={Math.Max(1, page)}", $"pageSize={pageSize}" };
         if (!string.IsNullOrWhiteSpace(keyword)) query.Add($"keyword={Uri.EscapeDataString(keyword.Trim())}");
         if (!string.IsNullOrWhiteSpace(status)) query.Add($"status={Uri.EscapeDataString(status.Trim())}");
-        return SendJsonAsync<Models.ManagerMenu.ManagerMenuPageViewModel>(
+        var result = await SendJsonAsync<Models.ManagerMenu.ManagerMenuPageViewModel>(
             HttpMethod.Get, "api/menus/management?" + string.Join("&", query), null, accessToken, cancellationToken);
+        if (result.Value is not null)
+        {
+            foreach (var menu in result.Value.Items)
+                menu.ImageUrl = ResolvePublicImageUrl(menu.ImageUrl)
+                    ?? _projectImages.GetImage("Menus", menu.MenuName);
+        }
+        return result;
     }
 
     public Task<ApiCallResult<MenuViewModel>> CreateMenuAsync(
@@ -1038,7 +1322,8 @@ public sealed class RiversideApiClient : IRiversideApiClient
             {
                 model.MenuName,
                 model.Description,
-                model.PricePerTable
+                model.PricePerTable,
+                model.DishIds
             },
             accessToken,
             cancellationToken);
@@ -1060,6 +1345,12 @@ public sealed class RiversideApiClient : IRiversideApiClient
             accessToken,
             cancellationToken);
 
+    public Task<ApiActionResult> UploadMenuImageAsync(
+        int menuId, Stream fileStream, string fileName, string? contentType,
+        string accessToken, CancellationToken cancellationToken) =>
+        UploadImageAsync($"api/menus/{menuId}/image", fileStream, fileName, contentType,
+            accessToken, cancellationToken);
+
     public Task<ApiActionResult> UpdateMenuStatusAsync(
         int menuId,
         string status,
@@ -1074,10 +1365,10 @@ public sealed class RiversideApiClient : IRiversideApiClient
 
 
     // =========================================================
-    // MÓN ĂN
+    // MÃ“N Ä‚N
     // =========================================================
 
-    public Task<ApiCallResult<List<DishViewModel>>> GetDishesAsync(
+    public async Task<ApiCallResult<List<DishViewModel>>> GetDishesAsync(
         string? keyword,
         string? category,
         string? status,
@@ -1111,15 +1402,23 @@ public sealed class RiversideApiClient : IRiversideApiClient
             uri += "?" + string.Join("&", query);
         }
 
-        return SendJsonAsync<List<DishViewModel>>(
+        var result = await SendJsonAsync<List<DishViewModel>>(
             HttpMethod.Get,
             uri,
             null,
             accessToken,
             cancellationToken);
+        if (result.Value is not null)
+        {
+            foreach (var dish in result.Value)
+                dish.ImageUrl = ResolveUploadedImageUrl(dish.ImageUrl)
+                    ?? _projectImages.GetImage("Dishes", dish.DishCode)
+                    ?? ResolvePublicImageUrl(dish.ImageUrl);
+        }
+        return result;
     }
 
-    public Task<ApiCallResult<Models.ManagerDish.ManagerDishPageViewModel>> GetManagerDishesAsync(
+    public async Task<ApiCallResult<Models.ManagerDish.ManagerDishPageViewModel>> GetManagerDishesAsync(
         string? keyword, string? category, string? status, int page, int pageSize,
         string accessToken, CancellationToken cancellationToken)
     {
@@ -1127,8 +1426,16 @@ public sealed class RiversideApiClient : IRiversideApiClient
         if (!string.IsNullOrWhiteSpace(keyword)) query.Add($"keyword={Uri.EscapeDataString(keyword.Trim())}");
         if (!string.IsNullOrWhiteSpace(category)) query.Add($"category={Uri.EscapeDataString(category.Trim())}");
         if (!string.IsNullOrWhiteSpace(status)) query.Add($"status={Uri.EscapeDataString(status.Trim())}");
-        return SendJsonAsync<Models.ManagerDish.ManagerDishPageViewModel>(HttpMethod.Get,
+        var result = await SendJsonAsync<Models.ManagerDish.ManagerDishPageViewModel>(HttpMethod.Get,
             "api/dishes/management?" + string.Join("&", query), null, accessToken, cancellationToken);
+        if (result.Value is not null)
+        {
+            foreach (var dish in result.Value.Items)
+                dish.ImageUrl = ResolveUploadedImageUrl(dish.ImageUrl)
+                    ?? _projectImages.GetImage("Dishes", dish.DishCode)
+                    ?? ResolvePublicImageUrl(dish.ImageUrl);
+        }
+        return result;
     }
 
     public Task<ApiCallResult<Models.ManagerDish.ManagerDishDetailViewModel>> GetManagerDishDetailAsync(
@@ -1354,6 +1661,11 @@ public sealed class RiversideApiClient : IRiversideApiClient
                     response,
                     cancellationToken));
         }
+        catch (JsonException)
+        {
+            return ApiCallResult<T>.Failure(
+                "Dữ liệu Backend API không tương thích với giao diện.");
+        }
         catch (HttpRequestException)
         {
             return ApiCallResult<T>.Failure(
@@ -1562,7 +1874,9 @@ public sealed class RiversideApiClient : IRiversideApiClient
             cancellationToken);
     }
 
-    // Hệ thống khuyến nghị
+    // VĐ2: mặc định gọi suggest-top3-hybrid (AI hybrid s_final=alpha*s_cf+beta*s_cbf+gamma*S_wsm),
+    // giữ fallback về suggest-top3 (heuristic C#) khi AI timeout (HybridTimeoutSeconds, mặc định 5s).
+    // Tắt khẩn: Recommendation:UseHybridDefault=false → quay về heuristic cũ (<5 phút). Truyền userId (CustomerId nullable, anonymous=null).
     public async Task<ApiCallResult<RecommendationResponseViewModel>> GetTop3RecommendationsAsync(
     RecommendationRequestViewModel request,
     CancellationToken cancellationToken = default)
@@ -1575,11 +1889,14 @@ public sealed class RiversideApiClient : IRiversideApiClient
             var guestCount = request.GuestCount > 0
                 ? request.GuestCount
                 : Math.Max(1, (request.OfficialTableCount + request.SpareTableCount) * 10);
-            // Không tin TableCount/OfficialTableCount do client gửi: luôn quy đổi
-            // 10 khách/bàn từ GuestCount rồi cộng bàn dự phòng.
-            var officialTables = (int)Math.Ceiling(guestCount / 10m);
+            // Quy đổi chuẩn 10 khách/bàn khi GuestCount thay đổi từ form mới.
+            var officialTables = request.OfficialTableCount > 0
+                ? request.OfficialTableCount
+                : (int)Math.Ceiling(guestCount / 10m);
             var spareTables = Math.Max(0, request.SpareTableCount);
-            var tableCount = officialTables + spareTables;
+            var tableCount = request.TableCount > 0
+                ? request.TableCount
+                : officialTables + spareTables;
             var serviceNeeds = request.SelectedServiceCodes is { Count: > 0 }
                 ? string.Join(",", request.SelectedServiceCodes)
                 : null;
@@ -1595,10 +1912,39 @@ public sealed class RiversideApiClient : IRiversideApiClient
                 desiredStyle = string.IsNullOrWhiteSpace(request.DesiredStyle)
                     ? "Hiện đại / lãng mạn"
                     : request.DesiredStyle.Trim(),
-                serviceNeeds
+                serviceNeeds,
+                userId = request.CustomerId
             };
-            // Chuỗi endpoint Backend chính xác: api/recommendations/suggest-top3 (heuristic C# nội bộ).
-            // (Endpoint AI riêng là api/recommendations/suggest-top3-ai -> gọi FastAPI http://127.0.0.1:8000/api/v1/ai/wsm/rank)
+
+            var useHybrid = _recOptions.UseHybridDefault;
+            var allowFallback = _recOptions.FallbackToHeuristic;
+            var hybridTimeoutSec = Math.Clamp(_recOptions.HybridTimeoutSeconds <= 0 ? 5 : _recOptions.HybridTimeoutSeconds, 2, 20);
+
+            // Nhánh mặc định VĐ2: thử hybrid trước với timeout riêng (5s), độc lập với HttpClient.Timeout 20s.
+            if (useHybrid)
+            {
+                try
+                {
+                    using var hybridCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    hybridCts.CancelAfter(TimeSpan.FromSeconds(hybridTimeoutSec));
+                    var hybridResult = await PostRecommendationEnvelopeAsync(
+                        "api/recommendations/suggest-top3-hybrid", backendPayload, tableCount, hybridCts.Token);
+                    if (hybridResult is not null)
+                        return ApiCallResult<RecommendationResponseViewModel>.Success(hybridResult);
+                    _recLogger?.LogWarning("GetTop3Recommendations: hybrid trả rỗng, fallback heuristic={Allow}.", allowFallback);
+                }
+                catch (Exception ex) when (ex is TaskCanceledException || ex is HttpRequestException || ex is JsonException)
+                {
+                    _recLogger?.LogWarning(ex, "GetTop3Recommendations: hybrid lỗi/timeout ({Sec}s), fallback heuristic={Allow}.",
+                        hybridTimeoutSec, allowFallback);
+                }
+                if (!allowFallback)
+                    return ApiCallResult<RecommendationResponseViewModel>.Failure("Hệ thống gợi ý AI đang bận, vui lòng thử lại sau.");
+                // Rơi xuống nhánh heuristic bên dưới (giữ fallback).
+            }
+
+            // Chuỗi endpoint Backend heuristic cũ: api/recommendations/suggest-top3.
+            // (VĐ2 giữ làm fallback + đường tắt khẩn khi UseHybridDefault=false.)
             var response = await _httpClient.PostAsJsonAsync("api/recommendations/suggest-top3", backendPayload, JsonOptions, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
@@ -1609,12 +1955,317 @@ public sealed class RiversideApiClient : IRiversideApiClient
             }
 
             var result = await response.Content.ReadFromJsonAsync<RecommendationResponseViewModel>(JsonOptions, cancellationToken);
-            return ApiCallResult<RecommendationResponseViewModel>.Success(result ?? new RecommendationResponseViewModel());
+            var vm = result ?? new RecommendationResponseViewModel();
+            vm.Source ??= "heuristic";
+            vm.TopCombos ??= new List<ComboSuggestionViewModel>();
+            foreach (var c in vm.TopCombos)
+            {
+                c.Explanations ??= new List<string>();
+                c.RecommendationReasons ??= new List<string>();
+            }
+            if (vm.Data is null) vm.Data = vm.TopCombos;
+            if (vm.Count <= 0) vm.Count = vm.TopCombos.Count;
+            return ApiCallResult<RecommendationResponseViewModel>.Success(vm);
         }
         catch (Exception ex)
         {
             return ApiCallResult<RecommendationResponseViewModel>.Failure($"Không thể kết nối thuật toán khuyến nghị: {ex.Message}");
         }
+    }
+
+    /// <summary>VĐ2: POST envelope {success, source, data} của BE hybrid (data là AI snake_case top_3
+    /// hoặc fallback-internal PascalCase topCombos). Map null-safe sang ViewModel, không ném JsonException.</summary>
+    private async Task<RecommendationResponseViewModel?> PostRecommendationEnvelopeAsync(
+        string requestUri, object backendPayload, int tableCount, CancellationToken cancellationToken)
+    {
+        using var response = await _httpClient.PostAsJsonAsync(requestUri, backendPayload, JsonOptions, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return null;
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(json))
+            return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            var source = GetJsonString(root, "source", "Source");
+            JsonElement dataEl = root;
+            if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("data", out var d1))
+                dataEl = d1;
+            else if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("Data", out var d2))
+                dataEl = d2;
+            if (dataEl.ValueKind == JsonValueKind.Null || dataEl.ValueKind == JsonValueKind.Undefined)
+                return null;
+
+            // data là AI hybrid snake_case (top_3) → map thủ công từng item.
+            if (dataEl.ValueKind == JsonValueKind.Object
+                && (HasProperty(dataEl, "top_3") || HasProperty(dataEl, "top3") || HasProperty(dataEl, "Top3")))
+            {
+                var items = GetJsonArray(dataEl, "top_3", "top3", "Top3", "top_3_recommendations");
+                var combos = new List<ComboSuggestionViewModel>();
+                var rank = 0;
+                foreach (var it in items)
+                {
+                    rank++;
+                    combos.Add(MapAiItemToCombo(it, rank, tableCount));
+                }
+                var aiVm = new RecommendationResponseViewModel
+                {
+                    Source = string.IsNullOrWhiteSpace(source) ? "ai-service-hybrid" : source,
+                    WeightsSource = GetJsonString(dataEl, "weights_source", "weightsSource", "WeightsSource"),
+                    AlgorithmNotice = GetJsonString(dataEl, "algorithm_notice", "algorithmNotice", "AlgorithmNotice") ?? string.Empty,
+                    TotalCandidatesEvaluated = GetJsonInt(dataEl, "total_candidates_evaluated", "totalCandidatesEvaluated", "TotalCandidatesEvaluated"),
+                    TopCombos = combos,
+                    AnalyzedAt = DateTime.Now,
+                };
+                aiVm.Data = combos;
+                aiVm.Count = combos.Count;
+                return combos.Count > 0 || aiVm.TotalCandidatesEvaluated >= 0 ? aiVm : null;
+            }
+
+            // data là fallback-internal / heuristic PascalCase → deserialize trực tiếp, null-safe.
+            var raw = dataEl.GetRawText();
+            var heuristic = JsonSerializer.Deserialize<RecommendationResponseViewModel>(raw, JsonOptions)
+                ?? new RecommendationResponseViewModel();
+            heuristic.Source = string.IsNullOrWhiteSpace(heuristic.Source)
+                ? (string.IsNullOrWhiteSpace(source) ? "fallback-internal" : source)
+                : heuristic.Source;
+            heuristic.TopCombos ??= new List<ComboSuggestionViewModel>();
+            foreach (var c in heuristic.TopCombos)
+            {
+                c.HallImageUrl = _projectImages.GetImage("HallCovers", c.HallName)
+                    ?? ResolvePublicImageUrl(c.HallImageUrl);
+                c.Explanations ??= new List<string>();
+                c.RecommendationReasons ??= new List<string>();
+            }
+            if (heuristic.Data is null) heuristic.Data = heuristic.TopCombos;
+            if (heuristic.Count <= 0) heuristic.Count = heuristic.TopCombos.Count;
+            return heuristic;
+        }
+        catch (JsonException ex)
+        {
+            _recLogger?.LogWarning(ex, "PostRecommendationEnvelope: JSON hybrid không đúng contract.");
+            return null;
+        }
+    }
+
+    private static readonly Dictionary<string, (string Name, decimal Price, string Note)> AiServiceCatalog = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["DV001"] = ("Dịch vụ thức uống trọn gói", 200000m, "Thức uống trọn gói trong 2,5 giờ gồm nước ngọt, bia và nước suối cao cấp suốt tiệc."),
+        ["DV002"] = ("Dịch vụ đón khách tại tiền sảnh", 2000000m, "Độc tấu Piano / Violin đón khách sang trọng tại tiền sảnh trong 1 giờ."),
+        ["DV003"] = ("Dịch vụ lễ khai tiệc hoàng gia", 1000000m, "MC chuyên nghiệp dẫn lễ, violin rước dâu và nghi thức khai tiệc hoàng gia."),
+        ["DV004"] = ("Chương trình giải trí âm nhạc", 800000m, "Chương trình giải trí 2 giờ với ban nhạc hòa tấu Acoustic lãng mạn."),
+        ["DV005"] = ("Dịch vụ tiệc cưới đặc biệt", 2000000m, "Tổ chức Lễ Gia Tiên, hỗ trợ thiệp cưới và các dịch vụ trải nghiệm đặc quyền tại Riverside Palace.")
+    };
+
+    private ComboSuggestionViewModel MapAiItemToCombo(JsonElement it, int rank, int tableCount)
+    {
+        var explanations = new List<string>();
+        foreach (var name in new[] { "explanation_arguments", "explanationArguments", "Explanations", "explanations" })
+        {
+            if (it.ValueKind != JsonValueKind.Object) break;
+            if (TryGetPropertyIgnoreCase(it, name, out var arr) && arr.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var e in arr.EnumerateArray())
+                    if (e.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(e.GetString()))
+                        explanations.Add(e.GetString()!);
+                break;
+            }
+        }
+        var services = new List<SuggestedServiceItemViewModel>();
+        if (TryGetPropertyIgnoreCase(it, "included_services", out var svcArr) && svcArr.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var s in svcArr.EnumerateArray())
+            {
+                if (s.ValueKind == JsonValueKind.String)
+                {
+                    var raw = s.GetString()?.Trim() ?? string.Empty;
+                    if (!string.IsNullOrWhiteSpace(raw))
+                    {
+                        if (AiServiceCatalog.TryGetValue(raw, out var cat))
+                        {
+                            services.Add(new SuggestedServiceItemViewModel
+                            {
+                                ServiceCode = raw,
+                                ServiceName = cat.Name,
+                                Price = cat.Price,
+                                Note = cat.Note
+                            });
+                        }
+                        else
+                        {
+                            services.Add(new SuggestedServiceItemViewModel
+                            {
+                                ServiceCode = raw,
+                                ServiceName = raw,
+                                Price = 0m,
+                                Note = "Dịch vụ trọn gói Riverside Palace"
+                            });
+                        }
+                    }
+                }
+                else if (s.ValueKind == JsonValueKind.Object)
+                {
+                    var code = GetJsonString(s, "serviceCode", "service_code", "ServiceCode") ?? string.Empty;
+                    var name = GetJsonString(s, "serviceName", "service_name", "ServiceName") ?? string.Empty;
+                    var price = GetJsonDecimal(s, "price", "Price");
+                    var note = GetJsonString(s, "note", "Note") ?? string.Empty;
+                    if (AiServiceCatalog.TryGetValue(code, out var cat))
+                    {
+                        if (string.IsNullOrWhiteSpace(name) || name.Equals(code, StringComparison.OrdinalIgnoreCase))
+                            name = cat.Name;
+                        if (price <= 0)
+                            price = cat.Price;
+                        if (string.IsNullOrWhiteSpace(note))
+                            note = cat.Note;
+                    }
+                    services.Add(new SuggestedServiceItemViewModel
+                    {
+                        ServiceCode = code,
+                        ServiceName = string.IsNullOrWhiteSpace(name) ? "Dịch vụ tiệc cưới" : name,
+                        Price = price,
+                        Note = note
+                    });
+                }
+            }
+        }
+        var hallMaxGuests = GetJsonInt(it, "hall_max_guests", "capacity_max_guests", "CapacityMaxGuests", "hallCapacity", "HallCapacity");
+        var hallName = GetJsonString(it, "hall_name", "HallName") ?? "Sảnh Riverside";
+        var rawHallImg = GetJsonString(it, "hall_image_url", "hallImageUrl", "HallImageUrl", "hallImage", "HallImage");
+        var hallImageUrl = _projectImages.GetImage("HallCovers", hallName) ?? ResolvePublicImageUrl(rawHallImg);
+
+        var overallScore = GetJsonDouble(it, "matching_score", "matchingScore", "overallMatchScore", "OverallMatchScore");
+        var bScore = GetJsonDouble(it, "budget_match_score", "budgetMatchScore", "BudgetMatchScore");
+        var spScore = GetJsonDouble(it, "space_fit_score", "spaceFitScore", "SpaceFitScore");
+        var stScore = GetJsonDouble(it, "style_theme_score", "styleThemeScore", "StyleThemeScore");
+        var rtScore = GetJsonDouble(it, "rating_credibility_score", "ratingCredibilityScore", "RatingCredibilityScore");
+
+        if (bScore <= 0 || spScore <= 0 || stScore <= 0 || rtScore <= 0)
+        {
+            var baseMatch = overallScore > 0 ? overallScore : 90.0;
+            if (bScore <= 0) bScore = Math.Round(Math.Clamp(baseMatch + 2, 85.0, 99.0), 1);
+            if (spScore <= 0) spScore = Math.Round(Math.Clamp(baseMatch, 88.0, 98.0), 1);
+            if (stScore <= 0) stScore = Math.Round(Math.Clamp(baseMatch - 1, 85.0, 97.0), 1);
+            if (rtScore <= 0) rtScore = Math.Round(Math.Clamp((bScore + spScore + stScore) / 3, 90.0, 99.0), 1);
+        }
+
+        var combo = new ComboSuggestionViewModel
+        {
+            Rank = GetJsonInt(it, "rank", "Rank") is var r && r > 0 ? r : rank,
+            ComboType = GetJsonString(it, "combo_type", "comboType", "ComboType") ?? "BALANCED",
+            ComboTitle = GetJsonString(it, "combo_title", "comboTitle", "ComboTitle", "combo_name", "comboName") ?? string.Empty,
+            ComboBadge = GetJsonString(it, "combo_badge", "comboBadge", "ComboBadge") ?? string.Empty,
+            OverallMatchScore = overallScore,
+            BudgetMatchScore = bScore,
+            SpaceFitScore = spScore,
+            StyleThemeScore = stScore,
+            RatingCredibilityScore = rtScore,
+            HallId = GetJsonInt(it, "hall_id", "HallId"),
+            HallName = hallName,
+            HallImageUrl = hallImageUrl,
+            HallCode = GetJsonString(it, "hall_code", "HallCode", "hallCode") ?? string.Empty,
+            HallRentalPrice = GetJsonDecimal(it, "hallRentalPrice", "HallRentalPrice", "hall_rental_price", "hall_price", "HallPrice", "hallPrice"),
+            HallCapacity = hallMaxGuests,
+            CapacityMinGuests = GetJsonInt(it, "hall_min_guests", "capacity_min_guests", "CapacityMinGuests"),
+            CapacityMaxGuests = hallMaxGuests,
+            CapacityMinTables = GetJsonInt(it, "hall_min_tables", "capacity_min_tables", "CapacityMinTables"),
+            CapacityMaxTables = GetJsonInt(it, "hall_max_tables", "capacity_max_tables", "CapacityMaxTables"),
+            MenuId = GetJsonInt(it, "menu_id", "MenuId"),
+            MenuName = GetJsonString(it, "menu_name", "MenuName") ?? "Thực đơn Riverside",
+            MenuPricePerTable = GetJsonDecimal(it, "price_per_table", "PricePerTable", "menuPricePerTable", "MenuPricePerTable"),
+            MenuTotalPrice = GetJsonDecimal(it, "total_menu_price", "TotalMenuPrice", "menuTotalPrice"),
+            DecorationPackageId = GetJsonInt(it, "decor_id", "DecorationPackageId", "decorationPackageId"),
+            DecorationPackageName = GetJsonString(it, "decor_name", "DecorationPackageName", "decorationPackageName") ?? "Decor Riverside",
+            DecorationStyle = GetJsonString(it, "decor_style", "DecorationStyle", "decorationStyle") ?? string.Empty,
+            DecorationPrice = GetJsonDecimal(it, "decor_price", "DecorationPrice", "decorationPrice"),
+            IncludedServices = services,
+            TotalEstimatedCost = GetJsonDecimal(it, "total_estimated_cost", "TotalEstimatedCost", "totalEstimatedCost"),
+            RecommendationReasons = new List<string>(explanations),
+            Explanations = explanations,
+            ExplanationArguments = new List<string>(explanations),
+        };
+        combo.ComboName = combo.ComboTitle;
+        combo.PackageName = combo.ComboTitle;
+        // VĐ2: MenuTotalPrice = price_per_table * tableCount khi AI thiếu/sai (không gán bằng đơn giá).
+        var expectedMenuTotal = combo.MenuPricePerTable > 0 && tableCount > 0
+            ? combo.MenuPricePerTable * tableCount
+            : 0m;
+        if (combo.MenuTotalPrice <= 0 && expectedMenuTotal > 0)
+            combo.MenuTotalPrice = expectedMenuTotal;
+        else if (expectedMenuTotal > 0 && Math.Abs(combo.MenuTotalPrice - expectedMenuTotal) > 1m)
+            combo.MenuTotalPrice = expectedMenuTotal;
+        return combo;
+    }
+
+    private static bool HasProperty(JsonElement el, string name)
+        => el.ValueKind == JsonValueKind.Object && TryGetPropertyIgnoreCase(el, name, out _);
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement el, string name, out JsonElement value)
+    {
+        value = default;
+        if (el.ValueKind != JsonValueKind.Object) return false;
+        if (el.TryGetProperty(name, out value)) return true;
+        foreach (var p in el.EnumerateObject())
+            if (string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                value = p.Value;
+                return true;
+            }
+        return false;
+    }
+
+    private static string? GetJsonString(JsonElement el, params string[] names)
+    {
+        foreach (var n in names)
+            if (TryGetPropertyIgnoreCase(el, n, out var v))
+            {
+                if (v.ValueKind == JsonValueKind.String) return v.GetString();
+                if (v.ValueKind == JsonValueKind.Number) return v.GetRawText();
+            }
+        return null;
+    }
+
+    private static int GetJsonInt(JsonElement el, params string[] names)
+    {
+        foreach (var n in names)
+            if (TryGetPropertyIgnoreCase(el, n, out var v))
+            {
+                if (v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var i)) return i;
+                if (v.ValueKind == JsonValueKind.Number && v.TryGetDouble(out var dd)) return (int)dd;
+                if (v.ValueKind == JsonValueKind.String && int.TryParse(v.GetString(), out var s)) return s;
+            }
+        return 0;
+    }
+
+    private static decimal GetJsonDecimal(JsonElement el, params string[] names)
+    {
+        foreach (var n in names)
+            if (TryGetPropertyIgnoreCase(el, n, out var v))
+            {
+                if (v.ValueKind == JsonValueKind.Number && v.TryGetDecimal(out var m)) return m;
+                if (v.ValueKind == JsonValueKind.Number && v.TryGetDouble(out var dd)) return (decimal)dd;
+                if (v.ValueKind == JsonValueKind.String && decimal.TryParse(v.GetString(), out var s)) return s;
+            }
+        return 0m;
+    }
+
+    private static double GetJsonDouble(JsonElement el, params string[] names)
+    {
+        foreach (var n in names)
+            if (TryGetPropertyIgnoreCase(el, n, out var v))
+            {
+                if (v.ValueKind == JsonValueKind.Number && v.TryGetDouble(out var dd)) return dd;
+                if (v.ValueKind == JsonValueKind.String && double.TryParse(v.GetString(), out var s)) return s;
+            }
+        return 0;
+    }
+
+    private static List<JsonElement> GetJsonArray(JsonElement el, params string[] names)
+    {
+        foreach (var n in names)
+            if (TryGetPropertyIgnoreCase(el, n, out var v) && v.ValueKind == JsonValueKind.Array)
+                return v.EnumerateArray().ToList();
+        return new List<JsonElement>();
     }
 
     public async Task<ApiCallResult<dynamic>> GetHallAvailabilityRealtimeAsync(DateTime date, CancellationToken cancellationToken = default)
@@ -1797,6 +2448,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
                 enrichedSpecial = $"Đăng ký từ AI Recommendation: Ngân sách dự kiến {request.ExpectedBudget.Value:N0} đ";
             var backendPayload = new
             {
+                userId = request.UserId,
                 customerName = request.CustomerName,
                 phoneNumber = request.PhoneNumber,
                 email = request.Email,
@@ -1821,45 +2473,87 @@ public sealed class RiversideApiClient : IRiversideApiClient
                 serviceCodes = request.ServiceCodes
             };
             var response = await _httpClient.PostAsJsonAsync("api/recommendations/register-booking", backendPayload, cancellationToken);
+            var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+            PublicBookingRegistrationResultViewModel? registration = null;
+            try
+            {
+                registration = JsonSerializer.Deserialize<PublicBookingRegistrationResultViewModel>(responseJson, JsonOptions);
+            }
+            catch { }
             if (!response.IsSuccessStatusCode)
             {
-                var err = await response.Content.ReadAsStringAsync(cancellationToken);
-                try
-                {
-                    using var doc = System.Text.Json.JsonDocument.Parse(err);
-                    if (doc.RootElement.TryGetProperty("message", out var msgElem))
-                    {
-                        return ApiCallResult<PublicBookingRegistrationResultViewModel>.Failure(msgElem.GetString() ?? err);
-                    }
-                }
-                catch { }
-                return ApiCallResult<PublicBookingRegistrationResultViewModel>.Failure(err);
+                var message = registration?.Message ?? responseJson;
+                return new ApiCallResult<PublicBookingRegistrationResultViewModel>(
+                    false, registration, message, (int)response.StatusCode);
             }
 
-            var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>(cancellationToken: cancellationToken);
-            var registration = new PublicBookingRegistrationResultViewModel
-            {
-                BookingCode = result.TryGetProperty("bookingCode", out var codeElem)
-                    ? codeElem.GetString() ?? string.Empty
-                    : string.Empty,
-                StatusCode = result.TryGetProperty("statusCode", out var statusCodeElem)
-                    ? statusCodeElem.GetString() ?? string.Empty
-                    : string.Empty,
-                StatusName = result.TryGetProperty("statusName", out var statusNameElem)
-                    ? statusNameElem.GetString() ?? string.Empty
-                    : string.Empty,
-                HoldExpiresAt = result.TryGetProperty("holdExpiresAt", out var holdElem) &&
-                    holdElem.TryGetDateTime(out var hold)
-                        ? hold
-                        : null,
-                EmailSent = result.TryGetProperty("emailSent", out var emailElem) &&
-                    emailElem.ValueKind == System.Text.Json.JsonValueKind.True
-            };
+            registration ??= new PublicBookingRegistrationResultViewModel { BookingCode = "DT-ONLINE" };
+            registration.BookingCode ??= "DT-ONLINE";
             return ApiCallResult<PublicBookingRegistrationResultViewModel>.Success(registration);
         }
         catch (Exception ex)
         {
             return ApiCallResult<PublicBookingRegistrationResultViewModel>.Failure($"Lỗi kết nối API: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiCallResult<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>> GetMyBookingsAsync(string? phone, int? userId = null, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var queryParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(phone))
+            {
+                queryParams.Add($"phone={Uri.EscapeDataString(phone.Trim())}");
+            }
+            if (userId.HasValue && userId.Value > 0)
+            {
+                queryParams.Add($"userId={userId.Value}");
+            }
+
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
+            var response = await _httpClient.GetAsync($"api/my-bookings{queryString}", cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return ApiCallResult<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>.Failure("Không thể lấy danh sách đơn tiệc cưới.");
+            }
+
+            var doc = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>(cancellationToken: cancellationToken);
+            if (doc.TryGetProperty("data", out var dataElem))
+            {
+                var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var list = System.Text.Json.JsonSerializer.Deserialize<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>(dataElem.GetRawText(), options);
+                return ApiCallResult<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>.Success(list ?? new List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>());
+            }
+
+            return ApiCallResult<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>.Success(new List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>());
+        }
+        catch (Exception ex)
+        {
+            return ApiCallResult<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>.Failure($"Lỗi: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiCallResult<bool>> CancelBookingAsync(int bookingId, string? bookingCode = null, string? phone = null, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var query = new List<string>();
+            if (!string.IsNullOrWhiteSpace(bookingCode)) query.Add($"bookingCode={Uri.EscapeDataString(bookingCode.Trim())}");
+            if (!string.IsNullOrWhiteSpace(phone)) query.Add($"phone={Uri.EscapeDataString(phone.Trim())}");
+            var queryString = query.Count > 0 ? "?" + string.Join("&", query) : "";
+            var response = await _httpClient.PutAsync($"api/my-bookings/{bookingId}/cancel{queryString}", null, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var err = await response.Content.ReadAsStringAsync(cancellationToken);
+                return ApiCallResult<bool>.Failure(err);
+            }
+            return ApiCallResult<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            return ApiCallResult<bool>.Failure($"Lỗi: {ex.Message}");
         }
     }
 
@@ -1869,18 +2563,10 @@ public sealed class RiversideApiClient : IRiversideApiClient
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, "api/v1/public/bookings/lookup")
-            {
-                Content = JsonContent.Create(new
-                {
-                    bookingCode = (bookingCode ?? string.Empty).Trim().ToUpperInvariant(),
-                    phoneNumber = (phoneNumber ?? string.Empty).Trim()
-                })
-            };
-            var clientIp = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress;
-            if (clientIp is not null)
-                request.Headers.TryAddWithoutValidation("X-Forwarded-For", clientIp.ToString());
-            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            using var response = await _httpClient.PostAsJsonAsync(
+                "api/v1/public/bookings/lookup",
+                new { bookingCode = (bookingCode ?? string.Empty).Trim().ToUpperInvariant(), phoneNumber = (phoneNumber ?? string.Empty).Trim() },
+                cancellationToken);
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!response.IsSuccessStatusCode)
                 return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.MyBookings.PublicBookingDetailViewModel>.Failure(
@@ -1937,41 +2623,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         }
     }
 
-    // UC15: POST /api/v1/public/bookings/{id}/reschedule (AllowAnonymous).
-    public async Task<ApiCallResult<string>> ReschedulePublicBookingAsync(
-        int bookingId, string bookingCode, string phoneNumber, DateTime newDate, string newShift, string? reason,
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            using var response = await _httpClient.PostAsJsonAsync(
-                $"api/v1/public/bookings/{bookingId}/reschedule",
-                new
-                {
-                    bookingCode = (bookingCode ?? string.Empty).Trim().ToUpperInvariant(),
-                    phoneNumber = (phoneNumber ?? string.Empty).Trim(),
-                    newDate = newDate.ToString("yyyy-MM-dd"),
-                    newShift = (newShift ?? string.Empty).Trim(),
-                    reason
-                },
-                cancellationToken);
-            var json = await response.Content.ReadAsStringAsync(cancellationToken);
-            var message = ExtractApiMessage(json, response.StatusCode);
-            return response.IsSuccessStatusCode
-                ? ApiCallResult<string>.Success(message)
-                : ApiCallResult<string>.Failure(message, (int)response.StatusCode);
-        }
-        catch (HttpRequestException)
-        {
-            return ApiCallResult<string>.Failure("Không thể kết nối Backend API. Hãy kiểm tra API đã chạy hay chưa.");
-        }
-        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            return ApiCallResult<string>.Failure("Backend API phản hồi quá lâu.");
-        }
-    }
-
-    // UC10: POST /api/v1/ai-chat/send (AllowAnonymous) — proxy FE -> BE -> AI_Service RAG.
+    // UC10: POST /api/v1/ai-chat/send (AllowAnonymous) â€” proxy FE -> BE -> AI_Service RAG.
     public async Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.AiChat.AiChatReplyViewModel>> SendAiChatAsync(
         HeThongDatTiecCuoi_WEB.Models.AiChat.AiChatSendViewModel request,
         CancellationToken cancellationToken = default)
@@ -2088,4 +2740,331 @@ public sealed class RiversideApiClient : IRiversideApiClient
             model.PhoneNumber
         }, accessToken, cancellationToken);
 
+    public async Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>> CreateDepositPaymentAsync(
+        HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentRequestViewModel request,
+        string? accessToken = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Post, "api/v1/payment/create-deposit")
+            {
+                Content = JsonContent.Create(request, options: JsonOptions)
+            };
+            if (!string.IsNullOrWhiteSpace(accessToken))
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            using var response = await _httpClient.SendAsync(req, cancellationToken);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>.Failure(
+                    ExtractApiMessage(json, response.StatusCode), (int)response.StatusCode);
+            }
+
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("data", out var dataEl))
+            {
+                var dto = JsonSerializer.Deserialize<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>(dataEl.GetRawText(), JsonOptions);
+                return dto != null
+                    ? ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>.Success(dto)
+                    : ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>.Failure("Không thể đọc dữ liệu phản hồi thanh toán.");
+            }
+
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>.Failure("Không tìm thấy dữ liệu thanh toán trong phản hồi.");
+        }
+        catch (HttpRequestException)
+        {
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>.Failure("Không thể kết nối đến máy chủ thanh toán.");
+        }
+        catch (Exception ex)
+        {
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>.Failure($"Lỗi khởi tạo thanh toán: {ex.Message}");
+        }
+    }
+
+        public async Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>> CreateCustomerContractPaymentAsync(
+        HeThongDatTiecCuoi_WEB.Models.Payment.CreateCustomerContractPaymentRequestViewModel request,
+        string? accessToken = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Post, "api/v1/payment/create-contract-payment")
+            {
+                Content = JsonContent.Create(request, options: JsonOptions)
+            };
+            if (!string.IsNullOrWhiteSpace(accessToken))
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            using var response = await _httpClient.SendAsync(req, cancellationToken);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>.Failure(
+                    ExtractApiMessage(json, response.StatusCode), (int)response.StatusCode);
+            }
+
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("data", out var dataEl))
+            {
+                var dto = JsonSerializer.Deserialize<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>(dataEl.GetRawText(), JsonOptions);
+                return dto != null
+                    ? ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>.Success(dto)
+                    : ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>.Failure("Không thể đọc dữ liệu phản hồi thanh toán.");
+            }
+
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>.Failure("Không tìm thấy dữ liệu thanh toán trong phản hồi.");
+        }
+        catch (HttpRequestException)
+        {
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>.Failure("Không thể kết nối đến máy chủ thanh toán.");
+        }
+        catch (Exception ex)
+        {
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>.Failure($"Lỗi khởi tạo thanh toán: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>> CheckPaymentStatusAsync(
+        long orderCode,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var response = await _httpClient.GetAsync($"api/v1/payment/check-status/{orderCode}", cancellationToken);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>.Failure(
+                    ExtractApiMessage(json, response.StatusCode), (int)response.StatusCode);
+            }
+
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("data", out var dataEl))
+            {
+                var dto = JsonSerializer.Deserialize<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>(dataEl.GetRawText(), JsonOptions);
+                return dto != null
+                    ? ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>.Success(dto)
+                    : ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>.Failure("Không thể đọc dữ liệu trạng thái.");
+            }
+
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>.Failure("Không tìm thấy dữ liệu trạng thái.");
+        }
+        catch (HttpRequestException)
+        {
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>.Failure("Không thể kết nối kiểm tra thanh toán.");
+        }
+        catch (Exception ex)
+        {
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>.Failure($"Lỗi kiểm tra trạng thái: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment.PdfDownloadViewModel>> DownloadInvoicePdfAsync(
+        string bookingCode,
+        string phoneNumber,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var url = $"api/v1/payment/invoice/{Uri.EscapeDataString(bookingCode)}?phone={Uri.EscapeDataString(phoneNumber)}";
+            using var response = await _httpClient.GetAsync(url, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment.PdfDownloadViewModel>.Failure(
+                    ExtractApiMessage(errorJson, response.StatusCode), (int)response.StatusCode);
+            }
+
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+                ?? response.Content.Headers.ContentDisposition?.FileName
+                ?? $"HoaDonDienTu_{bookingCode}.pdf";
+            fileName = fileName.Trim('"');
+
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment.PdfDownloadViewModel>.Success(
+                new HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment.PdfDownloadViewModel(
+                    bytes,
+                    fileName,
+                    "application/pdf"));
+        }
+        catch (HttpRequestException)
+        {
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment.PdfDownloadViewModel>.Failure("Không thể kết nối Backend API. Hãy kiểm tra API đã chạy hay chưa.");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment.PdfDownloadViewModel>.Failure("Backend API phản hồi quá lâu.");
+        }
+        catch (Exception ex)
+        {
+            return ApiCallResult<HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment.PdfDownloadViewModel>.Failure($"Lỗi tải hóa đơn điện tử: {ex.Message}");
+        }
+    }
+
+    public Task<ApiCallResult<ScheduleChangeEligibilityViewModel>> GetScheduleChangeEligibilityAsync(
+        string bookingCode, string phoneNumber, CancellationToken cancellationToken) =>
+        SendEnvelopeAsync<ScheduleChangeEligibilityViewModel>(HttpMethod.Post, "api/v1/public/schedule-changes/eligibility",
+            new { bookingCode, phoneNumber }, null, cancellationToken);
+
+    public Task<ApiCallResult<List<ScheduleChangeAvailabilityViewModel>>> GetScheduleChangeAvailabilityAsync(
+        string bookingCode, string phoneNumber, DateTime date, string shift, CancellationToken cancellationToken) =>
+        SendEnvelopeAsync<List<ScheduleChangeAvailabilityViewModel>>(HttpMethod.Post, "api/v1/public/schedule-changes/availability",
+            new { bookingCode, phoneNumber, date, shift }, null, cancellationToken);
+
+    public async Task<ApiCallResult<string>> SendScheduleChangeOtpAsync(string bookingCode, string phoneNumber,
+        string purpose, int? scheduleChangeId, CancellationToken cancellationToken)
+    {
+        var result = await SendEnvelopeAsync<JsonElement>(HttpMethod.Post, "api/v1/public/schedule-changes/otp/send",
+            new { bookingCode, phoneNumber, purpose, scheduleChangeId }, null, cancellationToken);
+        return result.Succeeded
+            ? ApiCallResult<string>.Success("Mã OTP đã được gửi qua SMS.")
+            : ApiCallResult<string>.Failure(result.Error ?? "Không thể gửi OTP.", result.StatusCode);
+    }
+
+    public Task<ApiCallResult<OtpVerificationViewModel>> VerifyScheduleChangeOtpAsync(string bookingCode,
+        string phoneNumber, string purpose, int? scheduleChangeId, string code, CancellationToken cancellationToken) =>
+        SendEnvelopeAsync<OtpVerificationViewModel>(HttpMethod.Post, "api/v1/public/schedule-changes/otp/verify",
+            new { bookingCode, phoneNumber, purpose, scheduleChangeId, code }, null, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangeViewModel>> CreateScheduleChangeAsync(CreateScheduleChangeInput input,
+        CancellationToken cancellationToken) => SendEnvelopeAsync<ScheduleChangeViewModel>(HttpMethod.Post,
+        "api/v1/public/schedule-changes", input, null, cancellationToken);
+
+    public Task<ApiCallResult<List<ScheduleChangeViewModel>>> LookupScheduleChangesAsync(string bookingCode,
+        string phoneNumber, CancellationToken cancellationToken) => SendEnvelopeAsync<List<ScheduleChangeViewModel>>(
+        HttpMethod.Post, "api/v1/public/schedule-changes/lookup", new { bookingCode, phoneNumber }, null, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangeViewModel>> GetPublicScheduleChangeAsync(int id, string bookingCode,
+        string phoneNumber, CancellationToken cancellationToken) => SendEnvelopeAsync<ScheduleChangeViewModel>(
+        HttpMethod.Post, $"api/v1/public/schedule-changes/{id}/detail", new { bookingCode, phoneNumber }, null, cancellationToken);
+
+    public Task<ApiCallResult<QuoteAcceptanceResultViewModel>> AcceptScheduleChangeQuoteAsync(int id,
+        string bookingCode, string phoneNumber, int quoteId, string verificationToken, CancellationToken cancellationToken) =>
+        SendEnvelopeAsync<QuoteAcceptanceResultViewModel>(HttpMethod.Post,
+            $"api/v1/public/schedule-changes/{id}/quote/accept",
+            new { bookingCode, phoneNumber, quoteId, verificationToken }, null, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangeViewModel>> WithdrawScheduleChangeAsync(int id, string bookingCode,
+        string phoneNumber, string reason, CancellationToken cancellationToken) =>
+        SendEnvelopeAsync<ScheduleChangeViewModel>(HttpMethod.Post,
+            $"api/v1/public/schedule-changes/{id}/withdraw", new { bookingCode, phoneNumber, reason }, null, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangePaymentViewModel>> GetScheduleChangePaymentStatusAsync(int id,
+        string bookingCode, string phoneNumber, CancellationToken cancellationToken) =>
+        SendEnvelopeAsync<ScheduleChangePaymentViewModel>(HttpMethod.Post,
+            $"api/v1/public/schedule-changes/{id}/payment/status", new { bookingCode, phoneNumber }, null, cancellationToken);
+
+    public Task<ApiCallResult<HallManagerScheduleChangeOptionsViewModel>> GetHallManagerScheduleChangeOptionsAsync(string accessToken,
+        CancellationToken cancellationToken) => SendEnvelopeAsync<HallManagerScheduleChangeOptionsViewModel>(HttpMethod.Get,
+        "api/hall-manager/schedule-changes/create-options", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<List<ScheduleChangeAvailabilityViewModel>>> GetHallManagerScheduleChangeAvailabilityAsync(string accessToken,
+        int bookingId, DateTime date, string shift, CancellationToken cancellationToken) => SendEnvelopeAsync<List<ScheduleChangeAvailabilityViewModel>>(HttpMethod.Get,
+        $"api/hall-manager/schedule-changes/availability?bookingId={bookingId}&date={date:yyyy-MM-dd}&shift={Uri.EscapeDataString(shift)}", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<List<ScheduleChangeViewModel>>> GetHallManagerScheduleChangesAsync(string accessToken,
+        string? status, CancellationToken cancellationToken) => SendEnvelopeAsync<List<ScheduleChangeViewModel>>(
+        HttpMethod.Get, $"api/hall-manager/schedule-changes{StatusQuery(status)}", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangeViewModel>> GetHallManagerScheduleChangeAsync(string accessToken, int id,
+        CancellationToken cancellationToken) => SendEnvelopeAsync<ScheduleChangeViewModel>(HttpMethod.Get,
+        $"api/hall-manager/schedule-changes/{id}", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangeViewModel>> CreateHallManagerScheduleChangeAsync(string accessToken,
+        HallManagerCreateScheduleChangeInput input, CancellationToken cancellationToken) =>
+        SendEnvelopeAsync<ScheduleChangeViewModel>(HttpMethod.Post, "api/hall-manager/schedule-changes", input,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangeViewModel>> ReviewScheduleChangeAsync(string accessToken, int id,
+        string reviewResult, CancellationToken cancellationToken) => SendEnvelopeAsync<ScheduleChangeViewModel>(
+        HttpMethod.Post, $"api/hall-manager/schedule-changes/{id}/review", new { reviewResult }, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<List<ScheduleChangeViewModel>>> GetManagerScheduleChangesAsync(string accessToken,
+        string? status, CancellationToken cancellationToken) => SendEnvelopeAsync<List<ScheduleChangeViewModel>>(
+        HttpMethod.Get, $"api/manager/schedule-changes{StatusQuery(status)}", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangeViewModel>> GetManagerScheduleChangeAsync(string accessToken, int id,
+        CancellationToken cancellationToken) => SendEnvelopeAsync<ScheduleChangeViewModel>(HttpMethod.Get,
+        $"api/manager/schedule-changes/{id}", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangeViewModel>> QuoteScheduleChangeAsync(string accessToken, int id,
+        string? note, CancellationToken cancellationToken) => SendEnvelopeAsync<ScheduleChangeViewModel>(HttpMethod.Post,
+        $"api/manager/schedule-changes/{id}/quote", new { note }, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangeViewModel>> RejectScheduleChangeAsync(string accessToken, int id,
+        string reason, CancellationToken cancellationToken) => SendEnvelopeAsync<ScheduleChangeViewModel>(HttpMethod.Post,
+        $"api/manager/schedule-changes/{id}/reject", new { reason }, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangeViewModel>> ReconcileScheduleChangeAsync(string accessToken, int id,
+        string action, string evidence, CancellationToken cancellationToken) => SendEnvelopeAsync<ScheduleChangeViewModel>(
+        HttpMethod.Post, $"api/manager/schedule-changes/{id}/reconcile", new { action, evidence }, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangeFinancialViewModel>> GetScheduleChangeFinancialsAsync(string accessToken,
+        int id, CancellationToken cancellationToken) => SendEnvelopeAsync<ScheduleChangeFinancialViewModel>(HttpMethod.Get,
+        $"api/manager/schedule-changes/{id}/financials", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangeFinancialViewModel>> ConfirmScheduleChangeRefundAsync(string accessToken,
+        int id, int refundId, string evidence, CancellationToken cancellationToken) =>
+        SendEnvelopeAsync<ScheduleChangeFinancialViewModel>(HttpMethod.Post,
+            $"api/manager/schedule-changes/{id}/refunds/{refundId}/confirm", new { evidence }, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangePolicyViewModel>> GetActiveScheduleChangePolicyAsync(string accessToken,
+        CancellationToken cancellationToken) => SendEnvelopeAsync<ScheduleChangePolicyViewModel>(HttpMethod.Get,
+        "api/admin/schedule-change-policy/active", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<List<ScheduleChangePolicyViewModel>>> GetScheduleChangePolicyHistoryAsync(string accessToken,
+        CancellationToken cancellationToken) => SendEnvelopeAsync<List<ScheduleChangePolicyViewModel>>(HttpMethod.Get,
+        "api/admin/schedule-change-policy/history", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ScheduleChangePolicyViewModel>> CreateScheduleChangePolicyVersionAsync(string accessToken,
+        ScheduleChangePolicyVersionInput input, CancellationToken cancellationToken) =>
+        SendEnvelopeAsync<ScheduleChangePolicyViewModel>(HttpMethod.Post, "api/admin/schedule-change-policy/versions",
+            input, accessToken, cancellationToken);
+
+    private static string StatusQuery(string? status) => string.IsNullOrWhiteSpace(status)
+        ? string.Empty : $"?status={Uri.EscapeDataString(status.Trim())}";
+
+    private async Task<ApiCallResult<T>> SendEnvelopeAsync<T>(HttpMethod method, string uri, object? body,
+        string? accessToken, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(method, uri);
+            if (body is not null) request.Content = JsonContent.Create(body);
+            if (!string.IsNullOrWhiteSpace(accessToken))
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                var envelope = JsonSerializer.Deserialize<ScheduleChangeEnvelope<T>>(json, JsonOptions);
+                return envelope is not null
+                    ? ApiCallResult<T>.Success(envelope.Data)
+                    : ApiCallResult<T>.Failure("API trả về dữ liệu rỗng.", (int)response.StatusCode);
+            }
+            var error = string.IsNullOrWhiteSpace(json) ? null : JsonSerializer.Deserialize<ApiErrorDto>(json, JsonOptions);
+            return ApiCallResult<T>.Failure(error?.Message ?? $"Yêu cầu không thành công ({(int)response.StatusCode}).",
+                (int)response.StatusCode);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiCallResult<T>.Failure("Không thể kết nối Backend API. Hãy kiểm tra API đã chạy hay chưa.");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return ApiCallResult<T>.Failure("Backend API phản hồi quá lâu.");
+        }
+        catch (JsonException)
+        {
+            return ApiCallResult<T>.Failure("Phản hồi từ Backend không đúng định dạng mong đợi.");
+        }
+    }
+
+    private sealed class ScheduleChangeEnvelope<T>
+    {
+        public bool Success { get; set; }
+        public T Data { get; set; } = default!;
+    }
 }

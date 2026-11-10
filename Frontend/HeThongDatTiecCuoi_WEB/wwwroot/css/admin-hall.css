@@ -276,12 +276,22 @@ select {
 
     .filter-item input,
     .filter-item select {
-        border: none;
-        outline: none;
-        background: transparent;
+        border: 0 !important;
+        border-radius: 0 !important;
+        outline: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        min-height: 0 !important;
         font-size: 12px;
         font-weight: 600;
         color: #1e293b;
+    }
+
+    .filter-item input:focus,
+    .filter-item select:focus {
+        border: 0 !important;
+        box-shadow: none !important;
     }
 
 .btn-filter,
@@ -953,6 +963,66 @@ select {
     resize: vertical;
 }
 
+.image-url-upload {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid #dbe1e7;
+    border-radius: 8px;
+    background: #fff;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+.image-url-upload:focus-within {
+    border-color: #d4af37;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, .1);
+}
+
+.form-group .image-url-upload > input[type="text"] {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.form-group .image-url-upload > input[type="text"]:focus {
+    border: 0;
+    box-shadow: none;
+}
+
+.image-upload-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0 16px;
+    border-left: 1px solid #dbe1e7;
+    background: #263442;
+    color: #fff !important;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.image-upload-button:hover {
+    background: #1d2a36;
+}
+
+.form-group .image-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .form-error {
     min-height: 18px;
     margin-top: 13px;
@@ -1335,4 +1405,13 @@ select {
     .sidebar.collapsed .sidebar-toggle {
         right: -44px;
     }
+}
+.hall-card-image {
+    width: 100%;
+    height: 150px;
+    margin: 12px 0;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f1f5f9;
 }

@@ -1,17 +1,17 @@
 /* Typography riêng của khu vực nội dung quản trị; sidebar giữ nguyên stylesheet của nó. */
 #adminMainContent {
-    font-family: "Be Vietnam Pro", sans-serif;
+    font-family: "Plus Jakarta Sans", sans-serif;
     color: #1e242b;
 }
 
 #adminMainContent :is(p, span, strong, small, label, td, th, button, input, select,
     textarea, a, li) {
-    font-family: "Be Vietnam Pro", sans-serif !important;
+    font-family: "Plus Jakarta Sans", sans-serif !important;
 }
 
 #adminMainContent :is(h1, h2, h3, h4, h5, h6),
 #adminMainContent :is(.font-serif) {
-    font-family: "Be Vietnam Pro", sans-serif !important;
+    font-family: "Plus Jakarta Sans", sans-serif !important;
 }
 
 /* Topbar dùng chung cho Back Office; sidebar không chịu ảnh hưởng bởi các selector này. */
@@ -35,11 +35,11 @@
 .topbar-search { width: min(420px, 34vw); height: 44px; position: relative; display: flex; align-items: center; gap: 11px; box-sizing: border-box; padding: 0 14px; border: 1px solid transparent; border-radius: 12px; color: #142033; background: #f5f6f7; }
 .topbar-search:focus-within { border-color: #e5d3b0; background: #fff; box-shadow: 0 0 0 3px rgba(183, 138, 59, .1); }
 .topbar-search i { color: #142033; font-size: 17px; }
-.topbar-search input { width: 100%; min-width: 0; border: 0; outline: 0; color: #142033; background: transparent; font: 400 14px/1.25 "Be Vietnam Pro", sans-serif; }
+.topbar-search input { width: 100%; min-width: 0; border: 0; outline: 0; color: #142033; background: transparent; font: 400 14px/1.25 "Plus Jakarta Sans", sans-serif; }
 .topbar-search input::placeholder { color: #8290a3; opacity: 1; }
 .topbar-search-results { position: absolute; top: calc(100% + 8px); left: 0; z-index: 50; width: 100%; max-height: 280px; display: none; overflow-y: auto; padding: 6px; box-sizing: border-box; border: 1px solid #e9e6df; border-radius: 10px; background: #fff; box-shadow: 0 12px 28px rgba(15, 23, 42, .13); }
 .topbar-search-results.is-open { display: block; }
-.topbar-search-result { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px; border: 0; border-radius: 7px; color: #2b3440; background: transparent; font: 500 13px/1.25 "Be Vietnam Pro", sans-serif; text-align: left; cursor: pointer; }
+.topbar-search-result { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px; border: 0; border-radius: 7px; color: #2b3440; background: transparent; font: 500 13px/1.25 "Plus Jakarta Sans", sans-serif; text-align: left; cursor: pointer; }
 .topbar-search-result:hover, .topbar-search-result:focus-visible { color: #9b722d; background: #fbf7ef; outline: none; }
 .topbar-search-result i { width: 16px; color: #9b722d; text-align: center; }
 .topbar-search-empty { display: block; padding: 11px 10px; color: #728096; font-size: 13px; }
@@ -75,12 +75,9 @@
 .user-dropdown i { width: 16px; color: #697586; text-align: center; }
 .user-dropdown-divider { height: 1px; margin: 6px 2px; background: #ebe8e3; }
 
-/* Page header thống nhất: breadcrumb / tiêu đề / mô tả. */
+/* Page header thống nhất: tiêu đề / mô tả. */
 #adminMainContent .top-header { min-height: 0; box-sizing: border-box; display: flex; align-items: center; gap: 20px; padding: 16px 46px; background: #fbfaf8; border-bottom: 0; box-shadow: none; position: static; }
 #adminMainContent .top-header > :first-child { min-width: 0; }
-#adminMainContent .top-header .breadcrumb { margin: 0 0 5px; color: #637186; font-size: 14px; font-weight: 500; line-height: 1.35; }
-#adminMainContent .top-header .breadcrumb span { padding: 0 8px; color: #a3acb8; }
-#adminMainContent .top-header .breadcrumb strong { color: #a77b28; font-weight: 600; }
 #adminMainContent .top-header h2,
 #adminMainContent .top-header :is(.account-page-subtitle, .page-subtitle) { display: none; }
 
@@ -105,7 +102,7 @@
 #adminMainContent .decor-page-wrapper,
 #adminMainContent .policy-page,
 #adminMainContent .bi-page-wrapper {
-    font-family: "Be Vietnam Pro", sans-serif !important;
+    font-family: "Plus Jakarta Sans", sans-serif !important;
 }
 
 /* Dashboard và bổ nhiệm dành cho role Quản lý, kế thừa primitive của Quản lý Sảnh & Lịch. */
@@ -148,9 +145,6 @@
 /* Tổng quan Quản lý: dữ liệu vận hành thời gian thực, tách biệt với màn hình Báo cáo/BI. */
 .manager-overview-page { min-height: calc(100vh - 70px); box-sizing: border-box; padding: 0 30px 38px; background: #f8f7f4; }
 .manager-page-header { display: flex; align-items: end; justify-content: space-between; gap: 22px; padding: 23px 0 18px; }
-.manager-page-header .breadcrumb { margin: 0 0 7px; color: #637186; font-size: 14px; font-weight: 500; }
-.manager-page-header .breadcrumb span { padding: 0 8px; color: #a3acb8; }
-.manager-page-header .breadcrumb strong { color: #a77b28; font-weight: 600; }
 .manager-page-header h1 { margin: 0; color: #142033; font-size: 26px; font-weight: 700; line-height: 1.2; }
 .manager-page-header p { margin: 5px 0 0; color: #728096; font-size: 14px; }
 .manager-page-header-actions { display: flex; align-items: flex-end; flex-direction: column; gap: 9px; }
@@ -166,29 +160,11 @@
     justify-content: space-between;
     gap: 22px;
 }
-.manager-section-header .breadcrumb,
-.manager-section-header nav[aria-label="Breadcrumb"] {
-    margin: 0 0 7px !important;
-    color: #637186 !important;
-    font-family: "Be Vietnam Pro", sans-serif !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    line-height: 1.45 !important;
-}
-.manager-section-header .breadcrumb span,
-.manager-section-header nav[aria-label="Breadcrumb"] i {
-    color: #a3acb8 !important;
-}
-.manager-section-header .breadcrumb strong,
-.manager-section-header nav[aria-label="Breadcrumb"] > :last-child {
-    color: #a77b28 !important;
-    font-weight: 600 !important;
-}
 .manager-section-header h1,
 .manager-section-header h2 {
     margin: 0 !important;
     color: #142033 !important;
-    font-family: "Be Vietnam Pro", sans-serif !important;
+    font-family: "Plus Jakarta Sans", sans-serif !important;
     font-size: 26px !important;
     font-weight: 700 !important;
     line-height: 1.2 !important;
@@ -202,7 +178,7 @@
 .manager-section-header p {
     margin: 5px 0 0 !important;
     color: #728096 !important;
-    font-family: "Be Vietnam Pro", sans-serif !important;
+    font-family: "Plus Jakarta Sans", sans-serif !important;
     font-size: 14px !important;
     font-weight: 400 !important;
     line-height: 1.5 !important;
@@ -302,6 +278,47 @@
 }
 
 /* Khu vực vận hành của Quản lý sảnh: chỉ xem và điều phối trong phạm vi được giao. */
+/* Nút xuất Excel dùng chung trên các màn hình quản trị. */
+html body #adminMainContent :is(button, a).excel-export-button {
+    min-height: 42px !important;
+    box-sizing: border-box;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 9px !important;
+    padding: 0 16px !important;
+    border: 1px solid #21a366 !important;
+    border-radius: 8px !important;
+    color: #fff !important;
+    background: #21a366 !important;
+    box-shadow: 0 6px 16px rgba(33, 163, 102, .2) !important;
+    font-size: 12px !important;
+    font-weight: 650 !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: background-color .18s, border-color .18s, box-shadow .18s !important;
+}
+html body #adminMainContent :is(button, a).excel-export-button :is(i, span) {
+    color: #fff !important;
+}
+html body #adminMainContent :is(button, a).excel-export-button:hover {
+    border-color: #18864f !important;
+    color: #fff !important;
+    background: #18864f !important;
+    box-shadow: 0 8px 18px rgba(33, 163, 102, .28) !important;
+    filter: none !important;
+    transform: none !important;
+}
+html body #adminMainContent :is(button, a).excel-export-button:focus-visible {
+    outline: 3px solid rgba(33, 163, 102, .28) !important;
+    outline-offset: 2px;
+}
+html body #adminMainContent :is(button, a).excel-export-button:disabled {
+    cursor: not-allowed !important;
+    opacity: .62;
+}
+
 .hall-schedule-table-wrap { overflow-x: auto; background: #fff; border: 1px solid #e2e5e9; border-radius: 12px; box-shadow: 0 3px 14px rgba(0, 0, 0, .04); }
 .hall-schedule-table { width: 100%; min-width: 620px; border-collapse: collapse; }
 .hall-schedule-table th { padding: 13px 16px; background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 700; text-align: left; white-space: nowrap; }

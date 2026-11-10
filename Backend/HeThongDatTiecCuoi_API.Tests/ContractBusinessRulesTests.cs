@@ -46,14 +46,9 @@ public sealed class ContractBusinessRulesTests
         Assert.Equal(expected, ContractBusinessRules.IsAwaitingPayment(status, total, paid));
 
     [Fact]
-    public void Activate_WithoutVerifiedDeposit_IsRejected() =>
-        Assert.NotNull(ContractBusinessRules.ValidateActivation(
-            ContractStatusCodes.Draft, 100m, "Nội dung", "Điều khoản", BookingStatusCodes.Confirmed));
-
-    [Fact]
     public void Activate_ValidDraft_IsAccepted() =>
         Assert.Null(ContractBusinessRules.ValidateActivation(
-            ContractStatusCodes.Draft, 100m, "Nội dung", "Điều khoản", BookingStatusCodes.Confirmed, 30m, 30m));
+            ContractStatusCodes.Draft, 100m, "Nội dung", "Điều khoản", BookingStatusCodes.Confirmed));
 
     [Theory]
     [InlineData(0, "Nội dung", "Điều khoản", BookingStatusCodes.Confirmed)]
@@ -65,62 +60,11 @@ public sealed class ContractBusinessRulesTests
             ContractStatusCodes.Draft, total, content, terms, bookingStatus));
 
     [Theory]
-    [InlineData(100, 100, BookingStatusCodes.Completed, 0, null)]
-    [InlineData(100, 100, BookingStatusCodes.Preparing, -1, null)]
-    [InlineData(100, 80, BookingStatusCodes.Completed, -1, "Hợp đồng chưa được thanh toán đủ.")]
-    [InlineData(100, 120, BookingStatusCodes.Completed, -1, "Tổng thanh toán vượt giá trị hợp đồng. Vui lòng kiểm tra dữ liệu.")]
-    [InlineData(100, 100, BookingStatusCodes.Preparing, 0, "Sự kiện chưa diễn ra nên chưa thể hoàn tất hợp đồng.")]
-    [InlineData(100, 100, BookingStatusCodes.Cancelled, -1, "Booking đã hủy nên sự kiện không được xác nhận hoàn tất.")]
-    public void Complete_RequiresSettlementAndEventDone(
-        decimal total, decimal paid, string bookingStatus, int eventDayOffset, string? expected)
-    {
-        var today = new DateTime(2026, 10, 27);
-        Assert.Equal(expected, ContractBusinessRules.ValidateCompletion(
-            ContractStatusCodes.Active, total, paid, bookingStatus, today.AddDays(eventDayOffset), today));
-    }
-
-    [Fact]
-    public void ContractTemplate_IncludesBookingTimePriceSnapshot()
-    {
-        var provider = new ContractTemplateProvider(new PaymentPolicyProvider());
-        var data = new ContractTemplateData(
-            "DT-20261027-TEST", "Nguyễn Văn A", new DateTime(2026, 12, 20), "Ca tối", "Sảnh Seine",
-            300, "Thực đơn Riverside", "Thanh lịch", ["Âm thanh"],
-            HallPrice: 40_000_000m,
-            MenuPricePerTable: 3_500_000m,
-            DecorationPrice: 15_000_000m,
-            ServiceLines: [new ContractTemplateServiceLine("Âm thanh", 2, 1_000_000m)],
-            EstimatedTotal: 162_000_000m,
-            ContractTotalValue: 162_000_000m);
-
-        var content = provider.BuildContractContent(data);
-
-        Assert.Contains("Thuê sảnh Sảnh Seine: 40.000.000 đ", content);
-        Assert.Contains("Thực đơn Riverside (30 bàn x 3.500.000 đ): 105.000.000 đ", content);
-        Assert.Contains("Gói trang trí Thanh lịch: 15.000.000 đ", content);
-        Assert.Contains("Dịch vụ Âm thanh (2 x 1.000.000 đ): 2.000.000 đ", content);
-        Assert.Contains("Tổng giá trị hợp đồng: 162.000.000 đ", content);
-        Assert.DoesNotContain("Điều chỉnh giá trị hợp đồng", content);
-    }
-
-    [Fact]
-    public void ContractTemplate_AdjustsBreakdownToAgreedTotal()
-    {
-        var provider = new ContractTemplateProvider(new PaymentPolicyProvider());
-        var data = new ContractTemplateData(
-            "DT-20261027-TEST", "Nguyễn Văn A", new DateTime(2026, 12, 20), "Ca tối", "Sảnh Seine",
-            300, "Thực đơn Riverside", null, [],
-            HallPrice: 40_000_000m,
-            MenuPricePerTable: 3_500_000m,
-            EstimatedTotal: 145_000_000m,
-            ContractTotalValue: 140_000_000m);
-
-        var content = provider.BuildContractContent(data);
-
-        Assert.Contains("Thực đơn Riverside (30 bàn x 3.500.000 đ): 105.000.000 đ", content);
-        Assert.Contains("Điều chỉnh giá trị hợp đồng: -5.000.000 đ", content);
-        Assert.Contains("Tổng giá trị hợp đồng: 140.000.000 đ", content);
-    }
+    [InlineData(100, 100, null)]
+    [InlineData(100, 80, "Hợp đồng chưa được thanh toán đủ.")]
+    [InlineData(100, 120, "Tổng thanh toán vượt giá trị hợp đồng. Vui lòng kiểm tra dữ liệu.")]
+    public void Complete_RequiresExactSuccessfulPayment(decimal total, decimal paid, string? expected) =>
+        Assert.Equal(expected, ContractBusinessRules.ValidateCompletion(ContractStatusCodes.Active, total, paid));
 
     [Theory]
     [InlineData(ContractStatusCodes.Draft, true)]
@@ -141,12 +85,13 @@ public sealed class ContractBusinessRulesTests
     }
 
     [Fact]
-    public void PaymentController_ExposesNoUpdateOrDeleteActions()
+    public void PaymentController_ExposesOnlyAuthorizedWriteActions()
     {
         var methods = typeof(ManagerPaymentController).GetMethods()
-            .Where(method => method.DeclaringType == typeof(ManagerPaymentController));
-        Assert.DoesNotContain(methods, method => method.GetCustomAttributes(true).Any(attribute =>
-            attribute.GetType().Name is "HttpPutAttribute" or "HttpPatchAttribute" or "HttpDeleteAttribute"));
+            .Where(method => method.DeclaringType == typeof(ManagerPaymentController) &&
+                             method.GetCustomAttributes(true).Any(attribute =>
+                                 attribute.GetType().Name is "HttpPostAttribute" or "HttpPutAttribute" or "HttpPatchAttribute" or "HttpDeleteAttribute"));
+        Assert.All(methods, m => Assert.Contains(m.Name, new[] { "RecordCashPayment", "CreatePayOsLink" }));
     }
 
     [Fact]

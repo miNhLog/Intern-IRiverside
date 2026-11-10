@@ -1,16 +1,15 @@
+﻿using System.Security.Claims;
+using System.Text.Json;
 using HeThongDatTiecCuoi_API.Constants;
 using HeThongDatTiecCuoi_API.Constants.StatusCodes;
 using HeThongDatTiecCuoi_API.Data;
 using HeThongDatTiecCuoi_API.DTOs.Contract;
+using HeThongDatTiecCuoi_API.DTOs.Payment;
 using HeThongDatTiecCuoi_API.Models;
+using HeThongDatTiecCuoi_API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Data;
-using System.Security.Claims;
-using System.Text.Json;
-using HeThongDatTiecCuoi_API.Services;
-using Microsoft.Data.SqlClient;
 
 namespace HeThongDatTiecCuoi_API.Controllers;
 
@@ -21,90 +20,20 @@ public sealed class ManagerPaymentController : ControllerBase
 {
     private const int PageSize = 10;
     private readonly ApplicationDbContext _context;
-    public ManagerPaymentController(ApplicationDbContext context) => _context = context;
+    private readonly IStatusService _statusService;
+    private readonly IPaymentService _paymentService;
+    private readonly ILogger<ManagerPaymentController> _logger;
 
-    [HttpPost]
-    public async Task<IActionResult> RecordPayment([FromBody] RecordPaymentRequestDto request, CancellationToken cancellationToken)
+    public ManagerPaymentController(
+        ApplicationDbContext context,
+        IStatusService statusService,
+        IPaymentService paymentService,
+        ILogger<ManagerPaymentController> logger)
     {
-        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actor)) return Unauthorized();
-        if (request.RequestId == Guid.Empty || !PaymentBusinessRules.IsMoney(request.Amount) ||
-            string.IsNullOrWhiteSpace(request.PaymentMethod) || request.PaymentMethod.Length > 50 ||
-            request.TransactionCode?.Length > 100)
-            return BadRequest(new { message = "Số tiền, phương thức hoặc mã yêu cầu không hợp lệ." });
-        var method = request.PaymentMethod.Trim();
-        var reference = string.IsNullOrWhiteSpace(request.TransactionCode) ? null : request.TransactionCode.Trim();
-        try
-        {
-            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-            // Serialize the aggregate before reading its balance, including contracts with no payments yet.
-            var contract = await _context.Contracts.FromSqlInterpolated(
-                    $"SELECT * FROM [HopDong] WITH (UPDLOCK, HOLDLOCK) WHERE [HopDongID] = {request.ContractId}")
-                .Include(c => c.Status).Include(c => c.Booking).ThenInclude(b => b.Status)
-                .SingleOrDefaultAsync(cancellationToken);
-            if (contract is null) return NotFound(new { message = "Không tìm thấy hợp đồng." });
-            var previous = await _context.Payments.AsNoTracking()
-                .SingleOrDefaultAsync(p => p.RequestId == request.RequestId, cancellationToken);
-            if (previous is not null)
-            {
-                if (previous.ContractId != request.ContractId || previous.Amount != request.Amount ||
-                    previous.PaymentType != request.PaymentType || previous.PaymentMethod != method || previous.TransactionCode != reference)
-                    return Conflict(new { message = "Mã yêu cầu đã được dùng với dữ liệu khác." });
-                return Ok(new PaymentActionResponseDto { PaymentId = previous.PaymentId, Replayed = true, Message = "Khoản thu đã được ghi nhận trước đó." });
-            }
-            if (contract.Status.StatusGroup != StatusGroups.Contract || contract.Booking.Status.StatusGroup != StatusGroups.Booking)
-                return Conflict(new { message = "Trạng thái hợp đồng hoặc booking sai nhóm nghiệp vụ." });
-            var successful = await _context.Payments.AsNoTracking()
-                .Where(p => p.ContractId == contract.ContractId && p.Status.StatusGroup == StatusGroups.Payment &&
-                    p.Status.StatusCode == PaymentStatusCodes.Success)
-                .Select(p => new { p.Amount, p.PaymentType }).ToListAsync(cancellationToken);
-            var paid = successful.Sum(p => p.Amount);
-            var error = PaymentBusinessRules.Validate(contract.Status.StatusCode, contract.Booking.Status.StatusCode,
-                contract.TotalValue, contract.RequiredDepositAmount, paid, request.PaymentType, request.Amount);
-            if (error is not null) return Conflict(new { message = error });
-            var deposits = successful.Where(p => p.PaymentType == PaymentTypes.Deposit).Sum(p => p.Amount) +
-                (request.PaymentType == PaymentTypes.Deposit ? request.Amount : 0m);
-            var activate = contract.Status.StatusCode == ContractStatusCodes.Draft && deposits >= contract.RequiredDepositAmount!.Value;
-            if (activate)
-            {
-                error = ContractBusinessRules.ValidateActivation(contract.Status.StatusCode, contract.TotalValue,
-                    contract.ContractContent, contract.PaymentTerms, contract.Booking.Status.StatusCode, contract.RequiredDepositAmount, deposits);
-                if (error is not null) return Conflict(new { message = error });
-                contract.StatusId = await _context.Statuses.Where(s => s.StatusGroup == StatusGroups.Contract && s.StatusCode == ContractStatusCodes.Active)
-                    .Select(s => s.StatusId).SingleAsync(cancellationToken);
-            }
-            var payment = new Payment
-            {
-                ContractId = contract.ContractId, RequestId = request.RequestId, Amount = request.Amount,
-                PaymentType = request.PaymentType, PaymentMethod = method, TransactionCode = reference, PaymentDate = DateTime.Now,
-                StatusId = await _context.Statuses.Where(s => s.StatusGroup == StatusGroups.Payment && s.StatusCode == PaymentStatusCodes.Success)
-                    .Select(s => s.StatusId).SingleAsync(cancellationToken)
-            };
-            _context.Payments.Add(payment);
-            await _context.SaveChangesAsync(cancellationToken);
-            _context.AuditLogs.Add(new AuditLog
-            {
-                UserId = actor, Action = AuditActions.PaymentRecorded, EntityName = AuditEntityNames.Payment, EntityId = payment.PaymentId,
-                Timestamp = DateTime.Now, OldData = JsonSerializer.Serialize(new { PaidAmount = paid, RemainingBalance = contract.TotalValue - paid }),
-                NewData = JsonSerializer.Serialize(new { payment.ContractId, payment.RequestId, payment.PaymentType, payment.Amount,
-                    PaidAmount = paid + payment.Amount, RemainingBalance = contract.TotalValue - paid - payment.Amount }),
-                Notes = $"Ghi nhận khoản thu cho hợp đồng {contract.ContractCode}."
-            });
-            if (activate) _context.AuditLogs.Add(new AuditLog
-            {
-                UserId = actor, Action = AuditActions.ContractActivated, EntityName = AuditEntityNames.Contract, EntityId = contract.ContractId,
-                Timestamp = DateTime.Now, OldData = JsonSerializer.Serialize(new { Status = ContractStatusCodes.Draft }),
-                NewData = JsonSerializer.Serialize(new { Status = ContractStatusCodes.Active, SuccessfulDeposits = deposits }),
-                Notes = "Kích hoạt sau khi nhận đủ cọc cam kết."
-            });
-            await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            return Ok(new PaymentActionResponseDto { PaymentId = payment.PaymentId, Message = "Đã ghi nhận thanh toán." });
-        }
-        catch (Exception ex) when (ex is SqlException { Number: 1205 or 1222 } ||
-            ex is DbUpdateException { InnerException: SqlException { Number: 2601 or 2627 or 1205 or 1222 } })
-        {
-            return Conflict(new { message = "Có giao dịch đồng thời. Vui lòng thử lại với cùng mã yêu cầu." });
-        }
+        _context = context;
+        _statusService = statusService;
+        _paymentService = paymentService;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -177,6 +106,168 @@ public sealed class ManagerPaymentController : ControllerBase
             PageSize = PageSize,
             TotalItems = totalItems
         });
+    }
+
+    /// <summary>
+    /// Ghi nhận thanh toán tiền mặt trực tiếp tại quầy (Đợt 2 hoặc Quyết toán).
+    /// </summary>
+    [HttpPost("record-cash")]
+    public async Task<IActionResult> RecordCashPayment(
+        [FromBody] RecordCashPaymentRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (request == null || request.ContractId <= 0 || request.Amount <= 0)
+            return BadRequest(new { success = false, message = "Dữ liệu thanh toán không hợp lệ hoặc số tiền phải lớn hơn 0." });
+
+        var validTypes = new[] { PaymentTypes.Installment, PaymentTypes.Settlement };
+        var normalizedType = validTypes.FirstOrDefault(t => string.Equals(t, request.PaymentType?.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (normalizedType is null)
+            return BadRequest(new { success = false, message = "Loại thanh toán phải là 'Thanh toán đợt' hoặc 'Quyết toán'." });
+
+        var contract = await _context.Contracts
+            .Include(c => c.Status)
+            .Include(c => c.Booking)
+            .Include(c => c.Payments).ThenInclude(p => p.Status)
+            .SingleOrDefaultAsync(c => c.ContractId == request.ContractId, cancellationToken);
+
+        if (contract == null)
+            return NotFound(new { success = false, message = "Không tìm thấy hợp đồng." });
+
+        if (contract.Status.StatusCode != ContractStatusCodes.Active)
+            return Conflict(new { success = false, message = $"Chỉ hợp đồng đang có hiệu lực mới được ghi nhận thanh toán (Trạng thái hiện tại: {contract.Status.StatusName})." });
+
+        // SEC-05: Kiểm tra trần số tiền thanh toán tiền mặt không vượt quá công nợ còn lại
+        var oldPaid = contract.Payments
+            .Where(p => p.Status != null && p.Status.StatusCode == PaymentStatusCodes.Success)
+            .Sum(p => p.Amount);
+        var remainingBalance = Math.Max(0, contract.TotalValue - oldPaid);
+
+        if (remainingBalance <= 0)
+            return BadRequest(new { success = false, message = "Hợp đồng này đã được thanh toán đầy đủ 100%, không còn số dư cần thanh toán." });
+
+        if (request.Amount > remainingBalance)
+            return BadRequest(new { success = false, message = $"Số tiền thanh toán ({request.Amount:N0} đ) vượt quá số dư công nợ còn lại của hợp đồng ({remainingBalance:N0} đ)." });
+
+        if (request.Amount < 2000)
+            return BadRequest(new { success = false, message = "Số tiền thanh toán tối thiểu là 2.000 đ." });
+
+        int? actorId = null;
+        if (int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid))
+            actorId = uid;
+
+        var successStatusId = await _statusService.GetStatusIdAsync(StatusGroups.Payment, PaymentStatusCodes.Success, cancellationToken);
+        var txCode = $"TM-{contract.ContractCode}-{DateTime.Now:yyyyMMddHHmmss}";
+
+        var payment = new Payment
+        {
+            ContractId = contract.ContractId,
+            PaymentType = normalizedType,
+            Amount = request.Amount,
+            PaymentDate = DateTime.Now,
+            PaymentMethod = "CASH",
+            TransactionCode = txCode,
+            StatusId = successStatusId
+        };
+        _context.Payments.Add(payment);
+
+        contract.Booking.PaidAmount = (contract.Booking.PaidAmount) + request.Amount;
+
+        var newPaid = oldPaid + request.Amount;
+
+        _context.AuditLogs.Add(new AuditLog
+        {
+            UserId = actorId,
+            Action = AuditActions.PaymentRecorded,
+            EntityName = AuditEntityNames.Contract,
+            EntityId = contract.ContractId,
+            OldData = JsonSerializer.Serialize(new { contract.ContractCode, PaidAmount = oldPaid }),
+            NewData = JsonSerializer.Serialize(new { contract.ContractCode, PaidAmount = newPaid, PaymentType = normalizedType, Amount = request.Amount, Method = "CASH", Note = request.Note }),
+            Timestamp = DateTime.Now,
+            Outcome = AuditOutcomes.Success,
+            Notes = $"Quản lý ghi nhận thu tiền mặt {request.Amount:N0} đ ({normalizedType}) cho hợp đồng {contract.ContractCode}. Ghi chú: {request.Note ?? "Không có"}"
+        });
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Ok(new
+        {
+            success = true,
+            message = $"Đã ghi nhận thanh toán tiền mặt {request.Amount:N0} đ ({normalizedType}) thành công.",
+            data = new
+            {
+                paymentId = payment.PaymentId,
+                transactionCode = payment.TransactionCode,
+                amount = payment.Amount,
+                paymentType = payment.PaymentType,
+                paymentMethod = payment.PaymentMethod,
+                paymentDate = payment.PaymentDate,
+                totalPaid = newPaid,
+                remainingBalance = Math.Max(0, contract.TotalValue - newPaid)
+            }
+        });
+    }
+
+    /// <summary>
+    /// Tạo liên kết thanh toán VietQR PayOS cho hợp đồng (Đợt 2 hoặc Quyết toán).
+    /// </summary>
+    [HttpPost("create-payos-link")]
+    public async Task<IActionResult> CreatePayOsLink(
+        [FromBody] CreateContractPayOsLinkRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (request == null || request.ContractId <= 0 || request.Amount <= 0)
+            return BadRequest(new { success = false, message = "Dữ liệu tạo link thanh toán không hợp lệ hoặc số tiền phải lớn hơn 0." });
+
+        int? actorId = null;
+        if (int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid))
+            actorId = uid;
+
+        try
+        {
+            var result = await _paymentService.CreateContractPaymentAsync(request, actorId);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi tạo PayOS link cho ContractId={ContractId}. traceId={TraceId}", request.ContractId, HttpContext.TraceIdentifier);
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                success = false,
+                message = "Đã xảy ra lỗi khi tạo liên kết thanh toán PayOS. Vui lòng thử lại sau.",
+                traceId = HttpContext.TraceIdentifier
+            });
+        }
+    }
+
+    /// <summary>
+    /// Kiểm tra trạng thái thanh toán PayOS của hợp đồng phục vụ Polling từ Manager UI.
+    /// </summary>
+    [HttpGet("check-payos/{orderCode:long}")]
+    public async Task<IActionResult> CheckPayOsPayment(long orderCode)
+    {
+        try
+        {
+            var result = await _paymentService.CheckContractPaymentStatusAsync(orderCode);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi kiểm tra trạng thái PayOS OrderCode={OrderCode}. traceId={TraceId}", orderCode, HttpContext.TraceIdentifier);
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                success = false,
+                message = "Đã xảy ra lỗi khi kiểm tra trạng thái thanh toán PayOS.",
+                traceId = HttpContext.TraceIdentifier
+            });
+        }
     }
 
     private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

@@ -15,15 +15,7 @@ public static class AuditDataSanitizer
         try
         {
             using var document = JsonDocument.Parse(json);
-            if (document.RootElement.ValueKind != JsonValueKind.Object) return json;
-            var safe = new Dictionary<string, object?>();
-            foreach (var property in document.RootElement.EnumerateObject())
-            {
-                safe[property.Name] = IsSensitive(property.Name)
-                    ? "[Đã ẩn]"
-                    : ToSafeValue(property.Value);
-            }
-            return JsonSerializer.Serialize(safe);
+            return JsonSerializer.Serialize(ToSafeValue(document.RootElement));
         }
         catch (JsonException)
         {
@@ -44,6 +36,10 @@ public static class AuditDataSanitizer
         JsonValueKind.True => true,
         JsonValueKind.False => false,
         JsonValueKind.Null => null,
-        _ => value.ToString()
+        JsonValueKind.Object => value.EnumerateObject().ToDictionary(
+            property => property.Name,
+            property => IsSensitive(property.Name) ? (object?)"[Đã ẩn]" : ToSafeValue(property.Value)),
+        JsonValueKind.Array => value.EnumerateArray().Select(ToSafeValue).ToArray(),
+        _ => null
     };
 }

@@ -135,6 +135,7 @@ public sealed class AdminHallController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateHall(
         HallDto model,
+        IFormFile? imageFile,
         CancellationToken cancellationToken)
     {
         var accessToken = Request.Cookies[ApiTokenCookie];
@@ -210,6 +211,16 @@ public sealed class AdminHallController : Controller
             });
         }
 
+        if (imageFile is { Length: > 0 } && result.Value is not null)
+        {
+            await using var stream = imageFile.OpenReadStream();
+            var upload = await _apiClient.UploadHallImageAsync(
+                result.Value.HallId, stream, imageFile.FileName, imageFile.ContentType,
+                accessToken, cancellationToken);
+            if (!upload.Succeeded)
+                return Json(new { success = false, message = "Đã tạo sảnh nhưng tải ảnh thất bại: " + upload.Error });
+        }
+
         return Json(new
         {
             success = true,
@@ -222,6 +233,7 @@ public sealed class AdminHallController : Controller
     public async Task<IActionResult> UpdateHall(
         int hallId,
         HallDto model,
+        IFormFile? imageFile,
         CancellationToken cancellationToken)
     {
         var accessToken = Request.Cookies[ApiTokenCookie];
@@ -296,6 +308,16 @@ public sealed class AdminHallController : Controller
                 success = false,
                 message = result.Error ?? "Không thể cập nhật sảnh."
             });
+        }
+
+        if (imageFile is { Length: > 0 })
+        {
+            await using var stream = imageFile.OpenReadStream();
+            var upload = await _apiClient.UploadHallImageAsync(
+                hallId, stream, imageFile.FileName, imageFile.ContentType,
+                accessToken, cancellationToken);
+            if (!upload.Succeeded)
+                return Json(new { success = false, message = "Đã cập nhật sảnh nhưng tải ảnh thất bại: " + upload.Error });
         }
 
         return Json(new

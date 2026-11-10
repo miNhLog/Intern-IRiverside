@@ -2,6 +2,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HeThongDatTiecCuoi_WEB.Models.Auth;
 
+public sealed class ApiMessageResponse
+{
+    public string Message { get; set; } = string.Empty;
+}
+
 public sealed record CurrentUserDto(
     int UserId,
     string Email,

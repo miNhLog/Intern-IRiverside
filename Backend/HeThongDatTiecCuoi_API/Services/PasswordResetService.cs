@@ -26,6 +26,7 @@ public sealed partial class PasswordResetService : IPasswordResetService
     private readonly PasswordResetOptions _options;
     private readonly AccountProvisioningOptions _accountProvisioningOptions;
     private readonly byte[] _otpHashKey;
+    private readonly IAuditLogService _auditLogs;
 
     public PasswordResetService(
         ApplicationDbContext context,
@@ -33,7 +34,8 @@ public sealed partial class PasswordResetService : IPasswordResetService
         IEmailService emailService,
         IOptions<PasswordResetOptions> options,
         IOptions<AccountProvisioningOptions> accountProvisioningOptions,
-        IOptions<JwtOptions> jwtOptions)
+        IOptions<JwtOptions> jwtOptions,
+        IAuditLogService auditLogs)
     {
         _context = context;
         _passwordHasher = passwordHasher;
@@ -41,6 +43,7 @@ public sealed partial class PasswordResetService : IPasswordResetService
         _options = options.Value;
         _accountProvisioningOptions = accountProvisioningOptions.Value;
         _otpHashKey = Encoding.UTF8.GetBytes(jwtOptions.Value.Key);
+        _auditLogs = auditLogs;
     }
 
     public async Task<bool> SendResetOtpForEmailAsync(
@@ -294,6 +297,10 @@ public sealed partial class PasswordResetService : IPasswordResetService
         resetToken.User.MustChangePassword = false;
         resetToken.User.UpdatedAt = now;
         resetToken.UsedAt = now;
+        _context.AuditLogs.Add(_auditLogs.Create(
+            AuditActions.PasswordResetCompleted, null, resetToken.UserId,
+            AuditAuthMethods.ResetToken, AuditOutcomes.Success,
+            "Người dùng đã hoàn tất đặt lại mật khẩu."));
         await _context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -25,10 +25,27 @@ public class BookingListResponseViewModel
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / (PageSize > 0 ? PageSize : 10));
 
     [JsonPropertyName("pendingCount")]
-    public int PendingConfirmationCount { get; set; }
+    public int PendingCount { get; set; }
+
+    [JsonPropertyName("pendingConfirmationCount")]
+    public int PendingConfirmationCount
+    {
+        get => PendingCount;
+        set => PendingCount = value;
+    }
+
     public int ConfirmedCount { get; set; }
+
     [JsonPropertyName("preparingCount")]
-    public int DepositedCount { get; set; }
+    public int PreparingCount { get; set; }
+
+    [JsonPropertyName("depositedCount")]
+    public int DepositedCount
+    {
+        get => PreparingCount;
+        set => PreparingCount = value;
+    }
+
     public int CompletedCount { get; set; }
     public int CancelledCount { get; set; }
 }
@@ -42,8 +59,9 @@ public class BookingSummaryViewModel
     public string HallName { get; set; } = string.Empty;
     public DateTime EventDate { get; set; }
     public string Shift { get; set; } = string.Empty;
-    public int TableCount { get; set; }
-    public decimal EstimatedTotal { get; set; }
+    public int GuestCount { get; set; }
+    public int TableCount => (int)Math.Ceiling(GuestCount / 10m);
+    public decimal? EstimatedTotal { get; set; }
     [JsonPropertyName("statusName")]
     public string Status { get; set; } = string.Empty;
     public string StatusCode { get; set; } = string.Empty;
@@ -76,15 +94,15 @@ public class BookingDetailViewModel
     public string DecorationPackageName { get; set; } = string.Empty;
 
     public int GuestCount { get; set; }
-    public int TableCount { get; set; }
+    public int TableCount => (int)Math.Ceiling(GuestCount / 10m);
     public decimal ExpectedBudget { get; set; }
     public string DesiredStyle { get; set; } = string.Empty;
     public string SpecialRequests { get; set; } = string.Empty;
 
-    public decimal FinalMenuPrice { get; set; }
-    public decimal FinalDecorationPrice { get; set; }
-    public decimal FinalHallPrice { get; set; }
-    public decimal EstimatedTotal { get; set; }
+    public decimal? FinalMenuPrice { get; set; }
+    public decimal? FinalDecorationPrice { get; set; }
+    public decimal? FinalHallPrice { get; set; }
+    public decimal? EstimatedTotal { get; set; }
 
     [JsonPropertyName("statusName")]
     public string Status { get; set; } = string.Empty;
@@ -96,6 +114,12 @@ public class BookingDetailViewModel
     public int? ContractId { get; set; }
     public string? ContractCode { get; set; }
     public string? ContractStatusCode { get; set; }
+    public bool HasReviewQr { get; set; }
+    public string? ReviewQrToken { get; set; }
+    public string? ReviewQrState { get; set; }
+    public DateTime? ReviewOpensAt { get; set; }
+    public DateTime? ReviewExpiresAt { get; set; }
+    public int ReviewCount { get; set; }
 }
 
 public class CreateBookingRequestViewModel

@@ -13,6 +13,7 @@
     var isManager = User.IsInRole(RoleNames.Manager);
     var isHallManager = User.IsInRole(RoleNames.HallManager);
     var isCoordinator = User.IsInRole(RoleNames.Coordinator);
+    var usesAdminKlcnTheme = isAdmin;
     var dashboardController = isAdmin ? "AdminAccount" : "Home";
     var vietnameseCulture = CultureInfo.GetCultureInfo("vi-VN");
     var currentDateText = DateTime.Today.ToString("dddd, dd 'tháng' MM 'năm' yyyy", vietnameseCulture);
@@ -36,6 +37,11 @@
             if (localStorage.getItem("sidebarState") === "collapsed") {
                 document.documentElement.classList.add("sidebar-is-collapsed");
             }
+            if (@(usesAdminKlcnTheme ? "true" : "false")) {
+                const storedAdminTheme = localStorage.getItem("adminColorMode");
+                const preferredAdminTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                document.documentElement.dataset.adminTheme = storedAdminTheme || preferredAdminTheme;
+            }
         } catch (error) {
             // Sidebar vẫn dùng trạng thái mặc định nếu trình duyệt chặn localStorage.
         }
@@ -49,6 +55,11 @@
           rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;subset=vietnamese&amp;display=swap"
           rel="stylesheet" />
+    @if (usesAdminKlcnTheme)
+    {
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;subset=vietnamese&amp;display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    }
     <link rel="stylesheet"
           href="~/css/admin-hall.css"
           asp-append-version="true" />
@@ -65,8 +76,13 @@
     @await RenderSectionAsync("Styles", required: false)
     <link rel="stylesheet" href="~/css/backoffice-theme.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/backoffice-page-header.css" asp-append-version="true" />
+    @if (usesAdminKlcnTheme)
+    {
+        <link rel="stylesheet" href="~/css/admin-notifications-theme.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/admin-metis.css" asp-append-version="true" />
+    }
 </head>
-<body class="backoffice-app @(isManager ? "manager-theme" : string.Empty)">
+<body class="backoffice-app @(isManager ? "manager-theme" : string.Empty) @(usesAdminKlcnTheme ? "admin-metis-app" : string.Empty)">
     <div class="admin-layout backoffice-shell @(isManager ? "manager-theme-shell" : string.Empty)">
         <button type="button"
                 class="mobile-sidebar-toggle"
@@ -377,6 +393,13 @@
                     </label>
                 </div>
                 <div class="topbar-right">
+                    @if (usesAdminKlcnTheme)
+                    {
+                        <div class="admin-view-tools" aria-label="Tùy chọn hiển thị">
+                            <button type="button" class="admin-view-tool" id="adminThemeToggle" aria-label="Đổi giao diện sáng tối" title="Giao diện sáng tối"><i class="bi bi-moon" aria-hidden="true"></i></button>
+                            <button type="button" class="admin-view-tool" id="adminFullscreenToggle" aria-label="Bật chế độ toàn màn hình" title="Toàn màn hình"><i class="bi bi-arrows-fullscreen" aria-hidden="true"></i></button>
+                        </div>
+                    }
                     <div class="topbar-date" title="Ngày hiện tại">
                         <i class="fa-regular fa-calendar" aria-hidden="true"></i>
                         <span>@currentDateText</span>
@@ -446,6 +469,7 @@
     <script src="~/js/admin-sidebar.js" asp-append-version="true"></script>
     <script src="~/js/ui-format.js" asp-append-version="true"></script>
     @if (isAdmin || isManager) { <script src="~/js/notifications.js" asp-append-version="true"></script> }
+    @if (usesAdminKlcnTheme) { <script src="~/js/admin-metis.js" asp-append-version="true"></script> }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
