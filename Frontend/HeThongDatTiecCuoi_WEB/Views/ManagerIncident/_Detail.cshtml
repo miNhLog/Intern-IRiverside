@@ -1,0 +1,29 @@
+@model HeThongDatTiecCuoi_WEB.Models.Incident.ManagerIncidentDetailViewModel
+@{
+    var item = Model.Incident;
+    string statusClass = item.StatusCode == "RESOLVED" ? "resolved" : item.StatusCode == "PROCESSING" ? "processing" : "pending";
+    string severityClass = item.Severity == "Nghiêm trọng" ? "critical" : item.Severity == "Thấp" ? "low" : "normal";
+}
+<article class="incident-detail hall-incident-detail manager-incident-detail" data-id="@item.IncidentId" data-booking-id="@item.BookingId" data-type="@item.IncidentType" data-severity="@item.Severity" data-occurred="@item.OccurredAt.ToString("yyyy-MM-ddTHH:mm")" data-description="@item.Description">
+    <header><div><span class="modal-icon"><i class="fa-solid fa-shield-halved"></i></span><div><small>SỰ CỐ #SC-@item.IncidentId.ToString("D4")</small><h2>@item.IncidentType</h2></div></div><button type="button" class="modal-close" data-mg-close-detail><i class="fa-solid fa-xmark"></i></button></header>
+    <div class="detail-status-line"><span class="status-badge @statusClass">@item.StatusName</span><span class="severity-badge @severityClass"><i></i>@item.Severity</span>@if (item.StatusCode != "RESOLVED") { <span class="manager-monitoring-badge"><i class="fa-solid fa-satellite-dish"></i> Đang giám sát</span> }</div>
+    <section class="detail-summary">
+        <div><small>Mã tiệc</small><strong>@item.BookingCode</strong></div><div><small>Sảnh</small><strong>@item.HallName</strong></div>
+        <div><small>Ngày / ca</small><strong>@item.EventDate.ToString("dd/MM/yyyy") · @item.Shift</strong></div><div><small>Phát sinh</small><strong>@item.OccurredAt.ToString("dd/MM/yyyy HH:mm")</strong></div>
+    </section>
+    <section class="detail-section manager-stakeholders">
+        <h3><i class="fa-solid fa-people-group"></i> Người liên quan</h3>
+        <div class="stakeholder-grid"><div class="reporter"><span><i class="fa-regular fa-user"></i></span><div><small>Người báo cáo</small><strong>@item.ReporterName</strong><em>@item.ReporterCode</em></div></div><div class="reporter"><span><i class="fa-solid fa-user-tie"></i></span><div><small>Quản lý sảnh phụ trách</small><strong>@(item.HallManagerNames.Count == 0 ? "Chưa bổ nhiệm" : string.Join(", ", item.HallManagerNames))</strong><em>Theo ngày tổ chức tiệc</em></div></div></div>
+    </section>
+    <section class="detail-section"><h3><i class="fa-regular fa-file-lines"></i> Báo cáo ban đầu</h3><p>@item.Description</p></section>
+    @if (item.StatusCode == "PROCESSING")
+    {
+        <section class="detail-section processing-workspace manager-intervention-workspace"><h3><i class="fa-solid fa-screwdriver-wrench"></i> Hướng giải quyết</h3><p class="workspace-note"><i class="fa-solid fa-circle-info"></i> Manager có thể cập nhật hoặc hoàn tất khi cần trực tiếp can thiệp.</p><form class="mg-resolution-form" data-id="@item.IncidentId">@Html.AntiForgeryToken()<textarea name="Resolution" rows="4" maxlength="4000" placeholder="Nhập các bước đã thực hiện và kết quả hiện tại..." required>@item.Resolution</textarea><div class="resolution-actions"><button type="submit" data-action="save" class="modal-secondary"><i class="fa-regular fa-floppy-disk"></i> Lưu hướng xử lý</button><button type="submit" data-action="resolve" class="incident-primary"><i class="fa-solid fa-circle-check"></i><span>Hoàn tất sự cố</span></button></div><div class="form-alert resolution-error" hidden></div></form></section>
+    }
+    else
+    {
+        <section class="detail-section resolution"><h3><i class="fa-solid fa-screwdriver-wrench"></i> Hướng giải quyết</h3>@if (string.IsNullOrWhiteSpace(item.Resolution)) { <div class="resolution-empty"><i class="fa-regular fa-clock"></i><p>Chưa có hướng giải quyết</p><span>Tiếp nhận sự cố để bắt đầu cập nhật phương án xử lý.</span></div> } else { <p>@item.Resolution</p>@if (item.ResolvedAt.HasValue) { <small class="resolved-time"><i class="fa-solid fa-circle-check"></i> Hoàn tất lúc @item.ResolvedAt.Value.ToString("dd/MM/yyyy HH:mm")</small> } }</section>
+    }
+    <section class="detail-section history-section"><details open><summary><span><i class="fa-solid fa-clock-rotate-left"></i>Lịch sử thao tác</span><small>@Model.History.Count cập nhật</small></summary><div class="incident-history">@if (Model.History.Count == 0) { <div class="history-empty">Chưa có lịch sử thao tác.</div> } else { @foreach (var history in Model.History) { <article><span class="history-dot"></span><div><strong>@history.ActionName</strong><p>@history.Notes</p><small>@history.ActorName · @history.Timestamp.ToString("dd/MM/yyyy HH:mm")</small></div></article> } }</div></details></section>
+    <footer><button type="button" class="modal-secondary" data-mg-close-detail>Đóng</button>@if (item.CanEdit) { <button type="button" class="modal-secondary js-mg-edit-detail"><i class="fa-regular fa-pen-to-square"></i> Sửa báo cáo</button> }@if (item.StatusCode == "PENDING") { <button type="button" class="incident-primary js-mg-accept" data-id="@item.IncidentId"><i class="fa-solid fa-hand"></i><span>Manager tiếp nhận</span></button> }</footer>
+</article>

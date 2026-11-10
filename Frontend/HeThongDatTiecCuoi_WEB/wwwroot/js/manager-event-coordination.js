@@ -8,6 +8,27 @@
     const weekLabel = document.getElementById('weekLabel');
     let weekStart = mondayOf(new Date());
 
+    // Reassign Modal Elements
+    const reassignModal = document.getElementById('reassignModal');
+    const reassignOverlay = document.getElementById('reassignModalOverlay');
+    const reassignForm = document.getElementById('reassignForm');
+    const reassignBookingId = document.getElementById('reassignBookingId');
+    const reassignBookingCode = document.getElementById('reassignBookingCode');
+    const reassignEventTime = document.getElementById('reassignEventTime');
+    const reassignCurrentCoordinator = document.getElementById('reassignCurrentCoordinator');
+    const reassignSubtitle = document.getElementById('reassignModalSubtitle');
+    const reassignSelect = document.getElementById('reassignCoordinatorSelect');
+    const reassignReason = document.getElementById('reassignReason');
+    const btnSubmit = document.getElementById('btnSubmitReassign');
+
+    function toast(message, isError = false) {
+        if (window.RiversideToast) {
+            isError ? window.RiversideToast.error(message) : window.RiversideToast.success(message);
+        } else {
+            alert(message);
+        }
+    }
+
     function mondayOf(value) {
         const result = new Date(value.getFullYear(), value.getMonth(), value.getDate());
         const day = result.getDay() || 7;
@@ -48,12 +69,137 @@
             drawerContent.querySelectorAll('[data-drawer-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.drawerPanel === button.dataset.drawerTab));
         }));
     }
+
+    async function openReassignModal(bookingId, bookingCode, eventInfo, currentCoordinator) {
+        if (!reassignModal) return;
+        reassignBookingId.value = bookingId;
+        reassignBookingCode.textContent = bookingCode || `#${bookingId}`;
+        reassignEventTime.textContent = eventInfo || '-';
+        reassignCurrentCoordinator.textContent = currentCoordinator ? currentCoordinator : 'Chưa có điều phối';
+        reassignSubtitle.textContent = `Tiệc ${bookingCode || ('#' + bookingId)} · ${eventInfo || ''}`;
+        reassignReason.value = '';
+        reassignSelect.innerHTML = '<option value="">-- Đang tải danh sách điều phối viên... --</option>';
+        reassignSelect.disabled = true;
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> <span>Xác nhận phân công</span>';
+        }
+
+        reassignOverlay.hidden = false;
+        reassignModal.hidden = false;
+
+        try {
+            const response = await fetch(`/quan-ly/tiec-dieu-phoi/available-coordinators/${bookingId}`);
+            if (!response.ok) throw new Error(await response.text());
+            const list = await response.json();
+            reassignSelect.innerHTML = '<option value="">-- Chọn một điều phối viên --</option>';
+            if (!list || list.length === 0) {
+                reassignSelect.innerHTML = '<option value="">Không có nhân viên điều phối nào trong hệ thống</option>';
+            } else {
+                list.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.employeeId;
+                    let label = `${item.fullName} (${item.employeeCode})`;
+                    if (item.isCurrent) {
+                        label += ' — [Đang phụ trách tiệc này]';
+                        opt.disabled = true;
+                    } else if (item.isAvailable) {
+                        label += ' — ✓ Sẵn sàng (Rảnh)';
+                    } else {
+                        label += ` — ⚠️ ${item.statusNote || 'Bận ca khác'}`;
+                    }
+                    opt.textContent = label;
+                    reassignSelect.appendChild(opt);
+                });
+            }
+            reassignSelect.disabled = false;
+            if (btnSubmit) btnSubmit.disabled = false;
+        } catch (err) {
+            reassignSelect.innerHTML = '<option value="">Lỗi tải danh sách điều phối viên</option>';
+            toast('Không thể tải danh sách điều phối viên.', true);
+        }
+    }
+
+    function closeReassignModal() {
+        if (!reassignModal) return;
+        reassignOverlay.hidden = true;
+        reassignModal.hidden = true;
+    }
+
+    if (reassignForm) {
+        reassignForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const bId = reassignBookingId.value;
+            const cId = parseInt(reassignSelect.value, 10);
+            const reasonText = reassignReason.value.trim();
+
+            if (!cId || isNaN(cId)) {
+                toast('Vui lòng chọn điều phối viên.', true);
+                return;
+            }
+            if (reasonText.length < 3) {
+                toast('Vui lòng nhập lý do can thiệp (tối thiểu 3 ký tự).', true);
+                return;
+            }
+
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang xử lý...</span>';
+
+            try {
+                const res = await fetch(`/quan-ly/tiec-dieu-phoi/assign/${bId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ coordinatorEmployeeId: cId, reason: reasonText })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    throw new Error(data.message || 'Phân công điều phối viên thất bại.');
+                }
+
+                toast(data.message || 'Phân công điều phối viên thành công.');
+                closeReassignModal();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 700);
+            } catch (err) {
+                toast(err.message, true);
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> <span>Xác nhận phân công</span>';
+            }
+        });
+    }
+
     document.addEventListener('click', event => {
+        const assignBtn = event.target.closest('[data-emergency-assign]');
+        if (assignBtn) {
+            event.stopPropagation();
+            const ds = assignBtn.dataset;
+            openReassignModal(ds.emergencyAssign, ds.bookingCode, ds.eventInfo, ds.currentCoordinator);
+            return;
+        }
+
         const target = event.target.closest('[data-booking-id]');
-        if (target) openDrawer(target.dataset.bookingId);
+        if (target && !event.target.closest('[data-emergency-assign]')) {
+            openDrawer(target.dataset.bookingId);
+            return;
+        }
+
+        if (event.target.closest('[data-close-reassign]')) {
+            closeReassignModal();
+        }
     });
+
     overlay.addEventListener('click', closeDrawer);
-    document.addEventListener('keydown', event => { if (event.key === 'Escape') closeDrawer(); });
+    if (reassignOverlay) reassignOverlay.addEventListener('click', closeReassignModal);
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+            closeDrawer();
+            closeReassignModal();
+        }
+    });
 
     async function loadCalendar() {
         const end = new Date(weekStart); end.setDate(end.getDate() + 6);

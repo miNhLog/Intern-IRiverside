@@ -1,0 +1,107 @@
+/* Control-specific overrides for the Banner editor dialog. */
+.banner-upload {
+    min-width: 0;
+}
+
+.banner-upload input[type="file"] {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    padding: 5px;
+    border: 1px solid #d7dee7;
+    border-radius: 10px;
+    background: #fff;
+    color: #5d6b80;
+    font: inherit;
+    font-size: 13px;
+    line-height: 32px;
+    cursor: pointer;
+}
+
+.banner-upload input[type="file"]::file-selector-button,
+.banner-upload input[type="file"]::-webkit-file-upload-button {
+    height: 32px;
+    margin: 0 10px 0 0;
+    padding: 0 13px;
+    border: 0;
+    border-radius: 7px;
+    background: #eef2f6;
+    color: #263950;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.banner-fields .banner-switch {
+    align-self: end;
+    justify-self: start;
+    min-height: 44px;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start;
+    gap: 9px !important;
+    white-space: nowrap;
+}
+
+.banner-fields .banner-switch input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    accent-color: #bd8628;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .banner-fields .banner-switch {
+        align-self: start;
+    }
+}
+
+.banner-placement-nav {
+    display: flex;
+    gap: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    border-bottom: 1px solid #edf0f4;
+    background: #f8fafc;
+}
+
+.banner-placement-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    padding: 9px 13px;
+    border: 1px solid #e0e6ed;
+    border-radius: 999px;
+    background: #fff;
+    color: #475467;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.banner-placement-nav a:hover { border-color: #bd9349; color: #9a6b1d; }
+.banner-placement { scroll-margin-top: 92px; border-bottom: 1px solid #e7ebf0; }
+.banner-placement:last-child { border-bottom: 0; }
+.banner-placement__head { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 22px; background: linear-gradient(90deg, #fff, #fbfcfe); }
+.banner-placement__head > div:last-child { display: flex; align-items: center; gap: 10px; }
+.banner-placement__title { display: flex; align-items: center; gap: 12px; }
+.banner-placement__title > span { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 12px; background: #fff5df; color: #a87824; }
+.banner-placement__title h3 { margin: 0; color: #102b4e; font-size: 16px; }
+.banner-placement__title p { margin: 3px 0 0; color: #7b8798; font-size: 12px; }
+.banner-placement__count { padding: 5px 9px; border-radius: 999px; background: #eef2f7; color: #667085; font-size: 11px; font-weight: 700; }
+.banner-add-compact,
+.banner-empty--compact button { padding: 8px 11px; border: 1px solid #d7b878; border-radius: 9px; background: #fffaf0; color: #8a601c; font-weight: 700; cursor: pointer; }
+.banner-empty--compact { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 24px; }
+.banner-empty--compact > i { font-size: 20px; }
+.banner-empty--compact p { margin: 0; }
+.banner-placement .banner-list { border-top: 1px solid #f0f2f5; }
+
+@media (max-width: 700px) {
+    .banner-placement__head { align-items: flex-start; }
+    .banner-placement__count { display: none; }
+    .banner-placement__title p { max-width: 190px; }
+}

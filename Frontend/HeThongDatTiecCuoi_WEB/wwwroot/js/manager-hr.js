@@ -1,7 +1,7 @@
 (() => {
  const employees=()=>window.hrData?.employees||[], byId=id=>employees().find(x=>x.employeeId===Number(id));
  const token=()=>document.querySelector('input[name="__RequestVerificationToken"]')?.value||'';
- const toast=(message,error=false)=>{const e=document.getElementById('hrToast');e.textContent=message;e.style.background=error?'#b43c32':'#16824f';e.hidden=false;setTimeout(()=>e.hidden=true,3500)};
+ const toast=(message,error=false)=>error?window.RiversideToast?.error(message):window.RiversideToast?.success(message);
  const initials=name=>name.trim().split(/\s+/).slice(-2).map(x=>x[0]).join('').toUpperCase();
  const tabs=document.querySelectorAll('.hr-tabs button');
  function selectTab(name){tabs.forEach(b=>b.classList.toggle('active',b.dataset.tab===name));document.querySelectorAll('.hr-tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById(name+'Panel')?.classList.add('active');history.replaceState(null,'',name==='employees'?location.pathname+location.search.split('&tab=')[0]:location.pathname+'?tab='+name)}

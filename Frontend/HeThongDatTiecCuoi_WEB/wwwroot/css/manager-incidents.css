@@ -1,0 +1,26 @@
+.manager-theme .manager-incident-page{min-height:calc(100vh - 76px);padding:28px 32px 44px;background:var(--manager-canvas)}
+.manager-theme .manager-incident-hero{position:relative;overflow:hidden;border-color:#e8e4d9;background:linear-gradient(118deg,#fff 48%,#fbf4e5 100%);box-shadow:0 14px 38px rgba(15,23,42,.06)}
+.manager-theme .manager-incident-hero::after{content:"";position:absolute;right:9%;top:-42px;width:180px;height:180px;border:38px solid rgba(198,161,91,.07);border-radius:50%;pointer-events:none}
+.manager-theme .manager-incident-hero>div,.manager-theme .manager-incident-hero>button{position:relative;z-index:1}
+.manager-theme .manager-incident-page .incident-eyebrow{color:var(--manager-gold-dark)}
+.manager-theme .manager-incident-page .incident-primary{background:linear-gradient(135deg,#b98e3f,#8a651f);box-shadow:0 8px 20px rgba(138,101,31,.2)}
+.manager-theme .manager-incident-page .incident-primary:hover{background:linear-gradient(135deg,#c8a354,#765318)}
+.manager-theme .manager-incident-kpis article{border-color:#edf0f3;box-shadow:0 8px 26px rgba(15,23,42,.045)}
+.manager-theme .manager-incident-kpis article:hover{border-color:#e5d6b7;box-shadow:0 14px 34px rgba(15,23,42,.08)}
+.manager-theme .manager-incident-panel{border-color:#eceff3;box-shadow:0 12px 35px rgba(15,23,42,.05)}
+.manager-theme .manager-scope-pill{color:#6b4d17;background:#fbf0d7}
+.manager-theme .manager-incident-table .incident-code{color:#8a651f}
+.manager-theme .manager-incident-table tbody tr:not(.critical-row):hover{background:#fffdf8}
+.manager-theme .manager-detail-card{width:min(820px,calc(100vw - 32px))}
+.manager-monitoring-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;color:#745619;background:#fbf2df;font-size:9px;font-weight:800}
+.manager-stakeholders .stakeholder-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.manager-stakeholders .reporter{height:100%;margin:0;padding:12px;border:1px solid #edf0f3;border-radius:13px;background:#fafbfc}
+.manager-stakeholders .reporter>span{color:#8a651f;background:#fbf1dc}
+.manager-intervention-workspace{border-color:#eadbbd;background:#fffcf6}
+.manager-intervention-workspace h3{color:#765318}
+.mg-resolution-form textarea{width:100%;resize:vertical}
+.workspace-note{display:flex;align-items:flex-start;gap:7px;margin:-2px 0 12px!important;color:#78694b!important;font-size:10px!important}
+.workspace-note i{margin-top:2px;color:#b98e3f}
+.manager-theme .manager-incident-page .incident-pagination a.active{border-color:#a87d31;background:#b58b3d}
+@media(max-width:900px){.manager-theme .manager-incident-page{padding:22px 20px 36px}.manager-stakeholders .stakeholder-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.manager-theme .manager-incident-page{padding:16px 12px 28px}.manager-theme .manager-incident-hero::after{display:none}}

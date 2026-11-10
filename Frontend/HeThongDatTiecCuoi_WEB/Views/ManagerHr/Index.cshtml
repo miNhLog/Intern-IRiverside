@@ -8,15 +8,14 @@
 }
 @section Styles { <link rel="stylesheet" href="~/css/manager-hr.css" asp-append-version="true" /><link rel="stylesheet" href="~/css/manager-hr-fixes.css" asp-append-version="true" /> }
 <main class="hr-page">
- <header class="hr-header manager-section-header"><div><nav class="breadcrumb">Quản trị hệ thống <i class="fa-solid fa-chevron-right"></i> <strong>Quản lý nhân sự</strong></nav><h1><i class="fa-solid fa-users-gear"></i> Quản lý nhân sự</h1><p>Quản lý đội ngũ nhân sự, phân công phụ trách sảnh và gửi yêu cầu thay đổi vai trò.</p></div></header>
+ <header class="hr-header manager-section-header"><div><span class="backoffice-hero__eyebrow"><i class="bi bi-people" aria-hidden="true"></i> QUẢN LÝ NHÂN SỰ</span><h1>Quản lý nhân sự</h1><p>Quản lý đội ngũ nhân sự, phân công phụ trách sảnh và gửi yêu cầu thay đổi vai trò.</p></div></header>
  @Html.AntiForgeryToken()
  @if(!string.IsNullOrWhiteSpace(Model.ErrorMessage)){<div class="hr-alert error">@Model.ErrorMessage</div>}
- <div id="hrToast" class="hr-toast" hidden></div>
  <section class="hr-kpis">
-  <article><span><i class="fa-solid fa-users"></i></span><div><small>Tổng nhân sự</small><strong>@Model.TotalEmployees</strong></div></article>
-  <article><span><i class="fa-solid fa-people-roof"></i></span><div><small>Quản lý sảnh</small><strong>@Model.HallManagerCount</strong></div></article>
-  <article><span><i class="fa-solid fa-people-group"></i></span><div><small>Nhân viên điều phối</small><strong>@Model.CoordinatorCount</strong></div></article>
-  <article><span class="warn"><i class="fa-regular fa-clock"></i></span><div><small>Yêu cầu đang chờ duyệt</small><strong>@Model.PendingRequestCount</strong></div></article>
+  <article><span><i class="bi bi-people" aria-hidden="true"></i></span><div><small>Tổng nhân sự</small><strong>@Model.TotalEmployees</strong></div></article>
+  <article><span><i class="bi bi-person-badge" aria-hidden="true"></i></span><div><small>Quản lý sảnh</small><strong>@Model.HallManagerCount</strong></div></article>
+  <article><span><i class="bi bi-diagram-3" aria-hidden="true"></i></span><div><small>Nhân viên điều phối</small><strong>@Model.CoordinatorCount</strong></div></article>
+  <article><span class="warn"><i class="bi bi-clock-history" aria-hidden="true"></i></span><div><small>Yêu cầu đang chờ duyệt</small><strong>@Model.PendingRequestCount</strong></div></article>
  </section>
  <section class="hr-workspace">
   <div class="hr-tabs" role="tablist"><button class="active" data-tab="employees"><i class="fa-solid fa-users"></i> Danh sách nhân sự (@Model.TotalEmployees)</button><button data-tab="requests"><i class="fa-solid fa-clock-rotate-left"></i> Yêu cầu thay đổi vai trò (@Model.PendingRequestCount)</button><button data-tab="history"><i class="fa-regular fa-clipboard"></i> Lịch sử bổ nhiệm</button></div>
@@ -42,7 +41,7 @@
     </tr>
    }
    </tbody></table></div>
-   @if(Model.TotalPages>1){<nav class="hr-pagination">@for(var p=1;p<=Model.TotalPages;p++){<a class="@(p==Model.Page?"active":"")" asp-route-page="@p" asp-route-search="@Model.Search" asp-route-role="@Model.Role" asp-route-status="@Model.Status" asp-route-assignmentStatus="@Model.AssignmentStatus">@p</a>}</nav>}
+   @if(Model.TotalPages>1){<nav class="hr-pagination"><a class="pagination-edge @(Model.Page<=1?"disabled":"")" asp-route-page="@(Model.Page-1)" asp-route-search="@Model.Search" asp-route-role="@Model.Role" asp-route-status="@Model.Status" asp-route-assignmentStatus="@Model.AssignmentStatus">Trước</a>@for(var p=1;p<=Model.TotalPages;p++){<a class="@(p==Model.Page?"active":"")" asp-route-page="@p" asp-route-search="@Model.Search" asp-route-role="@Model.Role" asp-route-status="@Model.Status" asp-route-assignmentStatus="@Model.AssignmentStatus">@p</a>}<a class="pagination-edge @(Model.Page>=Model.TotalPages?"disabled":"")" asp-route-page="@(Model.Page+1)" asp-route-search="@Model.Search" asp-route-role="@Model.Role" asp-route-status="@Model.Status" asp-route-assignmentStatus="@Model.AssignmentStatus">Sau</a></nav>}
   </div>
   <div class="hr-tab-panel" id="requestsPanel"><div class="hr-table-scroll"><table class="hr-table"><thead><tr><th>Nhân viên</th><th>Mã nhân viên</th><th>Vai trò hiện tại</th><th>Vai trò đề xuất</th><th>Lý do</th><th>Ngày gửi</th><th>Trạng thái / Kết quả</th></tr></thead><tbody>@if(Model.RoleRequests.Count==0){<tr><td colspan="7" class="hr-empty">Chưa có yêu cầu thay đổi vai trò.</td></tr>}@foreach(var r in Model.RoleRequests){<tr><td><strong>@r.FullName</strong></td><td>@r.EmployeeCode</td><td>@r.CurrentRoleName</td><td>@r.RequestedRoleName</td><td>@(r.Reason??"—")</td><td>@r.RequestedAt.ToString("dd/MM/yyyy HH:mm")</td><td><span class="request-pill @r.Status.ToLowerInvariant()">@RequestLabel(r.Status)</span>@if(!string.IsNullOrWhiteSpace(r.RejectionReason)){<small>@r.RejectionReason</small>}</td></tr>}</tbody></table></div></div>
   <div class="hr-tab-panel" id="historyPanel"><div class="hr-table-scroll"><table class="hr-table"><thead><tr><th>Quản lý sảnh</th><th>Mã nhân viên</th><th>Sảnh</th><th>Từ ngày</th><th>Đến ngày</th><th>Trạng thái</th></tr></thead><tbody>@if(Model.AssignmentHistory.Count==0){<tr><td colspan="6" class="hr-empty">Chưa có lịch sử bổ nhiệm Quản lý sảnh.</td></tr>}@foreach(var h in Model.AssignmentHistory){<tr><td><strong>@h.EmployeeName</strong></td><td>@h.EmployeeCode</td><td>@h.HallName</td><td>@h.FromDate.ToString("dd/MM/yyyy")</td><td>@(h.ToDate?.ToString("dd/MM/yyyy")??"—")</td><td><span class="assignment-pill @(h.ToDate is null?"active":"ended")">@(h.ToDate is null?"Đang phụ trách":"Đã kết thúc")</span></td></tr>}</tbody></table></div></div>

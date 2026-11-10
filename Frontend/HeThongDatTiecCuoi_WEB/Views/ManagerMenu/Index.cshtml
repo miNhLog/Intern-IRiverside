@@ -7,19 +7,17 @@
 <section class="mm-page" data-detail-url="/quan-ly/thuc-don" data-dishes-url="@Url.Action("AvailableDishes")">
     @Html.AntiForgeryToken()
     <header class="mm-header manager-section-header">
-        <div><div class="mm-breadcrumb breadcrumb">Quản trị hệ thống <i class="fa-solid fa-chevron-right"></i> <strong>Thực đơn</strong></div><h1>Quản lý thực đơn</h1><p>Quản lý các thực đơn và danh sách món ăn trong từng thực đơn.</p></div>
-        <button class="mm-btn gold admin-create-button" type="button" data-modal-open="createModal"><i class="fa-solid fa-plus"></i> Thêm thực đơn</button>
+        <div><span class="backoffice-hero__eyebrow"><i class="bi bi-card-list" aria-hidden="true"></i> QUẢN LÝ THỰC ĐƠN</span><h1>Quản lý thực đơn</h1><p>Quản lý các thực đơn và danh sách món ăn trong từng thực đơn.</p></div>
+        <button class="mm-btn gold admin-create-button" type="button" data-modal-open="createModal"><i class="bi bi-plus-lg" aria-hidden="true"></i> Thêm thực đơn</button>
     </header>
 
-    @if (TempData["Success"] is string success) { <div class="mm-alert success">@success</div> }
-    @if (TempData["Error"] is string error) { <div class="mm-alert error">@error</div> }
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage)) { <div class="mm-alert error">@Model.ErrorMessage</div> }
 
     <div class="mm-kpis">
-        <article><span class="icon gold"><i class="fa-regular fa-rectangle-list"></i></span><div><small>Tổng thực đơn</small><strong>@Model.TotalMenus</strong></div></article>
-        <article><span class="icon green"><i class="fa-regular fa-circle-check"></i></span><div><small>Đang áp dụng</small><strong>@Model.ActiveMenus</strong></div></article>
-        <article><span class="icon orange"><i class="fa-regular fa-circle-pause"></i></span><div><small>Tạm ngưng</small><strong>@Model.InactiveMenus</strong></div></article>
-        <article><span class="icon gold"><i class="fa-solid fa-coins"></i></span><div><small>Giá trung bình / bàn</small><strong>@Model.AveragePricePerTable.ToString("N0", vi) đ</strong></div></article>
+        <article><span class="icon gold"><i class="bi bi-card-list" aria-hidden="true"></i></span><div><small>Tổng thực đơn</small><strong>@Model.TotalMenus</strong></div></article>
+        <article><span class="icon green"><i class="bi bi-check-circle" aria-hidden="true"></i></span><div><small>Đang áp dụng</small><strong>@Model.ActiveMenus</strong></div></article>
+        <article><span class="icon orange"><i class="bi bi-pause-circle" aria-hidden="true"></i></span><div><small>Tạm ngưng</small><strong>@Model.InactiveMenus</strong></div></article>
+        <article><span class="icon gold"><i class="bi bi-cash-stack" aria-hidden="true"></i></span><div><small>Giá trung bình / bàn</small><strong>@Model.AveragePricePerTable.ToString("N0", vi) đ</strong></div></article>
     </div>
 
     <form method="get" class="mm-filters">
@@ -41,12 +39,11 @@
             @foreach (var menu in Model.Items.Skip(rowStart).Take(2))
             {
                 <article class="mm-card" data-menu-id="@menu.MenuId" data-code="@menu.MenuCode" data-name="@menu.MenuName" data-description="@menu.Description" data-price="@menu.PricePerTable" data-status="@menu.Status" data-count="@menu.DishCount" data-in-use="@menu.IsInUse.ToString().ToLowerInvariant()">
-                    <div class="mm-card-icon"><i class="fa-solid fa-book-open"></i></div>
+                    <div class="mm-card-icon image"><img src="@(menu.ImageUrl ?? Url.Content("~/images/menus/menu-banquet.png"))" alt="Ảnh @menu.MenuName" onerror="this.onerror=null;this.src='@Url.Content("~/images/menus/menu-banquet.png")';" /></div>
                     <div class="mm-card-main"><span class="mm-code">@menu.MenuCode</span><h2>@menu.MenuName</h2><div class="mm-meta"><span><i class="fa-solid fa-bowl-food"></i> @menu.DishCount món</span><span><i class="fa-solid fa-coins"></i> @menu.PricePerTable.ToString("N0", vi) đ / bàn</span></div></div>
                     <div class="mm-card-actions"><span class="mm-badge @(menu.Status == MenuStatusCodes.Active ? "active" : "inactive")">@(menu.Status == MenuStatusCodes.Active ? "Đang áp dụng" : "Tạm ngưng")</span><button type="button" class="mm-detail-btn" data-detail-toggle>Xem chi tiết</button><details><summary aria-label="Thao tác"><i class="fa-solid fa-ellipsis-vertical"></i></summary><div><button type="button" data-edit>Chỉnh sửa</button><form method="post" action="@Url.Action("Status", new { menuId = menu.MenuId })">@Html.AntiForgeryToken()<input type="hidden" name="status" value="@(menu.Status == MenuStatusCodes.Active ? MenuStatusCodes.Inactive : MenuStatusCodes.Active)" /><button type="submit">@(menu.Status == MenuStatusCodes.Active ? "Chuyển sang Tạm ngưng" : "Áp dụng lại")</button></form></div></details></div>
                 </article>
             }
-            <div class="mm-detail-slot" hidden></div>
             </div>
         }
         </div>
@@ -56,15 +53,69 @@
     {
         var first = (Model.Page - 1) * Model.PageSize + 1; var last = Math.Min(Model.Page * Model.PageSize, Model.TotalItems);
         <footer class="mm-pagination"><span>Hiển thị @first - @last trong tổng số @Model.TotalItems thực đơn</span><nav>
-            <a class="@(Model.Page <= 1 ? "disabled" : "")" href="@Url.Action("Index", new { keyword=Model.Keyword, status=Model.Status, page=Model.Page-1 })">‹</a>
+            <a class="pagination-edge @(Model.Page <= 1 ? "disabled" : "")" href="@Url.Action("Index", new { keyword=Model.Keyword, status=Model.Status, page=Model.Page-1 })">Trước</a>
             @for (var p = Math.Max(1, Model.Page - 2); p <= Math.Min(Model.TotalPages, Model.Page + 2); p++) { <a class="@(p == Model.Page ? "current" : "")" href="@Url.Action("Index", new { keyword=Model.Keyword, status=Model.Status, page=p })">@p</a> }
-            <a class="@(Model.Page >= Model.TotalPages ? "disabled" : "")" href="@Url.Action("Index", new { keyword=Model.Keyword, status=Model.Status, page=Model.Page+1 })">›</a>
+            <a class="pagination-edge @(Model.Page >= Model.TotalPages ? "disabled" : "")" href="@Url.Action("Index", new { keyword=Model.Keyword, status=Model.Status, page=Model.Page+1 })">Sau</a>
         </nav></footer>
     }
 </section>
 
-<div class="mm-modal" id="createModal" hidden><form method="post" action="@Url.Action("Create")" class="mm-modal-box">@Html.AntiForgeryToken()<header><h2>Thêm thực đơn</h2><button type="button" data-modal-close>×</button></header><label>Tên thực đơn *<input name="MenuName" maxlength="200" required /></label><label>Giá / bàn *<input name="PricePerTable" type="number" min="0" required /></label><label>Mô tả<textarea name="Description" maxlength="1000" rows="4"></textarea></label><footer><button type="button" class="mm-btn light" data-modal-close>Hủy</button><button class="mm-btn gold" type="submit">Thêm thực đơn</button></footer></form></div>
-<div class="mm-modal" id="editModal" hidden><form method="post" action="@Url.Action("Update")" class="mm-modal-box">@Html.AntiForgeryToken()<input type="hidden" name="MenuId" /><header><h2>Chỉnh sửa thực đơn</h2><button type="button" data-modal-close>×</button></header><label>Mã thực đơn<input name="MenuCode" disabled /></label><label>Tên thực đơn *<input name="MenuName" maxlength="200" required /></label><label>Giá / bàn *<input name="PricePerTable" type="number" min="0" required /></label><label>Mô tả<textarea name="Description" maxlength="1000" rows="4"></textarea></label><footer><button type="button" class="mm-btn light" data-modal-close>Hủy</button><button class="mm-btn gold" type="submit">Lưu thay đổi</button></footer></form></div>
+<div class="mm-modal" id="menuDetailModal" hidden role="dialog" aria-modal="true" aria-labelledby="menuDetailTitle">
+    <section class="mm-modal-box mm-detail-modal">
+        <header>
+            <div class="mm-detail-modal-heading">
+                <span class="mm-detail-modal-icon"><i class="fa-solid fa-utensils"></i></span>
+                <div><small>CHI TIẾT THỰC ĐƠN</small><h2 id="menuDetailTitle">Thông tin thực đơn</h2></div>
+            </div>
+            <button type="button" data-modal-close aria-label="Đóng chi tiết thực đơn"><i class="fa-solid fa-xmark"></i></button>
+        </header>
+        <div class="mm-detail-modal-body" id="menuDetailContent"><p>Đang tải chi tiết...</p></div>
+        <footer><button type="button" class="mm-btn light" data-modal-close>Đóng</button></footer>
+    </section>
+</div>
+
+<div class="mm-modal" id="createModal" hidden role="dialog" aria-modal="true" aria-labelledby="createMenuTitle">
+    <form method="post" enctype="multipart/form-data" action="@Url.Action("Create")" class="mm-modal-box mm-create-modal" id="createMenuForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="PricePerTable" id="createMenuPrice" value="0" />
+        <div id="createSelectedDishInputs" hidden></div>
+        <header class="mm-create-header">
+            <div class="mm-create-heading">
+                <span class="mm-create-icon"><i class="bi bi-journal-plus" aria-hidden="true"></i></span>
+                <div><small>THỰC ĐƠN MỚI</small><h2 id="createMenuTitle">Thêm thực đơn</h2><p>Chọn món ăn, hệ thống sẽ tự tính số món và giá mỗi bàn.</p></div>
+            </div>
+            <button type="button" data-modal-close aria-label="Đóng form thêm thực đơn"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+        </header>
+
+        <div class="mm-create-body">
+            <section class="mm-create-panel" aria-labelledby="createMenuInfoTitle">
+                <div class="mm-create-section-title"><span><i class="bi bi-card-text" aria-hidden="true"></i></span><div><h3 id="createMenuInfoTitle">Thông tin thực đơn</h3><p>Nhập thông tin nhận diện và mô tả ngắn.</p></div></div>
+                <label class="mm-field">Tên thực đơn <em>*</em><input name="MenuName" maxlength="200" autocomplete="off" required /></label>
+                <label class="mm-field">Ảnh đại diện<input name="Image" type="file" accept="image/jpeg,image/png,image/webp" /><small>JPG, PNG hoặc WEBP; tối đa 5 MB.</small></label>
+                <label class="mm-field">Mô tả<textarea name="Description" maxlength="1000" rows="5" placeholder="Mô tả phong cách, nhóm món hoặc điểm nổi bật..."></textarea></label>
+            </section>
+
+            <section class="mm-create-panel mm-create-dishes-panel" aria-labelledby="createMenuDishesTitle">
+                <div class="mm-create-section-title"><span><i class="bi bi-list-check" aria-hidden="true"></i></span><div><h3 id="createMenuDishesTitle">Chọn món ăn</h3><p>Chỉ hiển thị các món đang phục vụ.</p></div></div>
+                <div class="mm-create-dish-filters">
+                    <label><i class="bi bi-search" aria-hidden="true"></i><input type="search" id="createDishSearch" placeholder="Tìm theo mã hoặc tên món..." /></label>
+                    <select id="createDishCategory" aria-label="Lọc theo danh mục món"><option value="">Tất cả danh mục</option></select>
+                </div>
+                <div id="createMenuDishes" class="mm-create-dish-list" tabindex="-1" aria-live="polite"><div class="mm-create-loading"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Đang tải danh sách món...</div></div>
+                <div class="mm-create-summary" aria-live="polite">
+                    <span><small>Số món đã chọn</small><strong id="createMenuDishCount">0 món</strong></span>
+                    <span><small>Giá mỗi bàn tự tính</small><strong id="createMenuTotal">0 đ</strong></span>
+                </div>
+            </section>
+        </div>
+
+        <footer class="mm-create-footer">
+            <p><i class="bi bi-info-circle" aria-hidden="true"></i> Giá mỗi bàn bằng tổng giá các món đã chọn.</p>
+            <div><button type="button" class="mm-btn light" data-modal-close>Hủy</button><button class="mm-btn gold" id="createMenuSubmit" type="submit" disabled><i class="bi bi-plus-lg" aria-hidden="true"></i> Thêm thực đơn</button></div>
+        </footer>
+    </form>
+</div>
+<div class="mm-modal" id="editModal" hidden><form method="post" enctype="multipart/form-data" action="@Url.Action("Update")" class="mm-modal-box">@Html.AntiForgeryToken()<input type="hidden" name="MenuId" /><header><h2>Chỉnh sửa thực đơn</h2><button type="button" data-modal-close>×</button></header><label>Mã thực đơn<input name="MenuCode" disabled /></label><label>Tên thực đơn *<input name="MenuName" maxlength="200" required /></label><label>Thay ảnh đại diện<input name="NewImage" type="file" accept="image/jpeg,image/png,image/webp" /><small>Để trống nếu muốn giữ ảnh hiện tại.</small></label><label>Giá / bàn *<input name="PricePerTable" type="number" min="0" required /></label><label>Mô tả<textarea name="Description" maxlength="1000" rows="4"></textarea></label><footer><button type="button" class="mm-btn light" data-modal-close>Hủy</button><button class="mm-btn gold" type="submit">Lưu thay đổi</button></footer></form></div>
 <div class="mm-modal" id="dishModal" hidden><form class="mm-modal-box wide" id="dishForm">@Html.AntiForgeryToken()<input type="hidden" name="MenuId" /><header><div><h2>Thêm món vào thực đơn</h2><p>Chỉ hiển thị món đang phục vụ và chưa có trong thực đơn.</p></div><button type="button" data-modal-close>×</button></header><div class="mm-dish-filters"><input type="search" id="dishSearch" placeholder="Tìm món ăn..." /><select id="dishCategory"><option value="">Tất cả danh mục</option><option>Món khai vị</option><option>Món súp</option><option>Món chính</option><option>Món tráng miệng</option></select></div><div id="availableDishes" class="mm-dish-picker"></div><footer><span id="dishSelectedCount">Đã chọn 0 món</span><button type="button" class="mm-btn light" data-modal-close>Hủy</button><button class="mm-btn gold" type="submit">Thêm vào thực đơn</button></footer></form></div>
 
 @section Scripts { <script src="~/js/manager-menu.js" asp-append-version="true"></script> }

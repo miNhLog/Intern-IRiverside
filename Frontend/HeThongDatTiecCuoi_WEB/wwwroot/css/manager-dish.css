@@ -6,3 +6,22 @@
 
 /* Typography aligned with the Hall Management screen. */
 .md-page{font-size:12px}.md-header h1{font-size:23px}.md-header p{font-size:11px}.md-breadcrumb{font-size:11px}.md-btn{font-size:11px}.md-alert{font-size:12px}.md-kpis small{font-size:11px}.md-kpis b{font-size:19px}.md-filters input,.md-filters select{font-size:12px}.md-card h2{font-size:15px}.md-code{font-size:10px}.md-status{font-size:9px}.md-category{font-size:9px}.md-card details button{font-size:11px}.md-card-body footer strong{font-size:13px}.md-card-body footer small{font-size:10px}.md-detail-empty h2{font-size:17px}.md-detail-empty p{font-size:11px}.md-detail-body>small{font-size:10px}.md-detail-body h2{font-size:17px}.md-detail-body p{font-size:11px}.md-detail-price{font-size:17px}.md-usage h3{font-size:13px}.md-usage>p{font-size:11px}.md-menu-usage{font-size:11px}.md-menu-usage small{font-size:9px}.md-menu-type{font-size:9px}.md-pagination{font-size:11px}.md-modal header h2{font-size:17px}.md-form-grid label{font-size:11px}.md-form-grid input,.md-form-grid select{font-size:12px}.md-upload small{font-size:9px}.md-delete-image{font-size:10px}.md-confirm>p{font-size:11px}.md-toast{font-size:11px}
+
+
+/* Affected Menus Inactive Warning Modal */
+.md-warning-banner[hidden],.md-affected-menus-wrap[hidden]{display:none!important}
+.md-warning-banner{display:flex;gap:12px;align-items:flex-start;background:#fff8ec;border:1px solid #fed7aa;border-radius:10px;padding:12px 14px;margin-bottom:14px;color:#9a3412}
+.md-warning-banner i{font-size:18px;color:#ea580c;margin-top:2px}
+.md-warning-banner strong{display:block;font-size:13px;font-weight:700;margin-bottom:3px}
+.md-warning-banner p{margin:0;font-size:11px;line-height:1.45;color:#7c2d12}
+.md-affected-menus-wrap{margin-top:12px;margin-bottom:14px}
+.md-affected-label{display:block;font-size:11px;font-weight:700;color:#334155;margin-bottom:6px}
+.md-affected-list{max-height:180px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;padding:6px}
+.md-affected-item{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-bottom:1px solid #edf2f7;background:#fff;border-radius:6px;margin-bottom:4px}
+.md-affected-item:last-child{margin-bottom:0}
+.md-affected-item-info{display:flex;flex-direction:column;gap:2px}
+.md-affected-code{font-size:10px;font-weight:700;color:#b89758;text-transform:uppercase}
+.md-affected-name{font-size:12px;font-weight:600;color:#0f172a}
+.md-affected-type{font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;background:#e2e8f0;color:#334155;white-space:nowrap}
+.md-affected-type.standard{background:#dbeafe;color:#1e40af}
+.md-affected-type.custom{background:#f3e8ff;color:#6b21a8}

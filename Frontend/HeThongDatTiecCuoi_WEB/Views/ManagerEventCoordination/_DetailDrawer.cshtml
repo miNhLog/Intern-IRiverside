@@ -6,8 +6,21 @@
 }
 <header class="drawer-header">
     <button type="button" class="drawer-close" data-close-drawer aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
-    <span>Chi tiết tiệc</span><div class="drawer-title"><h2>@Model.BookingCode</h2><span class="event-badge booking @Model.BookingStatusCode.ToLowerInvariant()">@Model.BookingStatusName</span></div>
-    <p><i class="fa-regular fa-calendar"></i> @Model.EventDate.ToString("dd/MM/yyyy") <b>·</b> @Model.Shift</p><p><i class="fa-solid fa-location-dot"></i> @Model.HallName</p>
+    <span>Chi tiết tiệc</span>
+    <div class="drawer-title">
+        <h2>@Model.BookingCode</h2>
+        <span class="event-badge booking @Model.BookingStatusCode.ToLowerInvariant()">@Model.BookingStatusName</span>
+    </div>
+    <p><i class="fa-regular fa-calendar"></i> @Model.EventDate.ToString("dd/MM/yyyy") <b>·</b> @Model.Shift</p>
+    <p><i class="fa-solid fa-location-dot"></i> @Model.HallName</p>
+    @if (Model.BookingStatusCode != "CANCELLED" && Model.BookingStatusCode != "COMPLETED")
+    {
+        <div class="drawer-header-actions">
+            <button type="button" class="drawer-action-btn gold" data-emergency-assign="@Model.BookingId" data-booking-code="@Model.BookingCode" data-event-info="@Model.EventDate.ToString("dd/MM/yyyy") - @Model.Shift" data-current-coordinator="@(Model.CoordinatorName ?? "")">
+                <i class="fa-solid fa-user-gear"></i> @(string.IsNullOrEmpty(Model.CoordinatorName) ? "Phân công điều phối" : "Đổi điều phối viên khẩn cấp")
+            </button>
+        </div>
+    }
 </header>
 <div class="drawer-tabs" role="tablist">
     <button type="button" class="active" data-drawer-tab="overview">Tổng quan</button><button type="button" data-drawer-tab="content">Nội dung tiệc</button><button type="button" data-drawer-tab="coordination">Điều phối</button><button type="button" data-drawer-tab="history">Lịch sử thay đổi lịch</button><button type="button" data-drawer-tab="incidents">Sự cố</button>
@@ -23,6 +36,15 @@
         <article class="detail-card"><h3>Yêu cầu đặc biệt</h3><p>@(string.IsNullOrWhiteSpace(Model.SpecialRequests) ? "Chưa có thông tin." : Model.SpecialRequests)</p></article>
     </section>
     <section class="drawer-panel" data-drawer-panel="coordination">
+        <div class="coordination-panel-header">
+            <h4>Lịch sử &amp; phân công nhân sự</h4>
+            @if (Model.BookingStatusCode != "CANCELLED" && Model.BookingStatusCode != "COMPLETED")
+            {
+                <button type="button" class="drawer-action-btn small gold" data-emergency-assign="@Model.BookingId" data-booking-code="@Model.BookingCode" data-event-info="@Model.EventDate.ToString("dd/MM/yyyy") - @Model.Shift" data-current-coordinator="@(Model.CoordinatorName ?? "")">
+                    <i class="fa-solid fa-user-gear"></i> Can thiệp phân công
+                </button>
+            }
+        </div>
         @if (Model.HasConflict) { <div class="drawer-warning"><i class="fa-solid fa-triangle-exclamation"></i> Điều phối viên này đang được phân công cho nhiều tiệc trong cùng ngày và ca tổ chức.</div> }
         @if (Model.Assignments.Count == 0) { <div class="drawer-empty tall"><i class="fa-solid fa-user-clock"></i><strong>Tiệc chưa được phân công Điều phối viên.</strong></div> }
         @foreach (var assignment in Model.Assignments) { <article class="timeline-card"><header><strong>@assignment.CoordinatorName</strong><span class="event-badge coordination @assignment.StatusCode.ToLowerInvariant()">@assignment.StatusName</span></header><dl><div><dt>Mã nhân viên</dt><dd>@assignment.CoordinatorCode</dd></div><div><dt>Thời điểm phân công</dt><dd>@assignment.AssignedAt.ToString("dd/MM/yyyy HH:mm")</dd></div><div><dt>Quản lý sảnh phân công</dt><dd>@assignment.AssignedByName</dd></div></dl></article> }
@@ -33,6 +55,6 @@
     </section>
     <section class="drawer-panel" data-drawer-panel="incidents">
         @if (Model.Incidents.Count == 0) { <div class="drawer-empty tall"><i class="fa-solid fa-shield-halved"></i><strong>Tiệc chưa ghi nhận sự cố.</strong></div> }
-        @foreach (var incident in Model.Incidents) { <article class="timeline-card incident"><header><strong>@incident.IncidentType</strong><span class="severity @incident.Severity.ToLowerInvariant().Replace(" ", "-")">@incident.Severity</span></header><p>@incident.Description</p><dl><div><dt>Trạng thái</dt><dd>@incident.StatusName</dd></div><div><dt>Người báo</dt><dd>@(incident.ReportedByName ?? "Không ghi nhận")</dd></div><div><dt>Phát sinh</dt><dd>@incident.OccurredAt.ToString("dd/MM/yyyy HH:mm")</dd></div></dl>@if (!string.IsNullOrWhiteSpace(incident.Resolution)) { <p><b>Hướng xử lý:</b> @incident.Resolution</p> }@if (incident.ResolvedAt.HasValue) { <small>Hoàn tất @incident.ResolvedAt.Value.ToString("dd/MM/yyyy HH:mm")</small> }</article> }
+        @foreach (var incident in Model.Incidents) { <article class="timeline-card incident"><header><strong>@incident.IncidentType</strong><span class="severity @incident.Severity.ToLowerInvariant().Replace(" ", "-")">@incident.Severity</span></header><p>@incident.Description</p><dl><div><dt>Trạng thái</dt><dd>@incident.StatusName</dd></div><div><dt>Người báo</dt><dd>@(incident.ReportedByName ?? "Không ghi nhận")</dd></div><div><dt>Phát sinh</dt><dd>@incident.OccurredAt.ToString("dd/MM/yyyy HH:mm")</dd></div></dl>@if (!string.IsNullOrWhiteSpace(incident.Resolution)) { <p><b>Hướng xử lý:</b> @incident.Resolution</p> }@if (incident.ResolvedAt.HasValue) { <small>Hoàn tất @incident.ResolvedAt.Value.ToString("dd/MM/yyyy HH:mm")</small> }<a class="incident-manage-link" asp-controller="ManagerIncident" asp-action="Index" asp-route-incidentId="@incident.IncidentId">Xem và xử lý sự cố <i class="fa-solid fa-arrow-up-right-from-square"></i></a></article> }
     </section>
 </div>
