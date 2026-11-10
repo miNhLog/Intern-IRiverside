@@ -1,12 +1,48 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const root = document.documentElement;
+    const themeButton = document.getElementById("authThemeToggle");
+    const themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
+    const themeStorageKey = "adminColorMode";
+    const currentTheme = () => root.dataset.authTheme === "dark" ? "dark" : "light";
+    const syncThemeButton = () => {
+        if (!themeButton) return;
+        const dark = currentTheme() === "dark";
+        themeButton.setAttribute("aria-label", dark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối");
+        themeButton.title = dark ? "Giao diện sáng" : "Giao diện tối";
+        const icon = themeButton.querySelector(".bi");
+        if (icon) {
+            icon.classList.toggle("bi-sun", dark);
+            icon.classList.toggle("bi-moon-stars", !dark);
+        }
+    };
+
+    themeButton?.addEventListener("click", () => {
+        const nextTheme = currentTheme() === "dark" ? "light" : "dark";
+        root.dataset.authTheme = nextTheme;
+        try { localStorage.setItem(themeStorageKey, nextTheme); }
+        catch { /* Theme remains active for the current page. */ }
+        syncThemeButton();
+    });
+
+    themeMedia.addEventListener("change", event => {
+        try { if (localStorage.getItem(themeStorageKey)) return; }
+        catch { return; }
+        root.dataset.authTheme = event.matches ? "dark" : "light";
+        syncThemeButton();
+    });
+    syncThemeButton();
+
     document.querySelectorAll(".toggle-password").forEach(button => {
         button.addEventListener("click", () => {
             const input = button.parentElement?.querySelector("input");
             if (!input) return;
             input.type = input.type === "password" ? "text" : "password";
             button.setAttribute("aria-label", input.type === "password" ? "Hiện mật khẩu" : "Ẩn mật khẩu");
-            const icon = button.querySelector(".material-symbols-outlined");
-            if (icon) icon.textContent = input.type === "password" ? "visibility" : "visibility_off";
+            const icon = button.querySelector(".bi");
+            if (icon) {
+                icon.classList.toggle("bi-eye", input.type === "password");
+                icon.classList.toggle("bi-eye-slash", input.type !== "password");
+            }
         });
     });
 

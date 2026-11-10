@@ -122,6 +122,9 @@
 .auth-toast-region { position: fixed; z-index: 10000; top: 22px; right: 22px; width: min(390px, calc(100vw - 32px)); display: grid; gap: 10px; pointer-events: none; }
 .auth-toast { display: flex; align-items: flex-start; gap: 11px; padding: 14px 16px; border: 1px solid; border-radius: 12px; box-shadow: 0 14px 35px rgba(31,41,55,.18); background: #fff; font: 13px/1.5 Arial, sans-serif; pointer-events: auto; animation: auth-toast-in .22s ease-out; }
 .auth-toast .material-symbols-outlined { flex: none; font-size: 21px; }
+.auth-toast > div { display: grid; min-width: 0; gap: 2px; }
+.auth-toast > div strong { font-size: 13px; font-weight: 700; }
+.auth-toast > div span { overflow-wrap: anywhere; }
 .auth-toast-success { border-color: #9fd5ba; color: #176445; background: #f0fbf5; }
 .auth-toast-error { border-color: #edaaa4; color: #982a23; background: #fff4f3; }
 .auth-toast.is-leaving { opacity: 0; transform: translateX(18px); transition: opacity .2s, transform .2s; }

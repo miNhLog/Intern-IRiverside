@@ -711,14 +711,23 @@ html body.admin-metis-app #adminMainContent .profile-secondary:hover { border-co
     color: #18181b;
     background: #fff;
 }
-html[data-admin-theme="dark"] .admin-metis-app .employee-filter select { color-scheme: dark; }
-html[data-admin-theme="dark"] .admin-metis-app .employee-filter select option {
+.admin-metis-app .account-modal select { color-scheme: light; }
+.admin-metis-app .account-modal select option {
+    color: #18181b;
+    background: #fff;
+}
+.admin-metis-app .account-modal select option:disabled { color: #a1a1aa; }
+html[data-admin-theme="dark"] .admin-metis-app :is(.employee-filter select,.account-modal select) { color-scheme: dark; }
+html[data-admin-theme="dark"] .admin-metis-app :is(.employee-filter select,.account-modal select) option {
     color: #f4f4f5;
     background: #18181b;
 }
-html[data-admin-theme="dark"] .admin-metis-app .employee-filter select option:checked {
+html[data-admin-theme="dark"] .admin-metis-app :is(.employee-filter select,.account-modal select) option:disabled {
+    color: #71717a;
+}
+html[data-admin-theme="dark"] .admin-metis-app :is(.employee-filter select,.account-modal select) option:checked {
     color: #fff;
-    background: #2563eb;
+    background: #9a7127;
 }
 .admin-metis-app :is(.account-modal,.audit-dialog-body) { color: var(--rp-text); border-color: var(--rp-border); border-radius: var(--metis-radius-lg); background: var(--rp-surface); }
 .admin-metis-app :is(.account-modal-overlay,.role-action-modal) { background: rgba(9, 9, 11, .52); }
