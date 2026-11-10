@@ -253,4 +253,3 @@ public sealed class Phase2FeatureTests
         public string EnvironmentName { get; set; } = "Development";
     }
 }
-

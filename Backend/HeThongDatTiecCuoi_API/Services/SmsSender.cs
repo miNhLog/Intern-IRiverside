@@ -47,4 +47,3 @@ public sealed class ConfigurableSmsSender : ISmsSender
         return response.IsSuccessStatusCode;
     }
 }
-

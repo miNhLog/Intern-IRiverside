@@ -1018,7 +1018,7 @@ public sealed class PayOSPaymentService : IPaymentService
             .OrderByDescending(t => t.NgayTao)
             .FirstOrDefault(t => t.TrangThai == "SUCCESS");
 
-        var amountPaid = booking.PaidAmount > 0 
+        var amountPaid = booking.PaidAmount > 0
             ? (latestPayment?.Amount ?? latestTx?.SoTienGhiNhan ?? booking.PaidAmount)
             : 0;
 
@@ -1034,7 +1034,7 @@ public sealed class PayOSPaymentService : IPaymentService
             CustomerPhone = booking.Customer.PhoneNumber,
             CustomerEmail = booking.Customer.Email ?? string.Empty,
             PaymentType = booking.PaidAmount >= (booking.EstimatedTotal ?? 0) && booking.PaidAmount > 0
-                ? "Thanh toán toàn bộ (100%)" 
+                ? "Thanh toán toàn bộ (100%)"
                 : "Đặt cọc (20%)",
             PaymentMethod = latestPayment?.PaymentMethod ?? "VIETQR_PAYOS",
             TransactionCode = orderCodeStr,

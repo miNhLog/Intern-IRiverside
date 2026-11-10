@@ -141,4 +141,3 @@ public class InvoicePdfAndSignatureTests
         Assert.NotEmpty(html);
     }
 }
-

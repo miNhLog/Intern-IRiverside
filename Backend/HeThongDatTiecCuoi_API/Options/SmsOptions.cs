@@ -16,4 +16,3 @@ public sealed class SmsOptions
     [RegularExpression("^[0-9]{6}$")]
     public string? DevelopmentCode { get; init; }
 }
-

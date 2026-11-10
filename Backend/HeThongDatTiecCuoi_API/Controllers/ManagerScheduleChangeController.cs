@@ -53,4 +53,3 @@ public sealed class ManagerScheduleChangeController : ControllerBase
         catch (DbUpdateException) { return Conflict(new { success = false, message = "Dữ liệu vừa thay đổi hoặc phát sinh xung đột lịch." }); }
     }
 }
-

@@ -31,4 +31,3 @@ public sealed class ScheduleChangePolicyTier
 
     public ScheduleChangePolicy Policy { get; set; } = null!;
 }
-

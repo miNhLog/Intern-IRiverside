@@ -90,4 +90,3 @@ public static class ScheduleChangePolicyStatusCodes
     public const string Active = "ACTIVE";
     public const string Retired = "RETIRED";
 }
-

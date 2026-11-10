@@ -66,4 +66,3 @@ public sealed class PublicScheduleChangeController : ControllerBase
         catch (DbUpdateException) { return Conflict(new { success = false, message = "Dữ liệu vừa thay đổi hoặc lịch đã được giữ bởi yêu cầu khác." }); }
     }
 }
-
