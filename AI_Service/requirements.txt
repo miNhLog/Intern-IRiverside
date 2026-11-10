@@ -10,3 +10,5 @@ seaborn==0.13.2
 requests==2.31.0
 chromadb>=0.4.0
 sentence-transformers>=2.2.0
+# UC10: hỗ trợ nạp cấu hình chatbot từ .env; không yêu cầu khóa để chạy offline.
+python-dotenv==1.0.1

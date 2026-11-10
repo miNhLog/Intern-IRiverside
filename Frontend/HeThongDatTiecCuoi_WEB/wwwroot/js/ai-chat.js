@@ -75,14 +75,21 @@
                 setTyping(false); sending = false;
                 var reply = (data && data.reply) || 'Dạ trợ lý AI đang bận, Quý khách gọi Hotline 0933 777 888 để được hỗ trợ ngay ạ!';
                 addMsg(reply, 'bot');
-                history.push({ role: 'assistant', content: reply });
-                refreshExtract();
+                var isFallback = !data || !data.reply || (data.confidence === 0 && (reply.indexOf('bận') >= 0 || reply.indexOf('gián đoạn') >= 0));
+                if (!isFallback) {
+                    history.push({ role: 'assistant', content: reply });
+                    refreshExtract();
+                } else if (history.length > 0 && history[history.length - 1].role === 'user') {
+                    history.pop();
+                }
             })
             .catch(function () {
                 setTyping(false); sending = false;
                 var fb = 'Dạ kết nối trợ lý AI đang gián đoạn, Quý khách vui lòng thử lại hoặc gọi Hotline 0933 777 888 ạ!';
                 addMsg(fb, 'bot');
-                history.push({ role: 'assistant', content: fb });
+                if (history.length > 0 && history[history.length - 1].role === 'user') {
+                    history.pop();
+                }
             });
     }
 
@@ -127,9 +134,10 @@
     function mapStyle(v) {
         if (!v) return null;
         var s = String(v);
-        var opts = ['Hiện đại / lãng mạn', 'Sân vườn / lãng mạn', 'Cổ tích / lãng mạn', 'Nhẹ nhàng'];
+        var opts = ['Hiện đại / lãng mạn', 'Hoàng gia', 'Sân vườn / lãng mạn', 'Cổ tích / lãng mạn', 'Nhẹ nhàng'];
         if (opts.indexOf(s) >= 0) return s;
-        return null;
+        if (/thiên nhiên|ngoài trời|ven sông/i.test(s)) return 'Sân vườn / lãng mạn';
+        return 'Hiện đại / lãng mạn';
     }
 
     function fillSurvey(e) {
@@ -143,14 +151,14 @@
         }
         var guests = e.so_khach_du_kien || (e.so_ban_du_kien ? e.so_ban_du_kien * 10 : 0);
         var gInput = $('guestCount');
-        if (gInput && guests && guests >= 150 && guests <= 2000) {
+        if (gInput && guests && guests >= 150 && guests <= 1400) {
             gInput.value = guests; filled++;
             try { if (typeof syncGuestToTables === 'function') syncGuestToTables(); } catch (x) { }
         } else if (e.so_ban_du_kien) {
             var off = $('officialTableCount');
             if (off) { off.value = e.so_ban_du_kien; }
             if (gInput) {
-                gInput.value = Math.min(2000, e.so_ban_du_kien * 10);
+                gInput.value = Math.min(1400, e.so_ban_du_kien * 10);
                 try { if (typeof syncGuestToTables === 'function') syncGuestToTables(); } catch (x) { }
             }
             filled++;
@@ -230,9 +238,15 @@
         } catch (x) { /* prefill lỗi: bỏ qua */ }
     }
 
+    function hideBubble() {
+        var b = $('aiChatBubble');
+        if (b) b.classList.add('hidden');
+    }
+
     function openPanel() {
         var p = $('aiChatPanel');
         if (!p) return;
+        hideBubble();
         p.classList.add('open');
         p.setAttribute('aria-hidden', 'false');
         if ($('aiChatMsgs') && $('aiChatMsgs').children.length === 0) greeting();
@@ -254,6 +268,22 @@
     function init() {
         var fab = $('aiChatFab');
         if (!fab || !$('aiChatPanel')) return;
+
+        var bubble = $('aiChatBubble');
+        var bubbleClose = $('aiBubbleCloseBtn');
+        if (bubble) {
+            bubble.addEventListener('click', function (ev) {
+                if (ev.target === bubbleClose || (bubbleClose && bubbleClose.contains(ev.target))) return;
+                openPanel();
+            });
+        }
+        if (bubbleClose) {
+            bubbleClose.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                hideBubble();
+            });
+        }
+
         fab.addEventListener('click', function () {
             var p = $('aiChatPanel');
             if (p && p.classList.contains('open')) closePanel(); else openPanel();

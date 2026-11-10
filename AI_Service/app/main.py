@@ -1,4 +1,12 @@
 """Riverside Palace - Intelligent Recommendation & Decision Support Service (FastAPI, port 8000)."""
+# Nạp cấu hình chatbot từ .env nếu có; vẫn chạy offline khi chưa cấu hình AI.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except Exception:  # pragma: no cover - python-dotenv là tùy chọn khi chạy offline
+    pass
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

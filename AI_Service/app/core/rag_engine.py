@@ -1,8 +1,22 @@
 """RAG Engine UC10: ChromaDB (optional) + TF-IDF/hash fallback, chat + entity extraction.
 
+Kien truc Retrieval-Augmented Generation (RAG) theo:
+- Lewis, P., et al. (2020). Retrieval-Augmented Generation for Knowledge-Intensive
+  NLP Tasks. *NeurIPS 33*. Retriever (o day: ChromaDB / TF-IDF fallback) lay Top-K
+  context tu knowledge_base, Generator sinh cau tra loi TIENG VIET co dieu kien
+  tren context + lich su hoi thoai.
+
+Che do sinh (Generator):
+- OFFLINE (mac dinh, khong can key): rule-based ``_rule_based_reply`` trich cau
+  lien quan tu Top chunks + bao gia/chinh sach chuan + cau ket theo slot thieu.
+- ONLINE LLM (khi co OPENAI_API_KEY hoac GEMINI_API_KEY): ``_call_external_llm``
+  goi OpenAI (gpt-4o-mini) hoac Gemini (gemini-1.5-flash) voi prompt dong
+  (Context + lich su + cau hoi), fallback ve rule-based khi loi/timeout.
+
 Persist: AI_Service/data/chroma_db/ (collection riverside_catalog).
 Source : AI_Service/data/knowledge_base/riverside_knowledge.md
 """
+import contextlib
 import hashlib
 import json
 import math
@@ -450,6 +464,36 @@ def search_context(query: str, top_k: int = 3) -> List[Tuple[str, float, Dict]]:
 
 
 # ---------------------------------------------------------------- chat
+def _force_ipv4_enabled() -> bool:
+    return os.getenv("LLM_FORCE_IPV4", "true").strip().lower() in ("1", "true", "yes", "on")
+
+
+@contextlib.contextmanager
+def _force_ipv4():
+    """Ép phân giải/ kết nối ra ngoài dùng IPv4.
+
+    Một số máy Windows có bản ghi AAAA (IPv6) của Google nhưng IPv6 không ra được:
+    ``urlopen`` thử IPv6 trước -> treo/timeout rất lâu hoặc bị chặn trả
+    ``WinError 10013`` (WSAEACCES). IPv4 vẫn OK -> tạm thay ``getaddrinfo`` chỉ
+    trả AF_INET trong lúc gọi LLM. Tắt bằng ``LLM_FORCE_IPV4=false``.
+    """
+    if not _force_ipv4_enabled():
+        yield
+        return
+    import socket as _socket
+
+    original = _socket.getaddrinfo
+
+    def _ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
+        return original(host, port, _socket.AF_INET, type, proto, flags)
+
+    _socket.getaddrinfo = _ipv4_only
+    try:
+        yield
+    finally:
+        _socket.getaddrinfo = original
+
+
 def _call_external_llm(prompt: str) -> Optional[str]:
     # OpenAI (ưu tiên nếu có key)
     openai_key = os.getenv("OPENAI_API_KEY", "").strip()
@@ -465,18 +509,20 @@ def _call_external_llm(prompt: str) -> Optional[str]:
                 "https://api.openai.com/v1/chat/completions", data=payload,
                 headers={"Authorization": f"Bearer {openai_key}",
                          "Content-Type": "application/json"}, method="POST")
-            with urllib.request.urlopen(req, timeout=12) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                txt = data["choices"][0]["message"]["content"].strip()
-                if txt:
-                    return txt
+            with _force_ipv4():
+                with urllib.request.urlopen(req, timeout=12) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    txt = data["choices"][0]["message"]["content"].strip()
+                    if txt:
+                        return txt
         except Exception:
             pass
     gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
     if gemini_key:
         try:
             import urllib.request
-            model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+            # gemini-1.5-flash da bi Google shutdown (2026); dung model con phuc vu.
+            model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
             payload = json.dumps({
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {"maxOutputTokens": 600, "temperature": 0.3},
@@ -486,12 +532,14 @@ def _call_external_llm(prompt: str) -> Optional[str]:
             req = urllib.request.Request(url, data=payload,
                                          headers={"Content-Type": "application/json"},
                                          method="POST")
-            with urllib.request.urlopen(req, timeout=12) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-                if txt:
-                    return txt
-        except Exception:
+            with _force_ipv4():
+                with urllib.request.urlopen(req, timeout=12) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    if txt:
+                        return txt
+        except Exception as e:
+            print(f"[Gemini Error] {e}")
             pass
     return None
 
@@ -586,9 +634,6 @@ def chat(query: str, history: Optional[List] = None) -> Dict:
     elif (hits and max_score >= 0.30 and _concept_points(query) >= 2
             and not _forced_out_of_scope(query)):
         out_of_scope = False
-    if out_of_scope:
-        return {"reply": SAFE_OUT_OF_SCOPE, "sources": [],
-                "confidence": round(float(max_score), 3), "is_out_of_scope": True}
     sources = [{"text": t[:500], "score": round(float(s), 3), **m} for t, s, m in hits]
     context = "\n---\n".join(t for t, _, _ in hits)
     hist_txt = ""
@@ -605,6 +650,27 @@ def chat(query: str, history: Optional[List] = None) -> Dict:
             hist_txt = "\n".join(parts)
     except Exception:
         hist_txt = ""
+
+    if out_of_scope:
+        # Cách 2: Nếu có LLM (OpenAI / Gemini), cho phép trả lời câu hỏi tự nhiên / toán học / xã giao
+        # nhưng giữ phong thái trợ lý Riverside Palace và khéo léo gợi ý dịch vụ tiệc cưới.
+        casual_prompt = (
+            "Bạn là Trợ lý ảo Riverside Palace - Trung tâm Hội nghị Tiệc cưới cao cấp ven sông Sài Gòn (360D Bến Vân Đồn, Q4, TP.HCM).\n"
+            "Khách hàng vừa hỏi một câu hỏi tự nhiên, toán học hoặc ngoài lề dịch vụ tiệc cưới.\n"
+            "Nhiệm vụ của bạn:\n"
+            "1. Trả lời câu hỏi của khách một cách chính xác, ngắn gọn và thân thiện bằng tiếng Việt, xưng 'Dạ/em'.\n"
+            "2. Khéo léo nói thêm rằng bạn là Trợ lý ảo của Riverside Palace và luôn sẵn sàng tư vấn về sảnh tiệc, thực đơn 7 món Á–Âu, ưu đãi tiệc cưới hoặc Hotline 0933 777 888.\n"
+            f"Lịch sử trò chuyện:\n{hist_txt}\n"
+            f"Câu hỏi của khách: {query}\n"
+            "Trả lời:"
+        )
+        casual_reply = _call_external_llm(casual_prompt)
+        if casual_reply:
+            return {"reply": casual_reply, "sources": [],
+                    "confidence": round(float(max_score), 3), "is_out_of_scope": False}
+        return {"reply": SAFE_OUT_OF_SCOPE, "sources": [],
+                "confidence": round(float(max_score), 3), "is_out_of_scope": True}
+
     prompt = ("Bạn là trợ lý ảo Riverside Palace, trả lời tiếng Việt thân thiện, xưng 'Dạ/em', "
               "chỉ dùng thông tin trong Context, kèm báo giá chuẩn và Hotline 0933 777 888.\n"
               f"Context:\n{context}\nLịch sử:\n{hist_txt}\nCâu hỏi: {query}\nTrả lời:")
@@ -736,6 +802,10 @@ def _iter_texts_newest_first(history: List) -> List[str]:
     texts = []
     for m in reversed(history or []):
         if isinstance(m, dict):
+            role = str(m.get("role", "")).lower()
+            # Bỏ qua tin nhắn của bot/assistant, chỉ lấy tin nhắn của khách (user)
+            if role in ("assistant", "bot", "system"):
+                continue
             c = m.get("content", m.get("message", m.get("text", "")))
             if c:
                 texts.append(str(c))
