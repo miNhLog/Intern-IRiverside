@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace HeThongDatTiecCuoi_API.DTOs.Contract;
 
@@ -63,25 +62,12 @@ public sealed class EligibleBookingDto
     public string? DecorationPackageName { get; set; }
     public List<string> Services { get; set; } = [];
     public decimal EstimatedTotal { get; set; }
-    // BR04: snapshot giá tại thời điểm booking, dùng để dựng bảng giá của hợp đồng.
-    public decimal? HallPrice { get; set; }
-    public decimal? MenuPricePerTable { get; set; }
-    public decimal? DecorationPrice { get; set; }
-    public List<ContractServiceLineDto> ServiceLines { get; set; } = [];
     public string DefaultContractContent { get; set; } = string.Empty;
     public string DefaultPaymentTerms { get; set; } = string.Empty;
 }
 
-public sealed class ContractServiceLineDto
-{
-    public string Name { get; set; } = string.Empty;
-    public int Quantity { get; set; }
-    public decimal UnitPrice { get; set; }
-}
-
 public sealed class CreateContractRequestDto
 {
-    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)] public decimal? RequiredDepositAmount { get; set; }
     [Range(1, int.MaxValue)] public int BookingId { get; set; }
     [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal? TotalValue { get; set; }
@@ -91,7 +77,6 @@ public sealed class CreateContractRequestDto
 
 public sealed class UpdateDraftContractRequestDto
 {
-    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)] public decimal? RequiredDepositAmount { get; set; }
     [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal TotalValue { get; set; }
     public string? ContractContent { get; set; }
@@ -100,8 +85,6 @@ public sealed class UpdateDraftContractRequestDto
 
 public sealed class ManagerContractDetailDto
 {
-    public decimal? RequiredDepositAmount { get; set; }
-    public decimal DepositPaidAmount { get; set; }
     public int ContractId { get; set; }
     public string ContractCode { get; set; } = string.Empty;
     public DateTime CreatedDate { get; set; }

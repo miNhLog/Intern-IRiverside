@@ -5,6 +5,7 @@ using HeThongDatTiecCuoi_WEB.Models.Auth;
 using HeThongDatTiecCuoi_WEB.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HeThongDatTiecCuoi_WEB.Controllers;
 
@@ -48,6 +49,14 @@ public sealed class AdminAccountController : Controller
             mustChangePassword,
             cancellationToken);
 
+        var allAccountsResult = await _apiClient.GetAccountsAsync(
+            accessToken,
+            null,
+            null,
+            null,
+            null,
+            cancellationToken);
+
         var adminRoleId = rolesResult.Value?
             .FirstOrDefault(role => role.RoleName == RoleNames.Admin)?
             .RoleId;
@@ -61,21 +70,56 @@ public sealed class AdminAccountController : Controller
                 cancellationToken)
             : null;
 
+        var adminAccount = adminResult?.Succeeded == true
+            ? adminResult.Value?.FirstOrDefault(account => account.RoleName == RoleNames.Admin)
+            : null;
+        var allowedRoles = new[]
+        {
+            RoleNames.Admin,
+            RoleNames.Manager,
+            RoleNames.HallManager,
+            RoleNames.Coordinator
+        };
+        var filteredAccounts = accountsResult.Succeeded && accountsResult.Value is not null
+            ? accountsResult.Value.Where(account => allowedRoles.Contains(account.RoleName)).ToList()
+            : [];
+        var allAccounts = allAccountsResult.Succeeded && allAccountsResult.Value is not null
+            ? allAccountsResult.Value.Where(account => allowedRoles.Contains(account.RoleName)).ToList()
+            : [];
+
+        bool AdminMatchesFilters(AccountDto account)
+        {
+            var keywordMatches = string.IsNullOrWhiteSpace(keyword)
+                || account.Email.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                || (account.FullName?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false)
+                || account.UserId.ToString().Contains(keyword, StringComparison.OrdinalIgnoreCase);
+            return keywordMatches
+                && (!roleId.HasValue || account.RoleId == roleId.Value)
+                && (string.IsNullOrWhiteSpace(status) || account.Status == status)
+                && (!mustChangePassword.HasValue || account.MustChangePassword == mustChangePassword.Value);
+        }
+
+        if (adminAccount is not null)
+        {
+            if (AdminMatchesFilters(adminAccount) && filteredAccounts.All(account => account.UserId != adminAccount.UserId))
+            {
+                filteredAccounts.Insert(0, adminAccount);
+            }
+            if (allAccounts.All(account => account.UserId != adminAccount.UserId))
+            {
+                allAccounts.Insert(0, adminAccount);
+            }
+        }
+
         var model = new AccountManagementViewModel
         {
             Keyword = keyword,
             RoleId = roleId,
             Status = status,
             MustChangePassword = mustChangePassword,
-            AdminAccount = adminResult?.Succeeded == true
-                ? adminResult.Value?.FirstOrDefault(account => account.RoleName == RoleNames.Admin)
-                : null,
-            Accounts = accountsResult.Succeeded && accountsResult.Value is not null
-                ? accountsResult.Value.Where(account =>
-                    account.RoleName == RoleNames.Manager ||
-                    account.RoleName == RoleNames.HallManager ||
-                    account.RoleName == RoleNames.Coordinator).ToList()
-                : new List<AccountDto>(),
+            AdminAccount = adminAccount,
+            Accounts = filteredAccounts,
+            AllAccounts = allAccounts,
             Roles = rolesResult.Succeeded && rolesResult.Value is not null
                 ? rolesResult.Value
                 : new List<RoleDto>()
@@ -320,6 +364,16 @@ public sealed class AdminAccountController : Controller
             {
                 success = false,
                 message = "Tài khoản không hợp lệ."
+            });
+        }
+
+        if (int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var currentUserId)
+            && currentUserId == userId)
+        {
+            return Json(new
+            {
+                success = false,
+                message = "Quản trị viên không thể tự khóa tài khoản đang đăng nhập."
             });
         }
 

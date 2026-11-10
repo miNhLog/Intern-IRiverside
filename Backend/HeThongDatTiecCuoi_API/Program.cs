@@ -8,7 +8,6 @@ using HeThongDatTiecCuoi_API.Models;
 using HeThongDatTiecCuoi_API.Options;
 using HeThongDatTiecCuoi_API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,13 +17,6 @@ using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 QuestPDF.Settings.License = LicenseType.Community;
-
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
-    foreach (var proxy in builder.Configuration.GetSection("BookingSecurity:TrustedWebProxyIps").Get<string[]>() ?? [])
-        if (System.Net.IPAddress.TryParse(proxy, out var address)) options.KnownProxies.Add(address);
-});
 
 // Cố định InvariantCulture cho toàn bộ thread để RangeAttribute(typeof(decimal), ...)
 // và decimal parsing không phụ thuộc culture Windows (vi-VN dùng dấu phẩy thập phân).
@@ -69,6 +61,8 @@ builder.Services.Configure<MailSettings>(
     builder.Configuration.GetSection(MailSettings.SectionName));
 builder.Services.Configure<PasswordResetOptions>(
     builder.Configuration.GetSection(PasswordResetOptions.SectionName));
+builder.Services.Configure<ReviewQrOptions>(
+    builder.Configuration.GetSection(ReviewQrOptions.SectionName));
 builder.Services
     .AddOptions<AccountProvisioningOptions>()
     .Bind(builder.Configuration.GetSection(AccountProvisioningOptions.SectionName))
@@ -125,25 +119,58 @@ builder.Services
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IPasswordHasher<FirstPasswordOtp>, PasswordHasher<FirstPasswordOtp>>();
+builder.Services.AddScoped<IPasswordHasher<ScheduleChangeOtp>, PasswordHasher<ScheduleChangeOtp>>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IStatusService, StatusService>();
+builder.Services.AddScoped<BookingStatusBusinessRules>();
+builder.Services.AddScoped<CustomMenuPricingService>();
 builder.Services.AddSingleton<IPaymentPolicyProvider, PaymentPolicyProvider>();
+builder.Services.AddSingleton<IHallPricingPolicyService, HallPricingPolicyService>();
+builder.Services.Configure<SmsOptions>(builder.Configuration.GetSection(SmsOptions.SectionName));
+builder.Services.Configure<PayOSOptions>(builder.Configuration.GetSection("PayOS"));
+builder.Services.AddSingleton(sp =>
+{
+    var opt = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PayOSOptions>>().Value;
+    return new PayOS.PayOSClient(opt.ClientId, opt.ApiKey, opt.ChecksumKey);
+});
+builder.Services.AddScoped<IPaymentService, PayOSPaymentService>();
+builder.Services.AddScoped<ISmsSender, ConfigurableSmsSender>();
+builder.Services.AddScoped<IScheduleChangePolicyService, ScheduleChangePolicyService>();
+builder.Services.AddScoped<IScheduleChangeService, ScheduleChangeService>();
+builder.Services.AddHostedService<ScheduleChangeExpirationWorker>();
 builder.Services.AddScoped<IContractTemplateProvider, ContractTemplateProvider>();
 builder.Services.AddScoped<IContractCodeGenerator, ContractCodeGenerator>();
 builder.Services.AddScoped<IContractPdfGenerator, ContractPdfGenerator>();
+builder.Services.AddSingleton<IInvoiceDigitalSignatureService, InvoiceDigitalSignatureService>();
+builder.Services.AddScoped<IInvoicePdfGenerator, InvoicePdfGenerator>();
 builder.Services.AddScoped<IEmployeeCodeGenerator, EmployeeCodeGenerator>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IIncidentService, IncidentService>();
+builder.Services.AddScoped<ICoordinationAssignmentService, CoordinationAssignmentService>();
+builder.Services.AddScoped<ChecklistService>();
+builder.Services.AddScoped<IReviewQrEligibilityPolicy, ReviewQrEligibilityPolicy>();
+builder.Services.AddScoped<IReviewQrService, ReviewQrService>();
+builder.Services.AddScoped<IReviewStatisticsService, ReviewStatisticsService>();
+builder.Services.AddHostedService<ReviewQrBackfillWorker>();
+builder.Services.AddScoped<IHallManagerDashboardService, HallManagerDashboardService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddHostedService<BookingHoldExpirationService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IFirstPasswordOtpService, FirstPasswordOtpService>();
 builder.Services.AddScoped<DevelopmentAuthSeeder>();
 builder.Services.AddScoped<IAiChatService, AiChatService>();
+builder.Services.AddScoped<IAiCatalogSyncService, AiCatalogSyncService>();
 builder.Services.AddHttpClient();
 builder.Services
     .AddOptions<AiServiceOptions>()
     .Bind(builder.Configuration.GetSection(AiServiceOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services
+    .AddOptions<PricingPolicyOptions>()
+    .Bind(builder.Configuration.GetSection(PricingPolicyOptions.SectionName))
     .ValidateDataAnnotations()
     .ValidateOnStart();
 builder.Services.AddHttpClient("AiService", (provider, client) =>
@@ -165,16 +192,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddPolicy("public-booking-lookup", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 30,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0,
-                AutoReplenishment = true
-            }));
     options.AddPolicy("auth", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -185,26 +202,23 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
-    // UC13: chặn lạm dụng đăng ký giữ chỗ công khai (mỗi yêu cầu có thể tạo khách + booking + giữ sảnh).
-    // 10 yêu cầu/phút/IP đủ cho khách sửa sai vài lần, đồng thời chặn spam tự động.
-    options.AddPolicy("public-booking-register", httpContext =>
+    options.AddPolicy("ai-chat", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = 15,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
-    // UC15: giới hạn thao tác ghi công khai (hủy / đổi lịch) để chặn dò mã và spam.
-    options.AddPolicy("public-booking-mutation", httpContext =>
+    options.AddPolicy("wedding-review", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            partitionKey: $"{httpContext.Connection.RemoteIpAddress}:{httpContext.Request.RouteValues["token"]}",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
-                Window = TimeSpan.FromMinutes(1),
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(10),
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
@@ -239,16 +253,22 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-app.UseForwardedHeaders();
 app.Use(async (context, next) =>
 {
-    if (HttpMethods.IsPost(context.Request.Method) &&
-        context.Request.Path.StartsWithSegments("/api/v1/public/bookings", StringComparison.OrdinalIgnoreCase))
+    context.Response.OnStarting(() =>
     {
-        context.Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
-        context.Response.Headers.Pragma = "no-cache";
-        context.Response.Headers.Expires = "0";
-    }
+        var headers = context.Response.Headers;
+        headers["X-Frame-Options"] = "SAMEORIGIN";
+        headers["X-Content-Type-Options"] = "nosniff";
+        headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        headers["X-XSS-Protection"] = "1; mode=block";
+        headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()";
+        if (context.Request.IsHttps)
+        {
+            headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+        }
+        return Task.CompletedTask;
+    });
     await next();
 });
 

@@ -1,0 +1,358 @@
+/* Metis page treatment for the Admin notification center. */
+.admin-metis-app #adminMainContent > .notifications-page {
+    min-height: calc(100vh - var(--metis-header-height));
+    box-sizing: border-box;
+    padding: 24px 26px 36px !important;
+    color: var(--rp-text);
+    background: var(--rp-bg);
+}
+
+html body.admin-metis-app #adminMainContent .notification-page-header {
+    position: static !important;
+    isolation: auto !important;
+    display: flex !important;
+    width: auto !important;
+    min-height: 0 !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    margin: 0 0 20px !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+html body.admin-metis-app #adminMainContent .notification-page-header::before,
+html body.admin-metis-app #adminMainContent .notification-page-header::after {
+    display: none !important;
+    content: none !important;
+}
+
+.admin-metis-app #adminMainContent .notification-page-header .backoffice-hero__eyebrow {
+    display: none !important;
+}
+
+html body.admin-metis-app #adminMainContent .notification-page-header h1 {
+    margin: 0 !important;
+    color: var(--rp-text) !important;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    font-size: 26px !important;
+    font-weight: 600 !important;
+    letter-spacing: -.02em !important;
+    line-height: 1.25 !important;
+}
+
+html body.admin-metis-app #adminMainContent .notification-page-header p {
+    margin: 4px 0 0 !important;
+    color: var(--rp-text-secondary) !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+}
+
+.admin-metis-app #adminMainContent .notification-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0 0 14px;
+}
+
+.admin-metis-app #adminMainContent .notification-mark-all {
+    flex: 0 0 auto;
+    padding: 4px 0;
+    border: 0;
+    color: var(--rp-gold-600);
+    background: transparent;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.admin-metis-app #adminMainContent .notification-mark-all:hover {
+    color: var(--rp-gold-700);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.admin-metis-app #adminMainContent .notification-mark-all:focus-visible {
+    border-radius: 3px;
+    outline: 2px solid var(--rp-gold-500);
+    outline-offset: 3px;
+}
+
+.admin-metis-app #adminMainContent .notification-filters {
+    display: inline-flex;
+    gap: 4px;
+    margin: 0;
+    padding: 4px;
+    border: 1px solid var(--rp-border);
+    border-radius: var(--metis-radius);
+    background: var(--rp-surface);
+}
+
+.admin-metis-app #adminMainContent .notification-filters a {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 13px;
+    border-radius: var(--metis-radius-sm);
+    color: var(--rp-text-secondary);
+    background: transparent;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.admin-metis-app #adminMainContent .notification-filters a:hover {
+    color: var(--rp-text);
+    background: var(--rp-surface-hover);
+}
+
+.admin-metis-app #adminMainContent .notification-filters a.active {
+    color: var(--rp-text);
+    background: var(--rp-surface-muted);
+    box-shadow: inset 0 0 0 1px var(--rp-border-strong);
+}
+
+.admin-metis-app #adminMainContent .notification-page-list {
+    overflow: hidden;
+    border: 1px solid var(--rp-border);
+    border-radius: var(--metis-radius-lg);
+    background: var(--rp-surface);
+    box-shadow: none;
+}
+
+.admin-metis-app #adminMainContent .notification-page-item {
+    min-height: 92px;
+    grid-template-columns: 40px minmax(0, 1fr) 8px;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border-bottom-color: var(--rp-border);
+    color: var(--rp-text);
+    background: var(--rp-surface);
+}
+
+.admin-metis-app #adminMainContent .notification-page-item:last-child {
+    border-bottom: 0;
+}
+
+.admin-metis-app #adminMainContent .notification-page-item:hover {
+    background: var(--rp-surface-hover);
+}
+
+.admin-metis-app #adminMainContent .notification-page-item.unread {
+    background: var(--rp-gold-100);
+}
+
+.admin-metis-app #adminMainContent .notification-page-item.unread:hover {
+    background: color-mix(in srgb, var(--rp-gold-500) 16%, var(--rp-surface));
+}
+
+.admin-metis-app #adminMainContent .notification-type-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--metis-radius);
+    color: var(--rp-gold-600);
+    background: var(--rp-gold-100);
+    font-size: 16px;
+}
+
+.admin-metis-app #adminMainContent .notification-page-item strong {
+    color: var(--rp-text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.admin-metis-app #adminMainContent .notification-page-item span span {
+    margin-top: 4px;
+    color: var(--rp-text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.admin-metis-app #adminMainContent .notification-page-item small {
+    margin-top: 6px;
+    color: var(--rp-text-muted);
+    font-size: 10px;
+}
+
+.admin-metis-app #adminMainContent .notification-page-empty {
+    padding: 64px 20px;
+    color: var(--rp-text-secondary);
+}
+
+.admin-metis-app #adminMainContent .notification-page-empty h2 {
+    margin: 12px 0 4px;
+    color: var(--rp-text);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.admin-metis-app #adminMainContent .notification-pagination a {
+    border-color: var(--rp-border);
+    border-radius: var(--metis-radius-sm);
+    color: var(--rp-text-secondary);
+    background: var(--rp-surface);
+}
+
+.admin-metis-app #adminMainContent .notification-pagination a.active {
+    border-color: var(--rp-gold-600);
+    color: #fff;
+    background: var(--rp-gold-600);
+}
+
+/* Theme bridge for the shared notification dropdown and notification page. */
+html[data-admin-theme="dark"] .admin-metis-app .notification-panel {
+    border-color: var(--rp-border);
+    color: var(--rp-text);
+    background: var(--rp-surface);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-panel-header {
+    border-bottom-color: var(--rp-border);
+    background: var(--rp-surface);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-panel-header h2 {
+    color: var(--rp-text);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-panel-header button,
+html[data-admin-theme="dark"] .admin-metis-app .notification-panel-footer a {
+    color: var(--rp-gold-600);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-panel-header button:hover,
+html[data-admin-theme="dark"] .admin-metis-app .notification-panel-footer a:hover {
+    color: var(--rp-gold-700);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-recent-list {
+    color: var(--rp-text);
+    background: var(--rp-surface);
+    scrollbar-color: var(--rp-border-strong) var(--rp-surface);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-recent-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-recent-list::-webkit-scrollbar-track {
+    background: var(--rp-surface);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-recent-list::-webkit-scrollbar-thumb {
+    border: 2px solid var(--rp-surface);
+    border-radius: 999px;
+    background: var(--rp-border-strong);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app :is(.notification-recent-item, .notification-page-item) {
+    border-bottom-color: var(--rp-border);
+    color: var(--rp-text);
+    background: var(--rp-surface);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app :is(.notification-recent-item, .notification-page-item):hover {
+    background: var(--rp-surface-hover);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app :is(.notification-recent-item.unread, .notification-page-item.unread) {
+    background: color-mix(in srgb, var(--rp-gold-500) 10%, var(--rp-surface));
+}
+
+html[data-admin-theme="dark"] .admin-metis-app :is(.notification-recent-item.unread, .notification-page-item.unread):hover {
+    background: color-mix(in srgb, var(--rp-gold-500) 15%, var(--rp-surface));
+}
+
+html[data-admin-theme="dark"] .admin-metis-app :is(.notification-recent-item, .notification-page-item) strong {
+    color: var(--rp-text);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app :is(.notification-recent-item, .notification-page-item) span span {
+    color: var(--rp-text-secondary);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app :is(.notification-recent-item, .notification-page-item) small {
+    color: var(--rp-text-muted);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-recent-item > i:first-child,
+html[data-admin-theme="dark"] .admin-metis-app .notification-type-icon {
+    color: var(--rp-gold-600);
+    background: color-mix(in srgb, var(--rp-gold-500) 14%, var(--rp-surface-hover));
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-unread-dot {
+    background: var(--rp-gold-500);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-panel-footer {
+    border-top: 1px solid var(--rp-border);
+    background: var(--rp-surface);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-empty-state,
+html[data-admin-theme="dark"] .admin-metis-app .notification-empty-state span {
+    color: var(--rp-text-muted);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-empty-state > i {
+    color: var(--rp-text-secondary);
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .notification-page-list {
+    border-color: var(--rp-border);
+    background: var(--rp-surface);
+}
+
+@media (max-width: 767.98px) {
+    .admin-metis-app #adminMainContent > .notifications-page {
+        padding: 20px 14px 30px !important;
+    }
+
+    html body.admin-metis-app #adminMainContent .notification-page-header {
+        align-items: stretch !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+
+    html body.admin-metis-app #adminMainContent .notification-page-header h1 {
+        font-size: 23px !important;
+    }
+
+    .admin-metis-app #adminMainContent .notification-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .admin-metis-app #adminMainContent .notification-filters {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .admin-metis-app #adminMainContent .notification-mark-all {
+        align-self: flex-end;
+    }
+
+    .admin-metis-app #adminMainContent .notification-filters a {
+        flex: 1 1 0;
+        justify-content: center;
+    }
+
+    .admin-metis-app #adminMainContent .notification-page-item {
+        min-height: 0;
+        grid-template-columns: 36px minmax(0, 1fr) 7px;
+        gap: 11px;
+        padding: 14px;
+    }
+
+    .admin-metis-app #adminMainContent .notification-type-icon {
+        width: 36px;
+        height: 36px;
+    }
+}

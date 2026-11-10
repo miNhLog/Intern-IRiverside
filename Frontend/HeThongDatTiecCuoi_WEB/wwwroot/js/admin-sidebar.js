@@ -6,20 +6,16 @@
     const mobileToggle = document.getElementById("mobileSidebarToggle");
     const backdrop = document.getElementById("sidebarBackdrop");
     const tooltip = document.getElementById("sidebarTooltip");
-    const toast = document.getElementById("globalToast");
-    const flashToast = document.getElementById("flashToast");
     const searchInput = document.getElementById("backofficeSearch");
     const searchResults = document.getElementById("backofficeSearchResults");
     const notificationButton = document.getElementById("notificationButton");
     const notificationPanel = document.getElementById("notificationPanel");
-    const desktopMedia = window.matchMedia("(min-width: 851px)");
-
-    if (flashToast?.hasAttribute("data-auto-show")) {
-        window.requestAnimationFrame(() => flashToast.classList.add("show"));
-        const closeFlash = () => flashToast.classList.remove("show");
-        flashToast.querySelector("button")?.addEventListener("click", closeFlash);
-        window.setTimeout(closeFlash, 4500);
-    }
+    const metisAdmin = document.body.classList.contains("admin-metis-app");
+    const desktopMedia = window.matchMedia(
+        metisAdmin
+            ? "(min-width: 992px)"
+            : "(min-width: 851px)"
+    );
 
     if (!sidebar || !desktopToggle || !mobileToggle || !backdrop || !tooltip) {
         return;
@@ -56,14 +52,24 @@
 
             desktopToggle.setAttribute("aria-label", label);
             desktopToggle.title = label;
-            desktopToggleIcon?.classList.toggle("fa-angles-left", !collapsed);
-            desktopToggleIcon?.classList.toggle("fa-angles-right", collapsed);
-            desktopToggleIcon?.classList.remove("fa-xmark");
+            if (metisAdmin) {
+                desktopToggleIcon?.classList.add("bi", "bi-list");
+                desktopToggleIcon?.classList.remove("bi-x-lg");
+            } else {
+                desktopToggleIcon?.classList.toggle("fa-angles-left", !collapsed);
+                desktopToggleIcon?.classList.toggle("fa-angles-right", collapsed);
+                desktopToggleIcon?.classList.remove("fa-xmark");
+            }
         } else {
             desktopToggle.setAttribute("aria-label", "Đóng thanh điều hướng");
             desktopToggle.title = "Đóng thanh điều hướng";
-            desktopToggleIcon?.classList.remove("fa-angles-left", "fa-angles-right");
-            desktopToggleIcon?.classList.add("fa-xmark");
+            if (metisAdmin) {
+                desktopToggleIcon?.classList.remove("bi-list");
+                desktopToggleIcon?.classList.add("bi", "bi-x-lg");
+            } else {
+                desktopToggleIcon?.classList.remove("fa-angles-left", "fa-angles-right");
+                desktopToggleIcon?.classList.add("fa-xmark");
+            }
         }
     };
 
@@ -216,18 +222,9 @@
         expandDesktopSidebar();
     });
 
-    let toastTimer;
     document.querySelectorAll(".developing").forEach(button => {
         button.addEventListener("click", () => {
-            if (!toast) {
-                return;
-            }
-
-            window.clearTimeout(toastTimer);
-            toast.classList.add("show");
-            toastTimer = window.setTimeout(() => {
-                toast.classList.remove("show");
-            }, 2000);
+            window.RiversideToast?.info("Chức năng đang được phát triển. Vui lòng quay lại sau.");
         });
     });
 

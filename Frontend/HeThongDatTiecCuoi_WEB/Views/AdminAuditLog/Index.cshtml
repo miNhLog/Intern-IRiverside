@@ -1,254 +1,135 @@
+@using System.Text.Json
 @model HeThongDatTiecCuoi_WEB.Models.AdminAccount.AuditLogPageViewModel
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Nhật ký hệ thống";
+    var isImportantMode = Model.Mode != "all";
     var actions = new Dictionary<string, string>
     {
-        ["CREATE_ACCOUNT"] = "Cấp tài khoản",
-        ["UPDATE_ACCOUNT"] = "Cập nhật tài khoản",
-        ["LOCK_ACCOUNT"] = "Khóa tài khoản",
-        ["UNLOCK_ACCOUNT"] = "Mở khóa tài khoản",
-        ["CHANGE_ROLE"] = "Thay đổi vai trò",
-        ["RESET_PASSWORD"] = "Đặt lại mật khẩu",
-        ["ROLE_CHANGE_REQUESTED"] = "Gửi yêu cầu thay đổi vai trò",
-        ["ROLE_CHANGE_APPROVED"] = "Duyệt thay đổi vai trò",
-        ["ROLE_CHANGE_REJECTED"] = "Từ chối thay đổi vai trò",
-        ["FIRST_PASSWORD_CHANGED"] = "Hoàn tất đổi mật khẩu lần đầu",
-        ["ADMIN_PASSWORD_CHANGED"] = "Đổi mật khẩu quản trị viên"
+        ["LOGIN_SUCCESS"] = "Đăng nhập thành công", ["LOGIN_FAILED"] = "Đăng nhập thất bại", ["LOGIN_BLOCKED"] = "Đăng nhập bị từ chối", ["LOGOUT"] = "Đăng xuất",
+        ["PASSWORD_CHANGED"] = "Đổi mật khẩu", ["PASSWORD_RESET_COMPLETED"] = "Hoàn tất đặt lại mật khẩu", ["FIRST_PASSWORD_CHANGED"] = "Hoàn tất đổi mật khẩu lần đầu", ["ADMIN_PASSWORD_CHANGED"] = "Đổi mật khẩu quản trị viên",
+        ["CREATE_ACCOUNT"] = "Cấp tài khoản", ["UPDATE_ACCOUNT"] = "Cập nhật tài khoản", ["LOCK_ACCOUNT"] = "Khóa tài khoản", ["UNLOCK_ACCOUNT"] = "Mở khóa tài khoản",
+        ["CHANGE_ROLE"] = "Thay đổi vai trò", ["RESET_PASSWORD"] = "Đặt lại mật khẩu", ["ROLE_CHANGE_REQUESTED"] = "Gửi yêu cầu thay đổi vai trò", ["ROLE_CHANGE_APPROVED"] = "Duyệt thay đổi vai trò", ["ROLE_CHANGE_REJECTED"] = "Từ chối thay đổi vai trò",
+        ["BOOKING_CREATED"] = "Tạo đặt tiệc", ["BOOKING_STATUS_CHANGED"] = "Đổi trạng thái đặt tiệc", ["BOOKING_CANCELLED"] = "Hủy đặt tiệc", ["BOOKING_HOLD_CANCELLED"] = "Khách hủy giữ chỗ", ["CANCEL"] = "Khách hủy giữ chỗ (cũ)",
+        ["CONTRACT_CREATED"] = "Tạo hợp đồng", ["CONTRACT_UPDATED"] = "Cập nhật hợp đồng", ["CONTRACT_ACTIVATED"] = "Kích hoạt hợp đồng", ["CONTRACT_COMPLETED"] = "Hoàn tất hợp đồng", ["CONTRACT_CANCELLED"] = "Hủy hợp đồng",
+        ["PAYMENT"] = "Thanh toán PayOS", ["PAYMENT_RECORDED"] = "Ghi nhận thu tiền", ["SCHEDULE_CHANGE_REFUND_CONFIRMED"] = "Xác nhận hoàn tiền",
+        ["SCHEDULE_CHANGE_CREATED"] = "Tạo yêu cầu đổi lịch", ["SCHEDULE_CHANGE_REVIEW"] = "Duyệt yêu cầu đổi lịch", ["SCHEDULE_CHANGE_QUOTED"] = "Báo giá đổi lịch", ["SCHEDULE_CHANGE_REJECTED"] = "Từ chối đổi lịch",
+        ["SCHEDULE_CHANGE_WITHDRAWN"] = "Rút yêu cầu đổi lịch", ["SCHEDULE_CHANGE_RECONCILED"] = "Đối soát đổi lịch", ["SCHEDULE_CHANGE_APPLIED"] = "Áp dụng đổi lịch", ["HALL_SCHEDULE_STATUS_CHANGED"] = "Đổi trạng thái lịch sảnh",
+        ["HALL_PRICE_UPDATED"] = "Cập nhật giá sảnh", ["HALL_CREATED"] = "Tạo sảnh", ["HALL_UPDATED"] = "Cập nhật sảnh", ["MENU_CREATED"] = "Tạo thực đơn", ["MENU_UPDATED"] = "Cập nhật thực đơn",
+        ["MENU_DISHES_CHANGED"] = "Thay đổi món trong thực đơn", ["DISH_CREATED"] = "Tạo món ăn", ["DISH_UPDATED"] = "Cập nhật món ăn", ["DECOR_CREATED"] = "Tạo gói trang trí", ["DECOR_UPDATED"] = "Cập nhật gói trang trí", ["SERVICE_CREATED"] = "Tạo dịch vụ", ["SERVICE_UPDATED"] = "Cập nhật dịch vụ",
+        ["HALL_MANAGER_ASSIGNED"] = "Phân công quản lý sảnh", ["HALL_MANAGER_ASSIGNMENT_ENDED"] = "Kết thúc quản lý sảnh", ["COORDINATION_ASSIGNED"] = "Phân công điều phối", ["COORDINATION_CHANGED"] = "Đổi phân công điều phối", ["COORDINATION_CANCELLED"] = "Hủy phân công điều phối", ["COORDINATION_COMPLETED"] = "Hoàn tất điều phối",
+        ["INCIDENT_CREATED"] = "Tạo sự cố", ["INCIDENT_UPDATED"] = "Cập nhật sự cố", ["INCIDENT_STATUS_CHANGED"] = "Đổi trạng thái sự cố", ["INCIDENT_RESOLUTION_UPDATED"] = "Cập nhật hướng xử lý"
     };
-    var entities = new Dictionary<string, string>
-    {
-        ["User"] = "Tài khoản nhân viên",
-        ["RoleChangeRequest"] = "Yêu cầu thay đổi vai trò"
-    };
-    string Label(string action) => actions.GetValueOrDefault(action, action);
-    var hasFilters = !string.IsNullOrWhiteSpace(Model.Keyword)
-        || !string.IsNullOrWhiteSpace(Model.Action)
-        || !string.IsNullOrWhiteSpace(Model.EntityNameFilter)
-        || Model.FromDate.HasValue
-        || Model.ToDate.HasValue;
+    string ActionLabel(string action) => actions.TryGetValue(action, out var label) ? label : action;
+    string GroupLabel(string group) => group switch { "authentication" => "Xác thực", "account" => "Tài khoản và phân quyền", "booking" => "Booking", "contract" => "Hợp đồng", "payment" => "Tài chính", "schedule" => "Lịch sảnh", "catalog" => "Danh mục", "workforce" => "Vận hành nhân sự", "incident" => "Sự cố", _ => "Khác" };
+    var importantGroups = new[] { new { Key = "", Label = "Tất cả", Icon = "bi bi-grid" }, new { Key = "security", Label = "Bảo mật", Icon = "bi bi-shield-check" }, new { Key = "finance", Label = "Tài chính", Icon = "bi bi-cash-stack" }, new { Key = "booking", Label = "Booking", Icon = "bi bi-calendar-check" }, new { Key = "operations", Label = "Vận hành", Icon = "bi bi-people" } };
+    var allGroups = new[] { new { Key = "", Label = "Tất cả", Icon = "bi bi-grid" }, new { Key = "authentication", Label = "Xác thực", Icon = "bi bi-key" }, new { Key = "account", Label = "Tài khoản & phân quyền", Icon = "bi bi-person-badge" }, new { Key = "booking", Label = "Booking", Icon = "bi bi-calendar-check" }, new { Key = "contract", Label = "Hợp đồng", Icon = "bi bi-file-earmark-text" }, new { Key = "payment", Label = "Tài chính", Icon = "bi bi-cash-stack" }, new { Key = "schedule", Label = "Lịch sảnh", Icon = "bi bi-calendar3" }, new { Key = "catalog", Label = "Danh mục", Icon = "bi bi-tags" }, new { Key = "workforce", Label = "Nhân sự", Icon = "bi bi-people" }, new { Key = "incident", Label = "Sự cố", Icon = "bi bi-exclamation-triangle" } };
+    var availableActions = actions.Where(item => Model.AvailableActions.Count == 0 || Model.AvailableActions.Contains(item.Key));
+    var hasAdvancedFilters = !string.IsNullOrWhiteSpace(Model.Action) || !string.IsNullOrWhiteSpace(Model.Outcome) || !string.IsNullOrWhiteSpace(Model.AuthMethod) || Model.PageSize != 20;
+    var hasAnyFilters = !string.IsNullOrWhiteSpace(Model.Keyword) || hasAdvancedFilters || (!Model.AppliedDefaultPeriod && (Model.FromDate.HasValue || Model.ToDate.HasValue));
+    var advancedCount = new object?[] { Model.Action, Model.Outcome, Model.AuthMethod, Model.PageSize == 20 ? null : Model.PageSize }.Count(value => value is not null && !string.IsNullOrWhiteSpace(value.ToString()));
     var firstItem = Model.TotalItems == 0 ? 0 : (Model.Page - 1) * Model.PageSize + 1;
     var lastItem = Math.Min(Model.Page * Model.PageSize, Model.TotalItems);
+    var tabFromDate = Model.AppliedDefaultPeriod ? null : Model.FromDate?.ToString("yyyy-MM-dd");
+    var tabToDate = Model.AppliedDefaultPeriod ? null : Model.ToDate?.ToString("yyyy-MM-dd");
+    var showAuthMethod = (!isImportantMode && Model.Group == "authentication") || (isImportantMode && Model.ImportantGroup == "security") || !string.IsNullOrWhiteSpace(Model.AuthMethod);
 }
-
 <link rel="stylesheet" href="~/css/admin-audit-log.css" asp-append-version="true" />
 
 <section class="audit-page">
-    <header class="audit-page-header">
-        <div class="breadcrumb">Quản trị hệ thống <span>›</span> <strong>Nhật ký hệ thống</strong></div>
-        <h1>Nhật ký hệ thống</h1>
-        <p>Theo dõi các thao tác quản trị tài khoản, phân quyền và bảo mật hệ thống.</p>
-    </header>
+    <header class="audit-page-header"><div><h1>Nhật ký hệ thống</h1><p>Theo dõi sự kiện quan trọng và truy vết toàn bộ hoạt động quản trị.</p></div><span class="audit-period-note"><i class="bi bi-calendar3" aria-hidden="true"></i>@(isImportantMode && Model.AppliedDefaultPeriod ? "7 ngày gần nhất" : "Theo khoảng thời gian đã chọn")</span></header>
 
-    <form method="get" class="audit-toolbar" id="auditFilterForm">
-        <label class="audit-field audit-search">
-            <span class="audit-field-label">Tìm kiếm</span>
-            <span class="audit-input-wrap">
-                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                <input type="search" name="keyword" value="@Model.Keyword" maxlength="200" placeholder="Người thực hiện, tài khoản, nội dung..." />
-            </span>
-        </label>
+    <nav class="audit-mode-tabs" aria-label="Chế độ xem nhật ký">
+        <a class="@(isImportantMode ? "active" : null)" aria-current="@(isImportantMode ? "page" : null)" asp-action="Index" asp-route-mode="important" asp-route-keyword="@Model.Keyword" asp-route-fromDate="@tabFromDate" asp-route-toDate="@tabToDate" asp-route-outcome="@Model.Outcome" asp-route-authMethod="@Model.AuthMethod" asp-route-pageSize="@Model.PageSize"><i class="bi bi-stars" aria-hidden="true"></i><span><strong>Nhật ký quan trọng</strong><small>Sự kiện cần ưu tiên giám sát</small></span></a>
+        <a class="@(!isImportantMode ? "active" : null)" aria-current="@(!isImportantMode ? "page" : null)" asp-action="Index" asp-route-mode="all" asp-route-keyword="@Model.Keyword" asp-route-fromDate="@tabFromDate" asp-route-toDate="@tabToDate" asp-route-outcome="@Model.Outcome" asp-route-authMethod="@Model.AuthMethod" asp-route-pageSize="@Model.PageSize"><i class="bi bi-clock-history" aria-hidden="true"></i><span><strong>Tất cả nhật ký</strong><small>Tra cứu toàn bộ lịch sử audit</small></span></a>
+    </nav>
 
-        <label class="audit-field">
-            <span class="audit-field-label">Thao tác</span>
-            <select name="auditAction">
-                <option value="">Tất cả thao tác</option>
-                @foreach (var item in actions)
-                {
-                    <option value="@item.Key" selected="@(Model.Action == item.Key)">@item.Value</option>
-                }
-            </select>
-        </label>
-
-        <label class="audit-field">
-            <span class="audit-field-label">Đối tượng</span>
-            <select name="entityName">
-                <option value="">Tất cả đối tượng</option>
-                @foreach (var item in entities)
-                {
-                    <option value="@item.Key" selected="@(Model.EntityNameFilter == item.Key)">@item.Value</option>
-                }
-            </select>
-        </label>
-
-        <label class="audit-field audit-date-field">
-            <span class="audit-field-label">Từ ngày</span>
-            <input type="date" name="fromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
-        </label>
-
-        <label class="audit-field audit-date-field">
-            <span class="audit-field-label">Đến ngày</span>
-            <input type="date" name="toDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
-        </label>
-
-        <label class="audit-field audit-page-size-field">
-            <span class="audit-field-label">Hiển thị</span>
-            <select name="pageSize">
-                <option value="10" selected="@(Model.PageSize == 10)">10 dòng</option>
-                <option value="20" selected="@(Model.PageSize == 20)">20 dòng</option>
-                <option value="50" selected="@(Model.PageSize == 50)">50 dòng</option>
-            </select>
-        </label>
-
-        <div class="audit-toolbar-actions">
-            <button type="submit" class="audit-filter-button"><i class="fa-solid fa-filter" aria-hidden="true"></i>Lọc</button>
-            @if (hasFilters)
+    <section class="audit-monitor-panel" aria-labelledby="auditDirectoryTitle">
+        <header class="audit-monitor-heading"><div><h2 id="auditDirectoryTitle">@(isImportantMode ? "Sự kiện cần theo dõi" : "Danh mục nhật ký")</h2><p>@Model.TotalItems.ToString("N0") kết quả trong phạm vi đang xem</p></div><span>@(isImportantMode ? "Ưu tiên" : "Toàn bộ dữ liệu")</span></header>
+        <nav class="audit-group-chips" aria-label="Lọc theo nhóm nghiệp vụ">
+            @if (isImportantMode)
             {
-                <a asp-action="Index" asp-route-pageSize="@Model.PageSize" class="audit-reset-button"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i>Đặt lại</a>
+                @foreach (var item in importantGroups)
+                {
+                    var active = (Model.ImportantGroup ?? "") == item.Key;
+                    <a class="@(active ? "active" : null)" aria-current="@(active ? "page" : null)" asp-action="Index" asp-route-mode="important" asp-route-importantGroup="@item.Key" asp-route-keyword="@Model.Keyword" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-outcome="@Model.Outcome" asp-route-authMethod="@(item.Key == "security" ? Model.AuthMethod : null)" asp-route-pageSize="@Model.PageSize"><i class="@item.Icon" aria-hidden="true"></i>@item.Label</a>
+                }
             }
-        </div>
-    </form>
-
-    <div class="audit-filter-error" id="auditFilterError" role="alert" hidden></div>
-
-    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
-    {
-        <div class="audit-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><span>@Model.ErrorMessage</span></div>
-    }
-
-    <section class="audit-card" aria-labelledby="auditTableTitle">
-        <div class="audit-card-heading">
-            <div><h2 id="auditTableTitle">Lịch sử thao tác</h2>@if (string.IsNullOrWhiteSpace(Model.ErrorMessage)){<span>@Model.TotalItems nhật ký được tìm thấy</span>}</div>
-            @if (string.IsNullOrWhiteSpace(Model.ErrorMessage) && Model.TotalItems > 0)
+            else
             {
-                <span>Hiển thị @firstItem–@lastItem / @Model.TotalItems</span>
+                @foreach (var item in allGroups)
+                {
+                    var active = (Model.Group ?? "") == item.Key;
+                    <a class="@(active ? "active" : null)" aria-current="@(active ? "page" : null)" asp-action="Index" asp-route-mode="all" asp-route-group="@item.Key" asp-route-keyword="@Model.Keyword" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-outcome="@Model.Outcome" asp-route-authMethod="@(item.Key == "authentication" ? Model.AuthMethod : null)" asp-route-pageSize="@Model.PageSize"><i class="@item.Icon" aria-hidden="true"></i>@item.Label</a>
+                }
             }
-        </div>
+        </nav>
 
-        @if (Model.IsLoadError)
+        <form method="get" class="audit-filter-form" id="auditFilterForm">
+            <input type="hidden" name="mode" value="@Model.Mode" />
+            @if (isImportantMode) { <input type="hidden" name="importantGroup" value="@Model.ImportantGroup" /> } else { <input type="hidden" name="group" value="@Model.Group" /> }
+            <label class="audit-filter-field audit-filter-search"><span class="sr-only">Tìm kiếm nhật ký</span><span class="audit-input-icon"><i class="bi bi-search" aria-hidden="true"></i><input type="search" name="keyword" value="@Model.Keyword" maxlength="200" placeholder="Tìm người thực hiện, tài khoản, nội dung..." /></span></label>
+            <div class="audit-date-range" role="group" aria-label="Khoảng thời gian"><label><span>Từ ngày</span><input type="date" name="fromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" /></label><span aria-hidden="true">–</span><label><span>Đến ngày</span><input type="date" name="toDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" /></label></div>
+            <button type="submit" class="audit-apply-button"><i class="bi bi-search" aria-hidden="true"></i>Lọc</button>
+            <details class="audit-advanced" @(hasAdvancedFilters ? "open" : null)>
+                <summary><span><i class="bi bi-sliders" aria-hidden="true"></i>Bộ lọc nâng cao @if (advancedCount > 0){<em>@advancedCount</em>}</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+                <div class="audit-advanced-grid">
+                    <label><span>Loại thao tác</span><select name="auditAction"><option value="">Tất cả thao tác</option>@foreach (var item in availableActions){<option value="@item.Key" selected="@(Model.Action == item.Key)">@item.Value</option>}</select></label>
+                    <label><span>Kết quả</span><select name="outcome"><option value="">Tất cả kết quả</option><option value="SUCCESS" selected="@(Model.Outcome == "SUCCESS")">Thành công</option><option value="FAILED" selected="@(Model.Outcome == "FAILED")">Thất bại</option><option value="BLOCKED" selected="@(Model.Outcome == "BLOCKED")">Bị từ chối</option></select></label>
+                    @if (showAuthMethod) { <label><span>Phương thức xác thực</span><select name="authMethod"><option value="">Tất cả phương thức</option><option value="PASSWORD" selected="@(Model.AuthMethod == "PASSWORD")">Mật khẩu</option><option value="GOOGLE" selected="@(Model.AuthMethod == "GOOGLE")">Google</option><option value="JWT" selected="@(Model.AuthMethod == "JWT")">Phiên đăng nhập</option><option value="RESET_TOKEN" selected="@(Model.AuthMethod == "RESET_TOKEN")">Mã đặt lại mật khẩu</option></select></label> }
+                    <label><span>Số dòng mỗi trang</span><select name="pageSize"><option value="10" selected="@(Model.PageSize == 10)">10 dòng</option><option value="20" selected="@(Model.PageSize == 20)">20 dòng</option><option value="50" selected="@(Model.PageSize == 50)">50 dòng</option></select></label>
+                    <div class="audit-advanced-actions"><button type="submit"><i class="bi bi-check2" aria-hidden="true"></i>Áp dụng</button>@if (hasAnyFilters){<a asp-action="Index" asp-route-mode="@Model.Mode" asp-route-importantGroup="@Model.ImportantGroup" asp-route-group="@Model.Group"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>Đặt lại</a>}</div>
+                </div>
+            </details>
+            <p class="audit-filter-error" id="auditFilterError" role="alert" hidden></p>
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage)) { <div class="audit-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i><span>@Model.ErrorMessage</span></div> }
+        @if (Model.Items.Count == 0)
         {
-            <div class="audit-empty"><strong>Không thể tải nhật ký</strong><span>Hãy thử tải lại sau khi kiểm tra kết nối.</span></div>
-        }
-        else if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
-        {
-            <div class="audit-empty"><strong>Điều kiện lọc chưa hợp lệ</strong><span>Hãy điều chỉnh giá trị ngày rồi thử lại.</span></div>
-        }
-        else if (Model.Items.Count == 0)
-        {
-            <div class="audit-empty">
-                <span class="audit-empty-icon"><i class="fa-regular fa-clock" aria-hidden="true"></i></span>
-                <strong>@(hasFilters ? "Không tìm thấy nhật ký phù hợp" : "Chưa có nhật ký hệ thống")</strong>
-                <span>@(hasFilters ? "Hãy thay đổi điều kiện lọc để xem kết quả khác." : "Các thao tác quản trị tài khoản và phân quyền sẽ được hiển thị tại đây.")</span>
-            </div>
+            <div class="audit-empty"><span><i class="bi bi-clock-history" aria-hidden="true"></i></span><strong>Không tìm thấy nhật ký phù hợp</strong><p>Hãy thay đổi nhóm hoặc điều kiện lọc để xem kết quả khác.</p></div>
         }
         else
         {
-            <div class="audit-table-wrap">
-                <table class="audit-table">
-                    <thead><tr><th scope="col">Thời gian</th><th scope="col">Người thực hiện</th><th scope="col">Thao tác</th><th scope="col">Đối tượng</th><th scope="col">Nội dung</th></tr></thead>
-                    <tbody>
-                    @foreach (var log in Model.Items)
-                    {
-                        <tr>
-                            <td class="audit-time"><strong>@log.Timestamp.ToString("dd/MM/yyyy")</strong><small>@log.Timestamp.ToString("HH:mm:ss")</small></td>
-                            <td class="audit-actor"><i class="fa-regular fa-user" aria-hidden="true"></i><span><strong>@log.ActorName</strong>@if (!string.IsNullOrWhiteSpace(log.ActorEmail)){<small>@log.ActorEmail</small>}</span></td>
-                            <td><span class="audit-action action-@log.Action.ToLowerInvariant()">@Label(log.Action)</span></td>
-                            <td class="audit-target"><strong>@log.Target</strong></td>
-                            <td class="audit-detail">
-                                <span>@(log.Notes ?? "Không có ghi chú")</span>
-                                @if (!string.IsNullOrWhiteSpace(log.OldData) || !string.IsNullOrWhiteSpace(log.NewData))
-                                {
-                                    <button type="button" class="audit-detail-button" data-old="@log.OldData" data-new="@log.NewData" data-title="@Label(log.Action) – @log.Target" data-time="@log.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")" data-actor="@log.Actor" data-target="@log.Target" data-entity="@log.EntityName #@log.EntityId" data-notes="@log.Notes">Xem chi tiết<i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
-                                }
-                            </td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
+            <div class="audit-monitor-table-wrap"><table class="audit-monitor-table"><thead><tr><th scope="col">Thời gian</th><th scope="col">Người thực hiện</th><th scope="col">Hành động</th><th scope="col">Đối tượng</th><th scope="col">Kết quả</th><th scope="col">Chi tiết</th></tr></thead><tbody>
+            @foreach (var log in Model.Items)
+            {
+                var detailId = $"audit-data-{log.AuditLogId}";
+                var outcomeLabel = log.Outcome == "SUCCESS" ? "Thành công" : log.Outcome == "FAILED" ? "Thất bại" : log.Outcome == "BLOCKED" ? "Bị từ chối" : "Chưa xác định";
+                <tr><td data-label="Thời gian" class="audit-time"><strong>@log.Timestamp.ToString("dd/MM/yyyy")</strong><small>@log.Timestamp.ToString("HH:mm:ss")</small></td><td data-label="Người thực hiện"><div class="audit-actor"><span class="audit-avatar"><i class="bi @(log.Source == "Internal" ? "bi-person" : "bi-diagram-3")" aria-hidden="true"></i></span><span><strong>@log.ActorName</strong></span></div></td><td data-label="Hành động"><strong class="audit-action-name">@ActionLabel(log.Action)</strong></td><td data-label="Đối tượng" class="audit-target"><strong>@(string.IsNullOrWhiteSpace(log.Target) ? "—" : log.Target)</strong><small>@GroupLabel(log.Group)</small></td><td data-label="Kết quả"><span class="audit-outcome outcome-@((log.Outcome ?? "unknown").ToLowerInvariant())">@outcomeLabel</span></td><td data-label="Chi tiết" class="audit-detail"><button type="button" class="audit-detail-button" data-detail-id="@detailId" data-title="@ActionLabel(log.Action)" data-group-label="@GroupLabel(log.Group)"><span>Xem chi tiết</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button><script type="application/json" id="@detailId">@Html.Raw(JsonSerializer.Serialize(log))</script></td></tr>
+            }
+            </tbody></table></div>
         }
-
+        <footer class="audit-table-footer"><span>@if (Model.TotalItems > 0){<text>Hiển thị <strong>@firstItem–@lastItem</strong> trong @Model.TotalItems kết quả</text>}else{<text>Không có kết quả</text>}</span>
         @if (Model.TotalPages > 1)
         {
-            <nav class="audit-pagination" aria-label="Phân trang nhật ký">
-                <a class="audit-page-link @(Model.Page <= 1 ? "disabled" : null)" aria-label="Trang trước" aria-disabled="@(Model.Page <= 1 ? "true" : null)" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize" asp-route-auditAction="@Model.Action" asp-route-entityName="@Model.EntityNameFilter" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-keyword="@Model.Keyword"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></a>
-                @for (var number = Math.Max(1, Model.Page - 2); number <= Math.Min(Model.TotalPages, Model.Page + 2); number++)
-                {
-                    <a class="audit-page-link @(number == Model.Page ? "active" : null)" aria-current="@(number == Model.Page ? "page" : null)" asp-action="Index" asp-route-page="@number" asp-route-pageSize="@Model.PageSize" asp-route-auditAction="@Model.Action" asp-route-entityName="@Model.EntityNameFilter" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-keyword="@Model.Keyword">@number</a>
-                }
-                <a class="audit-page-link @(Model.Page >= Model.TotalPages ? "disabled" : null)" aria-label="Trang sau" aria-disabled="@(Model.Page >= Model.TotalPages ? "true" : null)" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize" asp-route-auditAction="@Model.Action" asp-route-entityName="@Model.EntityNameFilter" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-keyword="@Model.Keyword"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a>
-            </nav>
+            <nav class="audit-pagination" aria-label="Phân trang nhật ký"><a class="audit-page-link pagination-edge @(Model.Page <= 1 ? "disabled" : null)" aria-label="Trang trước" aria-disabled="@(Model.Page <= 1 ? "true" : null)" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize" asp-route-auditAction="@Model.Action" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-keyword="@Model.Keyword" asp-route-group="@Model.Group" asp-route-outcome="@Model.Outcome" asp-route-authMethod="@Model.AuthMethod" asp-route-mode="@Model.Mode" asp-route-importantGroup="@Model.ImportantGroup">Trước</a>
+            @for (var number = Math.Max(1, Model.Page - 2); number <= Math.Min(Model.TotalPages, Model.Page + 2); number++) { <a class="audit-page-link @(number == Model.Page ? "active" : null)" aria-current="@(number == Model.Page ? "page" : null)" asp-action="Index" asp-route-page="@number" asp-route-pageSize="@Model.PageSize" asp-route-auditAction="@Model.Action" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-keyword="@Model.Keyword" asp-route-group="@Model.Group" asp-route-outcome="@Model.Outcome" asp-route-authMethod="@Model.AuthMethod" asp-route-mode="@Model.Mode" asp-route-importantGroup="@Model.ImportantGroup">@number</a> }
+            <a class="audit-page-link pagination-edge @(Model.Page >= Model.TotalPages ? "disabled" : null)" aria-label="Trang sau" aria-disabled="@(Model.Page >= Model.TotalPages ? "true" : null)" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize" asp-route-auditAction="@Model.Action" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")" asp-route-keyword="@Model.Keyword" asp-route-group="@Model.Group" asp-route-outcome="@Model.Outcome" asp-route-authMethod="@Model.AuthMethod" asp-route-mode="@Model.Mode" asp-route-importantGroup="@Model.ImportantGroup">Sau</a></nav>
         }
+        </footer>
     </section>
 </section>
 
-<dialog class="audit-dialog" id="auditDetailDialog" aria-labelledby="auditDialogTitle">
-    <div class="audit-dialog-header">
-        <div><span>Chi tiết nhật ký</span><h2 id="auditDialogTitle">Chi tiết thay đổi</h2></div>
-        <button type="button" data-close aria-label="Đóng"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
-    </div>
-    <div class="audit-change-grid">
-        <section class="audit-meta"><h3><i class="fa-solid fa-circle-info"></i>Thông tin</h3><dl id="auditMeta"></dl></section>
-        <section><h3><i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i>Dữ liệu trước</h3><dl id="auditOldData"></dl></section>
-        <section><h3><i class="fa-solid fa-arrow-right" aria-hidden="true"></i>Dữ liệu sau</h3><dl id="auditNewData"></dl></section>
-    </div>
-</dialog>
+<dialog class="audit-drawer" id="auditDetailDialog" aria-labelledby="auditDialogTitle"><div class="audit-drawer-shell"><header class="audit-drawer-header"><div><span>Chi tiết sự kiện</span><h2 id="auditDialogTitle">Chi tiết hoạt động</h2><p id="auditDialogSubtitle"></p></div><button type="button" data-close aria-label="Đóng chi tiết nhật ký"><i class="bi bi-x-lg" aria-hidden="true"></i></button></header><div class="audit-drawer-body"><section aria-labelledby="auditSummaryTitle"><h3 id="auditSummaryTitle">Thông tin sự kiện</h3><dl id="auditMeta"></dl></section><div class="audit-change-grid"><section id="auditOldSection"><h3>Dữ liệu trước thay đổi</h3><dl id="auditOldData"></dl></section><section id="auditNewSection"><h3>Dữ liệu sau thay đổi</h3><dl id="auditNewData"></dl></section></div><details class="audit-technical"><summary><span><i class="bi bi-code-slash" aria-hidden="true"></i>Thông tin kỹ thuật</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary><dl id="auditTechnical"></dl></details></div></div></dialog>
 
 @section Scripts {
 <script>
 (() => {
-    const form = document.getElementById('auditFilterForm');
-    const filterError = document.getElementById('auditFilterError');
-    const dialog = document.getElementById('auditDetailDialog');
-    const oldData = document.getElementById('auditOldData');
-    const newData = document.getElementById('auditNewData');
-    const dialogTitle = document.getElementById('auditDialogTitle');
-    const meta = document.getElementById('auditMeta');
-    const labels = { email:'Email', employeeCode:'Mã nhân viên', employeeCodeBefore:'Mã nhân viên trước', employeeCodeAfter:'Mã nhân viên sau', fullName:'Họ tên', phoneNumber:'Số điện thoại', dataStatus:'Trạng thái dữ liệu', role:'Vai trò', roleName:'Vai trò', currentRoleName:'Vai trò hiện tại', requestedRoleName:'Vai trò đề xuất', status:'Trạng thái', mustChangePassword:'Yêu cầu đổi mật khẩu', rejectionReason:'Lý do từ chối', reason:'Lý do', passwordChanged:'Đã đổi mật khẩu', userId:'Mã tài khoản', employeeId:'Mã định danh nhân viên' };
-    const values = { ACTIVE:'Hoạt động', LOCKED:'Bị khóa', EXISTING:'Đang sử dụng', DELETED:'Đã xóa', PENDING:'Chờ duyệt', APPROVED:'Đã duyệt', REJECTED:'Từ chối', Manager:'Quản lý', HallManager:'Quản lý sảnh', Coordinator:'Nhân viên điều phối', Admin:'Quản trị viên', true:'Có', false:'Không' };
-    const sensitive = ['password','matkhau','token','otp','securitycode','authorization','salt'];
-
-    form?.addEventListener('submit', event => {
-        const fromDate = form.elements.fromDate.value;
-        const toDate = form.elements.toDate.value;
-        filterError.hidden = true;
-        filterError.textContent = '';
-        if (fromDate && toDate && toDate < fromDate) {
-            event.preventDefault();
-            filterError.textContent = 'Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.';
-            filterError.hidden = false;
-        }
-    });
-
-    const renderEmpty = element => {
-        const empty = document.createElement('span');
-        empty.className = 'audit-change-empty';
-        empty.textContent = 'Không có dữ liệu';
-        element.append(empty);
-    };
-    const formatValue = value => {
-        if (value === null || value === undefined || value === '') return '—';
-        const key = String(value);
-        return values[key] || key;
-    };
-    const fill = (element, value) => {
-        element.replaceChildren();
-        let data = {};
-        try { data = value ? JSON.parse(value) : {}; } catch { const dd=document.createElement('dd');dd.textContent=value||'Không có dữ liệu';element.append(dd);return; }
-        const entries = Object.entries(data);
-        if (!entries.length) { renderEmpty(element); return; }
-        entries.forEach(([key, value]) => {
-            const dt = document.createElement('dt');
-            const dd = document.createElement('dd');
-            const normalized=key.replace(/[^a-z0-9]/gi,'').toLowerCase();
-            dt.textContent = labels[key] || labels[key.charAt(0).toLowerCase()+key.slice(1)] || key;
-            dd.textContent = sensitive.some(item=>normalized.includes(item)) ? '[Đã ẩn]' : formatValue(value);
-            element.append(dt, dd);
-        });
-    };
-
-    document.querySelectorAll('.audit-detail-button').forEach(button => {
-        button.addEventListener('click', () => {
-            dialogTitle.textContent = button.dataset.title || 'Chi tiết thay đổi';
-            meta.replaceChildren();
-            [['Thời gian',button.dataset.time],['Người thực hiện',button.dataset.actor],['Đối tượng',button.dataset.target],['Entity',button.dataset.entity],['Nội dung',button.dataset.notes]].forEach(([key,value])=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=key;dd.textContent=value||'—';meta.append(dt,dd);});
-            fill(oldData, button.dataset.old);
-            fill(newData, button.dataset.new);
-            dialog.showModal();
-        });
-    });
-    dialog?.querySelector('[data-close]')?.addEventListener('click', () => dialog.close());
-    dialog?.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+    const form = document.getElementById('auditFilterForm'), error = document.getElementById('auditFilterError'), dialog = document.getElementById('auditDetailDialog');
+    const title = document.getElementById('auditDialogTitle'), subtitle = document.getElementById('auditDialogSubtitle'), meta = document.getElementById('auditMeta'), technical = document.getElementById('auditTechnical');
+    const oldData = document.getElementById('auditOldData'), newData = document.getElementById('auditNewData'), oldSection = document.getElementById('auditOldSection'), newSection = document.getElementById('auditNewSection');
+    const labels = { status:'Trạng thái', amount:'Số tiền', price:'Đơn giá', totalAmount:'Tổng tiền', role:'Vai trò', roleName:'Vai trò', reason:'Lý do', rejectionReason:'Lý do từ chối', fullName:'Họ tên', email:'Email', phoneNumber:'Số điện thoại', hallName:'Sảnh', eventDate:'Ngày tổ chức', shift:'Ca', paymentMethod:'Phương thức thanh toán', transactionId:'Mã giao dịch', incidentType:'Loại sự cố', resolution:'Hướng xử lý' };
+    const values = { ACTIVE:'Hoạt động', LOCKED:'Bị khóa', PENDING:'Chờ duyệt', APPROVED:'Đã duyệt', REJECTED:'Từ chối', SUCCESS:'Thành công', FAILED:'Thất bại', BLOCKED:'Bị từ chối', true:'Có', false:'Không' };
+    const sensitive = ['password','matkhau','token','otp','secret','authorization','salt','securitycode']; let opener = null;
+    form?.addEventListener('submit', event => { const from = form.elements.fromDate?.value, to = form.elements.toDate?.value; error.hidden = true; if (from && to && to < from) { event.preventDefault(); error.textContent = 'Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.'; error.hidden = false; } });
+    const parseAuditValue = raw => { if (!raw) return null; try { return JSON.parse(raw); } catch { const legacy = {}; raw.split(';').forEach(part => { const index = part.indexOf('='); if (index > 0) legacy[part.slice(0, index).trim()] = part.slice(index + 1).trim(); }); return Object.keys(legacy).length ? legacy : raw; } };
+    const formatValue = (key, value) => { if (value === null || value === undefined || value === '') return '—'; if (/amount|price|total|fee|refund/i.test(key) && !Number.isNaN(Number(value))) return new Intl.NumberFormat('vi-VN', { style:'currency', currency:'VND', maximumFractionDigits:0 }).format(Number(value)); return values[String(value)] || String(value); };
+    const appendValue = (container, key, value) => { const dt = document.createElement('dt'), dd = document.createElement('dd'), normalized = key.replace(/[^a-z0-9]/gi, '').toLowerCase(); dt.textContent = labels[key] || key.replace(/([a-z])([A-Z])/g, '$1 $2'); if (sensitive.some(word => normalized.includes(word))) dd.textContent = '[Đã ẩn]'; else if (value && typeof value === 'object') { const pre = document.createElement('pre'); pre.textContent = JSON.stringify(value, null, 2); dd.append(pre); } else dd.textContent = formatValue(key, value); container.append(dt, dd); };
+    const renderData = (container, raw) => { container.replaceChildren(); const parsed = parseAuditValue(raw); if (parsed === null) return false; if (typeof parsed !== 'object') { const dd = document.createElement('dd'); dd.className = 'audit-legacy-text'; dd.textContent = parsed; container.append(dd); return true; } Object.entries(parsed).forEach(([key, value]) => appendValue(container, key, value)); return Object.keys(parsed).length > 0; };
+    const addMeta = (container, label, value) => { if (value === null || value === undefined || value === '') return; const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = label; dd.textContent = value; container.append(dt, dd); };
+    document.querySelectorAll('.audit-detail-button').forEach(button => button.addEventListener('click', () => { const node = document.getElementById(button.dataset.detailId); if (!node) return; const log = JSON.parse(node.textContent); opener = button; title.textContent = button.dataset.title || log.Action || 'Chi tiết hoạt động'; subtitle.textContent = new Date(log.Timestamp).toLocaleString('vi-VN'); meta.replaceChildren(); technical.replaceChildren(); addMeta(meta, 'Người thực hiện', log.ActorName || log.Actor); addMeta(meta, 'Vai trò', log.ActorRole); addMeta(meta, 'Đối tượng', log.Target); addMeta(meta, 'Kết quả', values[log.Outcome] || log.Outcome || 'Chưa xác định'); addMeta(meta, 'Ghi chú', log.Notes); addMeta(technical, 'Mã nhật ký', log.AuditLogId); addMeta(technical, 'Danh mục', button.dataset.groupLabel || log.Group); addMeta(technical, 'Mã đối tượng', log.EntityName ? `${log.EntityName} #${log.EntityId}` : null); addMeta(technical, 'Nguồn', log.Source); addMeta(technical, 'Phương thức xác thực', log.AuthMethod); addMeta(technical, 'Địa chỉ IP', log.IpAddress); addMeta(technical, 'Thiết bị / trình duyệt', log.UserAgent); addMeta(technical, 'Correlation ID', log.CorrelationId); oldSection.hidden = !renderData(oldData, log.OldData); newSection.hidden = !renderData(newData, log.NewData); dialog.showModal(); }));
+    dialog?.querySelector('[data-close]')?.addEventListener('click', () => dialog.close()); dialog?.addEventListener('click', event => { if (event.target === dialog) dialog.close(); }); dialog?.addEventListener('close', () => opener?.focus());
 })();
 </script>
 }

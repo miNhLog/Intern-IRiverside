@@ -392,30 +392,6 @@
     transform: translate(0, -50%);
 }
 
-.sidebar-toast {
-    position: fixed;
-    right: 22px;
-    bottom: 22px;
-    z-index: 4000;
-    padding: 11px 15px;
-    border: 1px solid rgba(212, 175, 55, 0.35);
-    border-radius: 9px;
-    color: #ffffff;
-    background: #202833;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
-    font-size: 12px;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(8px);
-    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
-}
-
-.sidebar-toast.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
 .sidebar-backdrop,
 .mobile-sidebar-toggle {
     display: none;
@@ -435,13 +411,6 @@ html.sidebar-is-collapsed .sidebar-header {
     justify-content: center;
     padding-inline: 8px;
 }
-
-.flash-toast { display: flex; align-items: center; gap: 10px; min-width: 280px; max-width: min(420px, calc(100vw - 32px)); padding: 13px 14px; }
-.flash-toast.is-success { border-color: #9dd9bd; color: #155f43; background: #effaf4; box-shadow: 0 12px 32px rgba(23, 121, 90, .18); }
-.flash-toast > i { color: #18825d; font-size: 18px; }
-.flash-toast > span { flex: 1; font-weight: 600; line-height: 1.45; }
-.flash-toast button { width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 6px; color: #4f7567; background: transparent; cursor: pointer; }
-.flash-toast button:hover { background: #dcefe5; }
 
 html.sidebar-is-collapsed .sidebar-brand {
     flex: 0 0 38px;
@@ -627,19 +596,13 @@ html.sidebar-is-collapsed .sidebar-footer-action span {
         display: none;
     }
 
-    .sidebar-toast {
-        right: 14px;
-        bottom: 14px;
-        max-width: calc(100vw - 28px);
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .admin-sidebar,
     .main-content,
     .sidebar-backdrop,
-    .sidebar-tooltip,
-    .sidebar-toast {
+    .sidebar-tooltip {
         transition: none;
     }
 }

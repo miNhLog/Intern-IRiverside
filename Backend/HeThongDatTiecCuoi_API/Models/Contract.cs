@@ -7,7 +7,6 @@ public sealed class Contract
     public string ContractCode { get; set; } = string.Empty;
     public DateTime CreatedDate { get; set; }
     public decimal TotalValue { get; set; }
-    public decimal? RequiredDepositAmount { get; set; }
     public string? ContractContent { get; set; }
     public string? PaymentTerms { get; set; }
     public int StatusId { get; set; }
@@ -15,4 +14,5 @@ public sealed class Contract
     public WeddingBooking Booking { get; set; } = null!;
     public Status Status { get; set; } = null!;
     public ICollection<Payment> Payments { get; set; } = [];
+    public ICollection<ContractAmendment> Amendments { get; set; } = [];
 }

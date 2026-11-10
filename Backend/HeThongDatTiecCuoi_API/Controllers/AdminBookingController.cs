@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace HeThongDatTiecCuoi_API.Controllers;
 
@@ -18,11 +20,29 @@ public sealed class AdminBookingController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly IStatusService _statusService;
+    private readonly ICoordinationAssignmentService _coordinationAssignments;
+    private readonly IHallPricingPolicyService _hallPricing;
+    private readonly IReviewQrService? _reviewQrService;
+    private readonly ILogger<AdminBookingController>? _logger;
+    private readonly IPaymentService? _paymentService;
+    private readonly BookingStatusBusinessRules _bookingStatusRules;
 
-    public AdminBookingController(ApplicationDbContext context, IStatusService statusService)
+    public AdminBookingController(ApplicationDbContext context, IStatusService statusService,
+        ICoordinationAssignmentService coordinationAssignments,
+        IHallPricingPolicyService? hallPricing = null,
+        IReviewQrService? reviewQrService = null,
+        ILogger<AdminBookingController>? logger = null,
+        IPaymentService? paymentService = null,
+        BookingStatusBusinessRules? bookingStatusRules = null)
     {
         _context = context;
         _statusService = statusService;
+        _coordinationAssignments = coordinationAssignments;
+        _hallPricing = hallPricing ?? new HallPricingPolicyService();
+        _reviewQrService = reviewQrService;
+        _logger = logger;
+        _paymentService = paymentService;
+        _bookingStatusRules = bookingStatusRules ?? new BookingStatusBusinessRules(context);
     }
 
     [HttpGet]
@@ -134,6 +154,9 @@ public sealed class AdminBookingController : ControllerBase
                 ContractId = b.Contract != null ? b.Contract.ContractId : null,
                 ContractCode = b.Contract != null ? b.Contract.ContractCode : null,
                 ContractStatusCode = b.Contract != null ? b.Contract.Status.StatusCode : null,
+                HasReviewQr = b.ReviewQrCode != null,
+                ReviewQrToken = b.ReviewQrCode != null ? b.ReviewQrCode.QrCode : null,
+                ReviewCount = b.ReviewQrCode != null ? b.ReviewQrCode.Reviews.Count : 0,
                 Services = b.BookingServices
                     .Where(item => item.DataStatusId == existingDataStatusId)
                     .Select(item => new BookingServiceDto
@@ -145,6 +168,22 @@ public sealed class AdminBookingController : ControllerBase
                         FinalUnitPrice = item.FinalUnitPrice
                     }).ToList()
             }).SingleOrDefaultAsync();
+
+        if (detail is not null && detail.HasReviewQr)
+        {
+            var qrStatus = await _context.ReviewQrCodes.AsNoTracking()
+                .Where(q => q.BookingId == id)
+                .Select(q => q.Status.StatusCode)
+                .SingleAsync();
+            var locked = qrStatus == "LOCKED" || detail.StatusCode == BookingStatusCodes.Cancelled;
+            var window = _reviewQrService?.GetWindow(new HallSchedule { Date = detail.EventDate, Shift = detail.Shift }, locked);
+            if (window is not null)
+            {
+                detail.ReviewQrState = window.State.ToString();
+                detail.ReviewOpensAt = window.OpensAt;
+                detail.ReviewExpiresAt = window.ExpiresAt;
+            }
+        }
 
         return detail == null ? NotFound(new { message = "Không tìm thấy đơn tiệc." }) : Ok(detail);
     }
@@ -253,6 +292,11 @@ public sealed class AdminBookingController : ControllerBase
         if (!createdSchedule && (schedule!.Status.StatusGroup != StatusGroups.HallSchedule || schedule.Status.StatusCode != HallScheduleStatusCodes.Available))
             return Conflict(new { message = "Lịch sảnh không còn ở trạng thái AVAILABLE." });
         var resolvedSchedule = schedule!;
+        if (!createdSchedule && await _context.ScheduleChangeHolds.AnyAsync(hold =>
+                hold.HallScheduleId == resolvedSchedule.HallScheduleId &&
+                hold.Status == ScheduleChangeHoldStatusCodes.Active &&
+                hold.ExpiresAt > RiversideBusinessClock.Now))
+            return Conflict(new { message = "Lịch sảnh đang được giữ tạm cho một yêu cầu đổi lịch." });
 
         Menu? menu = null;
         if (request.MenuId.HasValue)
@@ -274,7 +318,7 @@ public sealed class AdminBookingController : ControllerBase
         var bookedId = await _statusService.GetStatusIdAsync(StatusGroups.HallSchedule, HallScheduleStatusCodes.Booked);
         var tableCount = request.TableCount + request.SpareTableCount;
         var menuPrice = menu?.PricePerTable;
-        var hallPrice = hall.RentalPrice;
+        var hallPrice = _hallPricing.CalculateHallPrice(hall.RentalPrice, shift, resolvedSchedule.Date);
         var decorPrice = decor?.Gia;
 
         var serviceIds = request.Services.Select(x => x.ServiceId).ToList();
@@ -311,38 +355,110 @@ public sealed class AdminBookingController : ControllerBase
         resolvedSchedule.StatusId = bookedId;
         _context.WeddingBookings.Add(booking);
         await _context.SaveChangesAsync();
+        var actorUserId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var createdBy) ? createdBy : (int?)null;
+        _context.AuditLogs.Add(new AuditLog
+        {
+            UserId = actorUserId, Action = AuditActions.BookingCreated,
+            EntityName = AuditEntityNames.Booking, EntityId = booking.BookingId,
+            NewData = JsonSerializer.Serialize(new
+            {
+                booking.BookingCode, Status = BookingStatusCodes.Confirmed,
+                booking.HallScheduleId, HallId = hall.HallId, Date = resolvedSchedule.Date,
+                resolvedSchedule.Shift, request.TableCount, request.SpareTableCount,
+                booking.EstimatedTotal, booking.MenuId, booking.DecorationPackageId,
+                ServiceIds = request.Services.Select(x => x.ServiceId).ToArray()
+            }),
+            Timestamp = DateTime.Now, Outcome = AuditOutcomes.Success,
+            Notes = $"Tạo booking {booking.BookingCode} thành công."
+        });
+        await _context.SaveChangesAsync();
         await transaction.CommitAsync();
+        try
+        {
+            if (_reviewQrService is not null)
+                await _reviewQrService.EnsureForBookingAsync(booking.BookingId, HttpContext.RequestAborted);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Booking {BookingId} đã lưu nhưng tạo QR đánh giá thất bại; worker sẽ tạo bù.", booking.BookingId);
+        }
         return Ok(new { success = true, bookingId = booking.BookingId, bookingCode = booking.BookingCode });
     }
 
     [HttpPut("{id:int}/status")]
     public async Task<IActionResult> UpdateBookingStatus(int id, [FromBody] UpdateBookingStatusRequestDto request)
     {
+        if (string.IsNullOrWhiteSpace(request.StatusCode))
+            return BadRequest(new { message = "Mã trạng thái booking không được để trống." });
+
         var code = request.StatusCode.Trim().ToUpperInvariant();
         if (!BookingStatusCodes.All.Contains(code))
             return BadRequest(new { message = "Mã trạng thái booking không hợp lệ." });
 
-        await using var transaction = await _context.Database.BeginTransactionAsync();
+        using var bookingLock = await BookingPaymentConcurrency.AcquireAsync(id, HttpContext.RequestAborted);
+        await using var transaction = await BookingPaymentConcurrency.BeginSerializableTransactionAsync(
+            _context, HttpContext.RequestAborted);
         try
         {
-        var booking = await _context.WeddingBookings.Include(b => b.HallSchedule)
+        await BookingPaymentConcurrency.AcquireDatabaseLockAsync(_context, id, HttpContext.RequestAborted);
+        var booking = await _context.WeddingBookings
+            .Include(b => b.HallSchedule).ThenInclude(schedule => schedule.Status)
+            .Include(b => b.HallSchedule).ThenInclude(schedule => schedule.DataStatus)
+            .Include(b => b.HallSchedule).ThenInclude(schedule => schedule.Hall).ThenInclude(hall => hall.Status)
+            .Include(b => b.HallSchedule).ThenInclude(schedule => schedule.Hall).ThenInclude(hall => hall.DataStatus)
+            .Include(b => b.Status)
+            .Include(b => b.Contract).ThenInclude(contract => contract!.Status)
             .SingleOrDefaultAsync(b => b.BookingId == id);
         if (booking == null) return NotFound(new { message = "Không tìm thấy đơn tiệc." });
+
+        var oldStatusCode = booking.Status.StatusCode;
+        var validation = await _bookingStatusRules.ValidateAsync(
+            booking, code, HttpContext.RequestAborted);
+        if (validation.Unchanged)
+            return Ok(new { success = true, statusCode = code, unchanged = true });
+        if (!validation.Allowed)
+            return Conflict(new
+            {
+                success = false,
+                code = validation.Code,
+                message = validation.Message
+            });
 
         booking.StatusId = await _statusService.GetStatusIdAsync(StatusGroups.Booking, code);
         booking.CancellationReason = code == BookingStatusCodes.Cancelled
             ? NormalizeOptional(request.CancellationReason) ?? "Hủy theo yêu cầu khách hàng"
             : null;
 
+        var actorUserId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedUserId)
+            ? parsedUserId : (int?)null;
+        if (code is BookingStatusCodes.Cancelled or BookingStatusCodes.Completed)
+            await _coordinationAssignments.SynchronizeBookingAssignmentsAsync(booking.BookingId, code, actorUserId,
+                booking.CancellationReason, HttpContext.RequestAborted);
+
         // BR03 trong cùng transaction: hủy -> giải phóng LichSanh về AVAILABLE (bỏ qua nếu schedule null);
         // chuyển sang trạng thái chiếm giữ -> LichSanh BOOKED.
         if (code == BookingStatusCodes.Cancelled)
             await ReleaseScheduleIfUnusedAsync(booking);
-        else if (booking.HallSchedule is not null && BookingStatusCodes.OccupyingSchedule.Contains(code))
+        else if (code is BookingStatusCodes.Confirmed or BookingStatusCodes.Preparing)
             booking.HallSchedule.StatusId = await _statusService.GetStatusIdAsync(StatusGroups.HallSchedule, HallScheduleStatusCodes.Booked);
+
+        _context.AuditLogs.Add(new AuditLog
+        {
+            UserId = actorUserId,
+            Action = code == BookingStatusCodes.Cancelled ? AuditActions.BookingCancelled : AuditActions.BookingStatusChanged,
+            EntityName = AuditEntityNames.Booking, EntityId = booking.BookingId,
+            OldData = JsonSerializer.Serialize(new { booking.BookingCode, Status = oldStatusCode }),
+            NewData = JsonSerializer.Serialize(new { booking.BookingCode, Status = code, booking.CancellationReason }),
+            Timestamp = DateTime.Now, Outcome = AuditOutcomes.Success,
+            Notes = code == BookingStatusCodes.Cancelled ? $"Hủy booking {booking.BookingCode}." : $"Chuyển trạng thái booking {booking.BookingCode}: {oldStatusCode} → {code}."
+        });
 
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
+        bookingLock.Dispose();
+        if (code == BookingStatusCodes.Cancelled && _paymentService is not null)
+            await _paymentService.CancelPendingDepositLinksAsync(
+                booking.BookingId, booking.CancellationReason ?? "Booking cancelled by manager", CancellationToken.None);
         return Ok(new { success = true, statusCode = code });
         }
         catch
@@ -355,12 +471,19 @@ public sealed class AdminBookingController : ControllerBase
     private async Task ReleaseScheduleIfUnusedAsync(WeddingBooking booking)
     {
         if (booking.HallSchedule is null) return; // default-available: không có dòng vẫn coi trống.
+        if (booking.HallSchedule.Status?.StatusGroup == StatusGroups.HallSchedule &&
+            booking.HallSchedule.Status.StatusCode == HallScheduleStatusCodes.Locked)
+            return;
         var hasOtherActiveBooking = await _context.WeddingBookings.AnyAsync(item =>
             item.BookingId != booking.BookingId && item.HallScheduleId == booking.HallScheduleId &&
             item.Status != null &&
             item.Status.StatusGroup == StatusGroups.Booking &&
             BookingStatusCodes.OccupyingSchedule.Contains(item.Status.StatusCode));
-        if (!hasOtherActiveBooking)
+        var hasActiveScheduleHold = await _context.ScheduleChangeHolds.AnyAsync(hold =>
+            hold.HallScheduleId == booking.HallScheduleId &&
+            hold.Status == ScheduleChangeHoldStatusCodes.Active &&
+            hold.ExpiresAt > RiversideBusinessClock.Now);
+        if (!hasOtherActiveBooking && !hasActiveScheduleHold)
             booking.HallSchedule.StatusId = await _statusService.GetStatusIdAsync(StatusGroups.HallSchedule, HallScheduleStatusCodes.Available);
     }
 

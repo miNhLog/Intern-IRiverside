@@ -65,6 +65,14 @@ public sealed class ProfileController : ControllerBase
 
         var user = await LoadUserAsync(userId, false, cancellationToken);
         if (user is null) return NotFound(new { message = "Không tìm thấy tài khoản." });
+
+        var oldData = new
+        {
+            Email = user.Email,
+            FullName = user.Employee?.FullName,
+            PhoneNumber = user.Employee?.PhoneNumber
+        };
+
         user.Email = email;
 
         if (user.Employee is null)
@@ -90,6 +98,25 @@ public sealed class ProfileController : ControllerBase
             user.Employee.FullName = fullName;
             user.Employee.PhoneNumber = phoneNumber;
         }
+
+        var newData = new
+        {
+            Email = email,
+            FullName = fullName,
+            PhoneNumber = phoneNumber
+        };
+
+        _context.AuditLogs.Add(new AuditLog
+        {
+            UserId = userId,
+            Action = AuditActions.UpdateAccount,
+            EntityName = AuditEntityNames.User,
+            EntityId = userId,
+            OldData = System.Text.Json.JsonSerializer.Serialize(oldData),
+            NewData = System.Text.Json.JsonSerializer.Serialize(newData),
+            Timestamp = DateTime.Now,
+            Notes = $"Nhân viên {fullName} (UserId: {userId}) đã tự cập nhật hồ sơ cá nhân."
+        });
 
         await _context.SaveChangesAsync(cancellationToken);
         return Ok(new { message = "Cập nhật hồ sơ cá nhân thành công.", profile = ToResponse(user) });

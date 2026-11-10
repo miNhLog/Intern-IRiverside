@@ -41,6 +41,21 @@ public sealed class EventCoordinationAuthorizationIntegrationTests : IClassFixtu
 
         Assert.Equal(expectedStatus, response.StatusCode);
     }
+
+    [Theory]
+    [InlineData(null, HttpStatusCode.Unauthorized)]
+    [InlineData(RoleNames.Manager, HttpStatusCode.Forbidden)]
+    [InlineData(RoleNames.Admin, HttpStatusCode.Forbidden)]
+    [InlineData(RoleNames.Coordinator, HttpStatusCode.Forbidden)]
+    [InlineData(RoleNames.HallManager, HttpStatusCode.Forbidden)]
+    public async Task HallManagerWriteApi_RejectsUnauthenticatedAndUnauthorizedRoles(string? role, HttpStatusCode expectedStatus)
+    {
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        { AllowAutoRedirect = false, BaseAddress = new Uri("https://localhost") });
+        if (role is not null) client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(TestRoleAuthenticationHandler.Scheme, role);
+        using var response = await client.GetAsync("/api/hall-manager/coordination-assignments?page=1&pageSize=10");
+        Assert.Equal(expectedStatus, response.StatusCode);
+    }
 }
 
 public sealed class EventCoordinationApiFactory : WebApplicationFactory<Program>
@@ -66,7 +81,7 @@ public sealed class EventCoordinationApiFactory : WebApplicationFactory<Program>
 
 public sealed class TestRoleAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
-    public const string Scheme = "TestRole";
+    public new const string Scheme = "TestRole";
     public TestRoleAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger, UrlEncoder encoder) : base(options, logger, encoder) { }
 
@@ -78,7 +93,7 @@ public sealed class TestRoleAuthenticationHandler : AuthenticationHandler<Authen
 
         var role = header.Parameter;
         if (string.IsNullOrWhiteSpace(role)) return Task.FromResult(AuthenticateResult.NoResult());
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.Name, "QA user"), new Claim(ClaimTypes.Role, role)], Scheme);
+        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "999"), new Claim(ClaimTypes.Name, "QA user"), new Claim(ClaimTypes.Role, role)], Scheme);
         var principal = new ClaimsPrincipal(identity);
         return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme)));
     }

@@ -5,9 +5,12 @@ using HeThongDatTiecCuoi_API.DTOs.Common;
 using HeThongDatTiecCuoi_API.DTOs.Hall;
 using HeThongDatTiecCuoi_API.Models;
 using HeThongDatTiecCuoi_API.Services;
+using HeThongDatTiecCuoi_API.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace HeThongDatTiecCuoi_API.Controllers;
 
@@ -25,11 +28,19 @@ public sealed class HallController : ControllerBase
 
     private readonly ApplicationDbContext _context;
     private readonly IStatusService _statusService;
+    private readonly IWebHostEnvironment _environment;
+    private readonly IAiCatalogSyncService? _catalogSyncService;
 
-    public HallController(ApplicationDbContext context, IStatusService statusService)
+    public HallController(
+        ApplicationDbContext context,
+        IStatusService statusService,
+        IWebHostEnvironment environment,
+        IAiCatalogSyncService? catalogSyncService = null)
     {
         _context = context;
         _statusService = statusService;
+        _environment = environment;
+        _catalogSyncService = catalogSyncService;
     }
 
     [HttpGet("public")]
@@ -111,8 +122,9 @@ public sealed class HallController : ControllerBase
                 RentalPrice = hall.RentalPrice,
                 Description = hall.Description,
                 ImageUrl = hall.Images
-                    .Where(image => image.IsPrimary &&
-                        image.DataStatus.DataStatusCode == DataStatusCodes.Existing)
+                    .Where(image => image.DataStatus.DataStatusCode == DataStatusCodes.Existing)
+                    .OrderByDescending(image => image.IsPrimary)
+                    .ThenBy(image => image.SortOrder)
                     .Select(image => image.ImagePath)
                     .FirstOrDefault()
             })
@@ -184,7 +196,7 @@ public sealed class HallController : ControllerBase
                 hall.Status.StatusGroup == StatusGroups.Hall &&
                 hall.Status.StatusCode == HallStatusCodes.Active)
             .OrderBy(hall => hall.HallId)
-            .Take(3)
+            .Take(12)
             .Select(hall => new HallDto
             {
                 HallId = hall.HallId,
@@ -199,8 +211,9 @@ public sealed class HallController : ControllerBase
                 RentalPrice = hall.RentalPrice,
                 Description = hall.Description,
                 ImageUrl = hall.Images
-                    .Where(image => image.IsPrimary &&
-                        image.DataStatus.DataStatusCode == DataStatusCodes.Existing)
+                    .Where(image => image.DataStatus.DataStatusCode == DataStatusCodes.Existing)
+                    .OrderByDescending(image => image.IsPrimary)
+                    .ThenBy(image => image.SortOrder)
                     .Select(image => image.ImagePath)
                     .FirstOrDefault(),
                 Status = hall.Status.StatusCode,
@@ -269,8 +282,29 @@ public sealed class HallController : ControllerBase
             StatusId = status.StatusId,
             DataStatusId = existingDataStatus.DataStatusId
         };
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         _context.Halls.Add(hall);
         await _context.SaveChangesAsync(cancellationToken);
+        if (TryNormalizeImageUrl(request.ImageUrl, out var imageUrl))
+        {
+            var primaryImage = new ImageAsset
+            {
+                HallId = hall.HallId,
+                ImagePath = imageUrl!,
+                IsPrimary = true,
+                SortOrder = 1,
+                DataStatusId = existingDataStatus.DataStatusId
+            };
+            _context.ImageAssets.Add(primaryImage);
+            await _context.SaveChangesAsync(cancellationToken);
+            hall.Images.Add(primaryImage);
+        }
+        AddAudit(AuditActions.HallCreated, hall.HallId, null,
+            new { hall.HallCode, hall.HallName, hall.MinimumCapacity, hall.MaximumCapacity, hall.RentalPrice, Status = status.StatusCode },
+            $"Tạo sảnh {hall.HallCode} - {hall.HallName}.");
+        await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        _catalogSyncService?.SyncCatalogInBackground();
         return CreatedAtAction(nameof(GetHall), new { hallId = hall.HallId }, ToDto(hall, status));
     }
 
@@ -303,6 +337,7 @@ public sealed class HallController : ControllerBase
         var status = await ResolveStatusAsync(request.Status, cancellationToken);
         if (status is null) return BadRequest(new { message = "Trạng thái sảnh không hợp lệ." });
 
+        var oldData = new { hall.HallCode, hall.HallName, hall.MinimumCapacity, hall.MaximumCapacity, hall.RentalPrice, Status = hall.Status.StatusCode };
         hall.HallCode = request.HallCode.Trim();
         hall.HallName = request.HallName.Trim();
         hall.MinimumCapacity = request.MinimumCapacity;
@@ -310,7 +345,13 @@ public sealed class HallController : ControllerBase
         hall.RentalPrice = request.RentalPrice;
         hall.Description = request.Description?.Trim();
         hall.StatusId = status.StatusId;
+        if (!string.IsNullOrWhiteSpace(request.ImageUrl))
+            await UpsertPrimaryImageAsync(hall, request.ImageUrl, cancellationToken);
+        AddAudit(AuditActions.HallUpdated, hall.HallId, oldData,
+            new { hall.HallCode, hall.HallName, hall.MinimumCapacity, hall.MaximumCapacity, hall.RentalPrice, Status = status.StatusCode },
+            $"Cập nhật sảnh {hall.HallCode} - {hall.HallName}.");
         await _context.SaveChangesAsync(cancellationToken);
+        _catalogSyncService?.SyncCatalogInBackground();
         return Ok(ToDto(hall, status));
     }
 
@@ -321,6 +362,7 @@ public sealed class HallController : ControllerBase
         CancellationToken cancellationToken)
     {
         var hall = await _context.Halls
+            .Include(item => item.Status)
             .Include(item => item.Images.Where(image =>
                 image.IsPrimary &&
                 image.DataStatus.DataStatusCode == DataStatusCodes.Existing))
@@ -333,9 +375,43 @@ public sealed class HallController : ControllerBase
         var status = await ResolveStatusAsync(request.Status, cancellationToken);
         if (status is null) return BadRequest(new { message = "Trạng thái sảnh không hợp lệ." });
 
+        if (hall.Status.StatusCode == status.StatusCode) return Ok(new { message = "Trạng thái sảnh không thay đổi.", hall = ToDto(hall, status) });
+        var oldStatus = hall.Status.StatusCode;
         hall.StatusId = status.StatusId;
+        AddAudit(AuditActions.HallUpdated, hall.HallId,
+            new { hall.HallCode, Status = oldStatus }, new { hall.HallCode, Status = status.StatusCode },
+            $"Đổi trạng thái sảnh {hall.HallCode}: {oldStatus} → {status.StatusCode}.");
         await _context.SaveChangesAsync(cancellationToken);
+        _catalogSyncService?.SyncCatalogInBackground();
         return Ok(new { message = "Cập nhật trạng thái thành công.", hall = ToDto(hall, status) });
+    }
+
+    [HttpPost("{hallId:int}/image")]
+    [RequestSizeLimit(ImageUploadHelper.MaxRequestSize)]
+    public async Task<IActionResult> UploadHallImage(
+        int hallId,
+        [FromForm] IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        var existingDataStatus = await GetDataStatusAsync(DataStatusCodes.Existing, cancellationToken);
+        var hall = await _context.Halls
+            .Include(item => item.Images.Where(image => image.DataStatusId == existingDataStatus.DataStatusId))
+            .SingleOrDefaultAsync(item => item.HallId == hallId &&
+                item.DataStatus.DataStatusCode == DataStatusCodes.Existing, cancellationToken);
+        if (hall is null) return NotFound(new { message = "Không tìm thấy sảnh tiệc." });
+
+        var validationError = ImageUploadHelper.Validate(file);
+        if (validationError is not null) return BadRequest(new { message = validationError });
+
+        var oldUrl = hall.Images.FirstOrDefault(image => image.IsPrimary)?.ImagePath;
+        var imageUrl = await ImageUploadHelper.SaveAsync(
+            file, _environment.WebRootPath, "sanh", hallId.ToString(), cancellationToken);
+        await UpsertPrimaryImageAsync(hall, imageUrl, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        if (!string.Equals(oldUrl, imageUrl, StringComparison.OrdinalIgnoreCase))
+            ImageUploadHelper.DeleteManagedUrl(oldUrl, _environment.WebRootPath);
+
+        return Ok(new { message = "Tải ảnh sảnh thành công.", imageUrl });
     }
 
     [HttpDelete("{hallId:int}")]
@@ -351,8 +427,12 @@ public sealed class HallController : ControllerBase
             return Conflict(new { message = "Không thể xóa sảnh đang hoạt động. Hãy chuyển sảnh sang trạng thái Ngừng hoạt động trước." });
 
         var deletedDataStatus = await GetDataStatusAsync(DataStatusCodes.Deleted, cancellationToken);
+        AddAudit(AuditActions.HallUpdated, hall.HallId,
+            new { hall.HallCode, DataStatus = DataStatusCodes.Existing }, new { hall.HallCode, DataStatus = DataStatusCodes.Deleted },
+            $"Xóa mềm sảnh {hall.HallCode}.");
         hall.DataStatusId = deletedDataStatus.DataStatusId;
         await _context.SaveChangesAsync(cancellationToken);
+        _catalogSyncService?.SyncCatalogInBackground();
         return Ok(new { message = "Xóa sảnh thành công." });
     }
 
@@ -361,6 +441,58 @@ public sealed class HallController : ControllerBase
         var normalized = code?.Trim().ToUpperInvariant();
         if (string.IsNullOrWhiteSpace(normalized) || !ValidStatuses.Contains(normalized)) return null;
         return await _statusService.GetStatusAsync(StatusGroups.Hall, normalized, cancellationToken);
+    }
+
+    private void AddAudit(string action, long entityId, object? oldData, object? newData, string notes)
+    {
+        var actorId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsed) ? parsed : (int?)null;
+        _context.AuditLogs.Add(new AuditLog
+        {
+            UserId = actorId, Action = action, EntityName = AuditEntityNames.Hall, EntityId = entityId,
+            OldData = oldData is null ? null : JsonSerializer.Serialize(oldData), NewData = newData is null ? null : JsonSerializer.Serialize(newData),
+            Timestamp = DateTime.Now, Outcome = AuditOutcomes.Success, Notes = notes
+        });
+    }
+
+    private async Task UpsertPrimaryImageAsync(
+        Hall hall,
+        string? requestedUrl,
+        CancellationToken cancellationToken)
+    {
+        if (!TryNormalizeImageUrl(requestedUrl, out var imageUrl)) return;
+
+        var primary = hall.Images.FirstOrDefault(image => image.IsPrimary);
+        if (primary is not null)
+        {
+            primary.ImagePath = imageUrl!;
+            return;
+        }
+
+        var existing = await GetDataStatusAsync(DataStatusCodes.Existing, cancellationToken);
+        var image = new ImageAsset
+        {
+            HallId = hall.HallId,
+            ImagePath = imageUrl!,
+            IsPrimary = true,
+            SortOrder = 1,
+            DataStatusId = existing.DataStatusId
+        };
+        _context.ImageAssets.Add(image);
+        hall.Images.Add(image);
+    }
+
+    private static bool TryNormalizeImageUrl(string? value, out string? normalized)
+    {
+        normalized = null;
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        var candidate = value.Trim();
+        if (candidate.StartsWith('/') ||
+            (Uri.TryCreate(candidate, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https"))
+        {
+            normalized = candidate;
+            return true;
+        }
+        return false;
     }
 
     private async Task<DataStatus> GetDataStatusAsync(

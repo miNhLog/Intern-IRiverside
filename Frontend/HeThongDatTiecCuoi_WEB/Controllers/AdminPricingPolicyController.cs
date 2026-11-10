@@ -1,6 +1,7 @@
 ﻿using HeThongDatTiecCuoi_WEB.Constants;
 using HeThongDatTiecCuoi_WEB.Models.AdminHall;
 using HeThongDatTiecCuoi_WEB.Services;
+using HeThongDatTiecCuoi_WEB.Models.ScheduleChange;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,7 +33,39 @@ public class AdminPricingPolicyController : Controller
             ? hallsResult.Value
             : new List<HallDto>();
 
+        var policyTask = _apiClient.GetActiveScheduleChangePolicyAsync(accessToken, cancellationToken);
+        var historyTask = _apiClient.GetScheduleChangePolicyHistoryAsync(accessToken, cancellationToken);
+        await Task.WhenAll(policyTask, historyTask);
+        ViewBag.ScheduleChangePolicy = new ScheduleChangePolicyPageViewModel
+        {
+            Active = policyTask.Result.Value,
+            History = historyTask.Result.Value ?? []
+        };
+        ViewBag.ScheduleChangePolicyError = policyTask.Result.Error ?? historyTask.Result.Error;
+
         return View(halls);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateScheduleChangePolicyVersion(
+        [FromBody] ScheduleChangePolicyVersionInput input, CancellationToken cancellationToken)
+    {
+        var accessToken = Request.Cookies[ApiTokenCookie];
+        if (string.IsNullOrWhiteSpace(accessToken)) return Unauthorized(new { success = false, message = "Phiên đăng nhập đã hết hạn." });
+        if (input.EffectiveFrom == default || input.Tiers.Count == 0 || input.Tiers.Any(x => x.FeeAmount < 0 || x.MinimumDays < 0))
+            return BadRequest(new { success = false, message = "Dữ liệu chính sách không hợp lệ." });
+        var ordered = input.Tiers.OrderBy(x => x.MinimumDays).ToList();
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            if (ordered[i].MaximumDays.HasValue && ordered[i].MaximumDays < ordered[i].MinimumDays)
+                return BadRequest(new { success = false, message = "Khoảng ngày của mức phí không hợp lệ." });
+            if (i > 0 && (!ordered[i - 1].MaximumDays.HasValue || ordered[i].MinimumDays <= ordered[i - 1].MaximumDays))
+                return BadRequest(new { success = false, message = "Các khoảng ngày không được chồng lấn." });
+        }
+        var result = await _apiClient.CreateScheduleChangePolicyVersionAsync(accessToken, input, cancellationToken);
+        if (result.StatusCode.HasValue) Response.StatusCode = result.StatusCode.Value;
+        return Json(new { success = result.Succeeded, data = result.Value, message = result.Error });
     }
 
     // Cập nhật giá sảnh trực tiếp vào bảng SanhTiec

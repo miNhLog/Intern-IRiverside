@@ -43,6 +43,14 @@ public sealed class AdminDecorServiceController : Controller
     public Task<IActionResult> UpdateService(int id, [FromBody] object request, CancellationToken cancellationToken) =>
         ProxyAsync(HttpMethod.Put, $"api/admin/decor-service/service/{id}", request, cancellationToken);
 
+    [HttpPost("AdminDecorService/data/decor/{id:int}/image")]
+    public Task<IActionResult> UploadDecorImage(int id, IFormFile file, CancellationToken cancellationToken) =>
+        ProxyFileAsync($"api/admin/decor-service/decor/{id}/image", file, cancellationToken);
+
+    [HttpPost("AdminDecorService/data/service/{id:int}/image")]
+    public Task<IActionResult> UploadServiceImage(int id, IFormFile file, CancellationToken cancellationToken) =>
+        ProxyFileAsync($"api/admin/decor-service/service/{id}/image", file, cancellationToken);
+
     private async Task<IActionResult> ProxyAsync(HttpMethod method, string path, object? body, CancellationToken cancellationToken)
     {
         var accessToken = Request.Cookies[ApiTokenCookie];
@@ -59,6 +67,45 @@ public sealed class AdminDecorServiceController : Controller
             using var response = await _httpClient.SendAsync(request, cancellationToken);
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
             return new ContentResult { Content = content, ContentType = "application/json", StatusCode = (int)response.StatusCode };
+        }
+        catch (HttpRequestException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new { success = false, message = "Không thể kết nối Backend API." });
+        }
+    }
+
+    private async Task<IActionResult> ProxyFileAsync(
+        string path,
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = Request.Cookies[ApiTokenCookie];
+        if (string.IsNullOrWhiteSpace(accessToken))
+            return Unauthorized(new { success = false, message = "Phiên đăng nhập đã hết hạn." });
+        if (file is null || file.Length == 0)
+            return BadRequest(new { success = false, message = "Vui lòng chọn tệp ảnh." });
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, path);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        using var multipart = new MultipartFormDataContent();
+        await using var stream = file.OpenReadStream();
+        using var content = new StreamContent(stream);
+        if (!string.IsNullOrWhiteSpace(file.ContentType))
+            content.Headers.ContentType = MediaTypeHeaderValue.Parse(file.ContentType);
+        multipart.Add(content, "file", file.FileName);
+        request.Content = multipart;
+
+        try
+        {
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            return new ContentResult
+            {
+                Content = responseContent,
+                ContentType = "application/json",
+                StatusCode = (int)response.StatusCode
+            };
         }
         catch (HttpRequestException)
         {

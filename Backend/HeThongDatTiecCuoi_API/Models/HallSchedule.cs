@@ -18,4 +18,5 @@ public sealed class HallSchedule
     public DataStatus DataStatus { get; set; } = null!;
     public ICollection<WeddingScheduleChange> ScheduleChangesAsOldSchedule { get; set; } = [];
     public ICollection<WeddingScheduleChange> ScheduleChangesAsNewSchedule { get; set; } = [];
+    public ICollection<ScheduleChangeHold> ScheduleChangeHolds { get; set; } = [];
 }

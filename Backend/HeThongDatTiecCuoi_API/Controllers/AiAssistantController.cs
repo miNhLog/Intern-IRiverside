@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using HeThongDatTiecCuoi_API.DTOs.AiChat;
 using HeThongDatTiecCuoi_API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +9,7 @@ namespace HeThongDatTiecCuoi_API.Controllers;
 /// <summary>UC10: Trợ lý ảo AI tư vấn thông minh (proxy FE/BE -&gt; AI_Service RAG).</summary>
 [Route("api/v1/ai-chat")]
 [ApiController]
+[EnableRateLimiting("ai-chat")]
 public sealed class AiAssistantController : ControllerBase
 {
     private readonly IAiChatService _aiChatService;
@@ -28,6 +30,8 @@ public sealed class AiAssistantController : ControllerBase
         {
             if (request is null || string.IsNullOrWhiteSpace(request.Message))
                 return BadRequest(new { message = "Vui lòng nhập nội dung cần tư vấn." });
+            if (request.Message.Trim().Length > 2000)
+                return BadRequest(new { message = "Nội dung tin nhắn không được vượt quá 2000 ký tự." });
             var reply = await _aiChatService.SendChatAsync(
                 request.Message.Trim(), request.History ?? new List<object>());
             return Ok(new
@@ -59,6 +63,8 @@ public sealed class AiAssistantController : ControllerBase
         {
             if (request is null)
                 return BadRequest(new { message = "Thiếu lịch sử hội thoại." });
+            if (request.History != null && request.History.Count > 50)
+                return BadRequest(new { message = "Lịch sử hội thoại không được vượt quá 50 mục." });
             var entities = await _aiChatService.ExtractEntitiesAsync(request.History ?? new List<object>());
             if (entities is null)
                 return Ok(new { success = false, entities = new AiChatEntitiesDto() });

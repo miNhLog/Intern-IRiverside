@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace HeThongDatTiecCuoi_WEB.Models.AdminReport;
@@ -17,8 +17,14 @@ public class RevenueBiViewModel
 public class KpiSummaryViewModel
 {
     public decimal TotalRevenue { get; set; }
+    public decimal EstimatedTotalRevenue { get; set; }
     public int TotalBookings { get; set; }
+    public int ConfirmedBookings { get; set; }
+    public int TotalContracts { get; set; }
+    public decimal TotalContractValue { get; set; }
+    public decimal OutstandingReceivables { get; set; }
     public decimal AverageRevenuePerTable { get; set; }
+    public decimal AverageMenuPricePerTable { get; set; }
     public int TotalTables { get; set; }
     public double AverageOccupancyRate { get; set; }
 }
@@ -28,7 +34,9 @@ public class MonthlyRevenueViewModel
     public int Month { get; set; }
     public string MonthName { get; set; } = string.Empty;
     public decimal TotalRevenue { get; set; }
+    public decimal EstimatedRevenue { get; set; }
     public int BookingCount { get; set; }
+    public int ContractCount { get; set; }
 }
 
 public class RevenueStructureViewModel
@@ -90,7 +98,8 @@ public class HallMatrixSlotDto
 {
     public DateTime Date { get; set; }
     public string Shift { get; set; } = string.Empty; // "Ca trưa" hoặc "Ca tối"
-    public int StatusId { get; set; } // 401: Trống, 402: Đã đặt, 403: Tạm khóa
+    public int StatusId { get; set; } // 301: Trống, 302: Đã đặt
+    public string StatusCode { get; set; } = "AVAILABLE"; // "AVAILABLE", "BOOKED", "LOCKED"
     public string StatusText { get; set; } = "Trống";
     public string? BookingCode { get; set; }
     public string? CustomerName { get; set; }

@@ -7,6 +7,8 @@ public sealed class MenuViewModel
     public string MenuName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal PricePerTable { get; set; }
+
+    public string? ImageUrl { get; set; }
     public string Status { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
 }

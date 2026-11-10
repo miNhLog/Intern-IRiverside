@@ -1,0 +1,63 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Riverside: Backend",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "watch",
+        "run",
+        "--no-launch-profile",
+        "--",
+        "--urls",
+        "https://localhost:7201;http://localhost:5201"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/Backend/HeThongDatTiecCuoi_API",
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Development"
+        }
+      },
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "group": "riverside",
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Riverside: Frontend",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "watch",
+        "run",
+        "--launch-profile",
+        "https"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/Frontend/HeThongDatTiecCuoi_WEB"
+      },
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "group": "riverside",
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Riverside: Chạy toàn bộ",
+      "dependsOn": [
+        "Riverside: Backend",
+        "Riverside: Frontend"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

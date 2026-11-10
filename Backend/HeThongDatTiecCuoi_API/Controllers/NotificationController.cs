@@ -9,7 +9,7 @@ namespace HeThongDatTiecCuoi_API.Controllers;
 
 [ApiController]
 [Route("api/notifications")]
-[Authorize(Roles = RoleNames.Admin + "," + RoleNames.Manager)]
+[Authorize(Roles = RoleNames.Admin + "," + RoleNames.Manager + "," + RoleNames.HallManager + "," + RoleNames.Coordinator)]
 public sealed class NotificationController : ControllerBase
 {
     private readonly INotificationService _notifications;

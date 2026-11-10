@@ -1,0 +1,1149 @@
+/* Riverside Palace Admin shell based on the supplied Metis v1.0.0 template. */
+.admin-metis-app {
+    --admin-sidebar-expanded: 240px;
+    --admin-sidebar-collapsed: 64px;
+    --metis-header-height: 56px;
+    --rp-bg: #fafafa;
+    --rp-surface: #ffffff;
+    --rp-surface-muted: #f4f4f5;
+    --rp-surface-hover: #f4f4f5;
+    --rp-border: #e4e4e7;
+    --rp-border-strong: #d4d4d8;
+    --rp-text: #18181b;
+    --rp-text-secondary: #52525b;
+    --rp-text-muted: #71717a;
+    --rp-gold-700: #765619;
+    --rp-gold-600: #9a7127;
+    --rp-gold-500: #c6a15b;
+    --rp-gold-100: #fbf3df;
+    --metis-radius-sm: 6px;
+    --metis-radius: 8px;
+    --metis-radius-lg: 10px;
+    --metis-shadow-float: 0 8px 24px rgba(9, 9, 11, .08), 0 2px 6px rgba(9, 9, 11, .04);
+    --metis-transition: 150ms cubic-bezier(.4, 0, .2, 1);
+    --chart-role-1: #9a7127;
+    --chart-role-2: #c6a15b;
+    --chart-role-3: #dfc58f;
+    --chart-role-4: #71717a;
+    --chart-tooltip-bg: #18181b;
+    --chart-tooltip-text: #fafafa;
+    --metis-badge-primary: #2563eb;
+    --metis-badge-success: #16a34a;
+    --metis-badge-warning: #b45309;
+    --metis-badge-danger: #dc2626;
+    --metis-badge-secondary: #52525b;
+    --metis-badge-purple: #7c3aed;
+    --metis-heading-bg: #f4f4f5;
+    --metis-heading-text: #18181b;
+    --metis-heading-muted: #52525b;
+    --metis-heading-border: #e4e4e7;
+    color: var(--rp-text);
+    background: var(--rp-bg);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.admin-metis-app #adminMainContent,
+.admin-metis-app :is(p,span,strong,small,label,td,th,button,input,select,textarea,a,li,h1,h2,h3,h4,h5,h6) {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+/* Metis layout: fixed header with navigation beginning below it. */
+.admin-metis-app .sidebar-header {
+    position: fixed;
+    inset: 0 auto auto 0;
+    z-index: 1040;
+    width: var(--admin-sidebar-expanded);
+    min-height: var(--metis-header-height);
+    height: var(--metis-header-height);
+    box-sizing: border-box;
+    justify-content: flex-start;
+    padding: 7px 10px 7px 14px;
+    border-right: 1px solid var(--rp-border);
+    border-bottom: 1px solid var(--rp-border);
+    background: var(--rp-surface);
+    transition: width var(--metis-transition), background var(--metis-transition), border-color var(--metis-transition);
+}
+
+.admin-metis-app .admin-sidebar {
+    top: var(--metis-header-height);
+    height: calc(100dvh - var(--metis-header-height));
+    min-height: 0;
+    color: var(--rp-text-secondary);
+    border-right: 1px solid var(--rp-border);
+    background: var(--rp-surface);
+    box-shadow: none;
+    transition: width var(--metis-transition), transform 250ms cubic-bezier(.4, 0, .2, 1), background var(--metis-transition), border-color var(--metis-transition);
+}
+
+.admin-metis-app .sidebar-brand { flex-direction: row; gap: 9px; }
+.admin-metis-app .sidebar-brand .brand-icon { width: 38px; height: 38px; flex: 0 0 38px; }
+.admin-metis-app .sidebar-brand .sidebar-brand-emblem { width: 38px !important; height: 34px !important; filter: none; }
+.admin-metis-app .sidebar-brand .brand-text { text-align: left; }
+.admin-metis-app .sidebar-brand .brand-text strong { color: var(--rp-text); font-size: 12px; font-weight: 750; letter-spacing: .065em; }
+.admin-metis-app .sidebar-brand .brand-text small { margin-top: 2px; color: var(--rp-text-muted); font-size: 7px; }
+.admin-metis-app .sidebar-toggle { top: 10px; right: 7px; width: 36px; height: 36px; color: var(--rp-text-secondary); border-radius: var(--metis-radius-sm); }
+.admin-metis-app .sidebar-toggle:hover,
+.admin-metis-app .sidebar-toggle:focus-visible { color: var(--rp-text); background: var(--rp-surface-hover); }
+
+.admin-metis-app .sidebar-content { padding: 14px 10px 20px; }
+.admin-metis-app .sidebar-section + .sidebar-section { margin-top: 18px; }
+.admin-metis-app .sidebar-section-title { margin: 0 12px 6px; color: var(--rp-text-muted); font-size: 9px; font-weight: 700; letter-spacing: .09em; }
+.admin-metis-app .sidebar-menu { padding: 0; }
+.admin-metis-app .sidebar-item {
+    min-height: 42px;
+    gap: 11px;
+    margin: 2px 0;
+    padding: 9px 11px;
+    border: 0;
+    border-radius: var(--metis-radius);
+    color: var(--rp-text-secondary);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 550;
+    transition: color var(--metis-transition), background var(--metis-transition);
+}
+.admin-metis-app .sidebar-item:hover,
+.admin-metis-app .sidebar-item:focus-visible { color: var(--rp-text); background: var(--rp-surface-hover); transform: none; }
+.admin-metis-app .sidebar-item.active { color: var(--rp-text); border: 0; background: var(--rp-surface-muted); box-shadow: inset 3px 0 0 var(--rp-gold-500); }
+.admin-metis-app .sidebar-icon { width: 22px; color: var(--rp-text-muted); font-size: 16px; text-align: center; }
+.admin-metis-app .sidebar-item.active .sidebar-icon { color: var(--rp-gold-700); }
+.admin-metis-app .sidebar-footer { min-height: 56px; padding: 7px 10px; border-top: 1px solid var(--rp-border); background: var(--rp-surface); }
+.admin-metis-app .sidebar-footer-action { min-height: 40px; padding: 8px 10px; border-radius: var(--metis-radius); color: var(--rp-text-secondary); }
+.admin-metis-app .sidebar-footer-action:hover,
+.admin-metis-app .sidebar-footer-action:focus-visible { color: var(--rp-text); background: var(--rp-surface-hover); }
+
+/* Header occupies the area to the right of the Riverside brand. */
+.admin-metis-app .backoffice-topbar {
+    position: fixed;
+    inset: 0 0 auto var(--admin-sidebar-expanded);
+    z-index: 1030;
+    min-height: var(--metis-header-height);
+    height: var(--metis-header-height);
+    box-sizing: border-box;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--rp-border);
+    background: var(--rp-surface);
+    box-shadow: none;
+    transition: left var(--metis-transition), background var(--metis-transition), border-color var(--metis-transition);
+}
+.admin-metis-app .main-content { padding-top: var(--metis-header-height); background: var(--rp-bg); }
+.admin-metis-app .topbar-left { flex: 1 1 auto; justify-content: center; }
+.admin-metis-app .topbar-search { width: min(620px, 52vw); height: 38px; flex-direction: row-reverse; padding: 0 13px 0 14px; border: 1px solid transparent; border-radius: var(--metis-radius); background: var(--rp-surface-muted); }
+.admin-metis-app .topbar-search:focus-within { border-color: var(--rp-gold-500); background: var(--rp-surface); box-shadow: 0 0 0 2px rgba(198, 161, 91, .18); }
+.admin-metis-app .topbar-search input { color: var(--rp-text); font-size: 13px; }
+.admin-metis-app .topbar-search input::placeholder { color: var(--rp-text-muted); }
+.admin-metis-app .topbar-right { gap: 9px; }
+.admin-metis-app .topbar-divider { height: 24px; background: var(--rp-border); }
+.admin-metis-app .topbar-date { order: -1; min-height: 34px; padding: 0 10px; border: 1px solid var(--rp-border); border-radius: var(--metis-radius-sm); color: var(--rp-text-secondary); background: var(--rp-surface-muted); font-size: 11px; font-weight: 550; }
+.admin-metis-app .topbar-date i { color: var(--rp-text-muted); font-size: 15px; }
+.admin-view-tools { display: flex; align-items: center; gap: 6px; }
+.admin-view-tool,
+.admin-metis-app .topbar-notification {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--metis-radius-sm);
+    color: var(--rp-text-secondary);
+    background: transparent;
+    font-size: 18px;
+    cursor: pointer;
+    transition: color var(--metis-transition), background var(--metis-transition), border-color var(--metis-transition), transform var(--metis-transition);
+}
+.admin-view-tool:hover,
+.admin-view-tool:focus-visible,
+.admin-metis-app .topbar-notification:hover,
+.admin-metis-app .topbar-notification:focus-visible { color: var(--rp-gold-700); border-color: transparent; outline: 0; background: var(--rp-gold-100); }
+.admin-view-tool.is-unavailable { animation: admin-tool-shake .25s linear 2; }
+.admin-view-tool.is-restore-pending {
+    border-color: color-mix(in srgb, var(--rp-gold-500) 45%, var(--rp-border));
+    color: var(--rp-gold-700);
+    background: var(--rp-gold-100);
+}
+@keyframes admin-tool-shake { 50% { transform: translateX(2px); } }
+.admin-metis-app .topbar-user { min-height: 38px; padding: 3px 6px; border: 1px solid transparent; border-radius: var(--metis-radius-sm); }
+.admin-metis-app .topbar-user:hover { border-color: var(--rp-border); background: var(--rp-surface-hover); }
+.admin-metis-app .topbar-avatar { width: 32px; height: 32px; flex-basis: 32px; border-radius: 50%; font-size: 11px; }
+.admin-metis-app .topbar-user-name { color: var(--rp-text); font-size: 12px; }
+.admin-metis-app .topbar-user-role { color: var(--rp-text-muted); font-size: 10px; }
+.admin-metis-app .topbar-chevron { color: var(--rp-text); }
+.admin-metis-app .topbar-account[open] .topbar-chevron,
+.admin-metis-app .topbar-user:hover .topbar-chevron { color: var(--rp-gold-700); }
+.admin-metis-app :is(.user-dropdown,.notification-panel,.topbar-search-results) { border: 1px solid var(--rp-border); border-radius: var(--metis-radius); background: var(--rp-surface); box-shadow: var(--metis-shadow-float); }
+.admin-metis-app .user-dropdown :is(a,button) {
+    color: var(--rp-text-secondary);
+    background: transparent;
+}
+.admin-metis-app .user-dropdown :is(a,button) i { color: var(--rp-text-muted); }
+.admin-metis-app .user-dropdown :is(a,button):hover,
+.admin-metis-app .user-dropdown :is(a,button):focus-visible {
+    color: var(--rp-text);
+    outline: 0;
+    background: var(--rp-surface-hover);
+}
+.admin-metis-app .user-dropdown :is(a,button):hover i,
+.admin-metis-app .user-dropdown :is(a,button):focus-visible i { color: var(--rp-gold-700); }
+.admin-metis-app .user-dropdown-divider { background: var(--rp-border); }
+
+html.sidebar-is-collapsed .admin-metis-app .sidebar-header { width: var(--admin-sidebar-collapsed); min-height: var(--metis-header-height); padding: 7px; }
+html.sidebar-is-collapsed .admin-metis-app .sidebar-brand { display: none; }
+html.sidebar-is-collapsed .admin-metis-app .sidebar-toggle { position: static; display: grid; margin: auto; }
+html.sidebar-is-collapsed .admin-metis-app .backoffice-topbar { left: var(--admin-sidebar-collapsed); }
+
+/* Page rhythm, cards and controls follow the supplied Metis tokens. */
+.admin-metis-app #adminMainContent > :is(.account-management-page,.admin-dashboard-page,.audit-page,.role-change-page) {
+    min-height: calc(100vh - var(--metis-header-height));
+    box-sizing: border-box;
+    padding: 24px 26px 36px;
+    color: var(--rp-text);
+    background: var(--rp-bg);
+}
+.admin-metis-app #adminMainContent :is(
+    .account-management-header,.dashboard-page-header,.audit-page-header,.role-change-header,
+    .food-header,.manager-section-header
+) {
+    min-height: 0 !important;
+    margin: 0 0 18px !important;
+    padding: 0 !important;
+    align-items: center !important;
+    gap: 16px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.admin-metis-app #adminMainContent :is(
+    .account-management-header,.dashboard-page-header,.audit-page-header,.role-change-header,
+    .food-header,.manager-section-header
+) .backoffice-hero__eyebrow { display: none; }
+.admin-metis-app #adminMainContent :is(
+    .account-management-header,.dashboard-page-header,.audit-page-header,.role-change-header,
+    .food-header,.manager-section-header
+) :is(h1,h2) {
+    max-width: none;
+    margin: 0 !important;
+    color: var(--rp-text) !important;
+    font-size: 26px !important;
+    font-weight: 650 !important;
+    line-height: 1.2 !important;
+    letter-spacing: -.025em !important;
+}
+.admin-metis-app #adminMainContent :is(
+    .account-management-header,.dashboard-page-header,.audit-page-header,.role-change-header,
+    .food-header,.manager-section-header
+) p {
+    max-width: none;
+    margin: 5px 0 0 !important;
+    color: var(--rp-text-muted) !important;
+    font-size: 13px !important;
+    line-height: 1.45;
+}
+.admin-metis-app #adminMainContent .bi-hero::after { display: none; }
+.admin-metis-app .backoffice-hero__eyebrow { color: var(--rp-gold-700); }
+
+/* Admin-only Metis page heading: plain typography, without the legacy hero card. */
+html body.admin-metis-app #adminMainContent :is(
+    .account-management-header,.dashboard-page-header,.audit-page-header,.role-change-header,
+    .food-header,.manager-section-header
+) {
+    position: static !important;
+    isolation: auto !important;
+    width: auto !important;
+    min-height: 0 !important;
+    margin: 0 0 20px !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+html body.admin-metis-app #adminMainContent :is(
+    .account-management-header,.dashboard-page-header,.audit-page-header,.role-change-header,
+    .food-header,.manager-section-header
+)::before,
+html body.admin-metis-app #adminMainContent :is(
+    .account-management-header,.dashboard-page-header,.audit-page-header,.role-change-header,
+    .food-header,.manager-section-header
+)::after { display: none !important; content: none !important; }
+html body.admin-metis-app #adminMainContent :is(
+    .account-management-header,.dashboard-page-header,.audit-page-header,.role-change-header,
+    .food-header,.manager-section-header
+) :is(h1,h2) {
+    margin: 0 !important;
+    color: var(--rp-text) !important;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    font-size: 26px !important;
+    font-weight: 600 !important;
+    letter-spacing: -.02em !important;
+    line-height: 1.25 !important;
+}
+html body.admin-metis-app #adminMainContent :is(
+    .account-management-header,.dashboard-page-header,.audit-page-header,.role-change-header,
+    .food-header,.manager-section-header
+) p {
+    margin: 4px 0 0 !important;
+    color: var(--rp-text-secondary) !important;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    line-height: 1.5 !important;
+}
+html body.admin-metis-app #adminMainContent .backoffice-function-header-shell {
+    position: static !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+html body.admin-metis-app #adminMainContent .admin-create-button {
+    min-height: 40px !important;
+    padding: 9px 15px !important;
+    border: 1px solid #2563eb !important;
+    border-radius: 8px !important;
+    color: #fff !important;
+    background: #2563eb !important;
+    box-shadow: none !important;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    line-height: 1.25 !important;
+}
+html body.admin-metis-app #adminMainContent .admin-create-button:hover {
+    border-color: #1d4ed8 !important;
+    background: #1d4ed8 !important;
+    filter: none !important;
+    transform: none !important;
+}
+.admin-metis-app .account-form-note {
+    border-color: var(--rp-border) !important;
+    border-radius: var(--metis-radius) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+}
+.admin-metis-app .account-form-note > i { color: #2563eb !important; }
+.admin-metis-app .account-form-note strong {
+    color: var(--rp-text) !important;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace !important;
+    font-weight: 700 !important;
+}
+
+/* Heading bars follow the active light/dark Metis theme. */
+.admin-metis-app #adminMainContent table thead th {
+    border-color: var(--metis-heading-border) !important;
+    color: var(--metis-heading-text) !important;
+    background: var(--metis-heading-bg) !important;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: .025em !important;
+}
+.admin-metis-app #adminMainContent table thead th * { color: var(--metis-heading-text) !important; }
+
+/* Audit category heading follows the same dark Metis title-bar language. */
+.admin-metis-app .audit-page,
+.admin-metis-app .audit-page :is(button,input,select,textarea) {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+.admin-metis-app .audit-section-header {
+    padding: 14px 16px;
+    border-color: var(--metis-heading-border);
+    border-radius: var(--metis-radius);
+    color: var(--metis-heading-text);
+    background: var(--metis-heading-bg);
+    box-shadow: none;
+}
+.admin-metis-app .audit-section-icon {
+    width: 40px;
+    height: 40px;
+    border-color: var(--metis-heading-border);
+    border-radius: var(--metis-radius-sm);
+    color: #e3c175;
+    background: var(--rp-surface);
+}
+.admin-metis-app .audit-section-header p { color: var(--metis-heading-muted) !important; font-size: 10px; font-weight: 600; }
+.admin-metis-app .audit-section-header h2 { color: var(--metis-heading-text) !important; font-size: 18px; font-weight: 600; }
+.admin-metis-app .audit-section-header div div > span { color: var(--metis-heading-muted) !important; font-size: 12px; }
+.admin-metis-app .audit-count {
+    padding: 7px 11px;
+    border: 0;
+    border-radius: var(--metis-radius-sm);
+    color: #fff;
+    background: #2563eb;
+    font-size: 11px;
+    font-weight: 500;
+}
+.admin-metis-app .audit-count strong { color: #fff !important; font-size: 12px; font-weight: 700; }
+
+/* Theme-aware audit detail dialog. */
+.admin-metis-app .audit-dialog {
+    border: 1px solid var(--rp-border);
+    border-radius: var(--metis-radius-lg);
+    color: var(--rp-text);
+    background: var(--rp-surface);
+    box-shadow: var(--metis-shadow-float);
+}
+.admin-metis-app .audit-dialog::backdrop { background: rgba(9, 9, 11, .68); backdrop-filter: blur(3px); }
+.admin-metis-app .audit-dialog-shell { color: var(--rp-text); background: var(--rp-surface); }
+.admin-metis-app .audit-dialog-header {
+    padding: 16px 18px;
+    border-color: var(--metis-heading-border);
+    color: var(--metis-heading-text);
+    background: var(--metis-heading-bg);
+}
+.admin-metis-app .audit-dialog-header span { color: #9a7127; font-size: 10px; font-weight: 700; }
+.admin-metis-app .audit-dialog-header h2 { color: var(--metis-heading-text) !important; font-size: 17px; font-weight: 600; }
+.admin-metis-app .audit-dialog-header button {
+    width: 38px;
+    height: 38px;
+    border-color: var(--metis-heading-border);
+    border-radius: var(--metis-radius-sm);
+    color: var(--metis-heading-text);
+    background: var(--rp-surface);
+}
+.admin-metis-app .audit-dialog-header button:hover { color: #fff; background: #2563eb; }
+.admin-metis-app .audit-dialog-body { color: var(--rp-text); background: var(--rp-surface); }
+.admin-metis-app .audit-dialog h3 { color: var(--rp-text) !important; }
+.admin-metis-app .audit-dialog h3 i { color: #9a7127; }
+.admin-metis-app .audit-dialog dl { border-color: var(--rp-border); border-radius: var(--metis-radius); }
+.admin-metis-app .audit-dialog :is(dt,dd) { border-color: var(--rp-border); }
+.admin-metis-app .audit-dialog dt { color: var(--rp-text-secondary) !important; background: var(--rp-surface-muted) !important; }
+.admin-metis-app .audit-dialog dd { color: var(--rp-text) !important; background: var(--rp-surface); }
+.admin-metis-app .audit-dialog pre { color: var(--rp-text); }
+html[data-admin-theme="dark"] .admin-metis-app .audit-dialog-header span,
+html[data-admin-theme="dark"] .admin-metis-app .audit-dialog h3 i { color: #e3c175; }
+
+/* Admin profile follows the same Metis shell without affecting other roles. */
+.admin-metis-app #adminMainContent > .profile-page {
+    min-height: calc(100vh - var(--metis-header-height));
+    box-sizing: border-box;
+    padding: 24px 26px 36px !important;
+    color: var(--rp-text);
+    background: var(--rp-bg) !important;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+html body.admin-metis-app #adminMainContent .profile-page-header {
+    position: static !important;
+    isolation: auto !important;
+    min-height: 0 !important;
+    margin: 0 0 20px !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+html body.admin-metis-app #adminMainContent .profile-page-header::before,
+html body.admin-metis-app #adminMainContent .profile-page-header::after { display: none !important; content: none !important; }
+html body.admin-metis-app #adminMainContent .profile-page-header .backoffice-hero__eyebrow { display: none !important; }
+html body.admin-metis-app #adminMainContent .profile-page-header h1 {
+    margin: 0 !important;
+    color: var(--rp-text) !important;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    font-size: 26px !important;
+    font-weight: 600 !important;
+    letter-spacing: -.02em !important;
+    line-height: 1.25 !important;
+}
+html body.admin-metis-app #adminMainContent .profile-page-header p { margin: 4px 0 0 !important; color: var(--rp-text-secondary) !important; font-size: 13px !important; }
+.admin-metis-app .profile-grid { grid-template-columns: 260px minmax(0,1fr); gap: 18px; }
+.admin-metis-app :is(.profile-summary,.profile-card) {
+    border: 1px solid var(--rp-border);
+    border-radius: var(--metis-radius);
+    color: var(--rp-text);
+    background: var(--rp-surface);
+    box-shadow: none;
+}
+.admin-metis-app .profile-summary { padding: 22px 18px; }
+.admin-metis-app .profile-avatar {
+    width: 68px;
+    height: 68px;
+    margin-bottom: 13px;
+    border-radius: 50%;
+    color: #fff;
+    background: #2563eb;
+    font-size: 21px;
+    font-weight: 700;
+}
+.admin-metis-app .profile-summary h2 { color: var(--rp-text); font-size: 16px; font-weight: 600; }
+.admin-metis-app .profile-role-badge {
+    width: max-content;
+    display: flex;
+    margin: 8px auto 18px !important;
+    padding: 5px 10px;
+    border-radius: 7px;
+    color: #fff !important;
+    background: var(--metis-badge-danger);
+    font-size: 11px !important;
+    font-weight: 650 !important;
+}
+.admin-metis-app .profile-summary dl div { padding: 11px 0; border-color: var(--rp-border); }
+.admin-metis-app .profile-summary dt { color: var(--rp-text-secondary); }
+.admin-metis-app .profile-summary dd { color: var(--rp-text); font-weight: 600; }
+.admin-metis-app .profile-status-badge {
+    display: inline-flex;
+    padding: 5px 9px;
+    border-radius: 7px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 650;
+}
+.admin-metis-app .profile-status-badge.is-active { background: var(--metis-badge-success); }
+.admin-metis-app .profile-status-badge.is-locked { background: var(--metis-badge-secondary); }
+.admin-metis-app .profile-card { padding: 0; overflow: hidden; }
+.admin-metis-app .profile-card-heading {
+    margin: 0;
+    padding: 14px 18px;
+    border-color: var(--metis-heading-border);
+    background: var(--metis-heading-bg);
+}
+.admin-metis-app .profile-card-heading h2 { color: var(--metis-heading-text) !important; font-size: 16px; font-weight: 600; }
+.admin-metis-app .profile-card-heading p { margin-top: 4px; color: var(--metis-heading-muted) !important; font-size: 11px; }
+.admin-metis-app .profile-card form { padding: 18px; }
+.admin-metis-app .profile-form-grid { gap: 15px; }
+html body.admin-metis-app #adminMainContent .profile-form-grid label { color: var(--rp-text-secondary) !important; font-size: 11px; font-weight: 600; }
+html body.admin-metis-app #adminMainContent .profile-form-grid input,
+html body.admin-metis-app #adminMainContent .profile-password-input {
+    height: 42px;
+    border-color: var(--rp-border-strong) !important;
+    border-radius: var(--metis-radius-sm) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface) !important;
+}
+html body.admin-metis-app #adminMainContent .profile-form-grid input:focus,
+html body.admin-metis-app #adminMainContent .profile-password-input:focus-within { border-color: #2563eb !important; box-shadow: 0 0 0 2px rgba(37,99,235,.18) !important; }
+html body.admin-metis-app #adminMainContent .profile-form-grid input[readonly] { color: var(--rp-text-muted) !important; background: var(--rp-surface-muted) !important; }
+html body.admin-metis-app #adminMainContent .profile-password-input input { color: var(--rp-text) !important; background: transparent !important; }
+html body.admin-metis-app #adminMainContent .profile-password-input .toggle-password { width: 40px; height: 40px; color: var(--rp-text-muted) !important; background: transparent !important; }
+.admin-metis-app :is(.profile-primary,.profile-secondary) {
+    min-width: 0;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 18px;
+    padding: 0 14px;
+    border-radius: var(--metis-radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+}
+html body.admin-metis-app #adminMainContent .profile-primary {
+    min-height: 40px;
+    border: 1px solid #2563eb !important;
+    border-radius: var(--metis-radius-sm) !important;
+    color: #fff !important;
+    background: #2563eb !important;
+    box-shadow: none !important;
+    font-size: 12px;
+    font-weight: 600;
+}
+html body.admin-metis-app #adminMainContent .profile-primary:hover { border-color: #1d4ed8 !important; color: #fff !important; background: #1d4ed8 !important; transform: none !important; box-shadow: none !important; }
+html body.admin-metis-app #adminMainContent .profile-secondary {
+    min-height: 40px;
+    border: 1px solid var(--rp-border-strong) !important;
+    border-radius: var(--metis-radius-sm) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface) !important;
+    font-size: 12px;
+    font-weight: 600;
+}
+html body.admin-metis-app #adminMainContent .profile-secondary:hover { border-color: var(--rp-text-muted) !important; color: var(--rp-text) !important; background: var(--rp-surface-hover) !important; }
+.admin-metis-app :is(.dashboard-stat-card,.dashboard-panel,.system-admin-panel,.employee-account-panel,.audit-overview article,.audit-card,.role-change-card) {
+    border: 1px solid var(--rp-border);
+    border-radius: var(--metis-radius);
+    background: var(--rp-surface);
+    box-shadow: none;
+}
+.admin-metis-app .system-admin-panel { margin: 0; padding: 0; border: 0; background: transparent; }
+.admin-metis-app .system-admin-card {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 48px minmax(0,1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 15px 16px;
+    border: 1px solid var(--rp-border);
+    border-radius: var(--metis-radius);
+    color: var(--rp-text);
+    background: var(--rp-surface);
+    box-shadow: none;
+}
+.admin-metis-app .system-admin-avatar {
+    width: 48px;
+    height: 48px;
+    flex: none;
+    border: 1px solid var(--rp-border);
+    border-radius: var(--metis-radius);
+    color: #2563eb;
+    background: var(--rp-surface-muted);
+    font-size: 20px;
+}
+.admin-metis-app .system-admin-identity { min-width: 0; gap: 4px; }
+.admin-metis-app .system-admin-identity strong {
+    overflow: hidden;
+    color: var(--rp-text) !important;
+    font-size: 15px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.admin-metis-app .system-admin-identity span {
+    min-width: 0;
+    color: var(--rp-text-secondary);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.admin-metis-app .system-admin-identity span i { color: var(--rp-text-muted); }
+.admin-metis-app .system-admin-badges { justify-content: flex-end; gap: 8px; margin-left: auto; }
+.admin-metis-app .account-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+.admin-metis-app .account-stat-card {
+    min-width: 0;
+    min-height: 112px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--rp-border);
+    border-radius: var(--metis-radius);
+    color: var(--rp-text);
+    background: var(--rp-surface);
+}
+.admin-metis-app .account-stat-icon {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--metis-radius);
+    color: #2563eb;
+    background: rgba(37,99,235,.10);
+    font-size: 20px;
+}
+.admin-metis-app .account-stat-icon.is-active { color: #16a34a; background: rgba(22,163,74,.11); }
+.admin-metis-app .account-stat-icon.is-locked { color: #dc2626; background: rgba(220,38,38,.10); }
+.admin-metis-app .account-stat-icon.is-password { color: #b45309; background: rgba(180,83,9,.11); }
+.admin-metis-app .account-stat-card > div { min-width: 0; }
+.admin-metis-app .account-stat-card :is(small,strong,p) { display: block; }
+.admin-metis-app .account-stat-card small { color: var(--rp-text-muted); font-size: 10px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
+.admin-metis-app .account-stat-card strong { margin-top: 4px; color: var(--rp-text) !important; font-size: 25px; font-weight: 650; line-height: 1; }
+.admin-metis-app .account-stat-card p { margin: 7px 0 0; color: var(--rp-text-secondary); font-size: 11px; }
+.admin-metis-app .account-directory-header {
+    min-height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 15px;
+    border-bottom: 1px solid var(--metis-heading-border);
+    color: var(--metis-heading-text);
+    background: var(--metis-heading-bg);
+}
+.admin-metis-app .account-directory-header > div { flex: 0 0 auto; }
+.admin-metis-app .account-directory-header h2 { margin: 0; color: var(--metis-heading-text) !important; font-size: 17px; font-weight: 600; }
+.admin-metis-app .account-directory-header p { margin: 3px 0 0; color: var(--metis-heading-muted) !important; font-size: 10px; }
+.admin-metis-app .account-directory-header .employee-account-toolbar {
+    width: min(720px, 68%);
+    display: grid;
+    grid-template-columns: minmax(210px,1fr) 155px 155px auto;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+}
+.admin-metis-app .account-directory-header :is(.employee-search,.employee-filter,.account-filter-clear) {
+    height: 38px;
+    border-color: var(--rp-border-strong);
+    background: var(--rp-surface);
+}
+.admin-metis-app .account-directory-header .employee-search { grid-column: auto; padding: 0 11px; }
+.admin-metis-app .account-directory-header .employee-search input { font-size: 12px; }
+.admin-metis-app .account-directory-header .employee-filter select { font-size: 12px; }
+.admin-metis-app .account-directory-header .account-filter-clear { position: static; width: 38px; }
+.admin-metis-app .self-account-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 5px 7px;
+    border-radius: var(--metis-radius-sm);
+    color: var(--rp-text-muted);
+    background: var(--rp-surface-muted);
+    font-size: 9px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.admin-metis-app .dashboard-stat-card { min-height: 108px; padding: 18px; }
+.admin-metis-app :is(.dashboard-stat-card,.dashboard-panel,.audit-overview article):hover { border-color: var(--rp-border-strong); box-shadow: none; transform: none; }
+.admin-metis-app :is(.dashboard-stat-icon,.audit-overview-icon,.system-admin-heading-icon) { border: 1px solid var(--rp-border); border-radius: var(--metis-radius) !important; color: var(--rp-text-secondary) !important; background: var(--rp-surface-muted) !important; }
+.admin-metis-app :is(.dashboard-panel-header,.audit-card-heading,.account-modal-header,.account-modal-actions) { border-color: var(--rp-border); }
+.admin-metis-app :is(.dashboard-table,.employee-account-table,.audit-table,.role-history-table) th { color: var(--rp-text-secondary); border-color: var(--rp-border); background: var(--rp-surface-muted); }
+.admin-metis-app :is(.dashboard-table,.employee-account-table,.audit-table,.role-history-table) td { color: var(--rp-text-secondary); border-color: var(--rp-border); }
+.admin-metis-app :is(.dashboard-table,.employee-account-table,.audit-table,.role-history-table) tbody tr:hover td { background: var(--rp-surface-hover); }
+.admin-metis-app #adminMainContent :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea) { color: var(--rp-text); border-color: var(--rp-border-strong); border-radius: var(--metis-radius-sm); background: var(--rp-surface); }
+.admin-metis-app #adminMainContent :is(input,select,textarea):focus-visible { border-color: var(--rp-gold-500); box-shadow: 0 0 0 2px rgba(198, 161, 91, .18); }
+.admin-metis-app .employee-filter {
+    display: block;
+    overflow: visible;
+    border-color: var(--rp-border-strong);
+    background: var(--rp-surface);
+}
+.admin-metis-app .employee-filter select {
+    width: 100%;
+    padding: 0 36px 0 13px;
+    border: 0 !important;
+    border-radius: inherit;
+    color: var(--rp-text);
+    background-color: var(--rp-surface);
+    font-size: 13px;
+    font-weight: 500;
+    color-scheme: light;
+    cursor: pointer;
+}
+.admin-metis-app .employee-filter select option {
+    color: #18181b;
+    background: #fff;
+}
+html[data-admin-theme="dark"] .admin-metis-app .employee-filter select { color-scheme: dark; }
+html[data-admin-theme="dark"] .admin-metis-app .employee-filter select option {
+    color: #f4f4f5;
+    background: #18181b;
+}
+html[data-admin-theme="dark"] .admin-metis-app .employee-filter select option:checked {
+    color: #fff;
+    background: #2563eb;
+}
+.admin-metis-app :is(.account-modal,.audit-dialog-body) { color: var(--rp-text); border-color: var(--rp-border); border-radius: var(--metis-radius-lg); background: var(--rp-surface); }
+.admin-metis-app :is(.account-modal-overlay,.role-action-modal) { background: rgba(9, 9, 11, .52); }
+.admin-metis-app :is(.account-modal,.audit-dialog) { box-shadow: 0 16px 40px rgba(9, 9, 11, .16), 0 4px 10px rgba(9, 9, 11, .08); }
+
+/* Compact Metis-style account actions menu. Existing action classes stay intact. */
+.admin-metis-app .employee-account-table th:last-child,
+.admin-metis-app .employee-account-table td:last-child { width: 82px; padding-right: 10px; padding-left: 8px; text-align: center; }
+.admin-metis-app .employee-account-table { min-width: 920px; }
+.admin-metis-app .employee-account-table th:nth-child(1) { width: 245px; }
+.admin-metis-app .employee-account-table th:nth-child(2) { width: 150px; }
+.admin-metis-app .employee-account-table th:nth-child(3) { width: 235px; }
+.admin-metis-app .employee-account-table th:nth-child(4) { width: 112px; }
+.admin-metis-app .employee-account-table th:nth-child(5) { width: 145px; }
+.admin-metis-app .employee-account-table th:nth-child(6) { width: 82px; padding-right: 10px; padding-left: 8px; text-align: center; }
+.admin-metis-app .employee-identity .employee-code {
+    margin-top: 3px;
+    color: var(--rp-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+.admin-metis-app .employee-action-menu { position: relative; display: inline-block; }
+.admin-metis-app .employee-action-menu > summary {
+    width: 72px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    box-sizing: border-box;
+    border: 1px solid var(--rp-border-strong);
+    border-radius: var(--metis-radius);
+    color: var(--rp-text-secondary);
+    background: var(--rp-surface);
+    font-size: 15px;
+    cursor: pointer;
+    list-style: none;
+    transition: border-color var(--metis-transition), color var(--metis-transition), background var(--metis-transition);
+}
+.admin-metis-app .employee-action-menu > summary::-webkit-details-marker { display: none; }
+.admin-metis-app .employee-action-menu > summary:hover,
+.admin-metis-app .employee-action-menu > summary:focus-visible,
+.admin-metis-app .employee-action-menu[open] > summary { border-color: var(--rp-gold-500); color: var(--rp-gold-700); outline: 0; background: var(--rp-gold-100); }
+.admin-metis-app .employee-action-menu[open] .action-menu-chevron { transform: rotate(180deg); }
+.admin-metis-app .action-menu-chevron { font-size: 11px; transition: transform var(--metis-transition); }
+.admin-metis-app .employee-action-menu-panel {
+    position: fixed;
+    z-index: 1080;
+    width: 206px;
+    box-sizing: border-box;
+    padding: 6px;
+    border: 1px solid var(--rp-border);
+    border-radius: var(--metis-radius);
+    background: var(--rp-surface);
+    box-shadow: var(--metis-shadow-float);
+    text-align: left;
+}
+.admin-metis-app .employee-action-menu-panel .employee-action-button {
+    width: 100%;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: var(--metis-radius-sm);
+    color: var(--rp-text-secondary);
+    background: transparent;
+    font-size: 12px;
+    text-align: left;
+}
+.admin-metis-app .employee-action-menu-panel .employee-action-button:hover,
+.admin-metis-app .employee-action-menu-panel .employee-action-button:focus-visible { color: var(--rp-text); outline: 0; background: var(--rp-surface-hover); }
+.admin-metis-app .employee-action-menu-panel .employee-action-button i { width: 18px; color: var(--rp-text-muted); font-size: 14px; text-align: center; }
+.admin-metis-app .employee-action-menu-panel .toggle-account-status i { color: #b45309; }
+.admin-metis-app .employee-status-stack { gap: 4px; }
+.admin-metis-app .employee-status-badge { min-width: 0; min-height: 26px; justify-content: flex-start; padding: 3px 8px; font-size: 10px; }
+.admin-metis-app .employee-status-badge i { font-size: 6px; }
+.admin-metis-app .password-waiting-badge { padding: 3px 7px; font-size: 9px; }
+
+/* Metis solid badges for roles and account states. */
+.admin-metis-app #adminMainContent :is(
+    .admin-role-badge,.admin-status-badge,.employee-role-badge,.employee-status-badge,
+    .password-waiting-badge,.reset-account-status,.role-badge,.status-badge
+) {
+    min-width: 0;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 5px 10px;
+    border: 0 !important;
+    border-radius: 7px !important;
+    color: #fff !important;
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.25;
+    white-space: nowrap;
+    box-shadow: none;
+}
+.admin-metis-app #adminMainContent :is(
+    .admin-role-badge,.admin-status-badge,.employee-role-badge,.employee-status-badge,
+    .password-waiting-badge,.reset-account-status,.role-badge,.status-badge
+) > i { display: none; }
+
+.admin-metis-app #adminMainContent .admin-role-badge { background: var(--metis-badge-danger) !important; }
+.admin-metis-app #adminMainContent .employee-role-badge.is-admin { background: var(--metis-badge-danger) !important; }
+.admin-metis-app #adminMainContent .employee-role-badge.is-manager { background: var(--metis-badge-warning) !important; }
+.admin-metis-app #adminMainContent :is(.employee-role-badge.is-hall-manager,.role-badge.role-hall-manager) { background: var(--metis-badge-primary) !important; }
+.admin-metis-app #adminMainContent :is(.employee-role-badge.is-coordinator,.role-badge.role-coordinator) { background: var(--metis-badge-purple) !important; }
+.admin-metis-app #adminMainContent .role-badge.neutral { background: var(--metis-badge-secondary) !important; }
+
+.admin-metis-app #adminMainContent :is(
+    .admin-status-badge.is-active,.employee-status-badge.is-active,.reset-account-status:not(.is-locked),
+    .status-badge.status-active,.status-badge.status-approved,.status-badge.active,.status-badge.resolved
+) { background: var(--metis-badge-success) !important; }
+.admin-metis-app #adminMainContent :is(
+    .admin-status-badge.is-locked,.employee-status-badge.is-locked,.reset-account-status.is-locked,
+    .status-badge.status-inactive,.status-badge.inactive,.status-badge.status-locked
+) { background: var(--metis-badge-secondary) !important; }
+.admin-metis-app #adminMainContent :is(
+    .password-waiting-badge,.status-badge.status-pending,.status-badge.status-maintenance,
+    .status-badge.pending,.status-badge.processing
+) { background: var(--metis-badge-warning) !important; }
+.admin-metis-app #adminMainContent :is(
+    .status-badge.status-rejected,.status-badge.rejected,.status-badge.failed,.status-badge.blocked
+) { background: var(--metis-badge-danger) !important; }
+
+.admin-metis-app .admin-icon-spin { animation: admin-icon-spin .8s linear infinite; }
+@keyframes admin-icon-spin { to { transform: rotate(360deg); } }
+
+.admin-metis-app .role-legend-dot { background: var(--chart-role-1); }
+.admin-metis-app .role-chart-legend > div:nth-child(2) .role-legend-dot { background: var(--chart-role-2); }
+.admin-metis-app .role-chart-legend > div:nth-child(3) .role-legend-dot { background: var(--chart-role-3); }
+.admin-metis-app .role-chart-legend > div:nth-child(4) .role-legend-dot { background: var(--chart-role-4); }
+.admin-metis-app .role-chart-panel,
+.admin-metis-app .role-chart-content,
+.admin-metis-app .role-chart-legend { min-width: 0; }
+.admin-metis-app .role-chart-wrap canvas { position: relative; z-index: 1; }
+.admin-metis-app .role-chart-center {
+    inset: 50% auto auto 50%;
+    z-index: 2;
+    width: 104px;
+    height: 104px;
+    border-radius: 50%;
+    background: var(--rp-surface);
+    transform: translate(-50%, -50%);
+}
+.admin-metis-app :is(.role-chart-center strong,.role-chart-legend b,.account-status-label strong,.password-waiting strong) { color: var(--rp-text); }
+.admin-metis-app :is(.role-chart-center span,.role-chart-legend strong,.role-chart-legend em,.account-status-label,.account-status-list > div > small,.password-waiting small) { color: var(--rp-text-secondary); }
+
+/* Metis dark theme: near-black app ground and opaque Zinc panels. */
+html[data-admin-theme="dark"] .admin-metis-app {
+    color-scheme: dark;
+    --rp-bg: #09090b;
+    --rp-surface: #18181b;
+    --rp-surface-muted: #09090b;
+    --rp-surface-hover: #27272a;
+    --rp-border: #27272a;
+    --rp-border-strong: #3f3f46;
+    --rp-text: #f4f4f5;
+    --rp-text-secondary: #a1a1aa;
+    --rp-text-muted: #71717a;
+    --rp-navy-900: #f4f4f5;
+    --rp-navy-800: #e4e4e7;
+    --rp-gold-700: #e3c175;
+    --rp-gold-600: #e3c175;
+    --rp-gold-500: #c6a15b;
+    --rp-gold-100: rgba(198, 161, 91, .13);
+    --chart-role-1: #e3c175;
+    --chart-role-2: #c6a15b;
+    --chart-role-3: #9f7d40;
+    --chart-role-4: #a1a1aa;
+    --chart-tooltip-bg: #f4f4f5;
+    --chart-tooltip-text: #18181b;
+    --metis-heading-bg: #09090b;
+    --metis-heading-text: #f4f4f5;
+    --metis-heading-muted: #a1a1aa;
+    --metis-heading-border: #27272a;
+}
+html[data-admin-theme="dark"] .admin-metis-app .main-content,
+html[data-admin-theme="dark"] .admin-metis-app #adminMainContent > :is(.account-management-page,.admin-dashboard-page,.audit-page,.role-change-page) { background: var(--rp-bg); }
+html[data-admin-theme="dark"] .admin-metis-app :is(h1,h2,h3,h4,strong,.dashboard-stat-card strong,.dashboard-panel-header h2,.audit-section-header h2,.audit-card-heading h3,.system-admin-info h2,.employee-identity strong) { color: var(--rp-text) !important; }
+html[data-admin-theme="dark"] .admin-metis-app :is(p,small,em,.dashboard-stat-card small,.dashboard-stat-card em,.dashboard-panel-header p,.account-page-subtitle) { color: var(--rp-text-secondary) !important; }
+html[data-admin-theme="dark"] .admin-metis-app :is(.sidebar-header,.admin-sidebar,.sidebar-footer,.backoffice-topbar,.dashboard-stat-card,.dashboard-panel,.system-admin-panel,.employee-account-panel,.audit-overview article,.audit-card,.role-change-card,.admin-view-tool,.topbar-notification,.topbar-search,.account-modal,.user-dropdown,.notification-panel,.topbar-search-results) { border-color: var(--rp-border); background: var(--rp-surface); }
+html[data-admin-theme="dark"] .admin-metis-app :is(.dashboard-table,.employee-account-table,.audit-table,.role-history-table) th { color: var(--rp-text-secondary); background: var(--rp-surface-muted); }
+html[data-admin-theme="dark"] .admin-metis-app :is(.dashboard-table,.employee-account-table,.audit-table,.role-history-table) td { color: #d4d4d8; border-color: var(--rp-border); }
+html[data-admin-theme="dark"] .admin-metis-app .account-status-progress { background: var(--rp-surface-hover); }
+html[data-admin-theme="dark"] .admin-metis-app .dashboard-empty-state { color: var(--rp-text-secondary); background: var(--rp-surface-muted); }
+
+/* Keep the legacy account and audit components legible when the Metis theme changes. */
+html[data-admin-theme="dark"] .admin-metis-app :is(
+    .account-toolbar,.account-panel,.summary-card,.employee-account-toolbar,
+    .audit-header-status,.audit-mobile-navigation,.audit-toolbar,
+    .audit-dialog-shell,.reset-password-user,.reset-password-summary > div,
+    .account-modal-actions,.administrator-password-section
+) {
+    border-color: var(--rp-border) !important;
+    background: var(--rp-surface) !important;
+}
+
+html[data-admin-theme="dark"] .admin-metis-app :is(
+    .account-search,.account-select,.employee-search,.employee-filter,
+    .audit-field input,.audit-field select,.audit-page-link,
+    .account-modal input,.account-modal select,.account-modal textarea
+) {
+    border-color: var(--rp-border-strong) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface-muted) !important;
+}
+
+html[data-admin-theme="dark"] .admin-metis-app :is(
+    .account-search input,.employee-search input,.employee-filter select,
+    .account-modal input,.account-modal select,.account-modal textarea
+) {
+    color: var(--rp-text) !important;
+    background: transparent !important;
+}
+
+html[data-admin-theme="dark"] .admin-metis-app :is(
+    input,select,textarea
+)::placeholder { color: var(--rp-text-muted); }
+
+html[data-admin-theme="dark"] .admin-metis-app :is(
+    .audit-page-header h1,.audit-sidebar-heading h2,.audit-mobile-navigation summary strong,
+    .audit-filter-heading h3,.audit-count strong,.audit-card-heading h3,
+    .audit-card-heading > span strong,.audit-time strong,.audit-actor strong,.audit-target strong,
+    .audit-empty strong,.audit-dialog h3,.employee-identity strong,.employee-code,
+    .reset-password-user strong,.reset-password-summary dd,.administrator-password-heading h4
+) { color: var(--rp-text) !important; }
+
+html[data-admin-theme="dark"] .admin-metis-app :is(
+    .audit-page-header p,.audit-overview small,.audit-overview em,
+    .audit-section-header div div > span,.audit-card-heading > span,.audit-card-title small,
+    .audit-time small,.audit-actor small,.audit-target small,.audit-empty > span:last-child,
+    .employee-identity span,.employee-contact,.employee-time,.reset-password-user span,
+    .reset-password-summary dt,.administrator-password-heading p
+) { color: var(--rp-text-secondary) !important; }
+
+html[data-admin-theme="dark"] .admin-metis-app :is(
+    .employee-filter > span,.employee-account-footer,.employee-account-empty,
+    .employee-account-empty p,.account-form-group label
+) { color: var(--rp-text-secondary) !important; border-color: var(--rp-border) !important; }
+
+html[data-admin-theme="dark"] .admin-metis-app :is(
+    .employee-account-empty strong,.account-modal-header h3
+) { color: var(--rp-text) !important; }
+
+html[data-admin-theme="dark"] .admin-metis-app :is(
+    .account-table,.employee-account-table,.audit-table,.dashboard-table,.role-history-table
+) tbody tr:hover { background: var(--rp-surface-hover) !important; }
+
+html[data-admin-theme="dark"] .admin-metis-app :is(
+    .account-table td,.employee-account-table td,.audit-table td,.dashboard-table td,
+    .role-history-table td,.audit-dialog dd
+) { color: var(--rp-text-secondary) !important; border-color: var(--rp-border) !important; }
+
+html[data-admin-theme="dark"] .admin-metis-app :is(
+    .audit-category-link:hover,.audit-category-link.active,
+    .audit-mobile-navigation nav a.active,.audit-reset-button:hover,
+    .audit-detail-button:hover,.audit-page-link:hover
+) {
+    border-color: var(--rp-border-strong) !important;
+    color: var(--rp-text) !important;
+    background: var(--rp-surface-hover) !important;
+}
+
+html[data-admin-theme="dark"] .admin-metis-app :is(
+    .audit-action,.audit-outcome,.audit-avatar,.audit-dialog dt
+) {
+    border-color: var(--rp-border) !important;
+    color: var(--rp-text-secondary) !important;
+    background: var(--rp-surface-muted) !important;
+}
+
+/* New audit monitor keeps outcome semantics visible in dark mode. */
+html[data-admin-theme="dark"] .admin-metis-app .audit-monitor-table .outcome-success {
+    color: #86efac !important;
+    background: rgba(22, 163, 74, .16) !important;
+}
+html[data-admin-theme="dark"] .admin-metis-app .audit-monitor-table .outcome-failed {
+    color: #fca5a5 !important;
+    background: rgba(220, 38, 38, .15) !important;
+}
+html[data-admin-theme="dark"] .admin-metis-app .audit-monitor-table .outcome-blocked {
+    color: #fdba74 !important;
+    background: rgba(217, 119, 6, .16) !important;
+}
+
+html[data-admin-theme="dark"] .admin-metis-app .audit-page-link.active {
+    border-color: var(--rp-gold-500) !important;
+    color: #18181b !important;
+    background: var(--rp-gold-500) !important;
+}
+
+html[data-admin-theme="dark"] .admin-metis-app :is(.audit-table tr,.employee-account-table tr) {
+    border-color: var(--rp-border) !important;
+}
+
+@media (max-width: 700px) {
+    html[data-admin-theme="dark"] .admin-metis-app .audit-table tr { background: var(--rp-surface) !important; }
+}
+
+/* Metis uses one lg breakpoint for the entire shell. */
+@media (max-width: 991.98px) {
+    .admin-metis-app .sidebar-header { display: none; }
+    .admin-metis-app .admin-sidebar,
+    html.sidebar-is-collapsed .admin-metis-app .admin-sidebar { top: var(--metis-header-height); width: min(260px, calc(100vw - 44px)); max-width: none; height: calc(100dvh - var(--metis-header-height)); transform: translateX(-100%); box-shadow: none; }
+    html.sidebar-mobile-open .admin-metis-app .admin-sidebar,
+    html.sidebar-mobile-open.sidebar-is-collapsed .admin-metis-app .admin-sidebar { transform: translateX(0); box-shadow: 4px 0 16px rgba(9, 9, 11, .15); }
+    .admin-metis-app .main-content,
+    html.sidebar-is-collapsed .admin-metis-app .main-content { width: 100%; margin-left: 0; }
+    .admin-metis-app .backoffice-topbar,
+    html.sidebar-is-collapsed .admin-metis-app .backoffice-topbar { left: 0; padding: 0 14px 0 64px; }
+    .admin-metis-app .mobile-sidebar-toggle { top: 10px; left: 14px; z-index: 1042; width: 36px; height: 36px; display: grid; border: 1px solid var(--rp-border); border-radius: var(--metis-radius-sm); color: var(--rp-text-secondary); background: var(--rp-surface); box-shadow: none; }
+    .admin-metis-app .sidebar-backdrop { z-index: 1040; }
+    .admin-metis-app .topbar-search { width: min(340px, 42vw); }
+    .admin-metis-app .account-directory-header { align-items: stretch; flex-direction: column; }
+    .admin-metis-app .account-directory-header .employee-account-toolbar { width: 100%; }
+}
+
+@media (max-width: 850px) {
+    .admin-metis-app .profile-grid { grid-template-columns: 1fr; }
+    .admin-metis-app .account-stat-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .admin-metis-app .topbar-search { width: min(360px, 35vw); }
+}
+
+@media (max-width: 767.98px) {
+    .admin-metis-app .topbar-search { width: min(230px, 42vw); }
+    .admin-metis-app .topbar-search input { font-size: 12px; }
+    .admin-metis-app .topbar-right { gap: 5px; }
+    .admin-metis-app .topbar-right > .topbar-divider { display: none; }
+    .admin-metis-app .topbar-user-text,
+    .admin-metis-app #adminFullscreenToggle { display: none; }
+    .admin-metis-app #adminMainContent > :is(.account-management-page,.admin-dashboard-page,.audit-page,.role-change-page) { padding: 20px 14px 30px; }
+    .admin-metis-app #adminMainContent > .profile-page { padding: 20px 14px 30px !important; }
+    .admin-metis-app .system-admin-card { grid-template-columns: 44px minmax(0,1fr); padding: 14px; }
+    .admin-metis-app .system-admin-avatar { width: 44px; height: 44px; }
+    .admin-metis-app .system-admin-identity { min-width: 0; }
+    .admin-metis-app .system-admin-badges { grid-column: 1 / -1; justify-content: flex-start; margin-left: 0; padding-left: 0; }
+    .admin-metis-app .account-stat-grid { grid-template-columns: 1fr; }
+    .admin-metis-app .account-stat-card:last-child { grid-column: auto; }
+    .admin-metis-app .account-directory-header .employee-account-toolbar { grid-template-columns: 1fr; }
+    .admin-metis-app .account-directory-header .account-filter-clear { width: 100%; }
+    .admin-metis-app #adminMainContent :is(
+        .account-management-header,.dashboard-page-header,.audit-page-header,.role-change-header,
+        .food-header,.manager-section-header
+    ) {
+        align-items: stretch !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+    .admin-metis-app #adminMainContent :is(
+        .account-management-header,.dashboard-page-header,.audit-page-header,.role-change-header,
+        .food-header,.manager-section-header
+    ) :is(h1,h2) { font-size: 23px !important; }
+    .admin-metis-app .profile-page-header h1 { font-size: 23px !important; }
+}
+
+@media (max-width: 479.98px) {
+    .admin-metis-app .topbar-search { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-metis-app *, .admin-metis-app *::before, .admin-metis-app *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+/* KPI text must stay on one line and truncate instead of wrapping. */
+.admin-metis-app #adminMainContent :is(
+    .account-stat-card, .dashboard-stat-card, .food-stat-card,
+    .manager-kpi-card, .coordinator-kpi-card, .summary-card,
+    .system-summary-card, .audit-summary-card
+) > :is(div, span:not(.account-stat-icon, .dashboard-stat-icon, .food-stat-icon, .manager-kpi-icon)) {
+    min-width: 0 !important;
+    max-width: 100%;
+}
+
+.admin-metis-app #adminMainContent :is(
+    .account-stat-card, .dashboard-stat-card, .food-stat-card,
+    .manager-kpi-card, .coordinator-kpi-card, .summary-card,
+    .system-summary-card, .audit-summary-card
+) :is(
+    small, strong, b, em, p,
+    .food-stat-label, .food-stat-note,
+    .summary-label, .summary-value, .stat-label, .stat-value
+) {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+}
+
+.admin-metis-app #adminMainContent :is(
+    .account-stat-card, .dashboard-stat-card, .manager-kpi-card,
+    .coordinator-kpi-card, .summary-card, .system-summary-card,
+    .audit-summary-card
+) :is(small, strong, b, em, p, .summary-label, .summary-value, .stat-label, .stat-value) {
+    display: block !important;
+}
+
+.admin-metis-app #adminMainContent .food-stat-card > div:first-child,
+.admin-metis-app #adminMainContent .food-stat-value {
+    min-width: 0 !important;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.admin-metis-app #adminMainContent .food-stat-value {
+    flex-wrap: nowrap !important;
+}
+
+.admin-metis-app #adminMainContent .food-stat-value > strong {
+    flex: 1 1 auto;
+}
+
+.admin-metis-app #adminMainContent .food-stat-value > span {
+    flex: 0 0 auto;
+    white-space: nowrap !important;
+}

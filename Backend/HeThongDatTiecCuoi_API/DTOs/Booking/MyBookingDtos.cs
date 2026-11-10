@@ -1,4 +1,4 @@
-namespace HeThongDatTiecCuoi_API.DTOs.Booking;
+﻿namespace HeThongDatTiecCuoi_API.DTOs.Booking;
 
 public sealed class MyBookingDto
 {
@@ -24,4 +24,10 @@ public sealed class MyBookingDto
     public string StatusName { get; set; } = string.Empty;
     public DateTime BookedAt { get; set; }
     public string? SpecialRequests { get; set; }
+
+    public int? ContractId { get; set; }
+    public string? ContractCode { get; set; }
+    public string? ContractStatusCode { get; set; }
+    public string? ContractStatusName { get; set; }
+    public bool HasContract => ContractId.HasValue;
 }

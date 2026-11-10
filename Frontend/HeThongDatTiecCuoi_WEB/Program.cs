@@ -10,18 +10,25 @@ using System.Globalization;
 const string externalCookieScheme = "External";
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddJsonFile("image-catalog.json", optional: false, reloadOnChange: true);
+builder.Services.AddSingleton<ProjectImageCatalog>();
 var googleClientId = builder.Configuration["Google:ClientId"];
 var googleClientSecret = builder.Configuration["Google:ClientSecret"];
 
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
-    foreach (var proxy in builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [])
-        if (IPAddress.TryParse(proxy, out var address)) options.KnownProxies.Add(address);
-});
-
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                               ForwardedHeaders.XForwardedHost |
+                               ForwardedHeaders.XForwardedProto;
+    // Cloudflare Quick Tunnel uses changing proxy addresses, so they cannot be
+    // listed statically. The public tunnel itself remains the trusted boundary.
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+builder.Services.Configure<HeThongDatTiecCuoi_WEB.Options.RecommendationOptions>(
+    builder.Configuration.GetSection(HeThongDatTiecCuoi_WEB.Options.RecommendationOptions.SectionName));
 builder.Services
     .AddHttpClient<IRiversideApiClient, RiversideApiClient>(client =>
     {
@@ -29,6 +36,10 @@ builder.Services
             ?? throw new InvalidOperationException("Thiếu RiversideApi:BaseUrl.");
         client.BaseAddress = new Uri(baseUrl);
         client.Timeout = TimeSpan.FromSeconds(20);
+    })
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
     });
 
 builder.Services.AddHttpClient("RiversideApi", client =>
@@ -37,6 +48,10 @@ builder.Services.AddHttpClient("RiversideApi", client =>
         ?? throw new InvalidOperationException("Thiếu RiversideApi:BaseUrl.");
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(20);
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 });
 
 builder.Services
@@ -110,13 +125,32 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 
 var app = builder.Build();
 
-app.UseForwardedHeaders();
-
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+
+app.UseForwardedHeaders();
+
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        var headers = context.Response.Headers;
+        headers["X-Frame-Options"] = "SAMEORIGIN";
+        headers["X-Content-Type-Options"] = "nosniff";
+        headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        headers["X-XSS-Protection"] = "1; mode=block";
+        headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()";
+        if (context.Request.IsHttps)
+        {
+            headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+        }
+        return Task.CompletedTask;
+    });
+    await next();
+});
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

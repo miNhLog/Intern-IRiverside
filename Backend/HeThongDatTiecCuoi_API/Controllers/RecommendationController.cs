@@ -2,7 +2,6 @@ using System.Data;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.Data.SqlClient;
 using HeThongDatTiecCuoi_API.Constants;
 using HeThongDatTiecCuoi_API.Constants.StatusCodes;
 using HeThongDatTiecCuoi_API.Data;
@@ -11,7 +10,6 @@ using HeThongDatTiecCuoi_API.Models;
 using HeThongDatTiecCuoi_API.Options;
 using HeThongDatTiecCuoi_API.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -27,13 +25,19 @@ public sealed class RecommendationController : ControllerBase
     private const double SpaceWeight = 0.3198;
     private const double StyleWeight = 0.1799;
     private const double ServiceWeight = 0.1999;
+    // TODO-4: khong hardcode 10tr; dung PricingPolicyOptions.GetTolerance(budget)
+    // = min(10tr, 5% budget) theo prompt.txt.
 
     private readonly ApplicationDbContext _context;
     private readonly IStatusService _statusService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly AiServiceOptions _aiOptions;
+    private readonly PricingPolicyOptions _pricing;
+    private readonly IHallPricingPolicyService _hallPricing;
     private readonly ILogger<RecommendationController> _logger;
     private readonly IEmailService? _emailService;
+    private readonly IReviewQrService? _reviewQrService;
+    private readonly CustomMenuPricingService _customMenuPricing;
 
     // Python FastAPI trả snake_case (top_3, hall_id, total_estimated_cost...).
     // C# dùng PascalCase -> bắt buộc case-insensitive + JsonPropertyName đầy đủ,
@@ -48,15 +52,23 @@ public sealed class RecommendationController : ControllerBase
         IStatusService statusService,
         IHttpClientFactory httpClientFactory,
         IOptions<AiServiceOptions> aiOptions,
+        IOptions<PricingPolicyOptions> pricing,
         ILogger<RecommendationController> logger,
-        IEmailService? emailService = null)
+        IHallPricingPolicyService? hallPricing = null,
+        IEmailService? emailService = null,
+        IReviewQrService? reviewQrService = null,
+        CustomMenuPricingService? customMenuPricing = null)
     {
         _context = context;
         _statusService = statusService;
         _httpClientFactory = httpClientFactory;
         _aiOptions = aiOptions.Value;
+        _pricing = pricing.Value;
         _logger = logger;
+        _hallPricing = hallPricing ?? new HallPricingPolicyService();
         _emailService = emailService;
+        _reviewQrService = reviewQrService;
+        _customMenuPricing = customMenuPricing ?? new CustomMenuPricingService(context);
     }
 
     /// <summary>
@@ -87,9 +99,10 @@ public sealed class RecommendationController : ControllerBase
         // Fallback GuestCount từ TableCount trước mọi validation để JS cũ không bị 400.
         if (request.GuestCount <= 0 && (request.TableCount > 0 || request.OfficialTableCount > 0))
             request.GuestCount = Math.Max(request.TableCount, request.OfficialTableCount + request.SpareTableCount) * 10;
-        if (request.GuestCount <= 0)
-            return BadRequest(new { message = "Số lượng khách phải lớn hơn 0." });
-            // Validate the supported budget range; UC12 candidate filtering is strict.
+        if (request.GuestCount < 50 || request.GuestCount > 1400)
+            return BadRequest(new { message = "Số lượng khách phải từ 50 đến 1400 khách (tương đương 5 đến 140 bàn phù hợp năng lực sảnh tiệc của Riverside Palace)." });
+        // Ràng buộc ngân sách: min tuyệt đối 100tr (min thực tế ~103,3tr cho 150 khách:
+        // sảnh Elbe 20tr + menu 4,35tr/bàn × 15 bàn + decor 18tr). Gợi ý chỉ vượt tối đa 10tr.
         const decimal MinBudgetAbsolute = 100_000_000m;
         const decimal MaxBudgetAbsolute = 3_000_000_000m;
         if (request.ExpectedBudget < MinBudgetAbsolute || request.ExpectedBudget > MaxBudgetAbsolute)
@@ -240,7 +253,7 @@ public sealed class RecommendationController : ControllerBase
             {
                 try
                 {
-                    var sg = await BuildSuggestedNextAsync(targetDate, desiredShift, request.GuestCount, tableCount, request.ExpectedBudget, existingDataStatusId, request.ServiceNeeds);
+                    var sg = await BuildSuggestedNextAsync(targetDate, desiredShift, tableCount, request.ExpectedBudget, existingDataStatusId);
                     suggestedNextAi = new
                     {
                         minRequiredBudget = sg.MinRequiredBudget,
@@ -343,6 +356,145 @@ public sealed class RecommendationController : ControllerBase
                 detail = ex.Message,
                 traceId = HttpContext.TraceIdentifier
             });
+        }
+    }
+
+    /// <summary>
+    /// Hybrid Top-3 (CNTT-KLCN257): goi AI POST /api/v1/ai/hybrid/rank
+    /// (s_final = alpha*s_cf + beta*s_cbf + gamma*S_wsm, trong so hoc tu du lieu).
+    /// Fallback: /wsm/rank cu, cuoi cung fallback noi bo. Giu nguyen route cu.
+    /// </summary>
+    [HttpPost("suggest-top3-hybrid")]
+    public async Task<IActionResult> SuggestTop3Hybrid([FromBody] RecommendationRequestDto? request)
+    {
+        if (request is null)
+            return BadRequest(new { message = "Thiếu dữ liệu khảo sát trong body." });
+        var desiredShift = (request.DesiredShift ?? string.Empty).Trim();
+        var desiredStyle = (request.DesiredStyle ?? string.Empty).Trim();
+        if (desiredShift != HallShiftNames.Lunch && desiredShift != HallShiftNames.Dinner)
+            return BadRequest(new { message = "Ca tổ chức chỉ có thể là Ca trưa hoặc Ca tối." });
+        if (string.IsNullOrWhiteSpace(desiredStyle))
+            return BadRequest(new { message = "Phong cách mong muốn không được để trống." });
+        if (request.GuestCount <= 0 && (request.TableCount > 0 || request.OfficialTableCount > 0))
+            request.GuestCount = Math.Max(request.TableCount, request.OfficialTableCount + request.SpareTableCount) * 10;
+        if (request.GuestCount < 50 || request.GuestCount > 1400)
+            return BadRequest(new { message = "Số lượng khách phải từ 50 đến 1400 khách (tương đương 5 đến 140 bàn phù hợp năng lực sảnh tiệc của Riverside Palace)." });
+        const decimal MinBudgetHybrid = 100_000_000m;
+        const decimal MaxBudgetHybrid = 3_000_000_000m;
+        if (request.ExpectedBudget < MinBudgetHybrid || request.ExpectedBudget > MaxBudgetHybrid)
+            return BadRequest(new { message = "Tổng ngân sách dự trù tối thiểu 100 triệu (chi phí tối thiểu ~103,3 triệu cho 150 khách) đến tối đa 3 tỷ VNĐ." });
+        DateTime targetDate;
+        try { targetDate = request.DesiredDate.Date; }
+        catch { return BadRequest(new { message = "Ngày tổ chức không hợp lệ." }); }
+        var minDateHybrid = DateTime.Today.AddDays(30);
+        var maxDateHybrid = DateTime.Today.AddDays(365);
+        if (targetDate < minDateHybrid)
+            return BadRequest(new { message = "Ngày tổ chức tiệc cưới phải cách ngày hiện tại tối thiểu 30 ngày. Vui lòng chọn ngày xa hơn để Riverside Palace có thời gian chuẩn bị tốt nhất." });
+        if (targetDate > maxDateHybrid)
+            return BadRequest(new { message = "Hệ thống chỉ nhận đăng ký giữ chỗ trước tối đa 365 ngày (1 năm). Vui lòng chọn ngày gần hơn." });
+        var nextDay = targetDate.AddDays(1);
+        List<int> occupiedHallIds = new();
+        byte existingDataStatusId;
+        try
+        {
+            existingDataStatusId = await GetDataStatusIdAsync(DataStatusCodes.Existing);
+            var shiftNorm = NormalizeHallShift(desiredShift).ToLower();
+            occupiedHallIds = await _context.HallSchedules.AsNoTracking()
+                .Where(s => s.Date >= targetDate && s.Date < nextDay &&
+                    s.Shift.ToLower() == shiftNorm &&
+                    s.DataStatusId == existingDataStatusId &&
+                    s.Status != null && s.Status.StatusGroup == StatusGroups.HallSchedule &&
+                    s.Status.StatusCode != HallScheduleStatusCodes.Available)
+                .Select(s => s.HallId).Distinct().ToListAsync();
+            // VĐ2: đồng bộ với SuggestTop3ViaAi — cộng thêm sảnh bị DatTiec hoạt động chiếm giữ (chỉ SELECT).
+            var bookingOccupiedHybrid = await _context.WeddingBookings.AsNoTracking()
+                .Where(booking =>
+                    booking.HallSchedule.Date >= targetDate && booking.HallSchedule.Date < nextDay &&
+                    booking.HallSchedule.Shift.ToLower() == shiftNorm &&
+                    booking.HallSchedule.DataStatusId == existingDataStatusId &&
+                    booking.Status != null &&
+                    booking.Status.StatusGroup == StatusGroups.Booking &&
+                    BookingStatusCodes.OccupyingSchedule.Contains(booking.Status.StatusCode))
+                .Select(booking => booking.HallSchedule.HallId)
+                .Distinct()
+                .ToListAsync();
+            occupiedHallIds = occupiedHallIds.Union(bookingOccupiedHybrid).Distinct().ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SuggestTop3Hybrid: loi DB occupied. traceId={TraceId}", HttpContext.TraceIdentifier);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Không thể tạo gợi ý lúc này, vui lòng thử lại.", traceId = HttpContext.TraceIdentifier });
+        }
+        var tableCount = request.TableCount > 0 ? request.TableCount
+            : (request.OfficialTableCount + request.SpareTableCount) > 0 ? request.OfficialTableCount + request.SpareTableCount
+            : (int)Math.Ceiling(request.GuestCount / 10m);
+        var aiShift = desiredShift == HallShiftNames.Lunch ? "Ca trua" : "Ca toi";
+        var priorityServices = (request.ServiceNeeds ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+        var aiPayload = new
+        {
+            guest_count = request.GuestCount, table_count = tableCount,
+            expected_budget = request.ExpectedBudget, event_date = targetDate.ToString("yyyy-MM-dd"),
+            shift = aiShift, desired_style = desiredStyle,             priority_services = priorityServices,
+            occupied_hall_ids = occupiedHallIds, user_id = request.UserId
+        };
+        // 1) Thu Hybrid truoc (timeout 5s theo AiService:TimeoutSeconds, user_id nullable cho CF cold-start).
+        try
+        {
+            var client = _httpClientFactory.CreateClient("AiService");
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_aiOptions.TimeoutSeconds));
+            using var response = await client.PostAsJsonAsync("api/v1/ai/hybrid/rank", aiPayload, cts.Token);
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync(cts.Token);
+            // VĐ2: bóc count/totalCandidatesEvaluated/weights_source null-safe lên envelope để smoke test
+            // kiểm tra trực tiếp (200 + source=ai-service-hybrid + count=3 + total>0) mà không cần parse data.
+            var (hybridCount, hybridTotal, hybridWeights) = TryParseAiEnvelope(json);
+            object? hybridSuggestedNext = null;
+            if (hybridCount == 0)
+            {
+                try
+                {
+                    var sg = await BuildSuggestedNextAsync(targetDate, desiredShift, tableCount, request.ExpectedBudget, existingDataStatusId);
+                    hybridSuggestedNext = new
+                    {
+                        minRequiredBudget = sg.MinRequiredBudget,
+                        suggestedDates = sg.SuggestedDates.Select(d => new { date = d.Date, shift = d.Shift, availableHalls = d.AvailableHalls }),
+                        reason = sg.Reason
+                    };
+                }
+                catch (Exception sgEx)
+                {
+                    _logger.LogWarning(sgEx, "SuggestTop3Hybrid: tính suggestedNext thất bại. traceId={TraceId}.", HttpContext.TraceIdentifier);
+                }
+            }
+            _logger.LogInformation("SuggestTop3Hybrid: source=ai-service-hybrid userId={UserId} count={Count} total={Total} weights={Weights} traceId={TraceId}",
+                request.UserId, hybridCount, hybridTotal, hybridWeights ?? "n/a", HttpContext.TraceIdentifier);
+            return Ok(new { success = true, source = "ai-service-hybrid", aiBaseUrl = _aiOptions.BaseUrl, occupiedHallIds, count = hybridCount, totalCandidatesEvaluated = hybridTotal, weights_source = hybridWeights, suggestedNext = hybridSuggestedNext, data = JsonSerializer.Deserialize<object>(json, AiJsonOptions) });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "SuggestTop3Hybrid: hybrid loi, fallback ve /wsm/rank cu. traceId={TraceId}", HttpContext.TraceIdentifier);
+        }
+        // 2) Fallback ve WSM cu.
+        try
+        {
+            var client = _httpClientFactory.CreateClient("AiService");
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_aiOptions.TimeoutSeconds));
+            using var response = await client.PostAsJsonAsync("api/v1/ai/wsm/rank", aiPayload, cts.Token);
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync(cts.Token);
+            var (wsmCount, wsmTotal, wsmWeights) = TryParseAiEnvelope(json);
+            _logger.LogInformation("SuggestTop3Hybrid: source=ai-service-wsm-fallback userId={UserId} count={Count} total={Total} traceId={TraceId}",
+                request.UserId, wsmCount, wsmTotal, HttpContext.TraceIdentifier);
+            return Ok(new { success = true, source = "ai-service-wsm-fallback", aiBaseUrl = _aiOptions.BaseUrl, occupiedHallIds, count = wsmCount, totalCandidatesEvaluated = wsmTotal, weights_source = wsmWeights, data = JsonSerializer.Deserialize<object>(json, AiJsonOptions) });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "SuggestTop3Hybrid: wsm fallback cung loi, dung fallback noi bo. traceId={TraceId}", HttpContext.TraceIdentifier);
+            var fallback = await BuildFallbackTop3Async(request, desiredShift, desiredStyle, targetDate, nextDay, existingDataStatusId, tableCount);
+            _logger.LogInformation("SuggestTop3Hybrid: source=fallback-internal userId={UserId} traceId={TraceId}",
+                request.UserId, HttpContext.TraceIdentifier);
+            return Ok(new { success = true, source = "fallback-internal", aiBaseUrl = _aiOptions.BaseUrl, aiError = ex.Message, traceId = HttpContext.TraceIdentifier, occupiedHallIds, data = fallback });
         }
     }
 
@@ -459,27 +611,9 @@ public sealed class RecommendationController : ControllerBase
             .ToDictionaryAsync(x => x.HallId, x => x.ImagePath);
 
         // Dịch vụ ưu tiên (ServiceNeeds "DV001,DV002..."): query trực tiếp bảng DichVu
-        // (chỉ lấy ACTIVE) để cộng vào dự toán trọn gói, khớp từng đồng với thẻ hiển thị.
+        // (DV001 tính theo bàn: đơn giá × số bàn; các DV khác tính theo tiệc) để khớp từng đồng với thẻ hiển thị.
         var priorityServices = await ResolvePriorityServicesAsync(request.ServiceNeeds, existingDataStatusId);
-        var requestedServiceCodes = (request.ServiceNeeds ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(code => code.Trim()).Where(code => code.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        var resolvedServiceCodes = priorityServices.Select(service => service.ServiceCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!requestedServiceCodes.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(resolvedServiceCodes))
-        {
-            var suggested = await BuildSuggestedNextAsync(targetDate, desiredShift, request.GuestCount, tableCount, request.ExpectedBudget, existingDataStatusId, request.ServiceNeeds);
-            return new
-            {
-                success = true,
-                count = 0,
-                data = new List<ComboSuggestionDto>(),
-                totalCandidatesEvaluated = 0,
-                top3 = new List<ComboSuggestionDto>(),
-                topCombos = new List<ComboSuggestionDto>(),
-                suggestedNext = suggested,
-                algorithmNotice = "Không thể chấm điểm vì dịch vụ được chọn không có trong danh mục ACTIVE."
-            };
-        }
-        var servicesTotalFallback = priorityServices.Sum(s => s.Price);
+        var servicesTotalFallback = priorityServices.Sum(s => string.Equals(s.ServiceCode, "DV001", StringComparison.OrdinalIgnoreCase) ? s.Price * tableCount : s.Price);
 
         var priorityCodes = (request.ServiceNeeds ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -495,10 +629,11 @@ public sealed class RecommendationController : ControllerBase
             var hall = schedule.Hall;
             var decor = decorCandidate.Decor;
             var menuTotal = menu.PricePerTable * tableCount;
-            // Dự toán trọn gói = Giá thuê sảnh + (Đơn giá Menu × Tổng số bàn) + Giá Decor + Tổng giá Dịch vụ ưu tiên.
-            var totalCost = hall.RentalPrice + menuTotal + decor.Gia + servicesTotalFallback;
-            // Hard filter: complete estimated cost must fit the submitted budget.
-            if (totalCost > request.ExpectedBudget)
+            var effectiveHallPrice = _hallPricing.CalculateHallPrice(hall.RentalPrice, desiredShift, targetDate);
+            // Dự toán trọn gói = Giá thuê sảnh theo ca/ngày + (Đơn giá Menu × Tổng số bàn) + Giá Decor + Tổng giá Dịch vụ ưu tiên.
+            var totalCost = effectiveHallPrice + menuTotal + decor.Gia + servicesTotalFallback;
+            // Hard filter WSM: est_total <= budget + Δ (Δ = min(10tr, 5%) tu PricingPolicyOptions, dong bo py + C#).
+            if (totalCost > request.ExpectedBudget + _pricing.GetTolerance(request.ExpectedBudget))
                 continue;
             var budgetDifference = request.ExpectedBudget - totalCost;
             // WSM chuẩn 4 chiều (r1..r4 0..1) — khớp wsm_engine.py.
@@ -524,12 +659,10 @@ public sealed class RecommendationController : ControllerBase
             scored.Add(new ComboSuggestionDto
             {
                 OverallMatchScore = overallScore,
-                WsmScore = score,
                 BudgetMatchScore = Math.Round(r1 * 100, 1),
                 SpaceFitScore = Math.Round(r2 * 100, 1),
                 StyleThemeScore = Math.Round(r3 * 100, 1),
                 RatingCredibilityScore = Math.Round((r2 + r3) / 2 * 100, 1),
-                ServiceMatchScore = Math.Round(r4 * 100, 1),
                 HallScheduleId = schedule.HallScheduleId,
                 HallId = hall.HallId,
                 HallName = hall.HallName,
@@ -540,7 +673,7 @@ public sealed class RecommendationController : ControllerBase
                 CapacityMaxGuests = hall.MaximumCapacity,
                 CapacityMinTables = (hall.MinimumCapacity ?? 150) / 10,
                 CapacityMaxTables = hall.MaximumCapacity / 10,
-                HallRentalPrice = hall.RentalPrice,
+                HallRentalPrice = effectiveHallPrice,
                 HallDescription = hall.Description ?? string.Empty,
                 TotalEstimatedCost = totalCost,
                 BudgetDifference = budgetDifference,
@@ -566,7 +699,10 @@ public sealed class RecommendationController : ControllerBase
             });
         }
 
-        var top = SelectTop3(scored);
+        // Diversity Filter: không trả 3 combo giống hệt (chỉ khác tên menu cùng giá).
+        // Ưu tiên sảnh khác nhau, sau đó Menu/Decor mức giá khác nhau.
+        // Truyền ExpectedBudget để ưu tiên combo trong ngân sách / vượt nhẹ ≤ 10tr.
+        var top = SelectDiverseTop3(scored, request.ExpectedBudget);
         for (var index = 0; index < top.Count; index++)
         {
             top[index].Rank = index + 1;
@@ -574,7 +710,7 @@ public sealed class RecommendationController : ControllerBase
         }
         if (top.Count == 0)
         {
-            var suggested = await BuildSuggestedNextAsync(targetDate, desiredShift, request.GuestCount, tableCount, request.ExpectedBudget, existingDataStatusId, request.ServiceNeeds);
+            var suggested = await BuildSuggestedNextAsync(targetDate, desiredShift, tableCount, request.ExpectedBudget, existingDataStatusId);
             return new
             {
                 success = true,
@@ -584,7 +720,7 @@ public sealed class RecommendationController : ControllerBase
                 top3 = new List<ComboSuggestionDto>(),
                 topCombos = new List<ComboSuggestionDto>(),
                 suggestedNext = suggested,
-                algorithmNotice = $"Fallback heuristic nội bộ: đã đánh giá {scored.Count} phương án, không có combo trong ngân sách."
+                algorithmNotice = $"Fallback heuristic nội bộ: đã đánh giá {scored.Count} phương án, không có combo trong ngân sách +10tr."
             };
         }
         return new
@@ -615,20 +751,73 @@ public sealed class RecommendationController : ControllerBase
         combo.PackageName = title;
     }
 
-    private static List<ComboSuggestionDto> SelectTop3(List<ComboSuggestionDto> scored)
+    private List<ComboSuggestionDto> SelectDiverseTop3(List<ComboSuggestionDto> scored, decimal? expectedBudget = null)
     {
-        return scored.OrderByDescending(c => c.WsmScore)
-            .ThenBy(c => c.TotalEstimatedCost)
-            .ThenBy(c => c.HallId)
-            .ThenBy(c => c.MenuId)
-            .ThenBy(c => c.DecorationPackageId)
-            .Take(3).ToList();
+        // Uu tien ngan sach: trong ngan sach truoc, sau do vuot nhe <= Δ, cuoi cung moi toi vuot xa.
+        // Tranh tra combo vuot qua xa gay chenh lech lon so voi du tru cua khach.
+        // Δ = min(10tr, 5% budget) tu PricingPolicyOptions theo prompt.txt.
+        List<ComboSuggestionDto> ordered;
+        if (expectedBudget.HasValue && expectedBudget.Value > 0)
+        {
+            var budget = expectedBudget.Value;
+            var toleranceVnd = _pricing.GetTolerance(budget);
+            ordered = scored
+                .OrderBy(c => c.TotalEstimatedCost - budget > toleranceVnd ? 2
+                    : c.TotalEstimatedCost - budget > 0 ? 1 : 0)
+                .ThenByDescending(c => c.OverallMatchScore)
+                .ThenBy(c => c.TotalEstimatedCost)
+                .ToList();
+        }
+        else
+        {
+            ordered = scored.OrderByDescending(c => c.OverallMatchScore).ToList();
+        }
+        var picked = new List<ComboSuggestionDto>();
+        var usedHalls = new HashSet<int>();
+        var usedMenuDecor = new HashSet<string>();
+        // Pass 1: sảnh khác nhau + cặp (menu,decor) khác nhau.
+        foreach (var c in ordered)
+        {
+            if (picked.Count >= 3) break;
+            var key = $"{c.MenuId}|{c.DecorationPackageId}|{(c.MenuPricePerTable / 1000000):F0}|{(c.DecorationPrice / 1000000):F0}";
+            if (!usedHalls.Contains(c.HallId) && !usedMenuDecor.Contains(key))
+            {
+                picked.Add(c);
+                usedHalls.Add(c.HallId);
+                usedMenuDecor.Add(key);
+            }
+        }
+        // Pass 2: nới lỏng — chỉ cần sảnh khác hoặc cặp menu/decor khác.
+        foreach (var c in ordered)
+        {
+            if (picked.Count >= 3) break;
+            if (picked.Contains(c)) continue;
+            var key = $"{c.MenuId}|{c.DecorationPackageId}";
+            if (!usedHalls.Contains(c.HallId) || !usedMenuDecor.Contains(key))
+            {
+                picked.Add(c);
+                usedHalls.Add(c.HallId);
+                usedMenuDecor.Add(key);
+            }
+        }
+        // Pass 3: vét phần còn lại để luôn đủ 3 (khi DB ít dữ liệu).
+        foreach (var c in ordered)
+        {
+            if (picked.Count >= 3) break;
+            if (!picked.Contains(c)) picked.Add(c);
+        }
+        return picked.Take(3).ToList();
     }
 
-    /// <summary>Builds recovery amounts and dates only from catalogue-complete, capacity-valid halls available within the supported date window.</summary>
+    /// <summary>
+    /// P0 fallback 0 combo: minRequiredBudget = sảnh rẻ nhất còn trống
+    /// + 4_350_000 × Số bàn + 18_000_000; suggestedDates quét 3 ngày gần nhất
+    /// còn sảnh trống phù hợp quy mô bàn (forward từ ngày yêu cầu, tối đa 60 ngày).
+    /// </summary>
     private async Task<SuggestedNextDto> BuildSuggestedNextAsync(
-        DateTime targetDate, string desiredShift, int guestCount, int tableCount, decimal budget, byte existingDataStatusId, string? serviceNeeds = null)
+        DateTime targetDate, string desiredShift, int tableCount, decimal budget, byte existingDataStatusId)
     {
+        var guestCount = Math.Max(1, tableCount * 10);
         var cheapestMenu = await _context.Menus.AsNoTracking()
             .Where(m => m.MenuType == MenuTypes.Standard
                 && m.DataStatusId == existingDataStatusId
@@ -636,34 +825,46 @@ public sealed class RecommendationController : ControllerBase
                 && m.Status.StatusGroup == StatusGroups.Menu
                 && m.Status.StatusCode == MenuStatusCodes.Active)
             .OrderBy(m => m.PricePerTable)
-            .Select(m => (decimal?)m.PricePerTable)
+            .Select(m => m.PricePerTable)
             .FirstOrDefaultAsync();
+        if (cheapestMenu <= 0) cheapestMenu = 4_350_000m;
         var cheapestDecor = await _context.DecorPackages.AsNoTracking()
             .Where(d => d.DataStatusId == existingDataStatusId
                 && d.Status != null
                 && d.Status.StatusGroup == StatusGroups.DecorationPackage
                 && d.Status.StatusCode == BusinessStatusCodes.Active)
             .OrderBy(d => d.Gia)
-            .Select(d => (decimal?)d.Gia)
+            .Select(d => d.Gia)
             .FirstOrDefaultAsync();
+        if (cheapestDecor <= 0) cheapestDecor = 18_000_000m;
 
-        var priorityServices = await ResolvePriorityServicesAsync(serviceNeeds, existingDataStatusId);
-        var requestedServiceCodes = (serviceNeeds ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(code => code.Trim()).Where(code => code.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Count();
-        // A price estimate is actionable only when every requested component resolves.
-        var catalogueComplete = cheapestMenu.HasValue && cheapestDecor.HasValue && priorityServices.Count == requestedServiceCodes;
-        var nonHallMinimum = catalogueComplete
-            ? cheapestMenu!.Value * Math.Max(0, tableCount) + cheapestDecor!.Value + priorityServices.Sum(s => s.Price)
-            : 0m;
+        // Sảnh rẻ nhất còn trống ngày yêu cầu mà chứa được quy mô bàn;
+        // không còn sảnh nào thì lấy sảnh rẻ nhất chứa được quy mô (kể cả kín) để ước lượng.
+        var hallsByPrice = await _context.Halls.AsNoTracking()
+            .Where(h => h.DataStatusId == existingDataStatusId
+                && h.Status != null
+                && h.Status.StatusGroup == StatusGroups.Hall
+                && h.Status.StatusCode == HallStatusCodes.Active
+                && guestCount <= h.MaximumCapacity
+                && (!h.MinimumCapacity.HasValue || guestCount >= h.MinimumCapacity.Value))
+            .OrderBy(h => h.RentalPrice)
+            .Select(h => new { h.HallId, h.HallName, h.RentalPrice })
+            .ToListAsync();
+        decimal cheapestHallPrice = 20_000_000m;
+        if (hallsByPrice.Count > 0)
+        {
+            var nextDay = targetDate.AddDays(1);
+            var cands = await ResolveAvailableCandidatesAsync(targetDate, nextDay, desiredShift, guestCount, existingDataStatusId);
+            var freeIds = cands.Select(c => c.Hall.HallId).ToHashSet();
+            var freeCheapest = hallsByPrice.FirstOrDefault(h => freeIds.Contains(h.HallId));
+            var rawCheapest = (freeCheapest ?? hallsByPrice[0]).RentalPrice;
+            cheapestHallPrice = _hallPricing.CalculateHallPrice(rawCheapest, desiredShift, targetDate);
+        }
+        var minRequired = cheapestHallPrice + cheapestMenu * Math.Max(0, tableCount) + cheapestDecor;
+
         var suggestedDates = new List<SuggestedDateDto>();
-        var targetAvailability = await ResolveAvailableCandidatesAsync(targetDate.Date, targetDate.Date.AddDays(1), desiredShift, guestCount, existingDataStatusId);
-        var targetHasCapacity = targetAvailability.Any(candidate => (long)tableCount * 10 <= candidate.Hall.MaximumCapacity);
-        decimal? cheapestAvailableHallPrice = null;
-        var hasFreeHallAboveBudgetLimit = false;
-        var today = DateTime.Today;
-        var startDay = new[] { targetDate.Date, today.AddDays(30) }.Max();
-        var endDay = new[] { targetDate.Date.AddDays(60), today.AddDays(365) }.Min();
-        for (var day = startDay; catalogueComplete && day <= endDay && suggestedDates.Count < 3; day = day.AddDays(1))
+        var startDay = targetDate.Date;
+        for (var day = startDay; day <= startDay.AddDays(60) && suggestedDates.Count < 3; day = day.AddDays(1))
         {
             var dayNext = day.AddDays(1);
             List<CandidateHallItem> free;
@@ -675,55 +876,23 @@ public sealed class RecommendationController : ControllerBase
             {
                 continue;
             }
-            free = free.Where(c => (long)tableCount * 10 <= c.Hall.MaximumCapacity).ToList();
             if (free.Count == 0) continue;
-            hasFreeHallAboveBudgetLimit |= free.Any(c => c.Hall.RentalPrice + nonHallMinimum > 3_000_000_000m);
-            free = free.Where(c => c.Hall.RentalPrice + nonHallMinimum <= 3_000_000_000m).ToList();
-            if (free.Count == 0) continue;
-            var dayCheapestHall = free.Min(candidate => candidate.Hall.RentalPrice);
-            cheapestAvailableHallPrice = cheapestAvailableHallPrice.HasValue
-                ? Math.Min(cheapestAvailableHallPrice.Value, dayCheapestHall)
-                : dayCheapestHall;
-            if (suggestedDates.Count < 3)
+            suggestedDates.Add(new SuggestedDateDto
             {
-                suggestedDates.Add(new SuggestedDateDto
-                {
-                    Date = day.ToString("yyyy-MM-dd"),
-                    Shift = NormalizeHallShift(desiredShift),
-                    AvailableHalls = free.Select(c => c.Hall.HallName)
-                        .Where(n => !string.IsNullOrWhiteSpace(n))
-                        .Distinct()
-                        .OrderBy(n => n)
-                        .ToList()
-                });
-            }
+                Date = day.ToString("yyyy-MM-dd"),
+                Shift = NormalizeHallShift(desiredShift),
+                AvailableHalls = free.Select(c => c.Hall.HallName)
+                    .Where(n => !string.IsNullOrWhiteSpace(n))
+                    .Distinct()
+                    .OrderBy(n => n)
+                    .ToList()
+            });
         }
-        // Price only the actual halls/dates represented by the returned nearest-date suggestions.
-        decimal? minRequired = catalogueComplete && cheapestAvailableHallPrice.HasValue
-            ? cheapestAvailableHallPrice.Value + cheapestMenu!.Value * Math.Max(0, tableCount) + cheapestDecor!.Value + priorityServices.Sum(s => s.Price)
-            : null;
-        if (minRequired.HasValue && minRequired.Value > 3_000_000_000m)
-            minRequired = null;
         return new SuggestedNextDto
         {
             MinRequiredBudget = minRequired,
             SuggestedDates = suggestedDates,
-            Reason = !cheapestMenu.HasValue || !cheapestDecor.HasValue || priorityServices.Count != requestedServiceCodes
-                    ? "Thiếu thực đơn, gói trang trí hoặc dịch vụ ACTIVE đã chọn; không thể tính ngân sách khả thi hoặc gợi ý ngày có thể đặt."
-                    : !minRequired.HasValue
-                        ? cheapestAvailableHallPrice.HasValue
-                            ? "Mức tối thiểu khả thi vượt phạm vi ngân sách được hỗ trợ; không thể tự điều chỉnh ngân sách."
-                            : hasFreeHallAboveBudgetLimit
-                                ? "Có sảnh ACTIVE trống phù hợp sức chứa, nhưng tổng chi phí khả thi vượt mức ngân sách tối đa được hỗ trợ."
-                                : "Không có sảnh ACTIVE đủ sức chứa và lịch trống trong cửa sổ ngày được phép; không thể tính ngân sách khả thi."
-                        : string.Join(" ", new[]
-                        {
-                            !targetHasCapacity ? "Ngày/ca đã chọn không có sảnh ACTIVE trống phù hợp sức chứa." : null,
-                            budget < minRequired.Value ? "Ngân sách thấp hơn mức tối thiểu từ danh mục ACTIVE cho cấu hình này." : null,
-                            suggestedDates.Count == 0 ? "Không tìm thấy ngày trống phù hợp trong cửa sổ ngày được phép." : null
-                        }.Where(reason => reason is not null)) is { Length: > 0 } causes
-                            ? causes
-                            : "Không có tổ hợp khả thi cho ngày và ca đã chọn; có thể thử ngày gợi ý."
+            Reason = "Ngân sách thấp hơn tối thiểu hoặc ngày đã kín sảnh phù hợp."
         };
     }
 
@@ -743,8 +912,8 @@ public sealed class RecommendationController : ControllerBase
         // Fallback GuestCount từ TableCount/Official+Spare trước Model validation.
         if (request.GuestCount <= 0 && (request.TableCount > 0 || request.OfficialTableCount > 0))
             request.GuestCount = Math.Max(request.TableCount, request.OfficialTableCount + request.SpareTableCount) * 10;
-        if (request.GuestCount <= 0)
-            return BadRequest(new { message = "Số lượng khách phải lớn hơn 0." });
+        if (request.GuestCount < 50 || request.GuestCount > 1400)
+            return BadRequest(new { message = "Số lượng khách phải từ 50 đến 1400 khách (tương đương 5 đến 140 bàn phù hợp năng lực sảnh tiệc của Riverside Palace)." });
         // Ràng buộc ngân sách: min tuyệt đối 100tr (min thực tế ~103,3tr cho 150 khách).
         const decimal MinBudgetAbsolute2 = 100_000_000m;
         const decimal MaxBudgetAbsolute2 = 3_000_000_000m;
@@ -773,17 +942,6 @@ public sealed class RecommendationController : ControllerBase
         try
         {
         var existingDataStatusId = await GetDataStatusIdAsync(DataStatusCodes.Existing);
-        // Không tin TableCount client gửi: quy đổi 10 khách/bàn từ GuestCount rồi cộng bàn dự phòng.
-        var officialTableCount = (int)Math.Ceiling(request.GuestCount / 10m);
-        var spareTableCount = Math.Max(0, request.SpareTableCount);
-        var estimatedTableCount = officialTableCount + spareTableCount;
-        // SucChuaToiDa lưu SỐ KHÁCH; tổng bàn kể cả dự phòng cũng phải nằm trong sức chứa lớn nhất.
-        var largestHallCapacity = await _context.Halls.AsNoTracking()
-            .Where(hall => hall.DataStatusId == existingDataStatusId)
-            .MaxAsync(hall => (int?)hall.MaximumCapacity);
-        if (largestHallCapacity.HasValue && (long)estimatedTableCount * 10 > largestHallCapacity.Value)
-            return BadRequest(new { message = $"Tổng {estimatedTableCount} bàn (kể cả bàn dự phòng) vượt sức chứa sảnh lớn nhất ({largestHallCapacity.Value / 10} bàn / {largestHallCapacity.Value} khách). Vui lòng giảm số khách hoặc bàn dự phòng." });
-
         var customerId = await ResolveAuthenticatedCustomerIdAsync(existingDataStatusId);
         var requestEntity = new RecommendationRequestEntity
         {
@@ -802,11 +960,6 @@ public sealed class RecommendationController : ControllerBase
         var candidateSchedules = await ResolveAvailableCandidatesAsync(
             targetDate, nextDay, desiredShift, request.GuestCount, existingDataStatusId);
 
-        // Bao gồm bàn dự phòng khi kiểm tra sức chứa của từng sảnh.
-        candidateSchedules = candidateSchedules
-            .Where(candidate => (long)estimatedTableCount * 10 <= candidate.Hall.MaximumCapacity)
-            .ToList();
-
         // Ảnh đại diện sảnh (primary ImageAsset) để card hiển thị đúng ảnh từng sảnh
         // thay vì placeholder cho tất cả.
         var hallImageById = await _context.ImageAssets.AsNoTracking()
@@ -815,9 +968,14 @@ public sealed class RecommendationController : ControllerBase
             .Select(g => new { HallId = g.Key, ImagePath = g.OrderBy(i => i.SortOrder).Select(i => i.ImagePath).FirstOrDefault() })
             .ToDictionaryAsync(x => x.HallId, x => x.ImagePath);
 
+        var estimatedTableCountEarly = request.TableCount > 0
+            ? request.TableCount
+            : (request.OfficialTableCount + request.SpareTableCount) > 0
+                ? request.OfficialTableCount + request.SpareTableCount
+                : (int)Math.Ceiling(request.GuestCount / 10m);
         if (candidateSchedules.Count == 0)
         {
-            var suggestedEmpty = await BuildSuggestedNextAsync(targetDate, desiredShift, request.GuestCount, estimatedTableCount, request.ExpectedBudget, existingDataStatusId, request.ServiceNeeds);
+            var suggestedEmpty = await BuildSuggestedNextAsync(targetDate, desiredShift, estimatedTableCountEarly, request.ExpectedBudget, existingDataStatusId);
             return Ok(new RecommendationResponseDto
             {
                 RecommendationRequestId = requestEntity.RecommendationRequestId,
@@ -853,26 +1011,15 @@ public sealed class RecommendationController : ControllerBase
             })
             .ToListAsync();
 
+        var estimatedTableCount = request.TableCount > 0
+            ? request.TableCount
+            : (request.OfficialTableCount + request.SpareTableCount) > 0
+                ? request.OfficialTableCount + request.SpareTableCount
+                : (int)Math.Ceiling(request.GuestCount / 10m);
         // Dịch vụ ưu tiên (ServiceNeeds "DV001,DV002..."): query trực tiếp bảng DichVu
-        // (chỉ lấy ACTIVE) để cộng vào dự toán trọn gói, khớp từng đồng với thẻ hiển thị.
+        // (DV001 tính theo bàn: đơn giá × số bàn; các DV khác tính theo tiệc) để khớp từng đồng với thẻ hiển thị.
         var priorityServices = await ResolvePriorityServicesAsync(request.ServiceNeeds, existingDataStatusId);
-        var servicesTotal = priorityServices.Sum(s => s.Price);
-        var requestedServiceCodes = (request.ServiceNeeds ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(code => code.Trim()).Where(code => code.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        var resolvedServiceCodes = priorityServices.Select(service => service.ServiceCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!requestedServiceCodes.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(resolvedServiceCodes))
-        {
-            var suggested = await BuildSuggestedNextAsync(targetDate, desiredShift, request.GuestCount, estimatedTableCount, request.ExpectedBudget, existingDataStatusId, request.ServiceNeeds);
-            return Ok(new RecommendationResponseDto
-            {
-                RecommendationRequestId = requestEntity.RecommendationRequestId,
-                TotalCandidatesEvaluated = 0,
-                TopCombos = [],
-                AlgorithmNotice = "Không thể chấm điểm vì dịch vụ được chọn không có trong danh mục ACTIVE.",
-                AnalyzedAt = DateTime.Now,
-                SuggestedNext = suggested
-            });
-        }
+        var servicesTotal = priorityServices.Sum(s => string.Equals(s.ServiceCode, "DV001", StringComparison.OrdinalIgnoreCase) ? s.Price * estimatedTableCount : s.Price);
         var scoredCombos = new List<ComboSuggestionDto>();
 
         foreach (var schedule in candidateSchedules)
@@ -882,10 +1029,11 @@ public sealed class RecommendationController : ControllerBase
             var hall = schedule.Hall;
             var decor = decorCandidate.Decor;
             var menuTotal = menu.PricePerTable * estimatedTableCount;
-            // Dự toán trọn gói = Giá thuê sảnh + (Đơn giá Menu × Tổng số bàn) + Giá Decor + Tổng giá Dịch vụ ưu tiên.
-            var totalCost = hall.RentalPrice + menuTotal + decor.Gia + servicesTotal;
-            // Hard filter: complete estimated cost must fit the submitted budget.
-            if (totalCost > request.ExpectedBudget)
+            var effectiveHallPrice = _hallPricing.CalculateHallPrice(hall.RentalPrice, desiredShift, targetDate);
+            // Dự toán trọn gói = Giá thuê sảnh theo ca/ngày + (Đơn giá Menu × Tổng số bàn) + Giá Decor + Tổng giá Dịch vụ ưu tiên.
+            var totalCost = effectiveHallPrice + menuTotal + decor.Gia + servicesTotal;
+            // Hard filter WSM: est_total <= budget + Δ (Δ = min(10tr, 5%) tu PricingPolicyOptions, dong bo py + C#).
+            if (totalCost > request.ExpectedBudget + _pricing.GetTolerance(request.ExpectedBudget))
                 continue;
             var budgetDifference = request.ExpectedBudget - totalCost;
             var r1 = CalculateBudgetScore(totalCost, request.ExpectedBudget);
@@ -915,12 +1063,10 @@ public sealed class RecommendationController : ControllerBase
             scoredCombos.Add(new ComboSuggestionDto
             {
                 OverallMatchScore = overallScore,
-                WsmScore = BudgetWeight * r1 + SpaceWeight * r2 + StyleWeight * r3 + ServiceWeight * r4,
                 BudgetMatchScore = Math.Round(r1 * 100, 1),
                 SpaceFitScore = Math.Round(r2 * 100, 1),
                 StyleThemeScore = Math.Round(r3 * 100, 1),
                 RatingCredibilityScore = Math.Round((r2 + r3) / 2 * 100, 1),
-                ServiceMatchScore = Math.Round(r4 * 100, 1),
                 HallScheduleId = schedule.HallScheduleId,
                 HallId = hall.HallId,
                 HallName = hall.HallName,
@@ -931,7 +1077,7 @@ public sealed class RecommendationController : ControllerBase
                 CapacityMaxGuests = hall.MaximumCapacity,
                 CapacityMinTables = (hall.MinimumCapacity ?? 150) / 10,
                 CapacityMaxTables = hall.MaximumCapacity / 10,
-                HallRentalPrice = hall.RentalPrice,
+                HallRentalPrice = effectiveHallPrice,
                 HallDescription = hall.Description ?? string.Empty,
                 MenuId = menu.MenuId,
                 MenuName = menu.MenuName,
@@ -957,7 +1103,7 @@ public sealed class RecommendationController : ControllerBase
             });
         }
 
-        var topCombos = SelectTop3(scoredCombos);
+        var topCombos = SelectDiverseTop3(scoredCombos, request.ExpectedBudget);
         for (var index = 0; index < topCombos.Count; index++)
         {
             topCombos[index].Rank = index + 1;
@@ -965,11 +1111,11 @@ public sealed class RecommendationController : ControllerBase
         }
 
         SuggestedNextDto? suggestedNext = null;
-        var notice = $"Đã đánh giá {scoredCombos.Count} phương án theo WSM C# (0.3004/0.3198/0.1799/0.1999) và trả về tối đa 3 kết quả.";
+        var notice = $"Đã đánh giá {scoredCombos.Count} phương án bằng scoring C# (W* 0.3004/0.3198/0.1799/0.1999) và trả về tối đa 3 kết quả.";
         if (topCombos.Count == 0)
         {
-            suggestedNext = await BuildSuggestedNextAsync(targetDate, desiredShift, request.GuestCount, estimatedTableCount, request.ExpectedBudget, existingDataStatusId, request.ServiceNeeds);
-            notice = $"Đã đánh giá {scoredCombos.Count} phương án, không có combo trong ngân sách.";
+            suggestedNext = await BuildSuggestedNextAsync(targetDate, desiredShift, estimatedTableCount, request.ExpectedBudget, existingDataStatusId);
+            notice = $"Đã đánh giá {scoredCombos.Count} phương án, không có combo trong ngân sách +10tr.";
         }
 
         return Ok(new RecommendationResponseDto
@@ -1064,22 +1210,32 @@ public sealed class RecommendationController : ControllerBase
             occupiedHallShifts.Any(item => item.HallId == hallId &&
                 string.Equals(NormalizeHallShift(item.Shift), NormalizeHallShift(shift), StringComparison.OrdinalIgnoreCase));
 
+        bool isWeekend = targetDate.DayOfWeek == DayOfWeek.Saturday || targetDate.DayOfWeek == DayOfWeek.Sunday;
+
         return Ok(new HallAvailabilityResponseDto
         {
             QueryDate = targetDate.ToString("yyyy-MM-dd"),
-            Halls = halls.Select(hall => new HallAvailabilityItemDto
+            Halls = halls.Select(hall =>
             {
-                HallId = hall.HallId,
-                HallName = hall.HallName,
-                HallCode = hall.HallCode,
-                Capacity = hall.Capacity,
-                CapacityMinGuests = hall.MinimumCapacity ?? 150,
-                CapacityMaxGuests = hall.Capacity,
-                CapacityMinTables = (hall.MinimumCapacity ?? 150) / 10,
-                CapacityMaxTables = hall.Capacity / 10,
-                RentalPrice = hall.RentalPrice,
-                IsNoonAvailable = !IsBlocked(hall.HallId, HallShiftNames.Lunch),
-                IsEveningAvailable = !IsBlocked(hall.HallId, HallShiftNames.Dinner)
+                var noonPrice = _hallPricing.CalculateHallPrice(hall.RentalPrice, HallShiftNames.Lunch, targetDate);
+                var eveningPrice = _hallPricing.CalculateHallPrice(hall.RentalPrice, HallShiftNames.Dinner, targetDate);
+                return new HallAvailabilityItemDto
+                {
+                    HallId = hall.HallId,
+                    HallName = hall.HallName,
+                    HallCode = hall.HallCode,
+                    Capacity = hall.Capacity,
+                    CapacityMinGuests = hall.MinimumCapacity ?? 150,
+                    CapacityMaxGuests = hall.Capacity,
+                    CapacityMinTables = (hall.MinimumCapacity ?? 150) / 10,
+                    CapacityMaxTables = hall.Capacity / 10,
+                    RentalPrice = isWeekend ? eveningPrice : noonPrice,
+                    RentalPriceNoon = noonPrice,
+                    RentalPriceEvening = eveningPrice,
+                    IsWeekend = isWeekend,
+                    IsNoonAvailable = !IsBlocked(hall.HallId, HallShiftNames.Lunch),
+                    IsEveningAvailable = !IsBlocked(hall.HallId, HallShiftNames.Dinner)
+                };
             }).ToList()
         });
         }
@@ -1220,7 +1376,6 @@ public sealed class RecommendationController : ControllerBase
 
     [HttpPost("register-booking")]
     [HttpPost("register")]
-    [EnableRateLimiting("public-booking-register")]
     public async Task<IActionResult> RegisterPublicBooking([FromBody] RegisterPublicBookingDto? request)
     {
         if (request is null)
@@ -1244,27 +1399,19 @@ public sealed class RecommendationController : ControllerBase
         }
         // Tự phục hồi GuestCount từ TableCount*10 trước Model validation để hết lỗi 400
         // "Số lượng khách phải lớn hơn 0" khi JS chỉ gửi TableCount.
-        var cleanPhone = request.PhoneNumber.Trim();
-        // UC14 tra cứu bằng đúng SĐT 10 số bắt đầu bằng 0; chặn sớm để không tạo booking không thể tra cứu.
-        if (cleanPhone.Length != 10 || cleanPhone[0] != '0' || !cleanPhone.All(char.IsDigit))
-            return BadRequest(new { success = false, message = "Số điện thoại Việt Nam phải gồm đúng 10 số và bắt đầu bằng 0." });
-
         if (request.GuestCount <= 0 && request.TableCount > 0)
             request.GuestCount = request.TableCount * 10;
-        if (request.GuestCount <= 0)
-            return BadRequest(new { success = false, message = "Số lượng khách phải lớn hơn 0." });
+        if (request.GuestCount < 50 || request.GuestCount > 1400)
+            return BadRequest(new { success = false, message = "Số lượng khách phải từ 50 đến 1400 khách (tương đương 5 đến 140 bàn phù hợp năng lực sảnh tiệc của Riverside Palace)." });
 
-        // SQL Server dùng Serializable để khóa khoảng lịch trong lúc kiểm tra và ghi.
-        // InMemory (unit test cũ) không hỗ trợ transaction cách ly nên bỏ qua.
-        await using var transaction = _context.Database.IsRelational()
-            ? await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable)
-            : null;
+        await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
         try
         {
         var existingDataStatus = await _context.DataStatuses.SingleAsync(item => item.DataStatusCode == DataStatusCodes.Existing);
+        var cleanPhone = request.PhoneNumber.Trim();
         var customer = await _context.Customers.FirstOrDefaultAsync(customer =>
             customer.DataStatusId == existingDataStatus.DataStatusId &&
-            customer.PhoneNumber == cleanPhone);
+            (customer.PhoneNumber == cleanPhone || (request.UserId.HasValue && customer.UserId == request.UserId.Value)));
         if (customer == null)
         {
             customer = new Customer
@@ -1273,6 +1420,7 @@ public sealed class RecommendationController : ControllerBase
                 FullName = request.CustomerName.Trim(),
                 PhoneNumber = cleanPhone,
                 Email = cleanEmail,
+                UserId = request.UserId,
                 CreatedAt = DateTime.Now,
                 DataStatusId = existingDataStatus.DataStatusId
             };
@@ -1282,6 +1430,11 @@ public sealed class RecommendationController : ControllerBase
         else
         {
             var dirty = false;
+            if (request.UserId.HasValue && !customer.UserId.HasValue)
+            {
+                customer.UserId = request.UserId.Value;
+                dirty = true;
+            }
             // Đồng bộ email mới để mail xác nhận luôn tới đúng địa chỉ hiện tại.
             if (!string.IsNullOrWhiteSpace(cleanEmail) &&
                 !string.Equals((customer.Email ?? string.Empty).Trim(), cleanEmail, StringComparison.OrdinalIgnoreCase))
@@ -1303,68 +1456,14 @@ public sealed class RecommendationController : ControllerBase
             // (Index.cshtml submitActualBooking mở duplicateBookingModal khi message chứa các cụm này).
             return BadRequest(new { success = false, message = "Quý khách đã có đơn tiệc đang xử lý. Để bảo đảm lịch sảnh, mỗi khách hàng chỉ giữ chỗ 01 phương án tiệc cưới tại một thời điểm. Vui lòng vào mục \"Tiệc của tôi\" để xem hoặc hủy đơn cũ." });
 
+        // Default-to-Available + auto-init LichSanh (CREATE-IF-NOT-EXISTS):
+        // - HallScheduleId > 0: dùng record hiện có (tự phục hồi nếu stale-lock mà không có DatTiec chiếm giữ).
+        // - HallScheduleId <= 0 (ngày xa chưa có dòng) hoặc trỏ nhầm sang HallId (JS gửi hallScheduleId || hallId):
+        //   resolve bằng (HallId, EventDate yyyy-MM-dd, Shift); chưa có record + không có DatTiec hoạt động
+        //   -> tự INSERT LichSanh BOOKED, tuyệt đối không báo "Lịch sảnh không tồn tại".
         // Chuẩn hóa ca tổ chức: "Ca Tối (17:30 – 21:30)", "ca toi", "Ca Tối"... -> "Ca tối"/"Ca trưa" chuẩn.
         var requestedShift = NormalizeHallShift(request.Shift);
-        if (!string.Equals(requestedShift, HallShiftNames.Lunch, StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(requestedShift, HallShiftNames.Dinner, StringComparison.OrdinalIgnoreCase))
-            return BadRequest(new { success = false, message = "Ca tổ chức không hợp lệ. Vui lòng chọn Ca trưa hoặc Ca tối." });
 
-        // Hỗ trợ client cũ chỉ gửi HallScheduleId: suy ra sảnh/ngày/ca từ lịch rồi vẫn validate đầy đủ.
-        if ((request.HallId <= 0 || !request.EventDate.HasValue) && request.HallScheduleId > 0)
-        {
-            var scheduleMeta = await _context.HallSchedules.AsNoTracking()
-                .Where(item => item.HallScheduleId == request.HallScheduleId &&
-                    item.DataStatusId == existingDataStatus.DataStatusId)
-                .Select(item => new { item.HallId, item.Date, item.Shift })
-                .SingleOrDefaultAsync();
-            if (scheduleMeta != null)
-            {
-                if (request.HallId <= 0) request.HallId = scheduleMeta.HallId;
-                request.EventDate ??= scheduleMeta.Date;
-                if (string.IsNullOrWhiteSpace(request.Shift))
-                    requestedShift = NormalizeHallShift(scheduleMeta.Shift);
-            }
-        }
-
-        if (request.HallId <= 0 || !request.EventDate.HasValue)
-            return BadRequest(new { success = false, message = "Thiếu thông tin sảnh/ngày/ca tổ chức. Vui lòng chọn lại ngày/ca khác." });
-
-        // Chuẩn hóa ngày (chỉ lấy phần Date, bỏ Time).
-        var eventDay = request.EventDate.Value.Date;
-        var minDate = DateTime.Today.AddDays(30);
-        var maxDate = DateTime.Today.AddDays(365);
-        if (eventDay < minDate)
-            return BadRequest(new { success = false, message = "Ngày tổ chức tiệc cưới phải cách ngày hiện tại tối thiểu 30 ngày. Vui lòng chọn ngày xa hơn để Riverside Palace có thời gian chuẩn bị tốt nhất." });
-        if (eventDay > maxDate)
-            return BadRequest(new { success = false, message = "Hệ thống chỉ nhận đăng ký giữ chỗ trước tối đa 365 ngày (1 năm). Vui lòng chọn ngày gần hơn." });
-        var nextDay = eventDay.AddDays(1);
-
-        var hall = await _context.Halls
-            .Include(h => h.Status)
-            .SingleOrDefaultAsync(h => h.HallId == request.HallId &&
-                h.DataStatusId == existingDataStatus.DataStatusId);
-        if (hall == null || hall.Status == null ||
-            hall.Status.StatusGroup != StatusGroups.Hall || hall.Status.StatusCode != HallStatusCodes.Active)
-            return BadRequest(new { success = false, message = "Sảnh tiệc không tồn tại hoặc đã ngừng hoạt động." });
-        if (request.GuestCount > hall.MaximumCapacity ||
-            (hall.MinimumCapacity.HasValue && request.GuestCount < hall.MinimumCapacity.Value))
-            return BadRequest(new { success = false, message = "Số khách không phù hợp sức chứa sảnh." });
-        if (request.TableCount < 0 || request.TableCount > 500 ||
-            request.SpareTableCount < 0 || request.SpareTableCount > 50)
-            return BadRequest(new { success = false, message = "Số bàn không hợp lệ." });
-
-        var officialTableCount = (int)Math.Ceiling(request.GuestCount / 10m);
-        var spareTableCount = Math.Max(0, request.SpareTableCount);
-        var estimatedTableCount = officialTableCount + spareTableCount;
-        if (request.TableCount > estimatedTableCount)
-            estimatedTableCount = request.TableCount;
-        if (estimatedTableCount <= 0 || estimatedTableCount * 10 > hall.MaximumCapacity)
-            return BadRequest(new { success = false, message = "Tổng số bàn (kể cả bàn dự phòng) vượt sức chứa sảnh." });
-
-        // Tìm LichSanh theo (HallId, Date, Shift chuẩn hóa). So sánh Shift
-        // case-insensitive (ToLower dịch được sang SQL) để khớp cả record cũ
-        // lưu "Ca Tối"/"Ca Trưa" lệch hoa/thường.
-        var normalizedShiftLower = requestedShift.ToLower();
         HallSchedule? schedule = null;
         if (request.HallScheduleId > 0)
         {
@@ -1374,20 +1473,49 @@ public sealed class RecommendationController : ControllerBase
                 .SingleOrDefaultAsync(item => item.HallScheduleId == request.HallScheduleId &&
                     item.DataStatusId == existingDataStatus.DataStatusId &&
                     item.Hall.DataStatusId == existingDataStatus.DataStatusId);
-            // Nếu JS gửi nhầm HallId vào HallScheduleId hoặc lịch đã đổi ca/ngày,
-            // bỏ lịch đó và resolve lại theo (HallId, EventDate, Shift).
-            if (schedule != null)
+            // LỖI A: verify khớp (HallId, EventDate.Date, Shift chuẩn hóa). Nếu JS gửi nhầm HallId
+            // vào HallScheduleId hoặc lịch đã đổi ca/ngày -> set null để rơi vào nhánh
+            // auto-init theo (HallId, EventDate yyyy-MM-dd, Shift), tránh đặt nhầm lịch.
+            // So sánh Shift sau chuẩn hóa + OrdinalIgnoreCase để tránh lệch hoa/thường ("Ca Tối" vs "Ca tối").
+            if (schedule != null && request.HallId > 0 && request.EventDate.HasValue
+                && !string.IsNullOrWhiteSpace(requestedShift))
             {
+                var reqDay = request.EventDate.Value.Date;
                 var sameHall = schedule.HallId == request.HallId;
-                var sameDate = schedule.Date.Date == eventDay;
+                var sameDate = schedule.Date.Date == reqDay;
                 var sameShift = string.Equals(NormalizeHallShift(schedule.Shift), requestedShift, StringComparison.OrdinalIgnoreCase);
                 if (!sameHall || !sameDate || !sameShift)
                     schedule = null;
             }
         }
 
-        if (schedule == null)
+        if (schedule == null && request.HallId > 0 && request.EventDate.HasValue)
         {
+            // Chuẩn hóa ngày (chỉ lấy phần Date, bỏ Time).
+            var eventDay = request.EventDate.Value.Date;
+            var minDate = DateTime.Today.AddDays(30);
+            var maxDate = DateTime.Today.AddDays(365);
+            if (eventDay < minDate)
+                return BadRequest(new { success = false, message = "Ngày tổ chức tiệc cưới phải cách ngày hiện tại tối thiểu 30 ngày. Vui lòng chọn ngày xa hơn để Riverside Palace có thời gian chuẩn bị tốt nhất." });
+            if (eventDay > maxDate)
+                return BadRequest(new { success = false, message = "Hệ thống chỉ nhận đăng ký giữ chỗ trước tối đa 365 ngày (1 năm). Vui lòng chọn ngày gần hơn." });
+            var nextDay = eventDay.AddDays(1);
+
+            var hall = await _context.Halls
+                .Include(h => h.Status)
+                .SingleOrDefaultAsync(h => h.HallId == request.HallId &&
+                    h.DataStatusId == existingDataStatus.DataStatusId);
+            if (hall == null || hall.Status == null ||
+                hall.Status.StatusGroup != StatusGroups.Hall || hall.Status.StatusCode != HallStatusCodes.Active)
+                return BadRequest(new { success = false, message = "Sảnh tiệc không tồn tại hoặc đã ngừng hoạt động." });
+            if (request.GuestCount > hall.MaximumCapacity ||
+                (hall.MinimumCapacity.HasValue && request.GuestCount < hall.MinimumCapacity.Value))
+                return BadRequest(new { success = false, message = "Số khách không phù hợp sức chứa sảnh." });
+
+            // Tìm LichSanh theo (HallId, Date, Shift chuẩn hóa). So sánh Shift
+            // case-insensitive (ToLower dịch được sang SQL) để khớp cả record cũ
+            // lưu "Ca Tối"/"Ca Trưa" lệch hoa/thường.
+            var normalizedShiftLower = requestedShift.ToLower();
             schedule = await _context.HallSchedules
                 .Include(item => item.Hall)
                 .Include(item => item.Status)
@@ -1395,94 +1523,150 @@ public sealed class RecommendationController : ControllerBase
                     item.Date >= eventDay && item.Date < nextDay &&
                     item.Shift.ToLower() == normalizedShiftLower &&
                     item.DataStatusId == existingDataStatus.DataStatusId);
+
+            if (schedule == null)
+            {
+                // Chưa có dòng LichSanh: kiểm tra DatTiec đang hoạt động chiếm dụng
+                // (PENDING/CONFIRMED/PREPARING, bỏ qua CANCELLED/COMPLETED) rồi tự INSERT.
+                // Chỉ báo bận khi thật sự có booking; còn không thì CREATE-IF-NOT-EXISTS.
+                var occupiedByBooking = await _context.WeddingBookings.AnyAsync(booking =>
+                    booking.HallSchedule.HallId == request.HallId &&
+                    booking.HallSchedule.Date >= eventDay && booking.HallSchedule.Date < nextDay &&
+                    booking.HallSchedule.Shift.ToLower() == normalizedShiftLower &&
+                    booking.HallSchedule.DataStatusId == existingDataStatus.DataStatusId &&
+                    booking.Status != null &&
+                    booking.Status.StatusGroup == StatusGroups.Booking &&
+                    BookingStatusCodes.OccupyingSchedule.Contains(booking.Status.StatusCode));
+                if (occupiedByBooking)
+                    return Conflict(new { success = false, message = $"Sảnh này vào ngày {eventDay:dd/MM/yyyy} ({requestedShift}) đã có khách đặt. Vui lòng chọn sảnh hoặc ngày/ca khác." });
+                schedule = new HallSchedule
+                {
+                    HallId = request.HallId,
+                    Date = eventDay,
+                    Shift = requestedShift,
+                    StatusId = await _statusService.GetStatusIdAsync(StatusGroups.HallSchedule, HallScheduleStatusCodes.Booked),
+                    DataStatusId = existingDataStatus.DataStatusId,
+                    Hall = hall
+                };
+                _context.HallSchedules.Add(schedule);
+                await _context.SaveChangesAsync();
+                // FIX TRIỆT ĐỂ: sau INSERT, EF chỉ gán StatusId, navigation Status vẫn null
+                // (dù đã gán Hall). Guard bên dưới check schedule.Status == null nên báo sai
+                // "Thiếu thông tin sảnh/ngày/ca...". Reload navigation ngay tại đây.
+                try
+                {
+                    await _context.Entry(schedule).Reference(s => s.Status).LoadAsync();
+                }
+                catch (Exception loadEx)
+                {
+                    _logger.LogWarning(loadEx, "Không reload được Status sau auto-init HallSchedule (HallId={HallId}, Date={Date}, Shift={Shift}).",
+                        schedule.HallId, schedule.Date.ToString("yyyy-MM-dd"), schedule.Shift);
+                }
+                if (schedule.Hall == null)
+                {
+                    try { await _context.Entry(schedule).Reference(s => s.Hall).LoadAsync(); } catch { }
+                }
+            }
         }
 
-        if (schedule == null)
-        {
-            // Chưa có dòng LichSanh: kiểm tra DatTiec đang hoạt động chiếm dụng
-            // (PENDING/CONFIRMED/PREPARING, bỏ qua CANCELLED/COMPLETED) rồi tự INSERT.
-            var occupiedByBooking = await _context.WeddingBookings.AnyAsync(booking =>
-                booking.HallSchedule.HallId == request.HallId &&
-                booking.HallSchedule.Date >= eventDay && booking.HallSchedule.Date < nextDay &&
-                booking.HallSchedule.Shift.ToLower() == normalizedShiftLower &&
-                booking.HallSchedule.DataStatusId == existingDataStatus.DataStatusId &&
-                booking.Status != null &&
-                booking.Status.StatusGroup == StatusGroups.Booking &&
-                BookingStatusCodes.OccupyingSchedule.Contains(booking.Status.StatusCode));
-            if (occupiedByBooking)
-                return Conflict(new { success = false, message = $"Sảnh này vào ngày {eventDay:dd/MM/yyyy} ({requestedShift}) đã có khách đặt. Vui lòng chọn sảnh hoặc ngày/ca khác." });
-            schedule = new HallSchedule
-            {
-                HallId = request.HallId,
-                Date = eventDay,
-                Shift = requestedShift,
-                StatusId = await _statusService.GetStatusIdAsync(StatusGroups.HallSchedule, HallScheduleStatusCodes.Booked),
-                DataStatusId = existingDataStatus.DataStatusId,
-                Hall = hall
-            };
-            _context.HallSchedules.Add(schedule);
-            await _context.SaveChangesAsync();
-            try
-            {
-                await _context.Entry(schedule).Reference(s => s.Status).LoadAsync();
-            }
-            catch (Exception loadEx)
-            {
-                _logger.LogWarning(loadEx, "Không reload được Status sau auto-init HallSchedule (HallId={HallId}, Date={Date}, Shift={Shift}).",
-                    schedule.HallId, schedule.Date.ToString("yyyy-MM-dd"), schedule.Shift);
-            }
-        }
+        // Log chi tiết trước guard để dễ debug: HallId, HallScheduleId, EventDate raw, Shift.
+        _logger.LogInformation(
+            "RegisterPublicBooking resolve schedule: HallId={HallId}, HallScheduleId={HallScheduleId}, EventDateRaw={EventDateRaw}, EventDate={EventDate}, RequestedShift={RequestedShift}, ScheduleId={ScheduleId}, StatusId={StatusId}, HasHall={HasHall}, HasStatus={HasStatus}",
+            request.HallId, request.HallScheduleId, request.EventDate?.ToString("o") ?? "<null>",
+            request.EventDate?.ToString("yyyy-MM-dd") ?? "<null>", requestedShift,
+            schedule?.HallScheduleId, schedule?.StatusId, schedule?.Hall != null, schedule?.Status != null);
 
-        // Luôn kiểm tra booking chiếm chỗ, không phụ thuộc trạng thái lịch:
-        // dữ liệu LichSanh có thể lệch nhưng không được phép có hai booking hiệu lực.
-        var occupied = await _context.WeddingBookings.AnyAsync(booking =>
-            booking.HallScheduleId == schedule.HallScheduleId &&
-            booking.Status != null &&
-            booking.Status.StatusGroup == StatusGroups.Booking &&
-            BookingStatusCodes.OccupyingSchedule.Contains(booking.Status.StatusCode));
-        if (occupied)
-            return Conflict(new { success = false, message = "Lịch sảnh không còn AVAILABLE." });
-
-        if (schedule.Hall == null) schedule.Hall = hall;
-        if (schedule.Status == null && schedule.StatusId != 0)
+        // Tự phục hồi navigation nếu bị null nhưng FK vẫn hợp lệ (tránh báo thiếu oan):
+        // schedule.Status null + StatusId != 0 -> reload; chỉ báo thiếu khi StatusId == 0.
+        if (schedule != null && schedule.Status == null && schedule.StatusId != 0)
         {
             try { await _context.Entry(schedule).Reference(s => s.Status).LoadAsync(); } catch { }
         }
-        if (schedule.Status == null || schedule.Status.StatusGroup != StatusGroups.HallSchedule)
+        if (schedule != null && schedule.Hall == null && schedule.HallId != 0)
+        {
+            try { await _context.Entry(schedule).Reference(s => s.Hall).LoadAsync(); } catch { }
+        }
+
+        // Sau nhánh auto-init ở trên, schedule chỉ còn null khi thiếu HallId/EventDate
+        // (request không hợp lệ) — không còn báo "Lịch sảnh không tồn tại" cho ô xanh
+        // (ngày xa chưa có record đã được tự INSERT BOOKED ở trên).
+        // Guard cứng: thiếu hẳn schedule/Hall/StatusId mới báo thiếu; Status navigation null
+        // nhưng StatusId hợp lệ thì KHÔNG báo thiếu (đã reload ở trên).
+        if (schedule == null || schedule.Hall == null || (schedule.Status == null && schedule.StatusId == 0))
             return BadRequest(new { success = false, message = "Thiếu thông tin sảnh/ngày/ca tổ chức. Vui lòng chọn lại ngày/ca khác." });
-        if (schedule.Status.StatusCode == HallScheduleStatusCodes.Locked)
-            return Conflict(new { success = false, message = "Khung giờ này đang bị khóa vận hành. Vui lòng chọn sảnh hoặc ngày/ca khác." });
-        if (schedule.Status.StatusCode != HallScheduleStatusCodes.Available &&
-            schedule.Status.StatusCode != HallScheduleStatusCodes.Booked)
-            return Conflict(new { success = false, message = "Lịch sảnh không ở trạng thái có thể đặt." });
+        // Phòng thủ: nếu Status navigation vẫn null (hiếm) thì query lại Include đầy đủ rồi mới check tiếp.
+        if (schedule.Status == null)
+        {
+            schedule = await _context.HallSchedules
+                .Include(item => item.Hall)
+                .Include(item => item.Status)
+                .SingleOrDefaultAsync(item => item.HallScheduleId == schedule.HallScheduleId);
+            if (schedule == null || schedule.Hall == null || schedule.Status == null)
+                return BadRequest(new { success = false, message = "Thiếu thông tin sảnh/ngày/ca tổ chức. Vui lòng chọn lại ngày/ca khác." });
+        }
+        if (schedule.Status.StatusGroup != StatusGroups.HallSchedule ||
+            schedule.Status.StatusCode != HallScheduleStatusCodes.Available)
+        {
+            // Stale-lock tự phục hồi: LichSanh != AVAILABLE nhưng không còn DatTiec hoạt động nào
+            // chiếm giữ (các ca hủy trước đây chưa giải phóng) -> cho phép đặt tiếp thay vì chặn.
+            var occupied = await _context.WeddingBookings.AnyAsync(booking =>
+                booking.HallScheduleId == schedule.HallScheduleId &&
+                booking.Status != null &&
+                booking.Status.StatusGroup == StatusGroups.Booking &&
+                BookingStatusCodes.OccupyingSchedule.Contains(booking.Status.StatusCode));
+            if (occupied)
+                return Conflict(new { success = false, message = "Lịch sảnh không còn AVAILABLE." });
+        }
+        if (await _context.ScheduleChangeHolds.AnyAsync(hold =>
+                hold.HallScheduleId == schedule.HallScheduleId &&
+                hold.Status == ScheduleChangeHoldStatusCodes.Active &&
+                hold.ExpiresAt > RiversideBusinessClock.Now))
+            return Conflict(new { success = false, message = "Lịch sảnh đang được giữ tạm cho một yêu cầu đổi lịch." });
+        if (request.GuestCount > schedule.Hall.MaximumCapacity ||
+            (schedule.Hall.MinimumCapacity.HasValue && request.GuestCount < schedule.Hall.MinimumCapacity.Value))
+            return BadRequest(new { success = false, message = "Số khách không phù hợp sức chứa sảnh." });
 
-        _logger.LogInformation(
-            "RegisterPublicBooking resolve schedule: HallId={HallId}, HallScheduleId={HallScheduleId}, EventDate={EventDate}, RequestedShift={RequestedShift}, ScheduleId={ScheduleId}, StatusId={StatusId}",
-            request.HallId, request.HallScheduleId, eventDay.ToString("yyyy-MM-dd"), requestedShift,
-            schedule.HallScheduleId, schedule.StatusId);
+        var customMenuRequested = !string.IsNullOrWhiteSpace(request.CustomMenuName) ||
+            request.CustomMenuPricePerTable.HasValue ||
+            request.CustomMenuItems is { Count: > 0 } ||
+            request.CustomMenuDishIds is not null;
+        if (customMenuRequested && !request.MenuId.HasValue)
+            return BadRequest(new { success = false, code = "CUSTOM_MENU_BASE_REQUIRED", message = "Phải chọn thực đơn gốc trước khi tùy chỉnh món." });
 
-        Menu? menu = null;
+        CustomMenuPricingResult? menuPricing = null;
         if (request.MenuId.HasValue)
         {
-            menu = await _context.Menus.Include(item => item.Status).SingleOrDefaultAsync(item =>
-                item.MenuId == request.MenuId && item.DataStatusId == existingDataStatus.DataStatusId);
-            if (menu == null) return BadRequest(new { success = false, message = "Thực đơn không tồn tại." });
-            if (menu.Status == null || menu.Status.StatusGroup != StatusGroups.Menu ||
-                menu.Status.StatusCode != BusinessStatusCodes.Active)
-                return BadRequest(new { success = false, message = "Thực đơn đã ngừng áp dụng." });
+            menuPricing = await _customMenuPricing.ResolveAsync(
+                request.MenuId.Value,
+                customer.CustomerId,
+                request.CustomMenuDishIds,
+                customMenuRequested,
+                request.CustomMenuPricePerTable,
+                HttpContext.RequestAborted);
+            if (!menuPricing.IsValid)
+                return StatusCode(menuPricing.StatusCode, new
+                {
+                    success = false,
+                    code = menuPricing.ErrorCode,
+                    message = menuPricing.Message
+                });
         }
 
         DecorPackage? decor = null;
         if (request.DecorationPackageId.HasValue)
         {
-            decor = await _context.DecorPackages.Include(item => item.Status).SingleOrDefaultAsync(item =>
+            decor = await _context.DecorPackages.SingleOrDefaultAsync(item =>
                 item.GoiTrangTriID == request.DecorationPackageId && item.DataStatusId == existingDataStatus.DataStatusId);
             if (decor == null) return BadRequest(new { success = false, message = "Gói trang trí không tồn tại." });
-            if (decor.Status == null || decor.Status.StatusGroup != StatusGroups.DecorationPackage ||
-                decor.Status.StatusCode != BusinessStatusCodes.Active)
-                return BadRequest(new { success = false, message = "Gói trang trí đã ngừng áp dụng." });
         }
 
+        // LỖI B: giữ bàn dự phòng. DatTiec chỉ lưu SoLuongKhach nên tổng bàn
+        // = Official (ceil Guest/10) + Spare; ưu tiên TableCount FE gửi lên nếu lớn hơn.
+        var officialTableCount = (int)Math.Ceiling(request.GuestCount / 10m);
+        var spareTableCount = Math.Max(0, request.SpareTableCount);
+        var estimatedTableCount = officialTableCount + spareTableCount;
+        if (request.TableCount > estimatedTableCount)
+            estimatedTableCount = request.TableCount;
         // Nhúng marker bàn dự phòng + ngân sách/phong cách vào SpecialRequests để
         // lookup (PublicBookingController.BuildDetailDto) khôi phục đúng 100%.
         var enrichedRequests = (request.SpecialRequests ?? string.Empty).Trim();
@@ -1500,41 +1684,17 @@ public sealed class RecommendationController : ControllerBase
             enrichedRequests = string.IsNullOrEmpty(enrichedRequests)
                 ? $"Phong cách mong muốn: {request.DesiredStyle.Trim()}"
                 : $"{enrichedRequests}; Phong cách mong muốn: {request.DesiredStyle.Trim()}";
-        // Thực đơn tùy chỉnh: chỉ tin mã món, tự tra giá từ Dish đang phục vụ.
-        // Giá/tên món do client gửi (CustomMenuPricePerTable/CustomMenuItems) không dùng để tính tiền.
+        // Thực đơn tùy chỉnh: chỉ dùng DishId để backend tải lại tên/giá từ database.
+        // Các chuỗi tên/giá cũ do client gửi chỉ còn để tương thích contract và bị bỏ qua.
         var customMenuName = (request.CustomMenuName ?? string.Empty).Trim();
-        var requestedDishIds = (request.CustomMenuDishIds ?? [])
-            .Where(id => id > 0)
-            .Distinct()
-            .ToList();
-        // UC13: mỗi booking chỉ dùng một chế độ thực đơn — menu chuẩn HOẶC menu tùy chỉnh theo mã món.
-        // Chặn tổ hợp để MenuID đã lưu luôn khớp với giá thực đơn đã chốt.
-        if (request.MenuId.HasValue && request.MenuId.Value > 0 && requestedDishIds.Count > 0)
-            return BadRequest(new { success = false, message = "Vui lòng chọn thực đơn chuẩn hoặc thực đơn tùy chỉnh, không chọn đồng thời cả hai." });
-        var hasCustomMenu = !string.IsNullOrWhiteSpace(customMenuName)
-            || requestedDishIds.Count > 0
-            || (request.CustomMenuPricePerTable.HasValue && request.CustomMenuPricePerTable.Value > 0);
-        var effectiveMenuPricePerTable = menu?.PricePerTable ?? 0m;
+        var hasCustomMenu = menuPricing?.IsCustomized == true;
+        var effectiveMenuPricePerTable = menuPricing?.OfficialPricePerTable ?? 0m;
         if (hasCustomMenu)
         {
-            if (requestedDishIds.Count == 0)
-                return BadRequest(new { success = false, message = "Thực đơn tùy chỉnh thiếu mã món. Vui lòng chọn lại thực đơn." });
-            var dishes = await _context.Dishes.AsNoTracking()
-                .Where(dish => requestedDishIds.Contains(dish.DishId) &&
-                    dish.DataStatusId == existingDataStatus.DataStatusId &&
-                    dish.Status != null &&
-                    dish.Status.StatusGroup == StatusGroups.Dish &&
-                    dish.Status.StatusCode == BusinessStatusCodes.Active)
-                .ToListAsync();
-            if (dishes.Count != requestedDishIds.Count)
-                return BadRequest(new { success = false, message = "Thực đơn tùy chỉnh có món không còn phục vụ. Vui lòng chọn lại." });
-            var dishById = dishes.ToDictionary(dish => dish.DishId);
-            effectiveMenuPricePerTable = requestedDishIds.Sum(id => dishById[id].Price);
-            if (effectiveMenuPricePerTable <= 0)
-                return BadRequest(new { success = false, message = "Thực đơn tùy chỉnh chưa có giá hợp lệ. Vui lòng chọn lại." });
-            var itemsText = string.Join("; ", requestedDishIds.Select(id =>
-                $"{dishById[id].DishName} ({dishById[id].Price:N0} đ)"));
             var customLabel = string.IsNullOrWhiteSpace(customMenuName) ? "Thực đơn tùy chỉnh" : customMenuName;
+            var itemsText = string.Join("; ", menuPricing!.SelectedDishes.Select(item =>
+                $"{item.DishName} ({item.Price:N0} đ)"));
+            enrichedRequests = RemoveLegacyCustomMenuMarkers(enrichedRequests);
             var customMarker = $"[{customLabel}: {effectiveMenuPricePerTable:N0} đ/bàn | {itemsText}]";
             enrichedRequests = string.IsNullOrEmpty(enrichedRequests)
                 ? customMarker
@@ -1560,8 +1720,6 @@ public sealed class RecommendationController : ControllerBase
                     svc.Status.StatusCode == BusinessStatusCodes.Active &&
                     serviceCodes.Contains(svc.MaDichVu.ToUpper()))
                 .ToListAsync();
-            if (serviceEntities.Count != serviceCodes.Count)
-                return BadRequest(new { success = false, message = "Một hoặc nhiều dịch vụ đi kèm không còn áp dụng. Vui lòng chọn lại." });
             bookingServices = serviceEntities
                 .OrderBy(svc => serviceCodes.IndexOf((svc.MaDichVu ?? string.Empty).ToUpperInvariant()))
                 .Select(svc => new RecommendedServiceDto
@@ -1571,26 +1729,56 @@ public sealed class RecommendationController : ControllerBase
                     Price = svc.Gia,
                     Note = svc.MoTa ?? string.Empty
                 }).ToList();
-            servicesTotalBooking = bookingServices.Sum(s => s.Price);
-            var svcText = string.Join("; ", bookingServices.Select(s => $"{s.ServiceName} ({s.Price:N0} đ)"));
+            servicesTotalBooking = bookingServices.Sum(s => string.Equals(s.ServiceCode, "DV001", StringComparison.OrdinalIgnoreCase) ? s.Price * estimatedTableCount : s.Price);
+            var svcText = string.Join("; ", bookingServices.Select(s => string.Equals(s.ServiceCode, "DV001", StringComparison.OrdinalIgnoreCase) ? $"{s.ServiceName} ({s.Price:N0} đ/bàn × {estimatedTableCount} bàn)" : $"{s.ServiceName} ({s.Price:N0} đ)"));
             if (!string.IsNullOrWhiteSpace(svcText))
             {
                 var svcMarker = $"[Dịch vụ đi kèm: {svcText}]";
                 enrichedRequests = string.IsNullOrEmpty(enrichedRequests) ? svcMarker : $"{enrichedRequests}; {svcMarker}";
             }
         }
+        var effectiveHallRentalPrice = _hallPricing.CalculateHallPrice(schedule.Hall.RentalPrice, schedule.Shift, schedule.Date);
+        decimal officialEstimatedTotal;
+        try
+        {
+            officialEstimatedTotal = CustomMenuPricingService.CalculateEstimatedTotal(
+                effectiveHallRentalPrice,
+                effectiveMenuPricePerTable,
+                estimatedTableCount,
+                decor?.Gia ?? 0m,
+                servicesTotalBooking);
+        }
+        catch (Exception ex) when (ex is OverflowException or ArgumentOutOfRangeException)
+        {
+            return Conflict(new
+            {
+                success = false,
+                code = "BOOKING_ESTIMATED_TOTAL_INVALID",
+                message = "Không thể tạo booking vì tổng dự toán không hợp lệ. Vui lòng liên hệ quản lý kiểm tra dữ liệu giá."
+            });
+        }
+        if (menuPricing?.RequiresPriceConfirmation == true)
+            return Conflict(new
+            {
+                success = false,
+                code = "CUSTOM_MENU_PRICE_CHANGED",
+                message = $"Giá thực đơn đã thay đổi thành {effectiveMenuPricePerTable:N0} đ/bàn. Vui lòng kiểm tra tổng dự toán mới và xác nhận lại.",
+                officialMenuPricePerTable = effectiveMenuPricePerTable,
+                officialEstimatedTotal
+            });
+
         var booking = new WeddingBooking
         {
             BookingCode = await GenerateBookingCodeAsync(schedule.Date),
             CustomerId = customer.CustomerId,
             HallScheduleId = schedule.HallScheduleId,
-            MenuId = menu?.MenuId,
+            MenuId = menuPricing?.MenuId,
             DecorationPackageId = decor?.GoiTrangTriID,
             GuestCount = request.GuestCount,
-            FinalHallPrice = schedule.Hall.RentalPrice,
-            FinalMenuPrice = menu == null && !hasCustomMenu ? (decimal?)null : effectiveMenuPricePerTable,
+            FinalHallPrice = effectiveHallRentalPrice,
+            FinalMenuPrice = menuPricing is null ? (decimal?)null : effectiveMenuPricePerTable,
             FinalDecorationPrice = decor?.Gia,
-            EstimatedTotal = schedule.Hall.RentalPrice + effectiveMenuPricePerTable * estimatedTableCount + (decor?.Gia ?? 0m) + servicesTotalBooking,
+            EstimatedTotal = officialEstimatedTotal,
             SpecialRequests = NormalizeOptional(enrichedRequests),
             StatusId = await _statusService.GetStatusIdAsync(StatusGroups.Booking, BookingStatusCodes.Pending),
             BookedAt = DateTime.Now
@@ -1603,18 +1791,29 @@ public sealed class RecommendationController : ControllerBase
         {
             foreach (var svc in serviceEntities)
             {
+                var isPerTableSvc = string.Equals(svc.MaDichVu, "DV001", StringComparison.OrdinalIgnoreCase);
                 _context.WeddingBookingServices.Add(new WeddingBookingService
                 {
                     BookingId = booking.BookingId,
                     ServiceId = svc.DichVuID,
-                    Quantity = 1,
+                    Quantity = isPerTableSvc ? estimatedTableCount : 1,
                     FinalUnitPrice = svc.Gia,
                     DataStatusId = existingDataStatus.DataStatusId
                 });
             }
             await _context.SaveChangesAsync();
         }
-        if (transaction != null) await transaction.CommitAsync();
+        await transaction.CommitAsync();
+        // Booking is durable. QR failure must not roll it back; the worker retries missing QR rows.
+        try
+        {
+            if (_reviewQrService is not null)
+                await _reviewQrService.EnsureForBookingAsync(booking.BookingId, HttpContext.RequestAborted);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Booking {BookingId} was saved but review QR creation failed; backfill will retry.", booking.BookingId);
+        }
 
         // FR15 / UC13 (6a) fault-tolerant: gửi email xác nhận SAU commit, lỗi SMTP
         // chỉ LogError, KHÔNG rollback, vẫn trả success + mã cho client.
@@ -1624,17 +1823,19 @@ public sealed class RecommendationController : ControllerBase
         var snapshotEventDate = schedule.Date;
         var snapshotShift = schedule.Shift;
         var snapshotHallName = schedule.Hall.HallName;
-        var snapshotMenuName = menu?.MenuName;
+        var snapshotMenuName = menuPricing?.MenuName;
         var snapshotDecorName = decor?.TenGoi;
         var snapshotTotal = booking.EstimatedTotal ?? 0m;
         var snapshotHoldExpiresAt = booking.BookedAt.AddHours(48);
         bool emailSent = false;
+        string? emailError = null;
         if (!string.IsNullOrWhiteSpace(recipientEmail))
         {
             try
             {
                 if (_emailService is null)
                 {
+                    emailError = "IEmailService chưa được đăng ký DI.";
                     _logger.LogWarning("Bỏ qua gửi email giữ chỗ {Code}: IEmailService chưa được đăng ký DI.",
                         snapshotBookingCode);
                 }
@@ -1661,6 +1862,7 @@ public sealed class RecommendationController : ControllerBase
             }
             catch (Exception ex)
             {
+                emailError = ex.Message;
                 _logger.LogError(ex, "Gửi email xác nhận thất bại cho mã đơn {BookingCode} đến {Email}",
                     snapshotBookingCode, recipientEmail);
             }
@@ -1670,54 +1872,29 @@ public sealed class RecommendationController : ControllerBase
             _logger.LogWarning("Khách hàng không cung cấp email cho mã đơn {BookingCode}, bỏ qua gửi email", snapshotBookingCode);
         }
 
-        var bookingStatus = await _context.Statuses.AsNoTracking()
-            .Where(status => status.StatusId == booking.StatusId)
-            .Select(status => new { status.StatusCode, status.StatusName })
-            .SingleAsync();
-        return Ok(new
-        {
-            success = true,
-            bookingCode = booking.BookingCode,
-            bookingId = booking.BookingId,
-            statusCode = bookingStatus.StatusCode,
-            statusName = bookingStatus.StatusName,
-            holdExpiresAt = snapshotHoldExpiresAt,
-            emailSent
-        });
-        }
-        catch (Exception ex) when (IsReservationConflict(ex))
-        {
-            try { if (transaction != null) await transaction.RollbackAsync(); } catch { }
-            _logger.LogWarning(ex, "RegisterPublicBooking xung đột giữ chỗ. traceId={TraceId}", HttpContext?.TraceIdentifier);
-            return Conflict(new
-            {
-                success = false,
-                message = "Khung giờ này vừa được khách khác giữ chỗ. Vui lòng chọn sảnh hoặc ngày/ca khác."
-            });
+        return Ok(new { success = true, bookingCode = booking.BookingCode, bookingId = booking.BookingId, emailSent, emailError });
         }
         catch (Exception ex)
         {
-            try { if (transaction != null) await transaction.RollbackAsync(); } catch { }
+            try { await transaction.RollbackAsync(); } catch { }
             _logger.LogError(ex, "RegisterPublicBooking thất bại. traceId={TraceId}. Chi tiết: {Detail}",
-                HttpContext?.TraceIdentifier, ex.ToString());
+                HttpContext.TraceIdentifier, ex.ToString());
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
                 success = false,
                 message = "Không thể lưu đơn đăng ký lúc này, vui lòng thử lại.",
-                traceId = HttpContext?.TraceIdentifier
+                traceId = HttpContext.TraceIdentifier
             });
         }
     }
 
-    private static bool IsReservationConflict(Exception exception)
-    {
-        for (var current = exception; current != null; current = current.InnerException)
-        {
-            if (current is SqlException sql && sql.Number is 1205 or 1222 or 2601 or 2627 or 3960)
-                return true;
-        }
-        return false;
-    }
+    private static string RemoveLegacyCustomMenuMarkers(string value) =>
+        System.Text.RegularExpressions.Regex.Replace(
+            value,
+            @"(?:^|;\s*)\[[^\]]*Thực đơn tùy chỉnh[^\]]*\](?:\s*\([^)]*tùy chỉnh[^)]*\))?",
+            string.Empty,
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)
+        .Trim().Trim(';').Trim();
 
     private async Task<int?> ResolveAuthenticatedCustomerIdAsync(byte existingDataStatusId)
     {
@@ -1756,7 +1933,7 @@ public sealed class RecommendationController : ControllerBase
             {
                 ServiceCode = svc.MaDichVu,
                 ServiceName = svc.TenDichVu,
-                Price = svc.Gia,
+                Price = string.Equals(svc.MaDichVu, "DV001", StringComparison.OrdinalIgnoreCase) && svc.Gia > 500_000m ? 200_000m : svc.Gia,
                 Note = svc.MoTa ?? string.Empty
             })
             .ToListAsync();
@@ -1777,17 +1954,19 @@ public sealed class RecommendationController : ControllerBase
         ["nature"] = ["Thiên nhiên / ngoài trời"],
     };
 
-    /// <summary>r1 ngân sách 0..1 — port y hệt wsm_engine.py score_candidate.</summary>
-    private static double CalculateBudgetScore(decimal totalCost, decimal expectedBudget)
+    /// <summary>r1 ngan sach 0..1 — port y het wsm_engine.py score_candidate (Δ = min(10tr, 5%)).</summary>
+    private double CalculateBudgetScore(decimal totalCost, decimal expectedBudget)
     {
         var budget = (double)(expectedBudget > 0 ? expectedBudget : 1m);
         var total = (double)totalCost;
         var over = total - budget;
+        var tolerance = (double)_pricing.GetTolerance(expectedBudget > 0 ? expectedBudget : 0m);
+        var soft = tolerance / 2.0;
         if (over <= 0)
             return Math.Max(0.0, 1.0 - Math.Abs(total - budget) / Math.Max(1.0, budget));
-        if (over <= 5_000_000) return 0.70 - (over / 5_000_000) * 0.05;
-        if (over <= 10_000_000) return 0.65 - ((over - 5_000_000) / 5_000_000) * 0.10;
-        var extraTens = (over - 10_000_000) / 10_000_000;
+        if (over <= soft) return 0.70 - (over / soft) * 0.05;
+        if (over <= tolerance) return 0.65 - ((over - soft) / soft) * 0.10;
+        var extraTens = (over - tolerance) / tolerance;
         return Math.Max(0.0, 0.45 - extraTens * 0.08);
     }
 
@@ -1848,8 +2027,9 @@ public sealed class RecommendationController : ControllerBase
         list.Add(diff >= 0
             ? $"Chi phí: Tiết kiệm {FormatVnd(diff)} ({tr:F1} triệu, {pct:F1}%) so với ngân sách."
             : $"Chi phí: Vượt {FormatVnd(Math.Abs(diff))} ({tr:F1} triệu, {pct:F1}%) so với ngân sách, cân nhắc điều chỉnh.");
-        var ratio = maxTables > 0 ? Math.Clamp((double)tableCount / maxTables, 0.0, 1.0) : 0.0;
-        list.Add($"Sức chứa: {tableCount} bàn sử dụng khoảng {ratio * 100:F1}% sức chứa tối đa sảnh {hallName} ({minTables}-{maxTables} bàn, tối ưu {optimalTables} bàn).");
+        var span = Math.Max(1, maxTables - minTables);
+        var ratio = Math.Clamp((double)(tableCount - minTables) / span, 0.0, 1.0);
+        list.Add($"Sức chứa: {tableCount} bàn đạt lấp đầy {ratio * 100:F1}% sảnh {hallName} ({minTables}-{maxTables} bàn, tối ưu {optimalTables} bàn).");
         list.Add(r3 >= 1.0
             ? $"Phong cách: '{decorStyle}' khớp 100% với mong muốn '{desiredStyle}'."
             : r3 >= 0.5
@@ -1929,6 +2109,10 @@ public sealed class RecommendationController : ControllerBase
         [JsonPropertyName("included_services")] public List<string> IncludedServices { get; set; } = new();
         [JsonPropertyName("total_estimated_cost")] public double TotalEstimatedCost { get; set; }
         [JsonPropertyName("matching_score")] public double MatchingScore { get; set; }
+        [JsonPropertyName("budget_match_score")] public double BudgetMatchScore { get; set; }
+        [JsonPropertyName("space_fit_score")] public double SpaceFitScore { get; set; }
+        [JsonPropertyName("style_theme_score")] public double StyleThemeScore { get; set; }
+        [JsonPropertyName("rating_credibility_score")] public double RatingCredibilityScore { get; set; }
         [JsonPropertyName("explanation_arguments")] public List<string> ExplanationArguments { get; set; } = new();
     }
 
@@ -1939,5 +2123,25 @@ public sealed class RecommendationController : ControllerBase
         [JsonPropertyName("top_3")] public List<AiRankItem>? Top3 { get; set; }
         [JsonPropertyName("top_3_recommendations")] public List<AiRankItem>? Top3Recommendations { get; set; }
         [JsonPropertyName("algorithm_notice")] public string? AlgorithmNotice { get; set; }
+        // VĐ2: nguồn trọng số hybrid (learned:... / default-unlearned). Nullable, thiếu field không vỡ.
+        [JsonPropertyName("weights_source")] public string? WeightsSource { get; set; }
+    }
+
+    /// <summary>VĐ2: bóc (count, totalCandidatesEvaluated, weights_source) null-safe từ JSON AI
+    /// snake_case để đưa lên envelope BE. Không ném exception — lỗi parse trả (0,0,null).</summary>
+    private (int Count, int Total, string? WeightsSource) TryParseAiEnvelope(string json)
+    {
+        try
+        {
+            var typed = JsonSerializer.Deserialize<AiRankResponse>(json, AiJsonOptions);
+            if (typed is null) return (0, 0, null);
+            var top = typed.Top3 ?? typed.Top3Recommendations;
+            return (top?.Count ?? 0, typed.TotalCandidatesEvaluated, string.IsNullOrWhiteSpace(typed.WeightsSource) ? null : typed.WeightsSource);
+        }
+        catch (JsonException jex)
+        {
+            _logger.LogWarning(jex, "TryParseAiEnvelope: AI JSON không đúng contract. traceId={TraceId}.", HttpContext.TraceIdentifier);
+            return (0, 0, null);
+        }
     }
 }

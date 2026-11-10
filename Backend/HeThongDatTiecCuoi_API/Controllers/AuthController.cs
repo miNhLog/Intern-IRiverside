@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using HeThongDatTiecCuoi_API.Constants;
 using HeThongDatTiecCuoi_API.DTOs.Auth;
 using HeThongDatTiecCuoi_API.Models;
 using HeThongDatTiecCuoi_API.Services;
@@ -17,16 +18,19 @@ public sealed class AuthController : ControllerBase
     private readonly IPasswordResetService _passwordResetService;
     private readonly IFirstPasswordOtpService _firstPasswordOtpService;
     private readonly ILogger<AuthController> _logger;
+    private readonly IAuditLogService _auditLogs;
 
     public AuthController(
         IAuthService authService,
         IPasswordResetService passwordResetService,
         IFirstPasswordOtpService firstPasswordOtpService,
+        IAuditLogService auditLogs,
         ILogger<AuthController> logger)
     {
         _authService = authService;
         _passwordResetService = passwordResetService;
         _firstPasswordOtpService = firstPasswordOtpService;
+        _auditLogs = auditLogs;
         _logger = logger;
     }
 
@@ -125,6 +129,19 @@ public sealed class AuthController : ControllerBase
     {
         var result = await _authService.LoginWithGoogleAsync(request, cancellationToken);
         return ToActionResult(result);
+    }
+
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
+    {
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId)) return Unauthorized();
+        var sessionVersion = User.FindFirstValue("session_version") ?? "unknown";
+        var correlationId = $"logout:{userId}:{sessionVersion}";
+        await _auditLogs.TrySaveAsync(_auditLogs.Create(
+            AuditActions.Logout, userId, userId, AuditAuthMethods.Jwt,
+            AuditOutcomes.Success, "Người dùng đã chủ động đăng xuất.", correlationId), cancellationToken);
+        return Ok(new { message = "Đã ghi nhận đăng xuất." });
     }
 
     [HttpGet("me")]

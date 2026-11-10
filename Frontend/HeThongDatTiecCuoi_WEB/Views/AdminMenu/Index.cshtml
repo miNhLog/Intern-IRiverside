@@ -54,15 +54,9 @@
 <!-- =====================================================
      HEADER
      ===================================================== -->
-<header class="top-header food-header">
+<header class="top-header food-header backoffice-hero">
 
     <div>
-
-        <div class="breadcrumb">
-            Quản trị hệ thống
-            <span>›</span>
-            <strong>Quản lý Thực đơn & Món ăn</strong>
-        </div>
 
         <div class="food-title-row">
 
@@ -103,34 +97,6 @@
     <!-- =========================
          THÔNG BÁO
          ========================= -->
-    @if (TempData["Success"] is string successMessage)
-    {
-        <div class="food-alert success">
-
-            <i class="fa-solid fa-circle-check"></i>
-
-            <span>
-                @successMessage
-            </span>
-
-        </div>
-    }
-
-
-    @if (TempData["Error"] is string errorMessage)
-    {
-        <div class="food-alert error">
-
-            <i class="fa-solid fa-circle-exclamation"></i>
-
-            <span>
-                @errorMessage
-            </span>
-
-        </div>
-    }
-
-
     @if (!ViewData.ModelState.IsValid)
     {
         <div class="food-alert error">
@@ -467,6 +433,12 @@
 
                             <!-- TOP -->
                             <div class="food-menu-card-top">
+
+                                <img class="food-menu-cover"
+                                     src="@(menu.ImageUrl ?? Url.Content("~/images/menus/menu-banquet.png"))"
+                                     alt="Ảnh đại diện @menu.MenuName"
+                                     loading="lazy"
+                                     onerror="this.onerror=null;this.src='@Url.Content("~/images/menus/menu-banquet.png")';" />
 
                                 <div class="food-menu-main">
 
@@ -1071,7 +1043,7 @@
 
                                                 @if (!string.IsNullOrWhiteSpace(dish.ImageUrl))
                                                 {
-                                                    <img src="@($"https://localhost:7101{dish.ImageUrl}")"
+                                                    <img src="@dish.ImageUrl"
                                                          alt="@dish.DishName"
                                                          loading="lazy" />
                                                 }
@@ -1142,19 +1114,19 @@
                      aria-label="Phân trang danh sách món ăn"
                      hidden>
                     <button type="button"
-                            class="food-page-button"
+                            class="food-page-button pagination-edge"
                             id="dishPreviousPage"
                             aria-label="Trang trước">
-                        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                        Trước
                     </button>
 
                     <div class="food-page-numbers" id="dishPageNumbers"></div>
 
                     <button type="button"
-                            class="food-page-button"
+                            class="food-page-button pagination-edge"
                             id="dishNextPage"
                             aria-label="Trang sau">
-                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                        Sau
                     </button>
                 </nav>
 
@@ -1210,10 +1182,22 @@
         <form method="post"
               asp-controller="AdminMenu"
               asp-action="CreateMenu"
+              enctype="multipart/form-data"
               class="food-modal-form">
 
             @Html.AntiForgeryToken()
 
+
+            <div class="food-form-field">
+
+                <label>Ảnh đại diện</label>
+
+                <input type="file"
+                       name="Image"
+                       accept="image/jpeg,image/png,image/webp" />
+                <small>JPG, PNG hoặc WEBP; tối đa 5 MB.</small>
+
+            </div>
 
             <div class="food-form-field">
 
@@ -1317,6 +1301,7 @@
         <form method="post"
               asp-controller="AdminMenu"
               asp-action="UpdateMenu"
+              enctype="multipart/form-data"
               class="food-modal-form">
 
             @Html.AntiForgeryToken()
@@ -1326,6 +1311,17 @@
                    name="MenuId"
                    id="editMenuId" />
 
+
+            <div class="food-form-field">
+
+                <label>Thay ảnh đại diện</label>
+
+                <input type="file"
+                       name="NewImage"
+                       accept="image/jpeg,image/png,image/webp" />
+                <small>Để trống nếu muốn giữ ảnh hiện tại.</small>
+
+            </div>
 
             <div class="food-form-field">
 

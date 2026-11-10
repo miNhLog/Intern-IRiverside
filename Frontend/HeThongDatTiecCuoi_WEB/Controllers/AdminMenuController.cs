@@ -209,6 +209,19 @@ public sealed class AdminMenuController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        if (model.Image is { Length: > 0 })
+        {
+            await using var stream = model.Image.OpenReadStream();
+            var upload = await _apiClient.UploadMenuImageAsync(
+                result.Value.MenuId, stream, model.Image.FileName, model.Image.ContentType,
+                accessToken, cancellationToken);
+            if (!upload.Succeeded)
+            {
+                TempData["Error"] = "Đã tạo thực đơn nhưng tải ảnh thất bại: " + upload.Error;
+                return RedirectToAction(nameof(Index), new { menuId = result.Value.MenuId });
+            }
+        }
+
         TempData["Success"] =
             "Thêm thực đơn thành công.";
 
@@ -248,8 +261,20 @@ public sealed class AdminMenuController : Controller
         }
         else
         {
-            TempData["Success"] =
-                "Cập nhật thực đơn thành công.";
+            if (model.NewImage is { Length: > 0 })
+            {
+                await using var stream = model.NewImage.OpenReadStream();
+                var upload = await _apiClient.UploadMenuImageAsync(
+                    model.MenuId, stream, model.NewImage.FileName, model.NewImage.ContentType,
+                    accessToken, cancellationToken);
+                TempData[upload.Succeeded ? "Success" : "Error"] = upload.Succeeded
+                    ? "Cập nhật thực đơn và ảnh đại diện thành công."
+                    : "Đã cập nhật thông tin nhưng tải ảnh thất bại: " + upload.Error;
+            }
+            else
+            {
+                TempData["Success"] = "Cập nhật thực đơn thành công.";
+            }
         }
 
         return RedirectToAction(

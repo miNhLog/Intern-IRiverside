@@ -109,7 +109,8 @@ public sealed class ManagerDashboardController : ControllerBase
             .ToListAsync(cancellationToken);
 
         var openIncidents = await openIncidentQuery
-            .OrderByDescending(incident => incident.OccurredAt)
+            .OrderByDescending(incident => incident.Severity == IncidentSeverityCodes.Critical)
+            .ThenByDescending(incident => incident.OccurredAt)
             .Take(4)
             .Select(incident => new ManagerIncidentDto
             {

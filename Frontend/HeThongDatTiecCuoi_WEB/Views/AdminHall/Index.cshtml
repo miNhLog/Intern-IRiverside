@@ -10,15 +10,14 @@
 }
 
 <!-- HEADER -->
-<header class="top-header manager-section-header">
+<header class="top-header manager-section-header backoffice-hero">
 
     <div>
 
-        <div class="breadcrumb">
-            Quản trị hệ thống
-            <span>›</span>
-            <strong>Quản lý Sảnh & Lịch Sảnh</strong>
-        </div>
+        <span class="backoffice-hero__eyebrow">
+            <i class="fa-solid fa-building" aria-hidden="true"></i>
+            QUẢN LÝ SẢNH &amp; LỊCH
+        </span>
 
         <h1>
             Quản Trị Sảnh Tiệc & Lịch Phân Bổ Theo Ca
@@ -27,6 +26,13 @@
         <p>Quản lý thông tin sảnh, bảng giá và lịch phân bổ theo ca.</p>
 
     </div>
+
+    <button type="button"
+            class="btn-add admin-create-button"
+            id="openAddHallModal">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        Thêm sảnh tiệc mới
+    </button>
 
 </header>
 
@@ -49,7 +55,7 @@
               action="/admin/quan-ly-sanh"
               class="filter-form">
 
-            <div class="filter-item">
+            <div class="filter-item backoffice-filter-control">
 
                 <i class="fa-regular fa-calendar"></i>
 
@@ -62,7 +68,7 @@
             </div>
 
 
-            <div class="filter-item">
+            <div class="filter-item backoffice-filter-control">
 
                 <i class="fa-solid fa-building"></i>
 
@@ -106,17 +112,6 @@
             </button>
 
         </form>
-
-
-        <button type="button"
-                class="btn-add admin-create-button"
-                id="openAddHallModal">
-
-            <i class="fa-solid fa-plus"></i>
-
-            Thêm sảnh tiệc mới
-
-        </button>
 
     </div>
 
@@ -203,6 +198,14 @@
 
                 </div>
 
+                @if (!string.IsNullOrWhiteSpace(hall.ImageUrl))
+                {
+                    <img class="hall-card-image"
+                         src="@hall.ImageUrl"
+                         alt="Không gian @hall.HallName"
+                         loading="lazy"
+                         onerror="this.hidden=true" />
+                }
 
                 <div class="hall-info">
 
@@ -786,29 +789,6 @@
     </div>
 
 </section>
-<footer class="admin-footer">
-
-    <div>
-        © @DateTime.Now.Year IRevirsidePlace.
-        Quản Trị Hệ Thống Master Data
-    </div>
-
-    <div class="footer-right">
-
-        <span>
-            <i class="fa-solid fa-lock"></i>
-            Phân quyền: Quản trị viên
-        </span>
-
-        <span class="footer-dot">•</span>
-
-        <span>
-            Hệ thống quản lý đặt tiệc cưới IRevirsidePlace
-        </span>
-
-    </div>
-
-</footer>
 
 <!-- MODAL THÊM SẢNH -->
 <div id="addHallModal" class="modal-overlay">
@@ -829,7 +809,7 @@
         </div>
 
 
-        <form id="addHallForm">
+        <form id="addHallForm" enctype="multipart/form-data">
 
             @Html.AntiForgeryToken()
 
@@ -891,9 +871,22 @@
                 <div class="form-group form-full">
                     <label>Hình ảnh</label>
 
-                    <input type="text"
-                           name="ImageUrl"
-                           placeholder="Đường dẫn hoặc URL hình ảnh" />
+                    <div class="image-url-upload">
+                        <input type="text"
+                               name="ImageUrl"
+                               placeholder="Đường dẫn hoặc URL hình ảnh" />
+                        <label class="image-upload-button" for="addHallImageFile">
+                            <i class="fa-solid fa-upload"></i>
+                            Tải ảnh
+                        </label>
+                        <input class="image-file-input"
+                               type="file"
+                               name="imageFile"
+                               id="addHallImageFile"
+                               accept="image/jpeg,image/png,image/webp"
+                               data-file-name-target="addHallImageName" />
+                    </div>
+                    <small id="addHallImageName">Chọn JPG, PNG hoặc WEBP, tối đa 5 MB. Ảnh tải lên sẽ được ưu tiên hơn URL.</small>
                 </div>
 
 
@@ -960,7 +953,7 @@
         </div>
 
 
-        <form id="editHallForm">
+        <form id="editHallForm" enctype="multipart/form-data">
 
             @Html.AntiForgeryToken()
 
@@ -1049,9 +1042,22 @@
 
                     <label>Hình ảnh</label>
 
-                    <input type="text"
-                           name="ImageUrl"
-                           id="editImageUrl" />
+                    <div class="image-url-upload">
+                        <input type="text"
+                               name="ImageUrl"
+                               id="editImageUrl" />
+                        <label class="image-upload-button" for="editImageFile">
+                            <i class="fa-solid fa-upload"></i>
+                            Tải ảnh
+                        </label>
+                        <input class="image-file-input"
+                               type="file"
+                               name="imageFile"
+                               id="editImageFile"
+                               accept="image/jpeg,image/png,image/webp"
+                               data-file-name-target="editHallImageName" />
+                    </div>
+                    <small id="editHallImageName">Để trống nếu muốn giữ ảnh hiện tại.</small>
 
                 </div>
 
@@ -1210,6 +1216,24 @@
 {
     <script>
 
+            document.querySelectorAll('.image-file-input[data-file-name-target]').forEach(function (input) {
+
+                input.addEventListener('change', function () {
+
+                    const target = document.getElementById(input.dataset.fileNameTarget);
+
+                    if (!target) return;
+
+                    target.textContent = input.files && input.files.length
+                        ? 'Đã chọn: ' + input.files[0].name
+                        : (input.id === 'editImageFile'
+                            ? 'Để trống nếu muốn giữ ảnh hiện tại.'
+                            : 'Chọn JPG, PNG hoặc WEBP, tối đa 5 MB. Ảnh tải lên sẽ được ưu tiên hơn URL.');
+
+                });
+
+            });
+
             const toggleButton =
                 document.getElementById("toggleHallButton");
 
@@ -1355,6 +1379,9 @@
 
         addHallForm.reset();
 
+        document.getElementById("addHallImageName").textContent =
+            "Chọn JPG, PNG hoặc WEBP, tối đa 5 MB. Ảnh tải lên sẽ được ưu tiên hơn URL.";
+
         addHallError.textContent = "";
         }
 
@@ -1471,6 +1498,11 @@
             editHallButtons.forEach(function (button) {
 
                 button.addEventListener("click", function () {
+
+                    document.getElementById("editImageFile").value = "";
+
+                    document.getElementById("editHallImageName").textContent =
+                        "Để trống nếu muốn giữ ảnh hiện tại.";
 
                     document.getElementById("editHallId").value =
                         button.dataset.hallId;

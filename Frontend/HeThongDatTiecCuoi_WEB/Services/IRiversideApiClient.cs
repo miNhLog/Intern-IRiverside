@@ -1,9 +1,8 @@
-﻿using HeThongDatTiecCuoi_WEB.Models.AdminHall;
+using HeThongDatTiecCuoi_WEB.Models.AdminHall;
 using HeThongDatTiecCuoi_WEB.Models.AdminAccount;
 using HeThongDatTiecCuoi_WEB.Models.Auth;
 using HeThongDatTiecCuoi_WEB.Models.Halls;
 using HeThongDatTiecCuoi_WEB.Models.Menus;
-using HeThongDatTiecCuoi_WEB.Models.DecorPackages;
 namespace HeThongDatTiecCuoi_WEB.Services;
 using HeThongDatTiecCuoi_WEB.Models.AdminMenu;
 using HeThongDatTiecCuoi_WEB.Models.AdminReport;
@@ -16,14 +15,42 @@ using HeThongDatTiecCuoi_WEB.Models.Profile;
 using HeThongDatTiecCuoi_WEB.Models.ManagerHr;
 using HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment;
 using HeThongDatTiecCuoi_WEB.Models.ManagerEventCoordination;
+using HeThongDatTiecCuoi_WEB.Models.Incident;
+using HeThongDatTiecCuoi_WEB.Models.Coordination;
 using Microsoft.AspNetCore.Mvc;
-
+using HeThongDatTiecCuoi_WEB.Models.DecorPackages;
+using HeThongDatTiecCuoi_WEB.Models.ScheduleChange;
+using HeThongDatTiecCuoi_WEB.Models.Banners;
 
 public interface IRiversideApiClient
 {
+    Task<ApiCallResult<ContractActionResponseViewModel>> ConfirmManagerDepositAsync(string accessToken, int id, ConfirmDepositViewModel model, CancellationToken cancellationToken);
+    Task<ApiCallResult<string>> ReschedulePublicBookingAsync(int bookingId, string bookingCode, string phoneNumber, DateTime newDate, string newShift, string? reason, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<List<BannerViewModel>>> GetPublicBannersAsync(CancellationToken cancellationToken);
+    Task<ApiCallResult<List<BannerViewModel>>> GetPublicBannersAsync(string placement, CancellationToken cancellationToken);
+    Task<ApiCallResult<System.Text.Json.JsonElement>> GetChecklistsAsync(string token, CancellationToken ct);
+    Task<ApiCallResult<System.Text.Json.JsonElement>> ExecuteChecklistAsync(string token, int bookingId, string action, System.Text.Json.JsonElement command, CancellationToken ct);
+    Task<ApiCallResult<ChecklistSummaryViewModel>> GetChecklistSummaryAsync(string token, CancellationToken ct);
+    Task<ApiCallResult<IncidentListResponseViewModel>> GetIncidentsAsync(string accessToken, string? search, string? status, string? severity, int? hallId, DateTime? fromDate, DateTime? toDate, int page, int pageSize, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<IncidentBookingOptionViewModel>>> GetIncidentBookingOptionsAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<IncidentDetailViewModel>> GetIncidentAsync(string accessToken, int id, CancellationToken cancellationToken);
+    Task<ApiCallResult<IncidentDetailViewModel>> CreateIncidentAsync(string accessToken, IncidentFormViewModel model, CancellationToken cancellationToken);
+    Task<ApiCallResult<IncidentDetailViewModel>> UpdateIncidentAsync(string accessToken, int id, IncidentFormViewModel model, CancellationToken cancellationToken);
+    Task<ApiCallResult<IncidentDetailViewModel>> UpdateIncidentStatusAsync(string accessToken, int id, string status, string? resolution, CancellationToken cancellationToken);
+    Task<ApiCallResult<IncidentDetailViewModel>> UpdateIncidentResolutionAsync(string accessToken, int id, string resolution, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<IncidentHistoryItemViewModel>>> GetIncidentHistoryAsync(string accessToken, int id, CancellationToken cancellationToken);
     Task<ApiCallResult<EventCoordinationListResponseViewModel>> GetManagerEventCoordinationAsync(string accessToken, string? search, string? bookingStatus, string? coordinationStatus, DateTime? fromDate, DateTime? toDate, int page, int pageSize, CancellationToken cancellationToken);
     Task<ApiCallResult<EventCoordinationDetailViewModel>> GetManagerEventCoordinationDetailAsync(string accessToken, int bookingId, CancellationToken cancellationToken);
     Task<ApiCallResult<EventCoordinationCalendarViewModel>> GetManagerEventCoordinationCalendarAsync(string accessToken, DateTime fromDate, DateTime toDate, int? hallId, int? coordinatorEmployeeId, bool conflictsOnly, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<ManagerAvailableCoordinatorViewModel>>> GetManagerCoordinationAvailableCoordinatorsAsync(string accessToken, int bookingId, CancellationToken cancellationToken);
+    Task<ApiCallResult<ManagerAssignResultViewModel>> AssignManagerEventCoordinatorAsync(string accessToken, int bookingId, int coordinatorEmployeeId, string reason, CancellationToken cancellationToken);
+    Task<ApiCallResult<HallManagerCoordinationListViewModel>> GetHallManagerCoordinationAsync(string accessToken, string? search, int? hallId, DateTime? eventDate, string? coordinationStatus, int page, int pageSize, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<CoordinatorAvailabilityViewModel>>> GetCoordinatorAvailabilityAsync(string accessToken, int bookingId, CancellationToken cancellationToken);
+    Task<ApiCallResult<HallManagerCoordinationDetailViewModel>> GetHallManagerCoordinationDetailAsync(string accessToken, int bookingId, CancellationToken cancellationToken);
+    Task<ApiCallResult<CoordinationMutationViewModel>> AssignCoordinatorAsync(string accessToken, int bookingId, int coordinatorEmployeeId, CancellationToken cancellationToken);
+    Task<ApiCallResult<CoordinationMutationViewModel>> ChangeCoordinatorAsync(string accessToken, int bookingId, int coordinatorEmployeeId, string reason, CancellationToken cancellationToken);
+    Task<ApiCallResult<CoordinationMutationViewModel>> CancelCoordinatorAssignmentAsync(string accessToken, int bookingId, string reason, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<CoordinatorAssignedPartyViewModel>>> GetCoordinatorAssignedPartiesAsync(string accessToken, CancellationToken cancellationToken);
     Task<ApiCallResult<ProfileDto>> GetProfileAsync(string accessToken, CancellationToken cancellationToken);
     Task<ApiCallResult<ProfileUpdateResponse>> UpdateProfileAsync(ProfilePageViewModel model, string accessToken, CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerContractListResponseViewModel>> GetManagerContractsAsync(string accessToken, string? keyword, string? status, DateTime? fromDate, DateTime? toDate, int page, CancellationToken cancellationToken);
@@ -35,13 +62,17 @@ public interface IRiversideApiClient
     Task<ApiCallResult<ContractActionResponseViewModel>> CompleteManagerContractAsync(string accessToken, int id, CancellationToken cancellationToken);
     Task<ApiCallResult<ContractActionResponseViewModel>> CancelManagerContractAsync(string accessToken, int id, CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerPaymentListResponseViewModel>> GetManagerPaymentsAsync(string accessToken, string? keyword, string? type, string? status, DateTime? fromDate, DateTime? toDate, int page, CancellationToken cancellationToken);
-    Task<ApiCallResult<PaymentActionResponseViewModel>> RecordManagerPaymentAsync(string accessToken, RecordPaymentViewModel model, CancellationToken cancellationToken);
-    Task<ApiCallResult<ContractActionResponseViewModel>> ConfirmManagerDepositAsync(string accessToken, int id, ConfirmDepositViewModel model, CancellationToken cancellationToken);
     Task<ApiCallResult<PdfDownloadViewModel>> DownloadManagerContractPdfAsync(string accessToken, int id, CancellationToken cancellationToken);
+    Task<ApiCallResult<object>> RecordManagerPaymentAsync(string accessToken, RecordPaymentViewModel model, CancellationToken cancellationToken);
+    Task<ApiCallResult<ContractPayOsLinkResultViewModel>> CreateManagerPayOsPaymentLinkAsync(string accessToken, CreateContractPayOsLinkViewModel model, CancellationToken cancellationToken);
+    Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>> CheckManagerPayOsPaymentStatusAsync(string accessToken, long orderCode, CancellationToken cancellationToken);
+    Task<ApiCallResult<PdfDownloadViewModel>> DownloadPublicContractPdfAsync(string bookingCode, string phone, CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerHrPageViewModel>> GetManagerHrAsync(string accessToken,string? search,string? role,string? status,string? assignmentStatus,int page,int pageSize,CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerHrActionViewModel>> AssignManagerHallsAsync(int employeeId,AssignHallsViewModel model,string accessToken,CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerHrActionViewModel>> EndManagerHallAssignmentAsync(int assignmentId,string accessToken,CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerDashboardViewModel>> GetManagerDashboardAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<HallManagerDashboardViewModel>> GetHallManagerDashboardAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<HallManagerScheduleViewModel>> GetHallManagerDashboardScheduleAsync(string accessToken, DateTime date, CancellationToken cancellationToken);
     Task<ApiCallResult<List<NotificationViewModel>>> GetRecentNotificationsAsync(string accessToken, int limit, CancellationToken cancellationToken);
     Task<ApiCallResult<NotificationCountViewModel>> GetUnreadNotificationCountAsync(string accessToken, CancellationToken cancellationToken);
     Task<ApiCallResult<NotificationPageViewModel>> GetNotificationsAsync(string accessToken, int page, int pageSize, string? readStatus, CancellationToken cancellationToken);
@@ -63,6 +94,7 @@ public interface IRiversideApiClient
         string accessToken,
         bool rememberMe,
         CancellationToken cancellationToken);
+    Task<ApiCallResult<ApiMessageResponse>> RecordLogoutAsync(string accessToken, CancellationToken cancellationToken);
     Task<ApiCallResult<MessageResponseDto>> ChangePasswordAsync(ChangePasswordViewModel model, string accessToken, CancellationToken cancellationToken);
     Task<ApiCallResult<FirstPasswordOtpResponseDto>> SendFirstPasswordOtpAsync(string accessToken, CancellationToken cancellationToken);
 
@@ -120,13 +152,17 @@ public interface IRiversideApiClient
         int menuId,
         CancellationToken cancellationToken);
 
+    Task<ApiCallResult<List<PublicDishDto>>> GetPublicDishesAsync(
+        string? keyword,
+        string? category,
+        CancellationToken cancellationToken);
 
     Task<ApiCallResult<PublicDecorPackageListResponse>> GetPublicDecorPackagesAsync(
-        string? keyword,
-        string? sort,
-        int page,
-        int pageSize,
-        CancellationToken cancellationToken);
+    string? keyword,
+    string? sort,
+    int page,
+    int pageSize,
+    CancellationToken cancellationToken);
 
     Task<ApiCallResult<PublicDecorPackageDto>> GetPublicDecorPackageAsync(
         int decorationPackageId,
@@ -151,6 +187,10 @@ public interface IRiversideApiClient
         HallDto model,
         string accessToken,
         CancellationToken cancellationToken);
+
+    Task<ApiActionResult> UploadHallImageAsync(
+        int hallId, Stream fileStream, string fileName, string? contentType,
+        string accessToken, CancellationToken cancellationToken);
 
     Task<ApiCallResult<ActionResponseDto>> UpdateHallStatusAsync(
         int hallId,
@@ -195,10 +235,14 @@ public interface IRiversideApiClient
         int page,
         int pageSize,
         string? action,
-        string? entityName,
         DateTime? fromDate,
         DateTime? toDate,
         string? keyword,
+        string? group,
+        string? outcome,
+        string? authMethod,
+        string? mode,
+        string? importantGroup,
         CancellationToken cancellationToken);
 
     Task<ApiCallResult<List<RoleDto>>> GetRolesAsync(
@@ -263,13 +307,17 @@ public interface IRiversideApiClient
         string accessToken,
         CancellationToken cancellationToken);
 
+    Task<ApiActionResult> UploadMenuImageAsync(
+        int menuId, Stream fileStream, string fileName, string? contentType,
+        string accessToken, CancellationToken cancellationToken);
+
     Task<ApiActionResult> UpdateMenuStatusAsync(
         int menuId,
         string status,
         string accessToken,
         CancellationToken cancellationToken);
 
-    // MÓN ĂN
+    // MÃ“N Ä‚N
     Task<ApiCallResult<List<DishViewModel>>> GetDishesAsync(
         string? keyword,
         string? category,
@@ -389,16 +437,14 @@ public interface IRiversideApiClient
     PublicBookingRequestViewModel request,
     CancellationToken cancellationToken = default);
 
+    Task<ApiCallResult<List<HeThongDatTiecCuoi_WEB.Models.MyBookings.MyBookingViewModel>>> GetMyBookingsAsync(string? phone, int? userId = null, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<bool>> CancelBookingAsync(int bookingId, string? bookingCode = null, string? phone = null, CancellationToken cancellationToken = default);
+
     // UC14 & UC15: tra cứu + hủy giữ chỗ public bằng mã + SĐT
     Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.MyBookings.PublicBookingDetailViewModel>> LookupPublicBookingAsync(
         string bookingCode, string phoneNumber, CancellationToken cancellationToken = default);
     Task<ApiCallResult<string>> CancelPublicBookingHoldAsync(
         int bookingId, string bookingCode, string phoneNumber, string? reason, CancellationToken cancellationToken = default);
-
-    // UC15: đổi ngày/ca (giữ nguyên sảnh) bằng mã + SĐT.
-    Task<ApiCallResult<string>> ReschedulePublicBookingAsync(
-        int bookingId, string bookingCode, string phoneNumber, DateTime newDate, string newShift, string? reason,
-        CancellationToken cancellationToken = default);
 
     // UC10: Trợ lý ảo AI (proxy FE -> BE -> AI_Service RAG).
     Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.AiChat.AiChatReplyViewModel>> SendAiChatAsync(
@@ -408,9 +454,53 @@ public interface IRiversideApiClient
     Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.AiChat.AiChatExtractResultViewModel>> ExtractAiEntitiesAsync(
         List<HeThongDatTiecCuoi_WEB.Models.AiChat.AiChatMessageViewModel> history,
         CancellationToken cancellationToken = default);
-    Task<ApiCallResult<List<PublicDishDto>>> GetPublicDishesAsync(
-    string? keyword,
-    string? category,
-    CancellationToken cancellationToken);
 
+    // Module Thanh toán Đặt cọc VietQR PayOS
+    Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>> CreateCustomerContractPaymentAsync(
+        HeThongDatTiecCuoi_WEB.Models.Payment.CreateCustomerContractPaymentRequestViewModel request,
+        string? accessToken = null,
+        CancellationToken cancellationToken = default);
+
+
+    Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentResponseViewModel>> CreateDepositPaymentAsync(
+        HeThongDatTiecCuoi_WEB.Models.Payment.CreateDepositPaymentRequestViewModel request,
+        string? accessToken = null,
+        CancellationToken cancellationToken = default);
+
+    Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>> CheckPaymentStatusAsync(
+        long orderCode,
+        CancellationToken cancellationToken = default);
+
+    Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment.PdfDownloadViewModel>> DownloadInvoicePdfAsync(
+        string bookingCode,
+        string phoneNumber,
+        CancellationToken cancellationToken = default);
+
+    // Thay đổi lịch tiệc cưới - public, vận hành, quản lý và chính sách.
+    Task<ApiCallResult<ScheduleChangeEligibilityViewModel>> GetScheduleChangeEligibilityAsync(string bookingCode, string phoneNumber, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<ScheduleChangeAvailabilityViewModel>>> GetScheduleChangeAvailabilityAsync(string bookingCode, string phoneNumber, DateTime date, string shift, CancellationToken cancellationToken);
+    Task<ApiCallResult<string>> SendScheduleChangeOtpAsync(string bookingCode, string phoneNumber, string purpose, int? scheduleChangeId, CancellationToken cancellationToken);
+    Task<ApiCallResult<OtpVerificationViewModel>> VerifyScheduleChangeOtpAsync(string bookingCode, string phoneNumber, string purpose, int? scheduleChangeId, string code, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangeViewModel>> CreateScheduleChangeAsync(CreateScheduleChangeInput input, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<ScheduleChangeViewModel>>> LookupScheduleChangesAsync(string bookingCode, string phoneNumber, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangeViewModel>> GetPublicScheduleChangeAsync(int id, string bookingCode, string phoneNumber, CancellationToken cancellationToken);
+    Task<ApiCallResult<QuoteAcceptanceResultViewModel>> AcceptScheduleChangeQuoteAsync(int id, string bookingCode, string phoneNumber, int quoteId, string verificationToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangeViewModel>> WithdrawScheduleChangeAsync(int id, string bookingCode, string phoneNumber, string reason, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangePaymentViewModel>> GetScheduleChangePaymentStatusAsync(int id, string bookingCode, string phoneNumber, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<ScheduleChangeViewModel>>> GetHallManagerScheduleChangesAsync(string accessToken, string? status, CancellationToken cancellationToken);
+    Task<ApiCallResult<HallManagerScheduleChangeOptionsViewModel>> GetHallManagerScheduleChangeOptionsAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<ScheduleChangeAvailabilityViewModel>>> GetHallManagerScheduleChangeAvailabilityAsync(string accessToken, int bookingId, DateTime date, string shift, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangeViewModel>> GetHallManagerScheduleChangeAsync(string accessToken, int id, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangeViewModel>> CreateHallManagerScheduleChangeAsync(string accessToken, HallManagerCreateScheduleChangeInput input, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangeViewModel>> ReviewScheduleChangeAsync(string accessToken, int id, string reviewResult, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<ScheduleChangeViewModel>>> GetManagerScheduleChangesAsync(string accessToken, string? status, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangeViewModel>> GetManagerScheduleChangeAsync(string accessToken, int id, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangeViewModel>> QuoteScheduleChangeAsync(string accessToken, int id, string? note, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangeViewModel>> RejectScheduleChangeAsync(string accessToken, int id, string reason, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangeViewModel>> ReconcileScheduleChangeAsync(string accessToken, int id, string action, string evidence, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangeFinancialViewModel>> GetScheduleChangeFinancialsAsync(string accessToken, int id, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangeFinancialViewModel>> ConfirmScheduleChangeRefundAsync(string accessToken, int id, int refundId, string evidence, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangePolicyViewModel>> GetActiveScheduleChangePolicyAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<ScheduleChangePolicyViewModel>>> GetScheduleChangePolicyHistoryAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiCallResult<ScheduleChangePolicyViewModel>> CreateScheduleChangePolicyVersionAsync(string accessToken, ScheduleChangePolicyVersionInput input, CancellationToken cancellationToken);
 }

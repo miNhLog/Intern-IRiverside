@@ -8,6 +8,8 @@ using HeThongDatTiecCuoi_API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace HeThongDatTiecCuoi_API.Controllers;
 
@@ -285,8 +287,13 @@ public sealed class DishController : ControllerBase
             DataStatusId = existingDataStatus.DataStatusId
         };
 
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         _context.Dishes.Add(dish);
         await _context.SaveChangesAsync(cancellationToken);
+        AddAudit(AuditActions.DishCreated, dish.DishId, null,
+            new { dish.DishCode, dish.DishName, dish.Category, dish.Price, Status = activeStatus.StatusCode }, $"Tạo món ăn {dish.DishCode}.");
+        await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return Created($"/api/dishes/{dish.DishId}", ToDto(dish, activeStatus));
     }
@@ -330,9 +337,12 @@ public sealed class DishController : ControllerBase
             return BadRequest(new { message = "Giá món không hợp lệ." });
         }
 
+        var oldData = new { dish.DishCode, dish.DishName, dish.Category, dish.Price, Status = dish.Status.StatusCode };
         dish.DishName = request.DishName.Trim();
         dish.Category = request.Category.Trim();
         dish.Price = request.Price;
+        AddAudit(AuditActions.DishUpdated, dish.DishId, oldData,
+            new { dish.DishCode, dish.DishName, dish.Category, dish.Price, Status = dish.Status.StatusCode }, $"Cập nhật món ăn {dish.DishCode}.");
 
         await _context.SaveChangesAsync(cancellationToken);
         return Ok(ToDto(dish));
@@ -371,7 +381,11 @@ public sealed class DishController : ControllerBase
             return BadRequest(new { message = "Trạng thái món ăn chưa được cấu hình." });
         }
 
+        if (dish.Status.StatusCode == status.StatusCode) return Ok(ToDto(dish, status));
+        var oldStatus = dish.Status.StatusCode;
         dish.StatusId = status.StatusId;
+        AddAudit(AuditActions.DishUpdated, dish.DishId,
+            new { dish.DishCode, Status = oldStatus }, new { dish.DishCode, Status = status.StatusCode }, $"Đổi trạng thái món {dish.DishCode}: {oldStatus} → {status.StatusCode}.");
         await _context.SaveChangesAsync(cancellationToken);
 
         return Ok(ToDto(dish, status));
@@ -510,6 +524,17 @@ public sealed class DishController : ControllerBase
         Status = (status ?? dish.Status).StatusCode,
         StatusName = (status ?? dish.Status).StatusName
     };
+
+    private void AddAudit(string action, long entityId, object? oldData, object? newData, string notes)
+    {
+        var actorId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsed) ? parsed : (int?)null;
+        _context.AuditLogs.Add(new AuditLog
+        {
+            UserId = actorId, Action = action, EntityName = AuditEntityNames.Dish, EntityId = entityId,
+            OldData = oldData is null ? null : JsonSerializer.Serialize(oldData), NewData = newData is null ? null : JsonSerializer.Serialize(newData),
+            Timestamp = DateTime.Now, Outcome = AuditOutcomes.Success, Notes = notes
+        });
+    }
 
     private async Task<DataStatus> GetDataStatusAsync(
         string code,

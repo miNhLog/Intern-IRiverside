@@ -1,11 +1,10 @@
-﻿@model HeThongDatTiecCuoi_WEB.Models.AdminReport.RevenueBiViewModel
+@model HeThongDatTiecCuoi_WEB.Models.AdminReport.RevenueBiViewModel
 @{
-    ViewData["Title"] = "Báo Cáo Doanh Thu & Thống Kê BI";
+    ViewData["Title"] = "Thống kê và báo cáo";
     Layout = "_AdminLayout";
 }
 
-<!-- Font dùng chung được nạp bởi _AdminLayout; FontAwesome, Chart.js & SheetJS vẫn giữ nguyên. -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Font và Bootstrap Icons dùng chung được nạp bởi _AdminLayout; Chart.js & SheetJS vẫn giữ nguyên. -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -39,16 +38,16 @@
 
 <style>
     .bi-page-wrapper {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        color: #1E293B;
+        font-family: 'Inter', sans-serif;
+        color: var(--rp-text);
     }
 
         .bi-page-wrapper .font-serif {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Inter', sans-serif;
         }
 
     .card-shadow {
-        box-shadow: 0 4px 20px -2px rgba(30, 41, 59, 0.05), 0 2px 6px -1px rgba(30, 41, 59, 0.02);
+        box-shadow: none;
     }
 
     .focus-ring:focus-visible {
@@ -62,17 +61,17 @@
     }
 
     .custom-scrollbar::-webkit-scrollbar-track {
-        background: #F1F5F9;
+        background: var(--rp-surface-muted);
         border-radius: 4px;
     }
 
     .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #CBD5E1;
+        background: var(--rp-border-strong);
         border-radius: 4px;
     }
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #B89758;
+            background: var(--rp-gold-500);
         }
 
     /* Hiệu ứng cho ma trận */
@@ -83,21 +82,21 @@
 
         .matrix-table th,
         .matrix-table td {
-            border-right: 1px solid rgba(226, 232, 240, 0.7);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+            border-right: 1px solid var(--rp-border);
+            border-bottom: 1px solid var(--rp-border);
         }
 
         .matrix-table thead th {
-            border-color: rgba(51, 65, 85, 0.6);
+            border-color: var(--rp-border-strong);
         }
 
     .matrix-cell-booking {
-        transition: all 0.2s ease;
+        transition: background-color var(--metis-transition), border-color var(--metis-transition), box-shadow var(--metis-transition);
     }
 
         .matrix-cell-booking:hover {
-            transform: scale(1.02);
-            box-shadow: 0 4px 12px -2px rgba(184, 151, 88, 0.25);
+            border-color: var(--rp-gold-500);
+            box-shadow: inset 0 0 0 1px var(--rp-gold-500);
         }
 
     /* Hiệu ứng pulse nhẹ cho badge trạng thái */
@@ -124,63 +123,142 @@
     }
 
     .matrix-scroll-container::-webkit-scrollbar-track {
-        background: #F1F5F9;
+        background: var(--rp-surface-muted);
         border-radius: 6px;
         margin: 0 8px;
     }
 
     .matrix-scroll-container::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, #C5A880, #B89758);
+        background: var(--rp-border-strong);
         border-radius: 6px;
-        border: 2px solid #F1F5F9;
+        border: 2px solid var(--rp-surface-muted);
     }
 
         .matrix-scroll-container::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, #B89758, #8C6D32);
+            background: var(--rp-gold-500);
         }
+
+    /* Manager BI dashboard */
+    .bi-dashboard { --bi-gold:var(--rp-gold-600);display:flex;flex-direction:column; }
+    .bi-hero { order:-3;min-height:0;padding:0 0 2px!important;border:0!important;background:transparent!important;box-shadow:none!important; }
+    .bi-hero h1 { max-width:760px;margin:4px 0 0;color:var(--rp-text);font-size:26px;font-weight:700;line-height:1.2;letter-spacing:0; }
+    .bi-hero p { max-width:720px;color:var(--rp-text-secondary);font-size:13px;line-height:1.55; }
+    .bi-filter-panel { order:-1;position:sticky;top:12px;z-index:20;padding:14px 16px!important;border-color:var(--rp-border)!important;border-radius:var(--metis-radius-lg)!important;background:var(--rp-surface)!important;box-shadow:none!important; }
+    .bi-filter-panel[aria-busy="true"] { opacity:.72;pointer-events:none; }
+    .bi-filter-panel[aria-busy="true"]::after { width:14px;height:14px;border:2px solid var(--rp-border-strong);border-top-color:var(--rp-gold-500);border-radius:50%;content:"";animation:biSpin .7s linear infinite; }
+    @@keyframes biSpin { to { transform:rotate(360deg); } }
+    .bi-filter-label { display:flex;align-items:center;gap:7px;color:var(--rp-text);font-size:11px;font-weight:700; }
+    .bi-filter-label i { color:var(--bi-gold); }
+    .bi-filter-control { min-height:42px!important;border-color:var(--rp-border)!important;border-radius:var(--metis-radius)!important;color:var(--rp-text);background:var(--rp-surface-muted)!important; }
+    .bi-filter-control :is(label,select) { color:inherit!important; }
+    .bi-filter-reset { min-height:42px;border:1px solid var(--rp-border)!important;color:var(--rp-text-secondary)!important;background:var(--rp-surface-muted)!important; }
+    .bi-filter-reset:hover { color:var(--rp-text)!important;background:var(--rp-surface-hover)!important; }
+    .bi-kpi-grid.manager-kpi-grid { order:-2;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px!important;margin-top:0; }
+    .bi-kpi-grid .manager-kpi-card { min-width:0; }
+    .bi-kpi-grid .manager-kpi-card > div { min-width:0; }
+    .bi-kpi-grid .manager-kpi-card em { display:none; }
+    .bi-kpi-grid .manager-kpi-card :is(small,strong) { min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-wrap:normal;word-break:normal; }
+    .bi-kpi-grid .manager-kpi-card small { display:block; }
+    .bi-kpi-grid .manager-kpi-card strong { display:block;line-height:1.15; }
+    .bi-kpi-unit { margin-left:3px;color:var(--rp-text-muted);font-size:10px;font-weight:500;letter-spacing:0;white-space:nowrap; }
+    .bi-chart-grid,.bi-secondary-grid { gap:18px!important; }
+    .bi-panel { overflow:hidden;padding:0!important;border:1px solid var(--rp-border)!important;border-radius:var(--metis-radius-lg)!important;background:var(--rp-surface);box-shadow:none; }
+    .bi-panel-head { min-height:62px;padding:14px 18px!important;border-bottom:1px solid var(--rp-border)!important;background:transparent; }
+    .bi-panel-head h3 { display:flex;align-items:center;gap:9px;color:var(--rp-text)!important;font-family:"Inter",sans-serif!important;font-size:15px!important;font-weight:650!important;letter-spacing:-.01em; }
+    .bi-panel-head h3 i { width:30px;height:30px;display:grid;place-items:center;border-radius:var(--metis-radius-sm);color:var(--metis-badge-primary);background:color-mix(in srgb,var(--metis-badge-primary) 12%,transparent);font-size:14px; }
+    .bi-panel-head p { margin-top:3px!important;color:var(--rp-text-secondary)!important;font-size:10px!important;line-height:1.5; }
+    .bi-chart-body { padding:20px 20px 18px; }
+    .bi-chart-canvas { min-height:280px; }
+    .bi-chart-unit { display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid var(--rp-border);border-radius:var(--metis-radius-sm);color:var(--rp-text-secondary);background:var(--rp-surface-muted);font-size:9px!important;font-weight:650;white-space:nowrap; }
+    .bi-chart-unit span { width:7px!important;height:7px!important;background:var(--metis-badge-primary)!important; }
+    .bi-chart-summary { display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 12px;border:1px solid var(--rp-border);border-radius:var(--metis-radius-sm);color:var(--rp-text-secondary);background:var(--rp-surface-muted);font-size:9px;line-height:1.5; }
+    .bi-chart-summary i { color:var(--bi-gold); }
+    .bi-structure-legend { margin:0 20px 18px;padding:12px!important;border:1px solid var(--rp-border)!important;border-radius:var(--metis-radius-sm);color:var(--rp-text-secondary);background:var(--rp-surface-muted); }
+    .bi-structure-legend>div { min-height:28px; }
+    .bi-chart-empty { min-height:92px!important;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--rp-text-secondary);font-size:11px;text-align:center; }
+    .bi-chart-empty i { color:var(--rp-gold-600);font-size:16px; }
+    .bi-recent-panel { padding:0!important; }
+    .bi-recent-panel table { min-width:700px; }
+    .bi-recent-panel thead { position:sticky;top:0;z-index:1; }
+    .bi-recent-count { border:1px solid var(--rp-border);color:var(--rp-text-secondary);background:var(--rp-surface-muted); }
+    .bi-recent-panel th { color:var(--rp-text-secondary);background:var(--rp-surface-muted); }
+    .bi-recent-panel td { border-color:var(--rp-border);color:var(--rp-text-secondary); }
+    .bi-recent-panel tbody tr:hover { background:var(--rp-surface-hover)!important; }
+    .bi-recent-footer { border-color:var(--rp-border)!important;background:var(--rp-surface-muted)!important; }
+    .bi-matrix-shell { border-color:var(--rp-border)!important;background:var(--rp-surface)!important; }
+    .bi-matrix-header,.bi-matrix-footer { border-color:var(--rp-border)!important;background:var(--rp-surface)!important; }
+    .bi-matrix-toolbar { border-color:var(--rp-border)!important;background:var(--rp-surface-muted)!important; }
+    .bi-matrix-control { border-color:var(--rp-border)!important;color:var(--rp-text)!important;background:var(--rp-surface)!important; }
+    .bi-matrix-body { background:var(--rp-surface-muted)!important; }
+    .bi-matrix-loading { color:var(--rp-text-secondary);background:color-mix(in srgb,var(--rp-surface) 90%,transparent)!important; }
+    .bi-matrix-loading>div { border-color:var(--rp-border)!important;background:var(--rp-surface)!important;box-shadow:none!important; }
+    .bi-matrix-legend { border-color:var(--rp-border)!important;color:var(--rp-text-secondary)!important;background:var(--rp-surface-muted)!important; }
+
+    html[data-admin-theme="dark"] .admin-metis-app :is(.bi-filter-panel,.bi-panel,.manager-kpi-card) { border-color:var(--rp-border)!important;background:var(--rp-surface)!important;box-shadow:none!important; }
+    html[data-admin-theme="dark"] .admin-metis-app .bi-dashboard :is(.text-slate-900,.text-slate-800,.text-slate-700) { color:var(--rp-text)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app .bi-dashboard :is(.text-slate-600,.text-slate-500,.text-slate-400) { color:var(--rp-text-secondary)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal :is(.text-slate-900,.text-slate-800,.text-slate-700) { color:var(--rp-text)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal :is(.text-slate-600,.text-slate-500,.text-slate-400,.text-slate-300) { color:var(--rp-text-secondary)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #matrixBodyRows { background:var(--rp-surface)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-table td { border-color:var(--rp-border)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-row:hover { background:transparent!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-hall-cell { border-color:var(--rp-border)!important;background:var(--rp-surface)!important;box-shadow:3px 0 8px -3px rgba(0,0,0,.45)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-row:hover .matrix-hall-cell { background:var(--rp-surface-hover)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-slot-empty { border-color:var(--rp-border)!important;background:color-mix(in srgb,var(--rp-surface-muted) 78%,var(--rp-surface))!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-slot-empty:hover { background:color-mix(in srgb,var(--metis-badge-success) 8%,var(--rp-surface-muted))!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-slot-empty>div { opacity:.88!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-slot-empty :is(i,span) { color:var(--rp-text-muted)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-slot-booked { border-color:var(--rp-border)!important;background:color-mix(in srgb,var(--rp-gold-500) 7%,var(--rp-surface-muted))!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-booking-card { border-color:color-mix(in srgb,var(--rp-gold-500) 48%,var(--rp-border))!important;background:var(--rp-surface)!important;box-shadow:none!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-slot-locked { border-color:var(--rp-border)!important;background:color-mix(in srgb,#fb7185 9%,var(--rp-surface-muted))!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-lock-icon { border-color:color-mix(in srgb,#fb7185 35%,var(--rp-border))!important;background:color-mix(in srgb,#fb7185 14%,var(--rp-surface))!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-booking-status--booked { border-color:color-mix(in srgb,var(--rp-gold-500) 55%,var(--rp-border))!important;color:#fcd34d!important;background:color-mix(in srgb,var(--rp-gold-500) 14%,var(--rp-surface))!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-booking-status--completed { border-color:color-mix(in srgb,#34d399 45%,var(--rp-border))!important;color:#86efac!important;background:color-mix(in srgb,#34d399 13%,var(--rp-surface))!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .bi-matrix-current-week { border-color:var(--rp-border)!important;color:var(--rp-text)!important;background:var(--rp-surface-muted)!important;box-shadow:none!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .bi-matrix-current-week:hover { background:var(--rp-surface-hover)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal :is(.bi-matrix-close,.bi-matrix-nav) { color:var(--rp-text-secondary)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal :is(.bi-matrix-close,.bi-matrix-nav):hover { color:var(--rp-text)!important;background:var(--rp-surface-hover)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-legend-booked { border-color:color-mix(in srgb,var(--rp-gold-500) 50%,var(--rp-border))!important;color:#fcd34d!important;background:color-mix(in srgb,var(--rp-gold-500) 12%,var(--rp-surface))!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-legend-locked { border-color:color-mix(in srgb,#fb7185 42%,var(--rp-border))!important;color:#fda4af!important;background:color-mix(in srgb,#fb7185 12%,var(--rp-surface))!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .matrix-legend-completed { border-color:color-mix(in srgb,#34d399 42%,var(--rp-border))!important;color:#86efac!important;background:color-mix(in srgb,#34d399 12%,var(--rp-surface))!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .bi-matrix-close-action { border:1px solid var(--rp-border)!important;color:var(--rp-text)!important;background:var(--rp-surface-muted)!important;box-shadow:none!important; }
+    html[data-admin-theme="dark"] .admin-metis-app #hallMatrixModal .bi-matrix-close-action:hover { background:var(--rp-surface-hover)!important; }
+    html[data-admin-theme="dark"] .admin-metis-app .bi-dashboard .manager-status.status-completed { color:#86efac!important;background:color-mix(in srgb,var(--metis-badge-success) 16%,var(--rp-surface))!important; }
+    html[data-admin-theme="dark"] .admin-metis-app .bi-dashboard .manager-status.status-pending { color:#fcd34d!important;background:color-mix(in srgb,var(--metis-badge-warning) 16%,var(--rp-surface))!important; }
+    html[data-admin-theme="dark"] .admin-metis-app .bi-dashboard .manager-status.status-preparing { color:#93c5fd!important;background:color-mix(in srgb,var(--metis-badge-primary) 16%,var(--rp-surface))!important; }
+    @@media(max-width:1100px){.bi-kpi-grid.manager-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @@media(max-width:1024px){.bi-filter-panel{position:static}.bi-chart-canvas{min-height:260px}}
+    @@media(max-width:640px){.bi-page-wrapper{padding:16px!important}.bi-hero h1{font-size:24px}.bi-panel-head{align-items:flex-start!important;flex-direction:column}.bi-chart-body{padding:14px}.bi-chart-canvas{min-height:240px}.bi-filter-panel>div{width:100%}.bi-filter-control{flex:1 1 100%;justify-content:space-between}.bi-export-btn{width:100%;justify-content:center}.bi-kpi-grid.manager-kpi-grid{grid-template-columns:1fr}}
+    @@media(prefers-reduced-motion:reduce){.status-pulse,.bi-filter-panel[aria-busy="true"]::after{animation:none!important}.matrix-cell-booking{transition:none}}
 </style>
 
-<!-- TOAST THÔNG BÁO TỰ ĐỘNG -->
-<div id="biToast" class="fixed top-5 right-5 z-[100000] transform translate-x-full transition-transform duration-300 flex items-center gap-3 bg-white border border-[#E5D5B8] shadow-2xl px-4 py-3 rounded-xl">
-    <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">
-        <i class="fa-solid fa-circle-check"></i>
-    </div>
-    <div>
-        <p class="text-xs font-bold text-slate-900" id="biToastTitle">Thông báo</p>
-        <p class="text-[11px] text-slate-500" id="biToastMsg">Nội dung</p>
-    </div>
-</div>
-
 <!-- CONTAINER CHÍNH -->
-<div class="bi-page-wrapper p-6 lg:p-8 space-y-6 w-full max-w-[1600px] mx-auto">
+<div class="bi-page-wrapper bi-dashboard p-6 lg:p-8 space-y-6 w-full max-w-[1600px] mx-auto">
 
     <!-- ================= 1. HEADER TRANG ================= -->
-    <div class="manager-section-header flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="manager-section-header bi-hero flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                <span>Quản trị hệ thống</span>
-                <i class="fa-solid fa-chevron-right text-[9px] text-slate-400"></i>
-                <span class="text-[#B89758] font-semibold">Báo cáo doanh thu &amp; BI</span>
-            </nav>
-            <h2 class="font-serif text-2xl font-bold text-slate-900 tracking-tight">
-                Phân tích doanh thu &amp; hiệu suất kinh doanh (BI)
-            </h2>
-            <p>Theo dõi doanh thu và hiệu suất kinh doanh theo kỳ báo cáo.</p>
+            <span class="backoffice-hero__eyebrow"><i class="bi bi-bar-chart-line" aria-hidden="true"></i> PHÂN TÍCH KINH DOANH</span>
+            <h1>
+                Thống kê và báo cáo
+            </h1>
+            <p>Tổng hợp doanh thu, cơ cấu nguồn thu và hiệu suất khai thác sảnh theo từng kỳ báo cáo.</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5">
-            <button onclick="exportReportExcel()" class="flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 focus-ring min-h-[40px] shadow-2xs">
-                <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i>
-                <span>Xuất Báo Cáo Excel</span>
+            <button type="button" onclick="exportReportExcel()" class="excel-export-button bi-export-btn focus-ring">
+                <i class="bi bi-file-earmark-excel" aria-hidden="true"></i>
+                <span>Xuất báo cáo Excel</span>
             </button>
         </div>
     </div>
 
     <!-- ================= 2. BỘ LỌC KỲ BÁO CÁO ================= -->
-    <section class="bg-white rounded-xl p-4 border border-slate-200 card-shadow flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-4">
+    <section id="biFilterPanel" aria-label="Bộ lọc kỳ báo cáo" aria-busy="false" class="bi-filter-panel bg-white rounded-xl p-4 border border-slate-200 card-shadow flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-4">
         <div class="flex flex-wrap items-center gap-3">
-            <div class="flex items-center bg-[#FAF8F5] border border-slate-200 rounded-lg px-3 py-1.5 min-h-[40px]">
-                <i class="fa-regular fa-calendar text-[#B89758] mr-2 text-xs"></i>
+            <span class="bi-filter-label"><i class="bi bi-sliders" aria-hidden="true"></i>Bộ lọc báo cáo</span>
+            <div class="backoffice-filter-control bi-filter-control flex items-center border rounded-lg px-3 py-1.5 min-h-[40px]">
+                <i class="bi bi-calendar3 mr-2 text-xs" aria-hidden="true"></i>
                 <label for="selectYear" class="text-xs text-slate-500 mr-1.5 font-medium">Niên độ:</label>
                 <select id="selectYear" onchange="onFilterChange()" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
                     <option value="2026" selected>Năm 2026</option>
@@ -188,8 +266,8 @@
                 </select>
             </div>
 
-            <div class="flex items-center bg-[#FAF8F5] border border-slate-200 rounded-lg px-3 py-1.5 min-h-[40px]">
-                <i class="fa-solid fa-chart-pie text-[#B89758] mr-2 text-xs"></i>
+            <div class="backoffice-filter-control bi-filter-control flex items-center border rounded-lg px-3 py-1.5 min-h-[40px]">
+                <i class="bi bi-pie-chart mr-2 text-xs" aria-hidden="true"></i>
                 <label for="selectQuarter" class="text-xs text-slate-500 mr-1.5 font-medium">Kỳ thống kê:</label>
                 <select id="selectQuarter" onchange="onFilterChange()" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
                     <option value="0" selected>Toàn bộ 4 Quý (12 Tháng)</option>
@@ -200,8 +278,8 @@
                 </select>
             </div>
 
-            <button onclick="resetBiFilter()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 flex items-center gap-1.5 min-h-[40px] transition-colors">
-                <i class="fa-solid fa-arrow-rotate-left text-slate-500 text-[11px]"></i>
+            <button type="button" onclick="resetBiFilter()" class="bi-filter-reset px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <i class="bi bi-arrow-counterclockwise text-[11px]" aria-hidden="true"></i>
                 <span>Mặc định</span>
             </button>
         </div>
@@ -209,106 +287,75 @@
     </section>
 
     <!-- ================= 3. BỘ THẺ KPI ================= -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white rounded-xl p-5 border border-slate-200 card-shadow relative overflow-hidden">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng Doanh Thu</span>
-                <div class="w-8 h-8 rounded-lg bg-[#B89758]/15 border border-[#B89758]/30 flex items-center justify-center text-[#8C6D32]">
-                    <i class="fa-solid fa-coins text-sm"></i>
-                </div>
+    <div class="bi-kpi-grid manager-kpi-grid" aria-label="Chỉ số kinh doanh trong kỳ báo cáo">
+        <article class="manager-kpi-card">
+            <span class="manager-kpi-icon"><i class="bi bi-cash-stack" aria-hidden="true"></i></span>
+            <div>
+                <small>Doanh thu thực thu</small>
+                <strong id="kpiTotalRevenue">@Model.Kpi.TotalRevenue.ToString("N0") <span class="bi-kpi-unit">VNĐ</span></strong>
+                <em>Số tiền đã thanh toán trong kỳ</em>
             </div>
-            <div class="mt-3">
-                <h3 id="kpiTotalRevenue" class="font-serif text-2xl font-bold text-slate-900">
-                    @Model.Kpi.TotalRevenue.ToString("N0") <span class="text-xs font-sans font-normal text-slate-500">VNĐ</span>
-                </h3>
-                <p class="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-                    <i class="fa-solid fa-arrow-trend-up"></i> Tăng trưởng thực tế theo hợp đồng
-                </p>
-            </div>
-            <div class="absolute -right-2 -bottom-2 w-16 h-16 bg-[#B89758]/5 rounded-full pointer-events-none"></div>
-        </div>
+        </article>
 
-        <div class="bg-white rounded-xl p-5 border border-slate-200 card-shadow relative overflow-hidden">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sự Kiện Tiệc Cưới</span>
-                <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
-                    <i class="fa-solid fa-bell-concierge text-sm"></i>
-                </div>
+        <article class="manager-kpi-card">
+            <span class="manager-kpi-icon"><i class="bi bi-file-earmark-check" aria-hidden="true"></i></span>
+            <div>
+                <small>Tiệc đã xác nhận</small>
+                <strong id="kpiConfirmedBookings">@Model.Kpi.ConfirmedBookings <span class="bi-kpi-unit">tiệc</span></strong>
+                <em>Đã chốt, không tính đơn bị hủy</em>
             </div>
-            <div class="mt-3">
-                <h3 id="kpiTotalBookings" class="font-serif text-2xl font-bold text-slate-900">
-                    @Model.Kpi.TotalBookings <span class="text-xs font-sans font-normal text-slate-500">hợp đồng</span>
-                </h3>
-                <p class="text-[11px] text-slate-500 mt-1">
-                    Tổng quy mô: <strong id="kpiTotalTables">@Model.Kpi.TotalTables</strong> bàn tiệc
-                </p>
-            </div>
-            <div class="absolute -right-2 -bottom-2 w-16 h-16 bg-blue-50/50 rounded-full pointer-events-none"></div>
-        </div>
+        </article>
 
-        <div class="bg-white rounded-xl p-5 border border-slate-200 card-shadow relative overflow-hidden">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Doanh Thu / Bàn Tiệc</span>
-                <div class="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
-                    <i class="fa-solid fa-utensils text-sm"></i>
-                </div>
+        <article class="manager-kpi-card">
+            <span class="manager-kpi-icon"><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i></span>
+            <div>
+                <small>Giá trị hợp đồng mới</small>
+                <strong id="kpiNewContractValue">@Model.Kpi.TotalContractValue.ToString("N0") <span class="bi-kpi-unit">VNĐ</span></strong>
+                <em>Tổng giá trị hợp đồng ký trong kỳ</em>
             </div>
-            <div class="mt-3">
-                <h3 id="kpiAvgPerTable" class="font-serif text-2xl font-bold text-[#8C6D32]">
-                    @Model.Kpi.AverageRevenuePerTable.ToString("N0") <span class="text-xs font-sans font-normal text-slate-500">VNĐ</span>
-                </h3>
-                <p class="text-[11px] text-slate-500 mt-1">
-                    Bao gồm Món ăn, Sảnh &amp; Decor
-                </p>
-            </div>
-            <div class="absolute -right-2 -bottom-2 w-16 h-16 bg-amber-50/50 rounded-full pointer-events-none"></div>
-        </div>
+        </article>
 
-        <div class="bg-white rounded-xl p-5 border border-slate-200 card-shadow relative overflow-hidden">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Công Suất Khai Thác</span>
-                <div class="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
-                    <i class="fa-solid fa-chart-line text-sm"></i>
-                </div>
+        <article class="manager-kpi-card">
+            <span class="manager-kpi-icon"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span>
+            <div>
+                <small>Công nợ phải thu</small>
+                <strong id="kpiOutstandingReceivables">@Model.Kpi.OutstandingReceivables.ToString("N0") <span class="bi-kpi-unit">VNĐ</span></strong>
+                <em>Số tiền hợp đồng chưa thanh toán</em>
             </div>
-            <div class="mt-3">
-                <h3 id="kpiOccupancy" class="font-serif text-2xl font-bold text-emerald-600">
-                    @Model.Kpi.AverageOccupancyRate% <span class="text-xs font-sans font-normal text-slate-500">lấp đầy</span>
-                </h3>
-                <p class="text-[11px] text-slate-500 mt-1">
-                    Bình quân 9 đại sảnh (Ca trưa &amp; tối)
-                </p>
-            </div>
-            <div class="absolute -right-2 -bottom-2 w-16 h-16 bg-emerald-50/50 rounded-full pointer-events-none"></div>
-        </div>
+        </article>
     </div>
 
     <!-- ================= 4. KHU VỰC BIỂU ĐỒ TRỰC QUAN ================= -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div class="lg:col-span-8 bg-white rounded-xl p-5 border border-slate-200 card-shadow space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+    <div class="bi-chart-grid grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <section class="bi-panel lg:col-span-12 bg-white rounded-xl border border-slate-200">
+            <header class="bi-panel-head flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
-                    <h3 class="font-serif font-bold text-base text-slate-900">Xu Hướng Doanh Thu Theo Tháng</h3>
-                    <p class="text-[11px] text-slate-500">Số liệu lũy kế từ bảng DatTiec theo các tháng trong niên độ</p>
+                    <h3><i class="bi bi-graph-up-arrow" aria-hidden="true"></i>Xu hướng doanh thu theo tháng</h3>
+                    <p>So sánh biến động doanh thu thực thu giữa các tháng trong kỳ.</p>
                 </div>
-                <span class="flex items-center gap-1.5 text-xs text-slate-600">
+                <span class="bi-chart-unit flex items-center gap-1.5 text-xs text-slate-600">
                     <span class="w-3 h-3 rounded-xs bg-[#B89758]"></span> Doanh thu (Triệu VNĐ)
                 </span>
+            </header>
+            <div class="bi-chart-body">
+                <div class="bi-chart-canvas h-64 sm:h-80 w-full relative">
+                    <canvas id="monthlyRevenueChart" role="img" aria-label="Biểu đồ xu hướng doanh thu thực thu theo tháng"></canvas>
+                </div>
+                <p class="bi-chart-summary" id="monthlyChartSummary"><i class="bi bi-info-circle" aria-hidden="true"></i><span>Đang tổng hợp xu hướng doanh thu...</span></p>
             </div>
-            <div class="h-64 sm:h-80 w-full relative">
-                <canvas id="monthlyRevenueChart"></canvas>
-            </div>
-        </div>
+        </section>
 
-        <div class="lg:col-span-4 bg-white rounded-xl p-5 border border-slate-200 card-shadow space-y-4">
-            <div class="border-b border-slate-100 pb-3">
-                <h3 class="font-serif font-bold text-base text-slate-900">Cơ Cấu Nguồn Thu</h3>
-                <p class="text-[11px] text-slate-500">Tỷ trọng đóng góp giữa Ẩm thực, Sảnh &amp; Decor</p>
+        <section class="hidden" aria-hidden="true">
+            <header class="bi-panel-head">
+                <h3><i class="bi bi-pie-chart" aria-hidden="true"></i>Cơ cấu nguồn thu</h3>
+                <p>Tỷ trọng đóng góp giữa ẩm thực, sảnh và trang trí.</p>
+            </header>
+            <div class="bi-chart-body">
+                <div class="bi-chart-canvas h-56 sm:h-64 relative flex items-center justify-center">
+                    <canvas id="revenueStructureChart" role="img" aria-label="Biểu đồ tỷ trọng cơ cấu nguồn thu"></canvas>
+                </div>
             </div>
-            <div class="h-56 sm:h-64 relative flex items-center justify-center">
-                <canvas id="revenueStructureChart"></canvas>
-            </div>
-            <div id="structureLegend" class="space-y-2 pt-2 border-t border-slate-100 text-xs">
+            <div id="structureLegend" class="bi-structure-legend space-y-2 pt-2 border-t border-slate-100 text-xs">
                 @foreach (var s in Model.RevenueStructures)
                 {
                     <div class="flex items-center justify-between">
@@ -320,34 +367,37 @@
                     </div>
                 }
             </div>
-        </div>
+        </section>
     </div>
 
     <!-- ================= 5. HIỆU SUẤT SẢNH & BẢNG TIỆC GẦN NHẤT ================= -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div class="lg:col-span-6 bg-white rounded-xl p-5 border border-slate-200 card-shadow space-y-4">
-            <div class="border-b border-slate-100 pb-3">
-                <h3 class="font-serif font-bold text-base text-slate-900">Hiệu Suất Khai Thác 9 Đại Sảnh</h3>
-                <p class="text-[11px] text-slate-500">Xếp hạng doanh thu sảnh thực tế (bảng SanhTiec)</p>
-            </div>
-            <div class="h-72 sm:h-84 relative">
-                <canvas id="hallPerformanceChart"></canvas>
-            </div>
-        </div>
-
-        <div class="lg:col-span-6 bg-white rounded-xl border border-slate-200 card-shadow flex flex-col justify-between overflow-hidden">
-            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
-                <div>
-                    <h3 class="font-serif font-bold text-base text-slate-900">Sự Kiện Tiệc Cưới Gần Nhất</h3>
-                    <p class="text-[11px] text-slate-500">Dữ liệu thực tế từ các bản ghi đặt tiệc mới nhất</p>
+    <div class="bi-secondary-grid grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <section class="bi-panel lg:col-span-12 bg-white rounded-xl border border-slate-200">
+            <header class="bi-panel-head">
+                <h3><i class="bi bi-bar-chart" aria-hidden="true"></i>Hiệu suất khai thác sảnh</h3>
+                <p>Xếp hạng doanh thu thực thu theo từng sảnh trong kỳ.</p>
+            </header>
+            <div class="bi-chart-body">
+                <div class="bi-chart-canvas h-80 sm:h-96 relative">
+                    <canvas id="hallPerformanceChart" role="img" aria-label="Biểu đồ xếp hạng doanh thu theo sảnh"></canvas>
                 </div>
-                <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-[11px] font-semibold">@Model.RecentBookings.Count hợp đồng</span>
+                <p class="bi-chart-summary" id="hallChartSummary"><i class="bi bi-trophy" aria-hidden="true"></i><span>Đang xác định sảnh dẫn đầu...</span></p>
             </div>
+        </section>
+
+        <section class="bi-panel bi-recent-panel lg:col-span-12 bg-white rounded-xl border border-slate-200 flex flex-col justify-between overflow-hidden">
+            <header class="bi-panel-head flex items-center justify-between">
+                <div>
+                    <h3><i class="bi bi-calendar2-check" aria-hidden="true"></i>Sự kiện tiệc cưới gần nhất</h3>
+                    <p>Các booking mới nhất trong kỳ báo cáo đang chọn.</p>
+                </div>
+                <span class="bi-recent-count px-2.5 py-1 rounded-md text-[11px] font-semibold"><span id="recentBookingsBadgeCount">@Model.RecentBookings.Count</span> đơn đặt tiệc</span>
+            </header>
 
             <div class="overflow-x-auto custom-scrollbar flex-1">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-[#FAF8F5] text-slate-700 border-b border-slate-200 font-semibold uppercase text-[10.5px]">
+                        <tr class="border-b border-slate-200 font-semibold uppercase text-[10.5px]">
                             <th class="py-3 px-4">Mã Tiệc</th>
                             <th class="py-3 px-4">Khách Hàng / Sảnh</th>
                             <th class="py-3 px-3 text-center">Ngày Đặt</th>
@@ -358,7 +408,7 @@
                     <tbody id="recentBookingsTbody" class="divide-y divide-slate-100">
                         @foreach (var b in Model.RecentBookings)
                         {
-                            <tr class="hover:bg-[#FAF8F5] transition-colors">
+                            <tr class="transition-colors">
                                 <td class="py-3 px-4 font-mono font-bold text-slate-800">@b.BookingCode</td>
                                 <td class="py-3 px-4">
                                     <p class="font-bold text-slate-900">@b.CustomerName</p>
@@ -373,15 +423,15 @@
                                 <td class="py-3 px-3 text-center">
                                     @if (b.Status == "Hoàn tất")
                                     {
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoàn tất</span>
+                                        <span class="manager-status status-completed">Hoàn tất</span>
                                     }
                                     else if (b.Status == "Đã cọc")
                                     {
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-300">Đã cọc</span>
+                                        <span class="manager-status status-pending">Đã cọc</span>
                                     }
                                     else
                                     {
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-50 text-blue-700 border border-blue-200">@b.Status</span>
+                                        <span class="manager-status status-preparing">@b.Status</span>
                                     }
                                 </td>
                             </tr>
@@ -390,13 +440,13 @@
                 </table>
             </div>
 
-            <div class="p-3 bg-[#FAF8F5] border-t border-slate-100 text-center">
+            <div class="bi-recent-footer p-3 border-t text-center">
                 <button type="button" onclick="openHallMatrixModal()" class="text-xs text-[#8C6D32] hover:text-[#B89758] font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer">
-                    <i class="fa-solid fa-table-cells text-[#B89758]"></i>
+                    <i class="bi bi-grid-3x3-gap text-[#B89758]"></i>
                     <span>Xem ma trận lịch sảnh toàn hệ thống &rarr;</span>
                 </button>
             </div>
-        </div>
+        </section>
     </div>
 
 </div>
@@ -404,29 +454,35 @@
 <!-- ================= MODAL MA TRẬN LỊCH SẢNH TOÀN HỆ THỐNG (UI NÂNG CẤP) ================= -->
 <div id="hallMatrixModal"
      class="fixed inset-0 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-2 sm:p-4 md:p-6 transition-all duration-300"
+     role="dialog"
+     aria-modal="true"
+     aria-hidden="true"
+     aria-labelledby="hallMatrixTitle"
+     aria-describedby="hallMatrixDescription"
+     tabindex="-1"
      style="z-index: 99999; font-family: 'Plus Jakarta Sans', sans-serif;">
-    <div class="bg-white w-full h-full sm:h-[95vh] sm:max-w-[1500px] sm:rounded-2xl shadow-2xl flex flex-col border border-[#E5D5B8] overflow-hidden">
+    <div class="bi-matrix-shell bg-white w-full h-full sm:h-[95vh] sm:max-w-[1500px] sm:rounded-xl flex flex-col border overflow-hidden">
 
         <!-- ============ HEADER MODAL ============ -->
-        <header class="shrink-0 bg-gradient-to-r from-[#FAF8F5] via-white to-[#FAF8F5] border-b border-slate-200">
+        <header class="bi-matrix-header shrink-0 border-b">
             <!-- Dòng tiêu đề chính -->
             <div class="px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3 min-w-0">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#B89758] to-[#8C6D32] flex items-center justify-center text-white shadow-md shrink-0">
-                        <i class="fa-solid fa-table-cells-large text-base"></i>
+                        <i class="bi bi-grid-3x3 text-base"></i>
                     </div>
                     <div class="min-w-0">
-                        <h3 class="font-serif font-bold text-base sm:text-lg text-slate-900 tracking-tight truncate">
+                        <h3 id="hallMatrixTitle" class="font-serif font-bold text-base sm:text-lg text-slate-900 tracking-tight truncate">
                             Ma Trận Điều Phối Lịch Sảnh Toàn Hệ Thống
                         </h3>
-                        <p class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                        <p id="hallMatrixDescription" class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
                             <span class="inline-flex items-center gap-1">
-                                <i class="fa-solid fa-building-columns text-[#B89758] text-[10px]"></i>
+                                <i class="bi bi-building text-[#B89758] text-[10px]"></i>
                                 9 Đại Sảnh Hoàng Gia
                             </span>
                             <span class="text-slate-300">•</span>
                             <span class="inline-flex items-center gap-1">
-                                <i class="fa-regular fa-clock text-[#B89758] text-[10px]"></i>
+                                <i class="bi bi-clock text-[#B89758] text-[10px]"></i>
                                 Trưa 10:30–14:00 | Tối 17:30–21:30
                             </span>
                         </p>
@@ -434,37 +490,41 @@
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" onclick="loadMatrixDefaultWeek()"
-                            class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-[#FAF8F5] text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 shadow-2xs transition-colors">
-                        <i class="fa-solid fa-wand-magic-sparkles text-[#B89758] text-[11px]"></i>
-                        <span>Mùa cưới 2026</span>
+                    <button type="button" onclick="loadMatrixCurrentWeek()"
+                            class="bi-matrix-current-week hidden sm:inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-[#FAF8F5] text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 shadow-2xs transition-colors cursor-pointer"
+                            title="Quay về tuần hiện tại">
+                        <i class="bi bi-calendar2-check text-[#B89758] text-[11px]"></i>
+                        <span>Tuần hiện tại</span>
                     </button>
                     <button type="button" onclick="closeHallMatrixModal()"
-                            class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-200/70 rounded-lg transition-colors cursor-pointer"
+                            class="bi-matrix-close w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-200/70 rounded-lg transition-colors cursor-pointer"
+                            aria-label="Đóng ma trận lịch sảnh"
                             title="Đóng cửa sổ">
-                        <i class="fa-solid fa-xmark text-lg"></i>
+                        <i class="bi bi-x-lg text-lg"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Thanh điều hướng tuần -->
-            <div class="px-4 sm:px-6 py-3 border-t border-slate-200/70 bg-white/60 flex items-center justify-between gap-3 flex-wrap">
+            <div class="bi-matrix-toolbar px-4 sm:px-6 py-3 border-t flex items-center justify-between gap-3 flex-wrap">
                 <div class="flex items-center gap-2">
                     <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tuần làm việc:</span>
-                    <div class="flex items-center bg-white border border-[#E5D5B8] rounded-lg shadow-2xs overflow-hidden">
+                    <div class="bi-matrix-control flex items-center border rounded-lg overflow-hidden">
                         <button type="button" onclick="changeMatrixWeek(-7)"
-                                class="w-9 h-9 flex items-center justify-center text-slate-600 hover:text-[#8C6D32] hover:bg-[#FAF8F5] transition-colors border-r border-slate-200"
+                                class="bi-matrix-nav w-9 h-9 flex items-center justify-center text-slate-600 hover:text-[#8C6D32] hover:bg-[#FAF8F5] transition-colors border-r border-slate-200"
+                            aria-label="Xem tuần trước"
                                 title="Tuần trước">
-                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                            <i class="bi bi-chevron-left text-xs"></i>
                         </button>
                         <span id="matrixWeekLabel"
                               class="px-4 text-xs font-bold text-slate-800 font-mono tracking-wide text-center min-w-[180px]">
                             Đang đồng bộ...
                         </span>
                         <button type="button" onclick="changeMatrixWeek(7)"
-                                class="w-9 h-9 flex items-center justify-center text-slate-600 hover:text-[#8C6D32] hover:bg-[#FAF8F5] transition-colors border-l border-slate-200"
+                                class="bi-matrix-nav w-9 h-9 flex items-center justify-center text-slate-600 hover:text-[#8C6D32] hover:bg-[#FAF8F5] transition-colors border-l border-slate-200"
+                            aria-label="Xem tuần sau"
                                 title="Tuần sau">
-                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                            <i class="bi bi-chevron-right text-xs"></i>
                         </button>
                     </div>
                 </div>
@@ -473,11 +533,13 @@
         </header>
 
         <!-- ============ BODY: BẢNG MA TRẬN ============ -->
-        <div class="flex-1 overflow-auto matrix-scroll-container relative bg-gradient-to-b from-slate-50 to-slate-100/50">
+        <div class="bi-matrix-body flex-1 overflow-auto matrix-scroll-container relative">
 
             <!-- Loading Overlay -->
             <div id="matrixLoading"
-                 class="absolute inset-0 bg-white/85 backdrop-blur-sm flex items-center justify-center z-30 transition-opacity">
+                 class="bi-matrix-loading absolute inset-0 backdrop-blur-sm flex items-center justify-center z-30 transition-opacity"
+                 role="status"
+                 aria-live="polite">
                 <div class="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white shadow-xl border border-[#E5D5B8]">
                     <div class="relative">
                         <div class="w-12 h-12 rounded-full border-4 border-[#FAF8F5]"></div>
@@ -489,12 +551,13 @@
             </div>
 
             <table class="matrix-table w-full text-xs">
+                <caption class="sr-only">Lịch sử dụng các đại sảnh theo ngày và ca trong tuần được chọn</caption>
                 <thead class="sticky top-0 z-20">
                     <tr id="matrixHeaderDays" class="bg-[#1E293B] text-white text-center shadow-md">
                         <th rowspan="2"
                             class="py-3 px-3 font-bold border border-slate-700 sticky left-0 z-30 bg-[#1E293B] min-w-[140px] sm:min-w-[180px] text-left">
                             <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-building-columns text-[#B89758] text-xs"></i>
+                                <i class="bi bi-building text-[#B89758] text-xs"></i>
                                 <span class="text-[11px] tracking-wide uppercase">Đại Sảnh / Quy Mô</span>
                             </div>
                         </th>
@@ -508,32 +571,32 @@
         </div>
 
         <!-- ============ FOOTER: CHÚ THÍCH ============ -->
-        <footer class="shrink-0 bg-gradient-to-r from-[#FAF8F5] via-white to-[#FAF8F5] border-t border-slate-200 px-4 sm:px-6 py-4">
+        <footer class="bi-matrix-footer shrink-0 border-t px-4 sm:px-6 py-4">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <!-- Legend chips -->
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="text-[10.5px] font-bold text-slate-700 uppercase tracking-wider mr-1 flex items-center gap-1.5">
-                        <i class="fa-solid fa-circle-info text-[#B89758] text-[11px]"></i>
+                        <i class="bi bi-info-circle text-[#B89758] text-[11px]"></i>
                         Chú thích trạng thái:
                     </span>
 
-                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs text-slate-600 font-medium text-[11px]">
+                    <div class="bi-matrix-legend inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border font-medium text-[11px]">
                         <span class="w-2.5 h-2.5 rounded-full bg-slate-200 border border-slate-300"></span>
                         <span>Trống</span>
                     </div>
 
-                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#B89758]/10 border border-[#B89758]/40 shadow-2xs text-[#8C6D32] font-semibold text-[11px]">
-                        <i class="fa-solid fa-calendar-check text-[#B89758] text-[10px]"></i>
+                    <div class="matrix-legend-booked inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#B89758]/10 border border-[#B89758]/40 shadow-2xs text-[#8C6D32] font-semibold text-[11px]">
+                        <i class="bi bi-calendar2-check text-[#B89758] text-[10px]"></i>
                         <span>Đã đặt tiệc</span>
                     </div>
 
-                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 shadow-2xs text-rose-700 font-semibold text-[11px]">
-                        <i class="fa-solid fa-lock text-rose-500 text-[10px]"></i>
+                    <div class="matrix-legend-locked inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 shadow-2xs text-rose-700 font-semibold text-[11px]">
+                        <i class="bi bi-lock text-rose-500 text-[10px]"></i>
                         <span>Tạm khóa</span>
                     </div>
 
-                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-300 shadow-2xs text-emerald-800 font-semibold text-[11px]">
-                        <i class="fa-solid fa-circle-check text-emerald-600 text-[10px]"></i>
+                    <div class="matrix-legend-completed inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-300 shadow-2xs text-emerald-800 font-semibold text-[11px]">
+                        <i class="bi bi-check-circle text-emerald-600 text-[10px]"></i>
                         <span>Hoàn tất</span>
                     </div>
                 </div>
@@ -542,8 +605,8 @@
                 <div class="flex items-center justify-end">
                     <button type="button"
                             onclick="closeHallMatrixModal()"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#1E293B] to-[#0F172A] hover:from-[#0F172A] hover:to-black active:scale-95 text-white rounded-lg text-xs font-semibold shadow-md transition-all cursor-pointer">
-                        <i class="fa-solid fa-xmark text-slate-400 text-xs"></i>
+                            class="bi-matrix-close-action w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#1E293B] to-[#0F172A] hover:from-[#0F172A] hover:to-black active:scale-95 text-white rounded-lg text-xs font-semibold shadow-md transition-all cursor-pointer">
+                        <i class="bi bi-x-lg text-slate-400 text-xs"></i>
                         <span>Đóng cửa sổ</span>
                     </button>
                 </div>
@@ -562,20 +625,78 @@
         let structureChart = null;
         let hallChart = null;
 
+        const getReportChartTheme = () => {
+            const styles = getComputedStyle(document.body);
+            const read = name => styles.getPropertyValue(name).trim();
+            const dark = document.documentElement.dataset.adminTheme === 'dark';
+            const categorical = [
+                read('--chart-role-1'),
+                read('--chart-role-2'),
+                read('--chart-role-3'),
+                read('--chart-role-4'),
+                read('--metis-badge-primary'),
+                read('--metis-badge-purple')
+            ];
+            return {
+                dark,
+                text: read('--rp-text'),
+                secondary: read('--rp-text-secondary'),
+                muted: read('--rp-text-muted'),
+                panel: read('--rp-surface'),
+                grid: read('--rp-border'),
+                accent: categorical[0],
+                palette: categorical,
+                tooltip: read('--chart-tooltip-bg'),
+                tooltipText: read('--chart-tooltip-text')
+            };
+        };
+
+        const doughnutCenterTextPlugin = {
+            id: 'doughnutCenterText',
+            afterDraw(chart) {
+                const { ctx, chartArea } = chart;
+                if (!chartArea) return;
+                const total = chart.data.datasets[0].data.reduce((sum, value) => sum + Number(value || 0), 0);
+                const x = (chartArea.left + chartArea.right) / 2;
+                const y = (chartArea.top + chartArea.bottom) / 2;
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const theme = getReportChartTheme();
+                ctx.fillStyle = theme.text;
+                ctx.font = '800 24px "Inter"';
+                ctx.fillText(`${Math.round(total)}%`, x, y - 5);
+                ctx.fillStyle = theme.secondary;
+                ctx.font = '600 9px "Inter"';
+                ctx.fillText('TỔNG TỶ TRỌNG', x, y + 17);
+                ctx.restore();
+            }
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             initCharts(reportData);
         });
 
+        window.addEventListener('admin-theme-change', () => initCharts(reportData));
+
         function showBiToast(title, msg) {
-            const toast = document.getElementById('biToast');
-            document.getElementById('biToastTitle').innerText = title;
-            document.getElementById('biToastMsg').innerText = msg;
-            toast.classList.remove('translate-x-full');
-            setTimeout(() => toast.classList.add('translate-x-full'), 3000);
+            const normalizedTitle = String(title || 'Thông báo').toLocaleLowerCase('vi-VN');
+            const type = normalizedTitle.includes('lỗi')
+                ? 'error'
+                : normalizedTitle.includes('cảnh báo')
+                    ? 'warning'
+                    : normalizedTitle.includes('thành công')
+                        ? 'success'
+                        : 'info';
+            window.RiversideToast?.show(type, msg, { title });
         }
 
         function initCharts(data) {
             if (!data) return;
+            const theme = getReportChartTheme();
+            Chart.defaults.font.family = '"Inter", sans-serif';
+            Chart.defaults.color = theme.secondary;
+            Chart.defaults.animation.duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 550;
 
             // 1. Biểu đồ cột: Doanh thu theo tháng
             const monthlyRevenues = data.monthlyRevenues || data.MonthlyRevenues || [];
@@ -583,18 +704,28 @@
             const revenues = monthlyRevenues.map(m => (m.totalRevenue ?? m.TotalRevenue ?? 0) / 1000000);
 
             const ctxMonthly = document.getElementById('monthlyRevenueChart').getContext('2d');
+            const monthlyGradient = ctxMonthly.createLinearGradient(0, 0, 0, 320);
+            monthlyGradient.addColorStop(0, theme.dark ? 'rgba(59, 130, 246, .24)' : 'rgba(37, 99, 235, .22)');
+            monthlyGradient.addColorStop(1, theme.dark ? 'rgba(59, 130, 246, .015)' : 'rgba(37, 99, 235, .015)');
             if (monthlyChart) monthlyChart.destroy();
             monthlyChart = new Chart(ctxMonthly, {
-                type: 'bar',
+                type: 'line',
                 data: {
                     labels: months,
                     datasets: [{
                         label: 'Doanh thu (Triệu VNĐ)',
                         data: revenues,
-                        backgroundColor: '#B89758',
-                        hoverBackgroundColor: '#8C6D32',
-                        borderRadius: 6,
-                        maxBarThickness: 40
+                        borderColor: theme.accent,
+                        backgroundColor: monthlyGradient,
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: .38,
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: theme.panel,
+                        pointBorderColor: theme.accent,
+                        pointBorderWidth: 2,
+                        pointHitRadius: 12
                     }]
                 },
                 options: {
@@ -603,48 +734,81 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            displayColors: true,
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            boxHeight: 8,
+                            backgroundColor: theme.tooltip,
+                            titleColor: theme.tooltipText,
+                            bodyColor: theme.tooltipText,
+                            borderColor: theme.grid,
+                            borderWidth: 1,
+                            titleFont: { weight: '700' },
+                            padding: 11,
+                            cornerRadius: 9,
                             callbacks: {
-                                label: (ctx) => `${ctx.parsed.y.toLocaleString('vi-VN')} Triệu VNĐ`
+                                label: (ctx) => `Doanh thu: ${ctx.parsed.y.toLocaleString('vi-VN')} triệu VNĐ`
                             }
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: { callback: (v) => v + ' tr' },
-                            grid: { color: '#F1F5F9' }
+                            border: { display: false },
+                            ticks: { color: theme.secondary, padding: 9, font: { size: 10 }, callback: (v) => v.toLocaleString('vi-VN') + ' tr' },
+                            grid: { color: theme.grid, drawTicks: false, borderDash: [4, 5] }
                         },
-                        x: { grid: { display: false } }
+                        x: { border: { display: false }, ticks: { color: theme.secondary, padding: 8, font: { size: 10, weight: '600' } }, grid: { display: false } }
                     }
                 }
             });
+            const monthlySummary = document.querySelector('#monthlyChartSummary span');
+            if (monthlySummary) {
+                if (!revenues.length || revenues.every(value => value === 0)) monthlySummary.textContent = 'Chưa có doanh thu được ghi nhận trong kỳ báo cáo này.';
+                else {
+                    const peak = Math.max(...revenues); const peakIndex = revenues.indexOf(peak);
+                    monthlySummary.textContent = `${months[peakIndex]} có doanh thu cao nhất: ${peak.toLocaleString('vi-VN')} triệu VNĐ.`;
+                }
+            }
 
             // 2. Biểu đồ tròn: Cơ cấu doanh thu
             const revenueStructures = data.revenueStructures || data.RevenueStructures || [];
             const labelsStruct = revenueStructures.map(s => s.categoryName || s.CategoryName);
             const valuesStruct = revenueStructures.map(s => s.percentage ?? s.Percentage ?? 0);
-            const colorsStruct = revenueStructures.map(s => s.colorHex || s.ColorHex || '#B89758');
+            const colorsStruct = revenueStructures.map((_, index) => theme.palette[index % theme.palette.length]);
 
-            const ctxStructure = document.getElementById('revenueStructureChart').getContext('2d');
-            if (structureChart) structureChart.destroy();
-            structureChart = new Chart(ctxStructure, {
+            const structureCanvas = document.getElementById('revenueStructureChart');
+            if (structureCanvas && structureCanvas.offsetParent !== null) {
+                const ctxStructure = structureCanvas.getContext('2d');
+                if (structureChart) structureChart.destroy();
+                structureChart = new Chart(ctxStructure, {
                 type: 'doughnut',
                 data: {
                     labels: labelsStruct,
                     datasets: [{
                         data: valuesStruct,
                         backgroundColor: colorsStruct,
-                        borderWidth: 2,
-                        borderColor: '#FFFFFF'
+                        borderWidth: 3,
+                        borderColor: theme.panel,
+                        hoverOffset: 6,
+                        spacing: 2
                     }]
                 },
+                plugins: [doughnutCenterTextPlugin],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: '70%',
+                    cutout: '66%',
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            backgroundColor: theme.tooltip,
+                            titleColor: theme.tooltipText,
+                            bodyColor: theme.tooltipText,
+                            borderColor: theme.grid,
+                            borderWidth: 1,
+                            padding: 11,
+                            cornerRadius: 9,
                             callbacks: {
                                 label: (ctx) => ` ${ctx.label}: ${ctx.parsed}%`
                             }
@@ -652,13 +816,20 @@
                     }
                 }
             });
+                updateStructureLegend(revenueStructures);
+            } else if (structureChart) {
+                structureChart.destroy();
+                structureChart = null;
+            }
 
-            // 3. Biểu đồ ngang: Hiệu suất 9 đại sảnh
-            const hallPerformances = data.hallPerformances || data.HallPerformances || [];
+            // 2. Biểu đồ cột đứng: Hiệu suất 9 đại sảnh
+            const hallPerformances = [...(data.hallPerformances || data.HallPerformances || [])].sort((a, b) =>
+                Number(b.totalRevenue ?? b.TotalRevenue ?? 0) - Number(a.totalRevenue ?? a.TotalRevenue ?? 0));
             const hallNames = hallPerformances.map(h => h.hallName || h.HallName);
             const hallRevs = hallPerformances.map(h => (h.totalRevenue ?? h.TotalRevenue ?? 0) / 1000000);
 
             const ctxHall = document.getElementById('hallPerformanceChart').getContext('2d');
+            const hallColors = hallRevs.map(() => theme.accent);
             if (hallChart) hallChart.destroy();
             hallChart = new Chart(ctxHall, {
                 type: 'bar',
@@ -667,38 +838,54 @@
                     datasets: [{
                         label: 'Doanh thu (Triệu VNĐ)',
                         data: hallRevs,
-                        backgroundColor: '#1E293B',
-                        hoverBackgroundColor: '#B89758',
-                        borderRadius: 4
+                        backgroundColor: hallColors,
+                        hoverBackgroundColor: hallColors,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        maxBarThickness: 56
                     }]
                 },
                 options: {
-                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            displayColors: false,
+                            backgroundColor: theme.tooltip,
+                            titleColor: theme.tooltipText,
+                            bodyColor: theme.tooltipText,
+                            borderColor: theme.grid,
+                            borderWidth: 1,
+                            padding: 11,
+                            cornerRadius: 9,
                             callbacks: {
-                                label: (ctx) => `${ctx.parsed.x.toLocaleString('vi-VN')} Triệu VNĐ`
+                                label: (ctx) => `Doanh thu: ${ctx.parsed.y.toLocaleString('vi-VN')} triệu VNĐ`
                             }
                         }
                     },
                     scales: {
-                        x: {
+                        y: {
                             beginAtZero: true,
-                            ticks: { callback: (v) => v + ' tr' },
-                            grid: { color: '#F1F5F9' }
+                            border: { display: false },
+                            ticks: { color: theme.secondary, padding: 8, font: { size: 9 }, callback: (v) => v.toLocaleString('vi-VN') + ' tr' },
+                            grid: { color: theme.grid, drawTicks: false, borderDash: [4, 5] }
                         },
-                        y: { grid: { display: false } }
+                        x: { border: { display: false }, ticks: { color: theme.text, maxRotation: 0, minRotation: 0, autoSkip: false, font: { size: 10, weight: '700' } }, grid: { display: false } }
                     }
                 }
             });
+            const hallSummary = document.querySelector('#hallChartSummary span');
+            if (hallSummary) hallSummary.textContent = hallNames.length
+                ? `${hallNames[0]} đang dẫn đầu với ${hallRevs[0].toLocaleString('vi-VN')} triệu VNĐ doanh thu.`
+                : 'Chưa có dữ liệu doanh thu sảnh trong kỳ báo cáo này.';
         }
 
         async function onFilterChange() {
             const year = document.getElementById('selectYear').value;
             const quarter = document.getElementById('selectQuarter').value;
+            const filterPanel = document.getElementById('biFilterPanel');
+            filterPanel?.setAttribute('aria-busy', 'true');
 
             try {
                 const res = await fetch(`/AdminReport/GetReportData?year=${year}&quarter=${quarter}`);
@@ -726,6 +913,8 @@
             } catch (e) {
                 console.error("Lỗi khi lọc báo cáo BI:", e);
                 showBiToast('Lỗi', 'Không thể kết nối máy chủ để cập nhật dữ liệu.');
+            } finally {
+                filterPanel?.setAttribute('aria-busy', 'false');
             }
         }
 
@@ -738,22 +927,22 @@
         function updateKpiDom(kpi) {
             if (!kpi) return;
             const totalRevenue = kpi.totalRevenue ?? kpi.TotalRevenue ?? 0;
-            const totalBookings = kpi.totalBookings ?? kpi.TotalBookings ?? 0;
-            const totalTables = kpi.totalTables ?? kpi.TotalTables ?? 0;
-            const avgPerTable = kpi.averageRevenuePerTable ?? kpi.AverageRevenuePerTable ?? 0;
-            const occupancy = kpi.averageOccupancyRate ?? kpi.AverageOccupancyRate ?? 0;
+            const confirmedBookings = kpi.confirmedBookings ?? kpi.ConfirmedBookings ?? 0;
+            const newContractValue = kpi.totalContractValue ?? kpi.TotalContractValue ?? 0;
+            const outstandingReceivables = kpi.outstandingReceivables ?? kpi.OutstandingReceivables ?? 0;
 
-            document.getElementById('kpiTotalRevenue').innerHTML = `${Number(totalRevenue).toLocaleString('vi-VN')} <span class="text-xs font-sans font-normal text-slate-500">VNĐ</span>`;
-            document.getElementById('kpiTotalBookings').innerHTML = `${totalBookings} <span class="text-xs font-sans font-normal text-slate-500">hợp đồng</span>`;
-            document.getElementById('kpiTotalTables').innerText = totalTables;
-            document.getElementById('kpiAvgPerTable').innerHTML = `${Number(avgPerTable).toLocaleString('vi-VN')} <span class="text-xs font-sans font-normal text-slate-500">VNĐ</span>`;
-            document.getElementById('kpiOccupancy').innerHTML = `${occupancy}% <span class="text-xs font-sans font-normal text-slate-500">lấp đầy</span>`;
+            document.getElementById('kpiTotalRevenue').innerHTML = `${Number(totalRevenue).toLocaleString('vi-VN')} <span class="bi-kpi-unit">VNĐ</span>`;
+            document.getElementById('kpiConfirmedBookings').innerHTML = `${confirmedBookings} <span class="bi-kpi-unit">tiệc</span>`;
+            document.getElementById('kpiNewContractValue').innerHTML = `${Number(newContractValue).toLocaleString('vi-VN')} <span class="bi-kpi-unit">VNĐ</span>`;
+            document.getElementById('kpiOutstandingReceivables').innerHTML = `${Number(outstandingReceivables).toLocaleString('vi-VN')} <span class="bi-kpi-unit">VNĐ</span>`;
         }
 
         function renderRecentTable(bookings) {
             const tbody = document.getElementById('recentBookingsTbody');
             tbody.innerHTML = '';
             const list = bookings || [];
+            const badgeCount = document.getElementById('recentBookingsBadgeCount');
+            if (badgeCount) badgeCount.innerText = list.length;
 
             if (list.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 italic">Không có sự kiện tiệc trong kỳ này.</td></tr>`;
@@ -770,15 +959,15 @@
                 const eventDateRaw = b.eventDate || b.EventDate;
                 const dateFormatted = eventDateRaw ? new Date(eventDateRaw).toLocaleDateString('vi-VN') : '---';
 
-                let badge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-50 text-blue-700 border border-blue-200">${status}</span>`;
+                let badge = `<span class="manager-status status-preparing">${status}</span>`;
                 if (status === 'Hoàn tất') {
-                    badge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoàn tất</span>`;
+                    badge = `<span class="manager-status status-completed">Hoàn tất</span>`;
                 } else if (status === 'Đã cọc') {
-                    badge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-300">Đã cọc</span>`;
+                    badge = `<span class="manager-status status-pending">Đã cọc</span>`;
                 }
 
                 tbody.innerHTML += `
-                    <tr class="hover:bg-[#FAF8F5] transition-colors">
+                    <tr class="transition-colors">
                         <td class="py-3 px-4 font-mono font-bold text-slate-800">${code}</td>
                         <td class="py-3 px-4">
                             <p class="font-bold text-slate-900">${custName}</p>
@@ -801,10 +990,16 @@
             if (!legendContainer) return;
             legendContainer.innerHTML = '';
             const list = structures || [];
+            const theme = getReportChartTheme();
 
-            list.forEach(s => {
+            if (list.length === 0) {
+                legendContainer.innerHTML = '<div class="bi-chart-empty"><i class="bi bi-pie-chart" aria-hidden="true"></i><span>Chưa có dữ liệu cơ cấu nguồn thu trong kỳ này.</span></div>';
+                return;
+            }
+
+            list.forEach((s, index) => {
                 const name = s.categoryName || s.CategoryName || '';
-                const color = s.colorHex || s.ColorHex || '#B89758';
+                const color = theme.palette[index % theme.palette.length];
                 const pct = s.percentage ?? s.Percentage ?? 0;
 
                 legendContainer.innerHTML += `
@@ -879,7 +1074,7 @@
                 };
 
                 // =====================================================
-                // SHEET 1: DASHBOARD VỚI KPI + 3 BIỂU ĐỒ ẢNH
+                // SHEET 1: DASHBOARD VỚI KPI + 2 BIỂU ĐỒ ẢNH
                 // =====================================================
                 const wsDash = wb.addWorksheet('📊 Dashboard', {
                     properties: { tabColor: { argb: COLOR_GOLD } },
@@ -910,11 +1105,10 @@
 
                 const kpi = reportData.kpi || reportData.Kpi;
                 const kpiRows = [
-                    ['Tổng doanh thu', (kpi.totalRevenue || kpi.TotalRevenue || 0), 'VNĐ'],
-                    ['Tổng số hợp đồng', (kpi.totalBookings || kpi.TotalBookings || 0), 'hợp đồng'],
-                    ['Tổng số bàn tiệc', (kpi.totalTables || kpi.TotalTables || 0), 'bàn'],
-                    ['Doanh thu / Bàn', (kpi.averageRevenuePerTable || kpi.AverageRevenuePerTable || 0), 'VNĐ'],
-                    ['Công suất lấp đầy', (kpi.averageOccupancyRate || kpi.AverageOccupancyRate || 0), '%']
+                    ['Doanh thu thực thu', (kpi.totalRevenue || kpi.TotalRevenue || 0), 'VNĐ'],
+                    ['Tiệc đã xác nhận', (kpi.confirmedBookings || kpi.ConfirmedBookings || 0), 'tiệc'],
+                    ['Giá trị hợp đồng mới', (kpi.totalContractValue || kpi.TotalContractValue || 0), 'VNĐ'],
+                    ['Công nợ phải thu', (kpi.outstandingReceivables || kpi.OutstandingReceivables || 0), 'VNĐ']
                 ];
 
                 kpiRows.forEach((row, idx) => {
@@ -939,7 +1133,7 @@
                     wsDash.getRow(r).height = 24;
                 });
 
-                let currentRow = 12;
+                let currentRow = 5 + kpiRows.length + 2;
 
                 // CHART 1: Monthly Revenue
                 if (monthlyChart) {
@@ -956,31 +1150,21 @@
                     currentRow += 18;
                 }
 
-                // CHART 2 + 3: Structure & Hall Performance (Side by side)
-                if (structureChart || hallChart) {
-                    applySectionTitle(wsDash, `A${currentRow}:E${currentRow}`, '📊  CƠ CẤU NGUỒN THU & HIỆU SUẤT ĐẠI SẢNH');
+                // CHART 2: Hall Performance
+                if (hallChart) {
+                    applySectionTitle(wsDash, `A${currentRow}:E${currentRow}`, '📊  HIỆU SUẤT KHAI THÁC SẢNH');
                     currentRow++;
-
-                    if (structureChart) {
-                        const imgBase64 = structureChart.toBase64Image('image/png', 1);
-                        const imgId = wb.addImage({ base64: imgBase64, extension: 'png' });
-                        wsDash.addImage(imgId, {
-                            tl: { col: 0.1, row: currentRow - 1 },
-                            ext: { width: 380, height: 320 },
-                            editAs: 'oneCell'
-                        });
-                    }
 
                     if (hallChart) {
                         const imgBase64 = hallChart.toBase64Image('image/png', 1);
                         const imgId = wb.addImage({ base64: imgBase64, extension: 'png' });
                         wsDash.addImage(imgId, {
-                            tl: { col: 2.7, row: currentRow - 1 },
-                            ext: { width: 420, height: 320 },
+                            tl: { col: 0.1, row: currentRow - 1 },
+                            ext: { width: 720, height: 340 },
                             editAs: 'oneCell'
                         });
                     }
-                    currentRow += 17;
+                    currentRow += 18;
                 }
 
                 // Footer
@@ -1185,10 +1369,21 @@
         }
 
         // ================= XỬ LÝ MA TRẬN LỊCH SẢNH (THOÁT STACKING CONTEXT & CHUẨN HÓA DỮ LIỆU) =================
-        let currentMatrixStartDate = new Date(2026, 0, 12); // Thứ Hai, 12/01/2026
+        function getMondayOfWeek(d) {
+            const date = new Date(d);
+            const day = date.getDay();
+            const diff = (day === 0 ? -6 : 1) - day;
+            date.setDate(date.getDate() + diff);
+            date.setHours(0, 0, 0, 0);
+            return date;
+        }
+
+        let currentMatrixStartDate = getMondayOfWeek(new Date());
+        let matrixTriggerElement = null;
 
         function openHallMatrixModal() {
             const modal = document.getElementById('hallMatrixModal');
+            matrixTriggerElement = document.activeElement;
 
             // ĐƯA MODAL RA TRỰC TIẾP THẺ BODY ĐỂ THOÁT KHỎI BỊ SIDEBAR CHE KHUẤT
             if (modal.parentElement !== document.body) {
@@ -1197,7 +1392,9 @@
 
             modal.classList.remove('hidden');
             modal.classList.add('flex'); // Đảm bảo flexbox hoạt động
+            modal.setAttribute('aria-hidden', 'false');
             document.body.style.overflow = 'hidden'; // Khóa cuộn trang nền khi mở modal
+            requestAnimationFrame(() => modal.querySelector('[aria-label="Đóng ma trận lịch sảnh"]')?.focus());
             loadHallMatrixData(currentMatrixStartDate);
         }
 
@@ -1205,16 +1402,25 @@
             const modal = document.getElementById('hallMatrixModal');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+            modal.setAttribute('aria-hidden', 'true');
             document.body.style.overflow = ''; // Trả lại thanh cuộn cho trang
+            matrixTriggerElement?.focus();
         }
+
+        document.addEventListener('keydown', (event) => {
+            const modal = document.getElementById('hallMatrixModal');
+            if (event.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+                closeHallMatrixModal();
+            }
+        });
 
         function changeMatrixWeek(offsetDays) {
             currentMatrixStartDate.setDate(currentMatrixStartDate.getDate() + offsetDays);
             loadHallMatrixData(currentMatrixStartDate);
         }
 
-        function loadMatrixDefaultWeek() {
-            currentMatrixStartDate = new Date(2026, 0, 12);
+        function loadMatrixCurrentWeek() {
+            currentMatrixStartDate = getMondayOfWeek(new Date());
             loadHallMatrixData(currentMatrixStartDate);
         }
 
@@ -1267,7 +1473,7 @@
             headerDays.innerHTML = `
                 <th rowspan="2" class="py-3 px-3 font-bold border border-slate-700 sticky left-0 z-30 bg-[#1E293B] min-w-[140px] sm:min-w-[180px] text-left">
                     <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-building-columns text-[#B89758] text-xs"></i>
+                        <i class="bi bi-building text-[#B89758] text-xs"></i>
                         <span class="text-[11px] tracking-wide uppercase">Đại Sảnh / Quy Mô</span>
                     </div>
                 </th>
@@ -1293,10 +1499,10 @@
 
                 headerShifts.innerHTML += `
                     <th class="py-2 px-2 border border-slate-700 min-w-[90px] sm:min-w-[100px] text-[10.5px] tracking-wider">
-                        <i class="fa-regular fa-sun text-amber-400 mr-1 text-[10px]"></i>Trưa
+                        <i class="bi bi-sun text-amber-400 mr-1 text-[10px]"></i>Trưa
                     </th>
                     <th class="py-2 px-2 border border-slate-700 min-w-[90px] sm:min-w-[100px] text-[10.5px] tracking-wider">
-                        <i class="fa-regular fa-moon text-indigo-300 mr-1 text-[10px]"></i>Tối
+                        <i class="bi bi-moon text-indigo-300 mr-1 text-[10px]"></i>Tối
                     </th>
                 `;
             });
@@ -1317,11 +1523,11 @@
                 const slots = hall.slots || hall.Slots || [];
 
                 let rowHtml = `
-                    <tr class="hover:bg-[#FAF8F5]/70 transition-colors group">
-                        <td class="py-3 px-3 sm:px-4 font-semibold text-slate-900 border border-slate-200 sticky left-0 z-10 bg-white shadow-[3px_0_8px_-3px_rgba(0,0,0,0.08)] group-hover:bg-[#FAF8F5] transition-colors">
+                    <tr class="matrix-row hover:bg-[#FAF8F5]/70 transition-colors group">
+                        <td class="matrix-hall-cell py-3 px-3 sm:px-4 font-semibold text-slate-900 border border-slate-200 sticky left-0 z-10 bg-white shadow-[3px_0_8px_-3px_rgba(0,0,0,0.08)] group-hover:bg-[#FAF8F5] transition-colors">
                             <div class="flex items-center gap-2">
                                 <div class="w-7 h-7 rounded-md bg-gradient-to-br from-[#B89758]/20 to-[#8C6D32]/10 border border-[#B89758]/30 flex items-center justify-center shrink-0">
-                                    <i class="fa-solid fa-hotel text-[#B89758] text-[10px]"></i>
+                                    <i class="bi bi-building text-[#B89758] text-[10px]"></i>
                                 </div>
                                 <div class="min-w-0">
                                     <div class="font-bold text-[13px] text-[#8C6D32] truncate">${hallName}</div>
@@ -1336,13 +1542,17 @@
                 `;
 
                 slots.forEach(slot => {
-                    const statusId = slot.statusId ?? slot.StatusId ?? 401;
+                    const statusCode = (slot.statusCode || slot.StatusCode || '').toUpperCase();
+                    const statusId = slot.statusId ?? slot.StatusId ?? 301;
                     const bookingCode = slot.bookingCode || slot.BookingCode;
                     const customerName = slot.customerName || slot.CustomerName || '';
                     const tableCount = slot.tableCount ?? slot.TableCount ?? 0;
                     const bookingStatus = slot.bookingStatus || slot.BookingStatus || '';
 
-                    if (statusId === 402 && bookingCode) {
+                    const isBooked = statusCode === 'BOOKED' || statusId === 302 || statusId === 402;
+                    const isLocked = statusCode === 'LOCKED' || statusId === 303 || statusId === 403;
+
+                    if (isBooked) {
                         const isCompleted = bookingStatus === 'Hoàn tất';
                         const accentColor = isCompleted ? 'emerald' : 'amber';
                         const badgeBg = isCompleted
@@ -1351,29 +1561,29 @@
                         const dotClass = isCompleted ? 'bg-emerald-500' : 'bg-amber-500';
 
                         rowHtml += `
-                            <td class="p-1.5 border border-slate-200 text-center bg-${accentColor}-50/20 align-middle">
-                                <div class="matrix-cell-booking p-2 rounded-lg bg-white border border-[#B89758]/40 shadow-2xs cursor-default">
+                            <td class="matrix-slot-booked p-1.5 border border-slate-200 text-center bg-${accentColor}-50/20 align-middle">
+                                <div class="matrix-cell-booking matrix-booking-card p-2 rounded-lg bg-white border border-[#B89758]/40 shadow-2xs cursor-default">
                                     <div class="flex items-center justify-center gap-1 mb-0.5">
                                         <span class="w-1.5 h-1.5 rounded-full ${dotClass}"></span>
-                                        <span class="font-mono font-bold text-[10.5px] text-[#8C6D32] tracking-tight">${bookingCode}</span>
+                                        <span class="font-mono font-bold text-[10.5px] text-[#8C6D32] tracking-tight">${bookingCode || 'ĐÃ ĐẶT'}</span>
                                     </div>
-                                    <span class="text-[10.5px] text-slate-800 font-semibold block truncate max-w-[90px] sm:max-w-[110px] mx-auto" title="${customerName}">${customerName}</span>
+                                    <span class="text-[10.5px] text-slate-800 font-semibold block truncate max-w-[90px] sm:max-w-[110px] mx-auto" title="${customerName}">${customerName || 'Đã đặt tiệc'}</span>
                                     <div class="flex items-center justify-center gap-1 mt-1">
                                         <span class="inline-flex items-center gap-0.5 text-[9px] text-slate-500">
-                                            <i class="fa-solid fa-chair text-[8px]"></i>
-                                            ${tableCount} bàn
+                                            <i class="bi bi-grid-3x3-gap text-[8px]"></i>
+                                            ${tableCount > 0 ? tableCount + ' bàn' : 'Sảnh tiệc'}
                                         </span>
-                                        <span class="inline-block px-1.5 py-0.5 rounded text-[8.5px] font-bold border ${badgeBg}">${bookingStatus}</span>
+                                        <span class="matrix-booking-status ${isCompleted ? 'matrix-booking-status--completed' : 'matrix-booking-status--booked'} inline-block px-1.5 py-0.5 rounded text-[8.5px] font-bold border ${badgeBg}">${bookingStatus || 'Đã đặt'}</span>
                                     </div>
                                 </div>
                             </td>
                         `;
-                    } else if (statusId === 403) {
+                    } else if (isLocked) {
                         rowHtml += `
-                            <td class="p-1.5 border border-slate-200 text-center bg-rose-50/40 align-middle">
+                            <td class="matrix-slot-locked p-1.5 border border-slate-200 text-center bg-rose-50/40 align-middle">
                                 <div class="flex flex-col items-center justify-center gap-1 py-2">
-                                    <div class="w-7 h-7 rounded-full bg-rose-100 border border-rose-200 flex items-center justify-center">
-                                        <i class="fa-solid fa-lock text-rose-500 text-[11px]"></i>
+                                    <div class="matrix-lock-icon w-7 h-7 rounded-full bg-rose-100 border border-rose-200 flex items-center justify-center">
+                                        <i class="bi bi-lock text-rose-500 text-[11px]"></i>
                                     </div>
                                     <span class="text-[9.5px] text-rose-600 font-bold italic tracking-wide">Tạm khóa</span>
                                 </div>
@@ -1381,9 +1591,9 @@
                         `;
                     } else {
                         rowHtml += `
-                            <td class="p-1.5 border border-slate-200 text-center bg-slate-50/40 hover:bg-emerald-50/30 transition-colors align-middle group/cell cursor-default">
+                            <td class="matrix-slot-empty p-1.5 border border-slate-200 text-center bg-slate-50/40 hover:bg-emerald-50/30 transition-colors align-middle group/cell cursor-default">
                                 <div class="flex flex-col items-center justify-center gap-1 py-2 opacity-60 group-hover/cell:opacity-100 transition-opacity">
-                                    <i class="fa-regular fa-circle text-slate-300 text-[13px] group-hover/cell:text-emerald-400 transition-colors"></i>
+                                    <i class="bi bi-circle text-slate-300 text-[13px] group-hover/cell:text-emerald-400 transition-colors"></i>
                                     <span class="text-[9.5px] text-slate-400 font-medium tracking-wide">Trống</span>
                                 </div>
                             </td>

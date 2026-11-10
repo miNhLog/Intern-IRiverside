@@ -22,4 +22,5 @@ public sealed class ServiceItemDto
     public decimal Price { get; set; }
     public string StatusCode { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
 }
