@@ -1,0 +1,154 @@
+@model HeThongDatTiecCuoi_WEB.Models.Home.HallManagerDashboardViewModel
+@using System.Globalization
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Tổng quan quản lý sảnh";
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+    var hasError = !string.IsNullOrWhiteSpace(Model.ErrorMessage);
+    string StatusClass(string code) => "state-" + code.ToLowerInvariant().Replace('_', '-');
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/hall-manager-dashboard.css" asp-append-version="true" />
+}
+
+<section class="hm-dashboard" data-schedule-url="@Url.Action("HallManagerDashboardSchedule", "Home")">
+    <header class="hm-hero">
+        <div>
+            <h1>Tổng quan quản lý sảnh</h1>
+            <p>Chào @User.Identity?.Name · Theo dõi lịch tiệc và hoạt động vận hành các sảnh đang phụ trách</p>
+        </div>
+        <div class="hm-hero-meta">
+            <span><i class="fa-regular fa-calendar"></i> @DateTime.Today.ToString("dd/MM/yyyy")</span>
+            @if (!hasError && Model.GeneratedAt != default)
+            {
+                <span><i class="fa-regular fa-clock"></i> Cập nhật @Model.GeneratedAt.ToString("HH:mm")</span>
+            }
+            <button type="button" data-dashboard-reload><i class="fa-solid fa-rotate"></i> Tải lại</button>
+        </div>
+    </header>
+
+    @if (hasError)
+    {
+        <div class="hm-error" role="alert">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <div><strong>Không thể tải dữ liệu Dashboard</strong><span>@Model.ErrorMessage</span></div>
+            <button type="button" data-dashboard-reload>Thử lại</button>
+        </div>
+    }
+
+    <div class="hm-kpis" aria-label="Sáu chỉ số vận hành">
+        <article><span class="hm-kpi-icon blue"><i class="fa-solid fa-building"></i></span><div><small>Sảnh đang phụ trách</small><strong>@(hasError ? "—" : Model.Kpi.ManagedHalls)</strong><em>Bổ nhiệm đang hiệu lực</em></div></article>
+        <article><span class="hm-kpi-icon violet"><i class="fa-solid fa-calendar-day"></i></span><div><small>Tiệc hôm nay</small><strong>@(hasError ? "—" : Model.Kpi.TodayBookings)</strong><em>Đã xác nhận, chuẩn bị hoặc hoàn thành</em></div></article>
+        <article><span class="hm-kpi-icon green"><i class="fa-solid fa-calendar-week"></i></span><div><small>Tiệc 7 ngày tới</small><strong>@(hasError ? "—" : Model.Kpi.NextSevenDaysBookings)</strong><em>Từ ngày mai, không trùng hôm nay</em></div></article>
+        <a asp-action="CoordinationAssignments" asp-route-coordinationStatus="UNASSIGNED"><span class="hm-kpi-icon amber"><i class="fa-solid fa-user-clock"></i></span><div><small>Tiệc chưa phân công</small><strong>@(hasError ? "—" : Model.Kpi.UnassignedBookings)</strong><em>Mở danh sách cần phân công</em></div><i class="fa-solid fa-arrow-up-right-from-square hm-kpi-link"></i></a>
+        <a asp-action="CoordinationAssignments" asp-route-coordinationStatus="CONFLICT" class="@(Model.Kpi.CoordinationConflicts > 0 ? "attention" : "")"><span class="hm-kpi-icon red"><i class="fa-solid fa-code-compare"></i></span><div><small>Xung đột điều phối</small><strong>@(hasError ? "—" : Model.Kpi.CoordinationConflicts)</strong><em>Trùng điều phối viên, ngày và ca</em></div><i class="fa-solid fa-arrow-up-right-from-square hm-kpi-link"></i></a>
+        <a asp-controller="HallManagerIncident" asp-action="Index" class="@(Model.Kpi.OpenIncidents > 0 ? "attention" : "")"><span class="hm-kpi-icon rose"><i class="fa-solid fa-triangle-exclamation"></i></span><div><small>Sự cố đang mở</small><strong>@(hasError ? "—" : Model.Kpi.OpenIncidents)</strong><em>Chờ xử lý hoặc đang xử lý</em></div><i class="fa-solid fa-arrow-up-right-from-square hm-kpi-link"></i></a>
+    </div>
+
+    @if (!hasError && Model.Kpi.ManagedHalls == 0)
+    {
+        <div class="hm-info"><i class="fa-solid fa-circle-info"></i> Bạn chưa được bổ nhiệm phụ trách sảnh nào ở thời điểm hiện tại.</div>
+    }
+
+    <article class="hm-panel hm-schedule-panel">
+        <header class="hm-panel-head">
+            <div><h2>Lịch sảnh</h2><p id="scheduleDateLabel">@Model.Schedule.Date.ToString("dddd, dd/MM/yyyy", vi)</p></div>
+            <div class="hm-date-controls">
+                <button type="button" data-date-step="-1" aria-label="Ngày trước"><i class="fa-solid fa-chevron-left"></i></button>
+                <input id="scheduleDate" type="date" value="@Model.Schedule.Date.ToString("yyyy-MM-dd")" aria-label="Chọn ngày xem lịch" />
+                <button type="button" data-date-step="1" aria-label="Ngày tiếp theo"><i class="fa-solid fa-chevron-right"></i></button>
+                <button type="button" class="today" data-today="@DateTime.Today.ToString("yyyy-MM-dd")">Hôm nay</button>
+            </div>
+        </header>
+        <div id="scheduleMessage" class="hm-inline-message" hidden></div>
+        <div class="hm-table-wrap">
+            <table class="hm-table hm-schedule-table">
+                <thead><tr><th>Sảnh</th><th>Ca trưa</th><th>Ca tối</th></tr></thead>
+                <tbody id="scheduleBody">
+                @if (hasError)
+                {
+                    <tr><td colspan="3" class="hm-empty">Dữ liệu lịch chưa được tải. Vui lòng thử lại.</td></tr>
+                }
+                else if (Model.Schedule.Halls.Count == 0)
+                {
+                    <tr><td colspan="3" class="hm-empty">Không có sảnh trong phạm vi phụ trách.</td></tr>
+                }
+                else
+                {
+                    foreach (var hall in Model.Schedule.Halls)
+                    {
+                        <tr>
+                            <td><strong>@hall.HallName</strong></td>
+                            <td><span class="hm-state @StatusClass(hall.Lunch.StateCode)">@hall.Lunch.StateName</span>@if (!string.IsNullOrEmpty(hall.Lunch.BookingCode)){<small>@hall.Lunch.BookingCode · @hall.Lunch.CustomerName</small>}</td>
+                            <td><span class="hm-state @StatusClass(hall.Dinner.StateCode)">@hall.Dinner.StateName</span>@if (!string.IsNullOrEmpty(hall.Dinner.BookingCode)){<small>@hall.Dinner.BookingCode · @hall.Dinner.CustomerName</small>}</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <div class="hm-lower-grid">
+        <article class="hm-panel">
+            <header class="hm-panel-head"><div><h2>Tiệc sắp diễn ra</h2><p>Hôm nay đến hết 7 ngày tiếp theo</p></div><a asp-action="CoordinationAssignments">Xem phân công <i class="fa-solid fa-arrow-right"></i></a></header>
+            <div class="hm-table-wrap">
+                <table class="hm-table">
+                    <thead><tr><th>Tiệc</th><th>Sảnh / Thời gian</th><th>Số bàn</th><th>Điều phối</th><th>Trạng thái</th></tr></thead>
+                    <tbody>
+                    @if (hasError)
+                    {
+                        <tr><td colspan="5" class="hm-empty">Dữ liệu tiệc chưa được tải. Vui lòng thử lại.</td></tr>
+                    }
+                    else if (Model.UpcomingBookings.Count == 0)
+                    {
+                        <tr><td colspan="5" class="hm-empty">Không có tiệc sắp diễn ra trong phạm vi phụ trách.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var booking in Model.UpcomingBookings)
+                        {
+                            <tr>
+                                <td><a asp-action="CoordinationAssignments" asp-route-search="@booking.BookingCode"><strong>@booking.BookingCode</strong></a><small>@booking.CustomerName</small></td>
+                                <td><strong>@booking.HallName</strong><small>@booking.EventDate.ToString("dd/MM/yyyy") · @booking.Shift</small></td>
+                                <td>@booking.TableCount</td>
+                                <td><span>@(booking.CoordinatorName ?? "Chưa phân công")</span>@if (booking.HasConflict){<small class="hm-danger"><i class="fa-solid fa-triangle-exclamation"></i> Có xung đột</small>}</td>
+                                <td><span class="hm-state @StatusClass(booking.BookingStatusCode)">@booking.BookingStatusName</span></td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <aside class="hm-panel hm-tasks">
+            <header class="hm-panel-head"><div><h2>Công việc cần xử lý</h2><p>Ưu tiên theo mức độ ảnh hưởng</p></div></header>
+            @if (hasError)
+            {
+                <div class="hm-task-empty"><i class="fa-solid fa-circle-exclamation"></i><span>Dữ liệu công việc chưa được tải.</span></div>
+            }
+            else if (Model.Tasks.Count == 0)
+            {
+                <div class="hm-task-empty"><i class="fa-solid fa-circle-check"></i><span>Hiện không có công việc cần xử lý.</span></div>
+            }
+            else
+            {
+                foreach (var task in Model.Tasks)
+                {
+                    var isIncident = task.Type == "INCIDENT";
+                    <a class="hm-task priority-@task.Priority.ToLowerInvariant()" asp-controller="@(isIncident ? "HallManagerIncident" : "Home")" asp-action="@(isIncident ? "Index" : "CoordinationAssignments")" asp-route-incidentId="@(isIncident ? task.IncidentId : null)" asp-route-search="@(!isIncident ? task.ReferenceCode : null)" asp-route-coordinationStatus="@(task.Type == "CONFLICT" ? "CONFLICT" : task.Type == "UNASSIGNED" ? "UNASSIGNED" : null)">
+                        <span class="hm-task-icon"><i class="fa-solid @(isIncident ? "fa-triangle-exclamation" : task.Type == "CONFLICT" ? "fa-code-compare" : "fa-user-plus")"></i></span>
+                        <span><strong>@task.Title</strong><small>@task.ReferenceCode · @task.HallName</small><time>@task.RelevantAt.ToString(isIncident ? "dd/MM/yyyy HH:mm" : "dd/MM/yyyy")</time></span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                }
+            }
+        </aside>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/hall-manager-dashboard.js" asp-append-version="true"></script>
+}

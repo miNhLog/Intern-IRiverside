@@ -1,0 +1,26 @@
+<div id="coordinatorWorkspace">
+    <header class="cw-heading"><div><div class="cw-eyebrow">CÔNG VIỆC CỦA TÔI</div><h1 id="cwTitle">Lịch làm việc</h1><p id="cwSubtitle">Sắp xếp lịch tiệc, chủ động chuẩn bị từng ca làm việc.</p></div><div class="cw-heading-actions"><span class="cw-timezone"><i class="fa-regular fa-clock"></i> Giờ Việt Nam · UTC+7</span></div></header>
+    <div id="cwNotice" class="cw-notice" role="status" hidden></div>
+    <div id="cwError" class="cw-error" role="alert" hidden></div>
+    <div id="cwSchedule">
+        <div class="cw-scope-tabs" aria-label="Phạm vi lịch làm việc">
+            <button type="button" id="cwScopeWeek" class="active" aria-pressed="true"><i class="fa-regular fa-calendar-days"></i> Theo tuần</button>
+            <button type="button" id="cwScopeAll" aria-pressed="false"><i class="fa-solid fa-list"></i> Tất cả tiệc</button>
+        </div>
+        <div class="cw-stats" id="cwScheduleStats"></div>
+        <section class="cw-panel">
+            <div class="cw-toolbar" id="cwToolbar"><div class="cw-date-navigation" id="cwDateNavigation"><button id="cwPrev" class="cw-icon-button" aria-label="Tuần trước" type="button"><i class="fa-solid fa-chevron-left"></i></button><h2 id="cwDateRange"></h2><button id="cwNext" class="cw-icon-button" aria-label="Tuần sau" type="button"><i class="fa-solid fa-chevron-right"></i></button><button id="cwToday" class="cw-button" type="button">Hôm nay</button></div><div class="cw-segment" id="cwViewSegment" aria-label="Kiểu hiển thị trong tuần"><button type="button" id="cwWeek" class="active" aria-pressed="true">Lịch tuần</button><button type="button" id="cwList" aria-pressed="false">Danh sách tuần</button></div></div>
+            <div class="cw-filters"><label class="cw-search"><i class="fa-solid fa-magnifying-glass"></i><input id="cwSearch" placeholder="Tìm mã tiệc, khách hàng, sảnh..." aria-label="Tìm tiệc" /></label><select id="cwHall" aria-label="Lọc theo sảnh"><option value="">Tất cả sảnh</option></select><select id="cwShift" aria-label="Lọc theo ca"><option value="">Tất cả ca</option></select><input id="cwDate" class="cw-date-filter" type="date" aria-label="Lọc theo ngày tổ chức" /><button id="cwClearDate" class="cw-button" type="button" hidden>Bỏ lọc ngày</button><span class="cw-result" id="cwResult" role="status"></span></div>
+            <div id="cwCalendar" class="cw-calendar-scroll"></div>
+            <div id="cwScheduleList" hidden></div>
+            <footer class="cw-panel-footer"><span><i class="fa-solid fa-circle cw-gold-dot"></i> Tiệc được giao</span><span>Chọn một tiệc để xem thông tin</span></footer>
+        </section>
+        <div class="cw-bottom-grid"><section class="cw-panel cw-next"><span class="cw-eyebrow">TIỆC TIẾP THEO</span><div id="cwNextParty"></div></section><section class="cw-panel cw-notes"><h3><i class="fa-regular fa-lightbulb"></i> Chuẩn bị trước ca</h3><p>Kiểm tra thực đơn, gói trang trí và yêu cầu đặc biệt trong chi tiết tiệc.</p><p>Lịch chỉ hiển thị các phân công còn hiệu lực của bạn.</p></section></div>
+    </div>
+    <div id="cwProgress" hidden>
+        <div class="cw-progress-info"><i class="fa-solid fa-circle-info"></i><span>Checklist đang ở chế độ xem trước. Các thao tác đánh dấu chỉ lưu trong phiên xem, chưa cập nhật dữ liệu hệ thống.</span></div>
+        <div class="cw-stats" id="cwProgressStats"></div>
+        <div class="cw-progress-layout"><section class="cw-panel cw-party-panel"><div class="cw-panel-title"><h2>Tiệc cần theo dõi</h2><span id="cwPartyCount" class="cw-count"></span></div><label class="cw-search cw-progress-search"><i class="fa-solid fa-magnifying-glass"></i><input id="cwProgressSearch" placeholder="Tìm tiệc, khách hàng..." aria-label="Tìm tiệc theo dõi" /></label><div id="cwPartyList"></div></section><section class="cw-panel cw-checklist-panel" id="cwChecklist"></section></div>
+    </div>
+    <dialog id="cwDetail" class="cw-dialog"><div class="cw-dialog-top"><span class="cw-eyebrow">THÔNG TIN TIỆC</span><button type="button" id="cwClose" class="cw-icon-button" aria-label="Đóng chi tiết"><i class="fa-solid fa-xmark"></i></button></div><div id="cwDetailBody"></div></dialog>
+</div>
