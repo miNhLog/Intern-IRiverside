@@ -54,6 +54,8 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<ScheduleChangeStatusHistory> ScheduleChangeStatusHistory => Set<ScheduleChangeStatusHistory>();
     public DbSet<ContractAmendment> ContractAmendments => Set<ContractAmendment>();
     public DbSet<ScheduleChangeRefund> ScheduleChangeRefunds => Set<ScheduleChangeRefund>();
+    public DbSet<Uc18BookingOperation> Uc18BookingOperations => Set<Uc18BookingOperation>();
+    public DbSet<Uc18RefundConfirmation> Uc18RefundConfirmations => Set<Uc18RefundConfirmation>();
     public DbSet<HomeBanner> HomeBanners => Set<HomeBanner>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -890,6 +892,7 @@ public sealed class ApplicationDbContext : DbContext
             entity.ToTable("DatTiec", table =>
             {
                 table.HasCheckConstraint("CK_DatTiec_SoLuongKhach", "[SoLuongKhach] > 0");
+                table.HasCheckConstraint("CK_DatTiec_SoBanCoCauTruc", "([SoBanTinhTien] IS NULL AND [SoBanDuPhong] IS NULL) OR ([SoBanTinhTien] IS NOT NULL AND [SoBanDuPhong] IS NOT NULL AND [SoBanTinhTien] > 0 AND [SoBanDuPhong] >= 0 AND [SoBanDuPhong] < [SoBanTinhTien])");
                 table.HasCheckConstraint("CK_DatTiec_GiaThucDonChot", "[GiaThucDonChot] IS NULL OR [GiaThucDonChot] >= 0");
                 table.HasCheckConstraint("CK_DatTiec_GiaTrangTriChot", "[GiaTrangTriChot] IS NULL OR [GiaTrangTriChot] >= 0");
                 table.HasCheckConstraint("CK_DatTiec_GiaSanhChot", "[GiaSanhChot] IS NULL OR [GiaSanhChot] >= 0");
@@ -903,11 +906,14 @@ public sealed class ApplicationDbContext : DbContext
             entity.Property(x => x.MenuId).HasColumnName("ThucDonID");
             entity.Property(x => x.DecorationPackageId).HasColumnName("GoiTrangTriID");
             entity.Property(x => x.GuestCount).HasColumnName("SoLuongKhach").IsRequired();
+            entity.Property(x => x.BilledTableCount).HasColumnName("SoBanTinhTien");
+            entity.Property(x => x.SpareTableCount).HasColumnName("SoBanDuPhong");
             entity.Property(x => x.FinalMenuPrice).HasColumnName("GiaThucDonChot").HasColumnType("decimal(18,2)");
             entity.Property(x => x.FinalDecorationPrice).HasColumnName("GiaTrangTriChot").HasColumnType("decimal(18,2)");
             entity.Property(x => x.FinalHallPrice).HasColumnName("GiaSanhChot").HasColumnType("decimal(18,2)");
             entity.Property(x => x.EstimatedTotal).HasColumnName("TongTienDuKien").HasColumnType("decimal(18,2)");
             entity.Property(x => x.SpecialRequests).HasColumnName("YeuCauDacBiet").HasColumnType("nvarchar(max)");
+            entity.Property(x => x.CustomMenuSnapshotJson).HasColumnName("ThucDonTuyChinhSnapshotJson").HasColumnType("nvarchar(max)");
             entity.Property(x => x.StatusId).HasColumnName("TrangThaiID").HasDefaultValue(801);
             entity.Property(x => x.DepositAmount).HasColumnName("TienCoc").HasColumnType("decimal(18,2)");
             entity.Property(x => x.PaidAmount).HasColumnName("SoTienDaThanhToan").HasColumnType("decimal(18,2)").HasDefaultValue(0);
@@ -919,6 +925,72 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasOne(x => x.Menu).WithMany().HasForeignKey(x => x.MenuId).OnDelete(DeleteBehavior.NoAction);
             entity.HasOne(x => x.DecorationPackage).WithMany().HasForeignKey(x => x.DecorationPackageId).OnDelete(DeleteBehavior.NoAction);
             entity.HasOne(x => x.Status).WithMany().HasForeignKey(x => x.StatusId).OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<Uc18BookingOperation>(entity =>
+        {
+            entity.ToTable("ThaoTacDatTiec", table =>
+            {
+                table.HasCheckConstraint("CK_ThaoTacDatTiec_RequestId", "[RequestId] <> CONVERT(UNIQUEIDENTIFIER, '00000000-0000-0000-0000-000000000000')");
+                table.HasCheckConstraint("CK_ThaoTacDatTiec_LoaiThaoTac", "[LoaiThaoTac] IN ('RESCHEDULE', 'MENU_CHANGE', 'CANCEL', 'HANDOFF', 'PRIOR_REFUND')");
+                table.HasCheckConstraint("CK_ThaoTacDatTiec_PayloadHash", "DATALENGTH([PayloadHash]) = 64 AND [PayloadHash] NOT LIKE '%[^0-9A-Fa-f]%'");
+                table.HasCheckConstraint("CK_ThaoTacDatTiec_SnapshotJson", "[SnapshotJson] IS NULL OR ISJSON([SnapshotJson]) = 1");
+                table.HasCheckConstraint("CK_ThaoTacDatTiec_FeeAmount", "[FeeAmount] >= 0");
+                table.HasCheckConstraint("CK_ThaoTacDatTiec_EffectiveTotal", "[EffectiveTotal] IS NULL OR [EffectiveTotal] >= 0");
+                table.HasCheckConstraint("CK_ThaoTacDatTiec_RetainedDeposit", "[RetainedDeposit] >= 0");
+                table.HasCheckConstraint("CK_ThaoTacDatTiec_PrincipalRefundDue", "[PrincipalRefundDue] >= 0");
+                table.HasCheckConstraint("CK_ThaoTacDatTiec_DepositPrincipalPortion", "[DepositPrincipalPortion] >= 0 AND [DepositPrincipalPortion] <= [PrincipalRefundDue]");
+                table.HasCheckConstraint("CK_ThaoTacDatTiec_CompensationDue", "[CompensationDue] >= 0");
+            });
+            entity.HasKey(x => x.RequestId).HasName("PK_ThaoTacDatTiec");
+            entity.Property(x => x.RequestId).HasColumnName("RequestId").ValueGeneratedNever();
+            entity.Property(x => x.BookingId).HasColumnName("DatTiecID");
+            entity.Property(x => x.ContractId).HasColumnName("HopDongID");
+            entity.Property(x => x.ActorUserId).HasColumnName("NguoiThucHienTaiKhoanID");
+            entity.Property(x => x.Kind).HasColumnName("LoaiThaoTac").HasColumnType("varchar(20)").HasMaxLength(20).IsRequired();
+            entity.Property(x => x.PayloadHash).HasColumnName("PayloadHash").HasColumnType("varchar(64)").HasMaxLength(64).UseCollation("Latin1_General_100_BIN2").IsRequired();
+            entity.Property(x => x.RecordedAtUtc).HasColumnName("RecordedAtUtc").HasColumnType("datetime2(7)");
+            entity.Property(x => x.PolicyVersion).HasColumnName("PolicyVersion").HasColumnType("varchar(50)").HasMaxLength(50);
+            entity.Property(x => x.ManagerAgreementReference).HasColumnName("ManagerAgreementReference").HasMaxLength(300);
+            entity.Property(x => x.SnapshotJson).HasColumnName("SnapshotJson").HasColumnType("nvarchar(max)");
+            entity.Property(x => x.SignedPriceDelta).HasColumnName("SignedPriceDelta").HasColumnType("decimal(18,2)");
+            entity.Property(x => x.FeeAmount).HasColumnName("FeeAmount").HasColumnType("decimal(18,2)");
+            entity.Property(x => x.EffectiveTotal).HasColumnName("EffectiveTotal").HasColumnType("decimal(18,2)");
+            entity.Property(x => x.RetainedDeposit).HasColumnName("RetainedDeposit").HasColumnType("decimal(18,2)");
+            entity.Property(x => x.PrincipalRefundDue).HasColumnName("PrincipalRefundDue").HasColumnType("decimal(18,2)");
+            entity.Property(x => x.DepositPrincipalPortion).HasColumnName("DepositPrincipalPortion").HasColumnType("decimal(18,2)");
+            entity.Property(x => x.CompensationDue).HasColumnName("CompensationDue").HasColumnType("decimal(18,2)");
+            entity.HasIndex(x => new { x.BookingId, x.RecordedAtUtc }).HasDatabaseName("IX_ThaoTacDatTiec_DatTiec_LichSu");
+            entity.HasIndex(x => new { x.ContractId, x.RecordedAtUtc }).HasDatabaseName("IX_ThaoTacDatTiec_HopDong_LichSu").HasFilter("[HopDongID] IS NOT NULL");
+            entity.HasOne(x => x.Booking).WithMany().HasForeignKey(x => x.BookingId).HasConstraintName("FK_ThaoTacDatTiec_DatTiec").OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.Contract).WithMany().HasForeignKey(x => x.ContractId).HasConstraintName("FK_ThaoTacDatTiec_HopDong").OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.Actor).WithMany().HasForeignKey(x => x.ActorUserId).HasConstraintName("FK_ThaoTacDatTiec_TaiKhoan").OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<Uc18RefundConfirmation>(entity =>
+        {
+            entity.ToTable("XacNhanHoanTien", table =>
+            {
+                table.HasCheckConstraint("CK_XacNhanHoanTien_RequestId", "[RequestId] <> CONVERT(UNIQUEIDENTIFIER, '00000000-0000-0000-0000-000000000000')");
+                table.HasCheckConstraint("CK_XacNhanHoanTien_PayloadHash", "DATALENGTH([PayloadHash]) = 64 AND [PayloadHash] NOT LIKE '%[^0-9A-Fa-f]%'");
+                table.HasCheckConstraint("CK_XacNhanHoanTien_PrincipalPaid", "[PrincipalPaid] >= 0");
+                table.HasCheckConstraint("CK_XacNhanHoanTien_DepositPrincipalPaid", "[DepositPrincipalPaid] >= 0 AND [DepositPrincipalPaid] <= [PrincipalPaid]");
+                table.HasCheckConstraint("CK_XacNhanHoanTien_CompensationPaid", "[CompensationPaid] >= 0");
+            });
+            entity.HasKey(x => x.RequestId).HasName("PK_XacNhanHoanTien");
+            entity.Property(x => x.RequestId).HasColumnName("RequestId").ValueGeneratedNever();
+            entity.Property(x => x.OperationRequestId).HasColumnName("ThaoTacRequestId");
+            entity.Property(x => x.ActorUserId).HasColumnName("NguoiXacNhanTaiKhoanID");
+            entity.Property(x => x.PayloadHash).HasColumnName("PayloadHash").HasColumnType("varchar(64)").HasMaxLength(64).UseCollation("Latin1_General_100_BIN2").IsRequired();
+            entity.Property(x => x.ExternalEvidenceReference).HasColumnName("ExternalEvidenceReference").HasMaxLength(300).IsRequired();
+            entity.Property(x => x.ConfirmedAtUtc).HasColumnName("ConfirmedAtUtc").HasColumnType("datetime2(7)");
+            entity.Property(x => x.PrincipalPaid).HasColumnName("PrincipalPaid").HasColumnType("decimal(18,2)");
+            entity.Property(x => x.DepositPrincipalPaid).HasColumnName("DepositPrincipalPaid").HasColumnType("decimal(18,2)");
+            entity.Property(x => x.CompensationPaid).HasColumnName("CompensationPaid").HasColumnType("decimal(18,2)");
+            entity.HasIndex(x => x.OperationRequestId).HasDatabaseName("IX_XacNhanHoanTien_ThaoTac_TongTien").IncludeProperties(x => new { x.PrincipalPaid, x.DepositPrincipalPaid, x.CompensationPaid });
+            entity.HasIndex(x => x.ExternalEvidenceReference).HasDatabaseName("UX_XacNhanHoanTien_ExternalEvidenceReference").IsUnique();
+            entity.HasOne(x => x.Operation).WithMany(x => x.RefundConfirmations).HasForeignKey(x => x.OperationRequestId).HasConstraintName("FK_XacNhanHoanTien_ThaoTacDatTiec").OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.Actor).WithMany().HasForeignKey(x => x.ActorUserId).HasConstraintName("FK_XacNhanHoanTien_TaiKhoan").OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<WeddingBookingService>(entity =>

@@ -9,11 +9,14 @@ public sealed class WeddingBooking
     public int? MenuId { get; set; }
     public int? DecorationPackageId { get; set; }
     public int GuestCount { get; set; }
+    public int? BilledTableCount { get; set; }
+    public int? SpareTableCount { get; set; }
     public decimal? FinalMenuPrice { get; set; }
     public decimal? FinalDecorationPrice { get; set; }
     public decimal? FinalHallPrice { get; set; }
     public decimal? EstimatedTotal { get; set; }
     public string? SpecialRequests { get; set; }
+    public string? CustomMenuSnapshotJson { get; set; }
     public int StatusId { get; set; }
     public decimal? DepositAmount { get; set; }
     public decimal PaidAmount { get; set; }

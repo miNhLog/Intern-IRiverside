@@ -67,8 +67,19 @@
                         <td data-label="Thao tác" class="actions"><div class="coord-row-actions">
                             @if (item.CanAssign) { <button type="button" class="coord-action primary js-open-assignment" data-mode="assign" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" data-customer="@item.CustomerName" data-hall="@item.HallName" data-date="@item.EventDate.ToString("dd/MM/yyyy")" data-shift="@item.Shift" data-tables="@item.TableCount"><i class="fa-solid fa-user-plus"></i><span>Phân công</span></button> }
                             @if (item.CanChangeOrCancel) { <button type="button" class="coord-action icon js-open-assignment" data-mode="change" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" data-customer="@item.CustomerName" data-hall="@item.HallName" data-date="@item.EventDate.ToString("dd/MM/yyyy")" data-shift="@item.Shift" data-tables="@item.TableCount" data-current-coordinator-id="@item.CoordinatorEmployeeId" title="Thay đổi điều phối viên" aria-label="Thay đổi điều phối viên"><i class="fa-solid fa-user-pen"></i></button><button type="button" class="coord-action icon danger js-open-cancel" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" data-coordinator="@item.CoordinatorName" title="Hủy phân công" aria-label="Hủy phân công"><i class="fa-solid fa-user-xmark"></i></button> }
-                            <button type="button" class="coord-action icon js-open-history" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" title="Xem chi tiết và lịch sử" aria-label="Xem chi tiết và lịch sử"><i class="fa-regular fa-eye"></i></button>
-                        </div></td>
+                             <button type="button" class="coord-action icon js-open-history" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" title="Xem chi tiết và lịch sử" aria-label="Xem chi tiết và lịch sử"><i class="fa-regular fa-eye"></i></button>
+                             @if (item.CoordinationState != "CANCELLED" && item.CoordinationState != "COMPLETED")
+                             {
+                                 <form method="post" asp-action="HandoffBooking" class="coord-handoff-form">
+                                     @Html.AntiForgeryToken()
+                                     <input type="hidden" name="bookingId" value="@item.BookingId" />
+                                     <input type="hidden" name="requestId" value="@Guid.NewGuid()" />
+                                     <select name="operation" aria-label="Yêu cầu bàn giao" required><option value="RESCHEDULE">Đổi lịch</option><option value="CANCEL">Hủy tiệc</option></select>
+                                     <input name="reason" required maxlength="500" placeholder="Lý do bàn giao" aria-label="Lý do bàn giao cho Quản lý" />
+                                     <button type="submit" class="coord-action primary" title="Bàn giao yêu cầu cho Quản lý"><i class="fa-solid fa-share"></i><span>Bàn giao</span></button>
+                                 </form>
+                             }
+                         </div></td>
                     </tr>
                 }
                 </tbody>

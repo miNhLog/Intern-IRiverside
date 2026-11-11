@@ -65,10 +65,11 @@ public sealed class EventCoordinationApiFactory : WebApplicationFactory<Program>
         builder.UseEnvironment("Production");
         builder.ConfigureServices(services =>
         {
+            var databaseName = $"event-coordination-auth-{Guid.NewGuid()}";
             services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
             services.RemoveAll<ApplicationDbContext>();
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseInMemoryDatabase($"event-coordination-auth-{Guid.NewGuid()}"));
+                options.UseInMemoryDatabase(databaseName));
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = TestRoleAuthenticationHandler.Scheme;
