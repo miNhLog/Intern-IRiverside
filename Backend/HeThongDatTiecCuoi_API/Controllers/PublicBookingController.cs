@@ -111,7 +111,10 @@ public sealed class PublicBookingController : ControllerBase
             // Tra cứu đúng -> reset đếm sai của IP này.
             _cache.Remove(rateKey);
 
-            var detail = BuildDetailDto(booking);
+            var ledger = booking.Contract is null
+                ? null
+                : await new Uc18FinancialLedger(_context).ReadAsync(booking.Contract);
+            var detail = BuildDetailDto(booking, ledger);
             return Ok(new { success = true, data = detail });
         }
         catch (Exception ex)
@@ -255,7 +258,7 @@ public sealed class PublicBookingController : ControllerBase
         }
     }
 
-    private static PublicBookingDetailDto BuildDetailDto(WeddingBooking booking)
+    private static PublicBookingDetailDto BuildDetailDto(WeddingBooking booking, Uc18FinancialLedgerSnapshot? ledger)
     {
         var official = (int)Math.Ceiling(booking.GuestCount / 10m);
         // LỖI B: khôi phục bàn dự phòng từ marker trong SpecialRequests
@@ -294,15 +297,16 @@ public sealed class PublicBookingController : ControllerBase
                 + services.Sum(s => s.LineTotal);
 
         // Đã cọc = tổng ThanhToan SUCCESS của HopDong (mọi loại: Đặt cọc/đợt/quyết toán).
-        var deposit = booking.Contract?.Payments
+        var grossPaid = booking.Contract?.Payments
             .Where(p => p.Status != null && p.Status.StatusCode == "SUCCESS")
             .Sum(p => p.Amount) ?? 0m;
-        var remaining = Math.Max(0m, total - deposit);
+        var deposit = ledger is null ? grossPaid : ledger.Receipts.GrossCollected - ledger.Receipts.TotalPrincipalReturned;
+        var contractTotal = ledger?.EffectiveTotal ?? booking.Contract?.TotalValue ?? total;
+        var remaining = Math.Max(0m, (booking.Contract is null ? total : contractTotal) - deposit);
 
         var stage2 = booking.Contract?.Payments
             .Where(p => p.Status != null && p.Status.StatusCode == "SUCCESS" && p.PaymentType == PaymentTypes.Installment)
             .Sum(p => p.Amount) ?? 0m;
-        var contractTotal = booking.Contract?.TotalValue ?? total;
         var hasPaidStage2 = stage2 > 0 || (contractTotal > 0 && deposit >= contractTotal * 0.59m);
 
         var consultant = booking.CoordinationAssignments
@@ -358,7 +362,7 @@ public sealed class PublicBookingController : ControllerBase
             ContractStatusName = booking.Contract?.Status?.StatusName,
             ContractContent = booking.Contract?.ContractContent,
             PaymentTerms = booking.Contract?.PaymentTerms,
-            ContractTotalValue = booking.Contract?.TotalValue,
+            ContractTotalValue = booking.Contract is null ? null : contractTotal,
             ContractPaidAmount = deposit,
                     };
     }
@@ -412,7 +416,7 @@ public sealed class PublicBookingController : ControllerBase
 
     private async Task<ManagerContractDetailDto?> BuildContractDetailAsync(int contractId, CancellationToken cancellationToken)
     {
-        return await _context.Contracts.AsNoTracking().Where(contract => contract.ContractId == contractId)
+        var detail = await _context.Contracts.AsNoTracking().Where(contract => contract.ContractId == contractId)
             .Select(contract => new ManagerContractDetailDto
             {
                 ContractId = contract.ContractId,
@@ -464,5 +468,15 @@ public sealed class PublicBookingController : ControllerBase
                         StatusName = payment.Status.StatusName
                     }).ToList()
             }).SingleOrDefaultAsync(cancellationToken);
+        if (detail is null) return null;
+        var contract = await _context.Contracts.AsNoTracking().SingleAsync(item => item.ContractId == contractId, cancellationToken);
+        var ledger = await new Uc18FinancialLedger(_context).ReadAsync(contract, cancellationToken);
+        detail.EffectiveTotal = ledger.EffectiveTotal;
+        detail.RefundedPrincipal = ledger.Receipts.TotalPrincipalReturned;
+        detail.NetPaidAmount = ledger.Receipts.GrossCollected - ledger.Receipts.TotalPrincipalReturned;
+        detail.EffectiveRemainingBalance = ledger.EffectiveTotal - detail.NetPaidAmount;
+        detail.TotalValue = ledger.EffectiveTotal;
+        detail.PaidAmount = detail.NetPaidAmount.Value;
+        return detail;
     }
 }
