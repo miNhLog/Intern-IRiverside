@@ -78,4 +78,3 @@ Write-Host " - Swagger Backend: https://localhost:7201/swagger" -ForegroundColor
 Write-Host " - Trang chu Web:   https://localhost:7102" -ForegroundColor Magenta
 Write-Host " - AI Service:      Khong khoi dong" -ForegroundColor DarkGray
 Write-Host "==============================================================================" -ForegroundColor Cyan
-Write-Host "Lenh chay lan sau: .\run_all.ps1" -ForegroundColor Yellow

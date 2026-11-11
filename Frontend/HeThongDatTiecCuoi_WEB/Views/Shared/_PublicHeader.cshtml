@@ -7,21 +7,49 @@
         || User.IsInRole(RoleNames.Coordinator);
     var dashboardController = User.IsInRole(RoleNames.Admin) ? "AdminAccount" : "Home";
 }
-<header class="home-header">
+<header class="home-header @(activePage == "home" ? "home-header--overlay" : null)">
     <div class="home-container header-inner">
-        <a class="brand" asp-controller="Home" asp-action="Index" asp-route-publicSite="@(isInternalUser ? "true" : null)" aria-label="Riverside Palace - Trang chủ">
-            <span class="brand-mark" aria-hidden="true">✧</span>
-            <span class="brand-name">Riverside Palace</span>
+        <a class="brand" href="/" aria-label="Riverside Palace - Trang chủ">
+            <span class="brand-mark">
+                <svg viewBox="0 0 200 170" width="70" height="60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Riverside Palace">
+                    <defs>
+                        <path id="brand-leaf" d="M0 0C3-4.5 8-4.5 12 0C8 4.5 3 4.5 0 0Z" />
+                        <g id="brand-branch" stroke-width="1.6">
+                            <path d="M45 156C29 140 24 110 36 84" />
+                            <g fill="currentColor" fill-opacity="0.2">
+                                <use href="#brand-leaf" transform="translate(36.8 144.9) rotate(-156)" /><use href="#brand-leaf" transform="translate(36.8 144.9) rotate(-66)" />
+                                <use href="#brand-leaf" transform="translate(31.5 131.2) rotate(-143)" /><use href="#brand-leaf" transform="translate(31.5 131.2) rotate(-53)" />
+                                <use href="#brand-leaf" transform="translate(29.4 116) rotate(-130)" /><use href="#brand-leaf" transform="translate(29.4 116) rotate(-40)" />
+                                <use href="#brand-leaf" transform="translate(30.8 99.9) rotate(-117)" /><use href="#brand-leaf" transform="translate(30.8 99.9) rotate(-27)" />
+                                <use href="#brand-leaf" transform="translate(36 84) rotate(-80)" />
+                            </g>
+                        </g>
+                    </defs>
+                    <path d="M100 8C101 17 103 20 114 22C103 24 101 27 100 36C99 27 97 24 86 22C97 20 99 17 100 8Z" fill="currentColor" fill-opacity="0.2" />
+                    <circle cx="100" cy="41" r="1.8" fill="currentColor" stroke="none" />
+                    <path d="M50 158V96C50 68 72 46 100 46C128 46 150 68 150 96V158" /><path d="M62 158V98C62 76 79 58 100 58C121 58 138 76 138 98V158" /><path d="M42 158H158" />
+                    <g stroke-width="1.7">
+                        <path d="M88 112C88 100 94 94 100 88C106 94 112 100 112 112" /><path d="M100 88V79" /><circle cx="100" cy="76.5" r="1.8" fill="currentColor" stroke="none" />
+                        <path d="M70 112H130V134H70Z" /><path d="M70 112V104L75 94L80 104V112" /><path d="M120 112V104L125 94L130 104V112" />
+                        <path d="M95 134V125C95 121.5 97 119.5 100 119.5C103 119.5 105 121.5 105 125V134" /><path d="M78 134V127C78 125 79 124 80 124C81 124 82 125 82 127V134" /><path d="M118 134V127C118 125 119 124 120 124C121 124 122 125 122 127V134" />
+                        <path d="M62 142q9.5-5 19 0t19 0t19 0t19 0" /><path d="M62 148q9.5-5 19 0t19 0t19 0t19 0" stroke-opacity="0.7" /><path d="M62 154q9.5-5 19 0t19 0t19 0t19 0" stroke-opacity="0.45" />
+                    </g>
+                    <use href="#brand-branch" /><use href="#brand-branch" transform="translate(200 0) scale(-1 1)" />
+                </svg>
+            </span>
+            <span class="brand-copy"><span class="brand-name">IRIVERSIDE PALACE</span><span class="brand-subtitle">WEDDING</span></span>
         </a>
         <nav class="desktop-nav" aria-label="Điều hướng chính">
-            <a class="@(activePage == "home" ? "active" : null)" asp-controller="Home" asp-action="Index" asp-route-publicSite="@(isInternalUser ? "true" : null)" aria-current="@(activePage == "home" ? "page" : null)">Trang chủ</a>
-            <a class="@(activePage == "halls" ? "active" : null)" asp-controller="Halls" asp-action="Index" aria-current="@(activePage == "halls" ? "page" : null)">Sảnh tiệc</a>
-            <a class="@(activePage == "menus" ? "active" : null)" asp-controller="Menus" asp-action="Index" aria-current="@(activePage == "menus" ? "page" : null)">Thực đơn</a>
-            <a href="#" data-coming-soon>Gói trang trí</a>
-            <a class="@(activePage == "recommendation" ? "active" : null)" asp-controller="Recommendation" asp-action="Index" aria-current="@(activePage == "recommendation" ? "page" : null)">Gợi ý gói tiệc</a>
-            <a asp-controller="MyBooking" asp-action="Index" class="@(activePage == "my-bookings" ? "active" : null)" aria-current="@(activePage == "my-bookings" ? "page" : null)">
-                Tiệc của tôi
-            </a>
+            <span class="desktop-nav-group desktop-nav-group--left">
+                <a class="@(activePage == "home" ? "active" : null)" asp-controller="Home" asp-action="Index" asp-route-publicSite="@(isInternalUser ? "true" : null)" aria-current="@(activePage == "home" ? "page" : null)">Trang chủ</a>
+                <a class="@(activePage == "halls" ? "active" : null)" asp-controller="Halls" asp-action="Index" aria-current="@(activePage == "halls" ? "page" : null)">Sảnh tiệc</a>
+                <a class="@(activePage == "menus" ? "active" : null)" asp-controller="Menus" asp-action="Index" aria-current="@(activePage == "menus" ? "page" : null)">Thực đơn</a>
+            </span>
+            <span class="desktop-nav-group desktop-nav-group--right">
+                <a class="@(activePage == "decor-packages" ? "active" : null)" asp-controller="DecorPackages" asp-action="Index" aria-current="@(activePage == "decor-packages" ? "page" : null)">Trang trí</a>
+                <a class="@(activePage == "recommendation" ? "active" : null)" asp-controller="Recommendation" asp-action="Index" aria-current="@(activePage == "recommendation" ? "page" : null)">Gợi ý tiệc</a>
+                <a asp-controller="MyBooking" asp-action="Index" class="@(activePage == "my-bookings" ? "active" : null)" aria-current="@(activePage == "my-bookings" ? "page" : null)">Tiệc của tôi</a>
+            </span>
         </nav>
         <div class="header-actions">
             @if (User.Identity?.IsAuthenticated == true)
@@ -54,10 +82,6 @@
                     </details>
                 }
             }
-            else
-            {
-                <span class="header-avatar material-symbols-outlined" aria-hidden="true">person</span>
-            }
             <button class="mobile-menu-toggle" type="button" aria-label="Mở menu" aria-controls="mobileNavigation" aria-expanded="false">
                 <span class="material-symbols-outlined" aria-hidden="true">menu</span>
             </button>
@@ -67,9 +91,15 @@
         <a asp-controller="Home" asp-action="Index" asp-route-publicSite="@(isInternalUser ? "true" : null)" aria-current="@(activePage == "home" ? "page" : null)">Trang chủ</a>
         <a asp-controller="Halls" asp-action="Index" aria-current="@(activePage == "halls" ? "page" : null)">Sảnh tiệc</a>
         <a class="@(activePage == "menus" ? "active" : null)" asp-controller="Menus" asp-action="Index" aria-current="@(activePage == "menus" ? "page" : null)">Thực đơn</a>
-        <a href="#" data-coming-soon>Gói trang trí</a>
-        <a class="@(activePage == "recommendation" ? "active" : null)" asp-controller="Recommendation" asp-action="Index" aria-current="@(activePage == "recommendation" ? "page" : null)">Gợi ý gói tiệc</a>
+        <a class="@(activePage == "decor-packages" ? "active" : null)"
+           asp-controller="DecorPackages"
+           asp-action="Index"
+           aria-current="@(activePage == "decor-packages" ? "page" : null)">
+            Trang trí
+        </a>
+        <a class="@(activePage == "recommendation" ? "active" : null)" asp-controller="Recommendation" asp-action="Index" aria-current="@(activePage == "recommendation" ? "page" : null)">Gợi ý tiệc</a>
         <a asp-controller="MyBooking" asp-action="Index">Tiệc của tôi</a>
     </nav>
 </header>
 <div class="mobile-nav-backdrop" hidden></div>
+<script src="~/js/public-header.js" asp-append-version="true" defer></script>
