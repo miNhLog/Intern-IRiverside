@@ -242,7 +242,7 @@
                             @if (detail.IsPending && detail.IsHoldExpired)
                             {
                                 <div class="rp-contact" role="status">
-                                    <strong>Đơn giữ chỗ đã quá 48 giờ.</strong> Bạn không thể tự hủy hoặc đổi lịch trực tuyến; vui lòng liên hệ nhân viên Riverside Palace để được hỗ trợ.
+                                    <strong>Đơn giữ chỗ đã quá 48 giờ.</strong> Bạn không thể tự hủy trực tuyến theo quy tắc 48 giờ; việc đổi lịch sẽ được kiểm tra theo điều kiện hiện tại. Vui lòng liên hệ nhân viên Riverside Palace nếu cần hỗ trợ.
                                 </div>
                             }
                             @if (detail.CanCancelOnline && !detail.IsCancelled)
@@ -252,13 +252,21 @@
                                     Thời gian còn lại: <b id="holdCountdown" data-expires="@detail.HoldExpiresAt.ToString("o")">--:--:--</b>
                                 </div>
                                 <div style="margin-top:12px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
-                                    @if (detail.CanRescheduleOnline)
+                                    @if (!detail.IsCancelled && detail.StatusCode != "COMPLETED")
                                     {
                                         <button type="button" class="rp-btn-gold" id="openRescheduleModalBtn" style="min-height:44px;">
                                             <span class="material-symbols-outlined" aria-hidden="true">event_repeat</span> Đổi lịch tiệc
                                         </button>
                                     }
                                     <button type="button" class="rp-btn-danger" id="openCancelModalBtn"><i class="fa-regular fa-trash-can"></i> Hủy giữ chỗ tiệc này</button>
+                                </div>
+                            }
+                            else if (!detail.IsCancelled && detail.StatusCode != "COMPLETED")
+                            {
+                                <div style="margin-top:12px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+                                    <button type="button" class="rp-btn-gold" id="openRescheduleModalBtn" style="min-height:44px;">
+                                        <span class="material-symbols-outlined" aria-hidden="true">event_repeat</span> Đổi lịch tiệc
+                                    </button>
                                 </div>
                             }
                         </div>
@@ -288,37 +296,52 @@
                     </div>
                 }
 
-                <!-- MODAL ĐỔI LỊCH (giữ nguyên sảnh) -->
-                @if (detail.CanRescheduleOnline && !detail.IsCancelled)
+                <!-- MODAL ĐỔI LỊCH (quy trình xác thực OTP qua email) -->
+                @if (!detail.IsCancelled && detail.StatusCode != "COMPLETED")
                 {
-                    <div class="rp-modal-backdrop" id="rescheduleModal" role="dialog" aria-modal="true" aria-label="Xác nhận đổi lịch tiệc"
-                         data-hall-id="@detail.HallId" data-current-date="@detail.EventDateString" data-current-shift="@detail.Shift">
+                    <div class="rp-modal-backdrop" id="rescheduleModal" role="dialog" aria-modal="true" aria-label="Yêu cầu đổi lịch tiệc"
+                         data-hall-id="@detail.HallId" data-current-date="@detail.EventDate.ToString("yyyy-MM-dd")" data-current-shift="@detail.Shift">
                         <div class="rp-modal">
                             <h3>Đổi lịch tiệc @detail.BookingCode</h3>
                             <p style="font-size:13px;color:#64748B;margin:0 0 4px;">
-                                Chỉ đổi <b>ngày và/hoặc ca</b>; sảnh <b>@detail.HallName</b> được giữ nguyên.
-                                Giá đã chốt không thay đổi và thời hạn giữ chỗ 48 giờ <b>không được làm mới</b>.
+                                Theo dõi yêu cầu đổi lịch hiện có, xem báo giá và xác nhận báo giá nếu được yêu cầu. Bạn cũng có thể gửi yêu cầu đổi <b>ngày và/hoặc ca</b> cho sảnh <b>@detail.HallName</b> theo quy trình hiện tại.
                             </p>
-                            <form id="rescheduleForm">
+                            <form id="rescheduleForm" autocomplete="off">
                                 @Html.AntiForgeryToken()
-                                <input type="hidden" name="bookingId" value="@detail.BookingId" />
                                 <input type="hidden" name="bookingCode" value="@detail.BookingCode" />
                                 <input type="hidden" name="phoneNumber" value="@Model.PhoneNumber" />
+                                <input type="hidden" name="verificationToken" id="rescheduleVerificationToken" value="" />
+                                <h4 style="font-size:15px;margin:14px 0 6px;">Yêu cầu đổi lịch hiện có</h4>
+                                <div class="hint" id="rescheduleRequestsStatus" aria-live="polite" style="font-size:12px;color:#56616b;"></div>
+                                <div id="rescheduleRequestsList" style="margin-top:8px;display:grid;gap:10px;"></div>
+                                <hr style="border:none;border-top:1px solid #e8e1d5;margin:16px 0;" />
+                                <h4 style="font-size:15px;margin:0 0 6px;">Gửi yêu cầu đổi lịch mới</h4>
+                                <div class="hint" id="rescheduleEligibility" aria-live="polite" style="margin-top:8px;font-size:12px;color:#56616b;"></div>
                                 <label for="rescheduleDate">Ngày tổ chức mới</label>
-                                <input type="date" id="rescheduleDate" name="newDate"
-                                       min="@DateTime.Today.AddDays(30).ToString("yyyy-MM-dd")"
-                                       max="@DateTime.Today.AddDays(365).ToString("yyyy-MM-dd")" required />
+                                <input type="date" id="rescheduleDate" name="newDate" required />
                                 <label for="rescheduleShift">Ca tổ chức mới</label>
                                 <select id="rescheduleShift" name="newShift">
                                     <option value="Ca trưa">Ca trưa</option>
                                     <option value="Ca tối">Ca tối</option>
                                 </select>
+                                <label for="rescheduleHallId">Sảnh mới</label>
+                                <select id="rescheduleHallId" name="newHallId">
+                                    <option value="@detail.HallId">@detail.HallName</option>
+                                </select>
                                 <div class="hint" id="rescheduleAvailability" aria-live="polite" style="margin-top:8px;font-size:12px;color:#56616b;"></div>
-                                <label for="rescheduleReason" style="margin-top:12px;">Lý do đổi lịch (tối đa 500 ký tự)</label>
-                                <textarea name="reason" id="rescheduleReason" maxlength="500" placeholder="Ví dụ: Thay đổi ngày tổ chức do lịch gia đình..."></textarea>
+                                <label for="rescheduleReason" style="margin-top:12px;">Lý do đổi lịch</label>
+                                <textarea name="reason" id="rescheduleReason" maxlength="500" placeholder="Ví dụ: Thay đổi ngày tổ chức do lịch gia đình..." required></textarea>
+                                <label for="rescheduleOtpCode" style="margin-top:12px;">Mã OTP xác thực (gửi qua email)</label>
+                                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                    <input type="text" id="rescheduleOtpCode" inputmode="numeric" maxlength="6" pattern="\d{6}" placeholder="Nhập 6 chữ số" style="max-width:180px;" />
+                                    <button type="button" class="rp-btn-ghost" id="sendRescheduleOtpBtn">Gửi OTP</button>
+                                    <button type="button" class="rp-btn-ghost" id="verifyRescheduleOtpBtn">Xác minh OTP</button>
+                                </div>
+                                <div class="hint" id="rescheduleOtpStatus" aria-live="polite" style="margin-top:8px;font-size:12px;color:#56616b;"></div>
+                                <div class="hint" id="rescheduleResultStatus" aria-live="polite" style="margin-top:8px;font-size:12px;color:#56616b;"></div>
                                 <div class="rp-modal-actions">
-                                    <button type="button" class="rp-btn-ghost" id="closeRescheduleModalBtn">Giữ lịch cũ</button>
-                                    <button type="submit" class="rp-btn-gold" id="confirmRescheduleBtn" style="min-height:42px;">Xác nhận đổi lịch</button>
+                                    <button type="button" class="rp-btn-ghost" id="closeRescheduleModalBtn">Đóng</button>
+                                    <button type="submit" class="rp-btn-gold" id="confirmRescheduleBtn" style="min-height:42px;" disabled>Gửi yêu cầu đổi lịch</button>
                                 </div>
                             </form>
                         </div>
@@ -439,78 +462,444 @@
                 });
             }
 
-            // Modal đổi lịch (giữ nguyên sảnh)
+            // Modal đổi lịch (quy trình: điều kiện -> lịch trống -> OTP email -> tạo yêu cầu, tra cứu/yêu cầu xác nhận báo giá)
             var rescheduleModal = document.getElementById('rescheduleModal');
             var openRescheduleBtn = document.getElementById('openRescheduleModalBtn');
             var closeRescheduleBtn = document.getElementById('closeRescheduleModalBtn');
             var rescheduleForm = document.getElementById('rescheduleForm');
             var rescheduleDate = document.getElementById('rescheduleDate');
             var rescheduleShift = document.getElementById('rescheduleShift');
-            function setAvailabilityMessage(text) {
-                var el = document.getElementById('rescheduleAvailability');
-                if (el) el.textContent = text || '';
+            var rescheduleHallId = document.getElementById('rescheduleHallId');
+            var sendOtpBtn = document.getElementById('sendRescheduleOtpBtn');
+            var verifyOtpBtn = document.getElementById('verifyRescheduleOtpBtn');
+            var otpCodeInput = document.getElementById('rescheduleOtpCode');
+            var otpStatus = document.getElementById('rescheduleOtpStatus');
+            var resultStatus = document.getElementById('rescheduleResultStatus');
+            var eligibilityStatus = document.getElementById('rescheduleEligibility');
+            var confirmRescheduleBtn = document.getElementById('confirmRescheduleBtn');
+            var verificationTokenInput = document.getElementById('rescheduleVerificationToken');
+            var requestsStatus = document.getElementById('rescheduleRequestsStatus');
+            var requestsList = document.getElementById('rescheduleRequestsList');
+            var verifiedState = { token: '', canRequest: false, hallAvailable: false };
+            var quoteTokens = Object.create(null);
+
+            function setText(el, text) { if (el) el.textContent = text || ''; }
+            function formToken(f) { var t = f && f.querySelector('input[name="__RequestVerificationToken"]'); return t ? t.value : ''; }
+            function proofData() {
+                var fd = new FormData();
+                if (!rescheduleForm) return fd;
+                fd.append('bookingCode', rescheduleForm.querySelector('input[name="bookingCode"]').value || '');
+                fd.append('phoneNumber', rescheduleForm.querySelector('input[name="phoneNumber"]').value || '');
+                fd.append('__RequestVerificationToken', formToken(rescheduleForm));
+                return fd;
+            }
+            function updateSubmitState() {
+                var reasonOk = document.getElementById('rescheduleReason') && document.getElementById('rescheduleReason').value.trim().length >= 3;
+                var hallSelect = document.getElementById('rescheduleHallId');
+                var hallSelected = hallSelect && hallSelect.value;
+                var canSubmit = !!(verifiedState.canRequest && verifiedState.hallAvailable && verifiedState.token && reasonOk && rescheduleDate && rescheduleDate.value && hallSelected);
+                if (confirmRescheduleBtn) confirmRescheduleBtn.disabled = !canSubmit;
+            }
+            function resetVerification() {
+                verifiedState.token = '';
+                if (verificationTokenInput) verificationTokenInput.value = '';
+                setText(otpStatus, '');
+                setText(resultStatus, '');
+                updateSubmitState();
+            }
+            async function postForm(url, fd) {
+                var res = await fetch(url, { method: 'POST', body: fd, headers: { 'RequestVerificationToken': formToken(rescheduleForm) } });
+                return await res.json();
+            }
+            function formatMoney(value) {
+                var n = Number(value || 0);
+                try { return n.toLocaleString('vi-VN') + ' đ'; } catch (e) { return String(n) + ' đ'; }
+            }
+            function clearNode(node) { while (node && node.firstChild) node.removeChild(node.firstChild); }
+            function appendLabeled(parent, label, value) {
+                if (value === null || value === undefined || value === '') return;
+                var p = document.createElement('div');
+                p.style.fontSize = '12px';
+                p.style.color = '#56616b';
+                p.style.marginTop = '4px';
+                var b = document.createElement('b');
+                b.style.color = '#162839';
+                b.textContent = label + ': ';
+                p.appendChild(b);
+                p.appendChild(document.createTextNode(String(value)));
+                parent.appendChild(p);
+            }
+            function trustedHttpsUrl(url) {
+                var u = (url || '').trim();
+                return /^https:\/\//i.test(u) ? u : '';
+            }
+            function renderPaymentResult(container, payment, scheduleChange) {
+                if (!payment && !scheduleChange) return;
+                var box = document.createElement('div');
+                box.style.marginTop = '8px';
+                box.style.padding = '10px';
+                box.style.border = '1px solid #e8e1d5';
+                box.style.borderRadius = '8px';
+                var title = document.createElement('div');
+                title.style.fontWeight = '700';
+                title.style.fontSize = '12px';
+                title.textContent = 'Kết quả xác nhận báo giá';
+                box.appendChild(title);
+                if (scheduleChange) {
+                    appendLabeled(box, 'Trạng thái yêu cầu', scheduleChange.displayStatus || scheduleChange.statusName || scheduleChange.status || '');
+                }
+                if (payment) {
+                    appendLabeled(box, 'Trạng thái thanh toán', payment.paymentStatus || payment.status || '');
+                    if (payment.businessAmount !== undefined && payment.businessAmount !== null) appendLabeled(box, 'Số tiền cần xử lý', formatMoney(payment.businessAmount));
+                    if (payment.message) appendLabeled(box, 'Thông báo', payment.message);
+                    var href = trustedHttpsUrl(payment.checkoutUrl);
+                    if (href) {
+                        var link = document.createElement('a');
+                        link.href = href;
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        link.className = 'rp-btn-gold';
+                        link.style.display = 'inline-flex';
+                        link.style.marginTop = '8px';
+                        link.style.minHeight = '40px';
+                        link.textContent = 'Thanh toán chênh lệch';
+                        box.appendChild(link);
+                    }
+                }
+                container.appendChild(box);
+            }
+            function renderScheduleChangeRequest(item) {
+                var card = document.createElement('div');
+                card.style.border = '1px solid #e8e1d5';
+                card.style.borderRadius = '8px';
+                card.style.padding = '12px';
+                card.style.background = '#fdfbf7';
+                var head = document.createElement('div');
+                head.style.fontWeight = '700';
+                head.style.color = '#162839';
+                head.textContent = 'Yêu cầu #' + item.scheduleChangeId + ' · ' + (item.displayStatus || item.statusName || item.status || '');
+                card.appendChild(head);
+                appendLabeled(card, 'Từ', (item.oldDate || '') + ' · ' + (item.oldShift || '') + ' · ' + (item.oldHallName || ''));
+                appendLabeled(card, 'Sang', (item.newDate || '') + ' · ' + (item.newShift || '') + ' · ' + (item.newHallName || ''));
+                if (item.reason) appendLabeled(card, 'Lý do', item.reason);
+                if (item.resolutionReason) appendLabeled(card, 'Ghi chú xử lý', item.resolutionReason);
+                if (item.quote) {
+                    var q = item.quote;
+                    var qTitle = document.createElement('div');
+                    qTitle.style.marginTop = '8px';
+                    qTitle.style.fontWeight = '700';
+                    qTitle.style.fontSize = '12px';
+                    qTitle.textContent = 'Báo giá hiện tại';
+                    card.appendChild(qTitle);
+                    appendLabeled(card, 'Phí đổi lịch', formatMoney(q.scheduleChangeFee));
+                    appendLabeled(card, 'Chênh lệch sảnh', formatMoney(q.hallPriceDifference));
+                    appendLabeled(card, 'Tổng điều chỉnh', formatMoney(q.adjustmentTotal));
+                    appendLabeled(card, 'Cần thanh toán', formatMoney(q.amountDue));
+                    appendLabeled(card, 'Tín dụng', formatMoney(q.creditAmount));
+                    appendLabeled(card, 'Hoàn lại', formatMoney(q.refundAmount));
+                }
+                var resultBox = document.createElement('div');
+                resultBox.setAttribute('data-quote-result', String(item.scheduleChangeId));
+                card.appendChild(resultBox);
+
+                if (item.status === 'AWAITING_QUOTE_ACCEPTANCE' && item.quote && item.quote.quoteId) {
+                    var panel = document.createElement('div');
+                    panel.style.marginTop = '10px';
+                    panel.style.paddingTop = '10px';
+                    panel.style.borderTop = '1px dashed #e8e1d5';
+                    var note = document.createElement('div');
+                    note.style.fontSize = '12px';
+                    note.style.color = '#56616b';
+                    note.textContent = 'Xác nhận báo giá cần OTP (SCHEDULE_CHANGE_ACCEPT_QUOTE).';
+                    panel.appendChild(note);
+                    var row = document.createElement('div');
+                    row.style.display = 'flex';
+                    row.style.gap = '8px';
+                    row.style.flexWrap = 'wrap';
+                    row.style.alignItems = 'center';
+                    row.style.marginTop = '8px';
+                    var otpInput = document.createElement('input');
+                    otpInput.type = 'text';
+                    otpInput.inputMode = 'numeric';
+                    otpInput.maxLength = 6;
+                    otpInput.placeholder = 'OTP 6 chữ số';
+                    otpInput.style.maxWidth = '160px';
+                    otpInput.style.minHeight = '40px';
+                    otpInput.style.borderRadius = '10px';
+                    otpInput.style.border = '1px solid #CBD5E1';
+                    otpInput.style.padding = '8px 12px';
+                    var sendBtn = document.createElement('button');
+                    sendBtn.type = 'button';
+                    sendBtn.className = 'rp-btn-ghost';
+                    sendBtn.textContent = 'Gửi OTP báo giá';
+                    var verifyBtn = document.createElement('button');
+                    verifyBtn.type = 'button';
+                    verifyBtn.className = 'rp-btn-ghost';
+                    verifyBtn.textContent = 'Xác minh OTP';
+                    var acceptBtn = document.createElement('button');
+                    acceptBtn.type = 'button';
+                    acceptBtn.className = 'rp-btn-gold';
+                    acceptBtn.style.minHeight = '40px';
+                    acceptBtn.textContent = 'Chấp nhận báo giá';
+                    row.appendChild(otpInput);
+                    row.appendChild(sendBtn);
+                    row.appendChild(verifyBtn);
+                    row.appendChild(acceptBtn);
+                    panel.appendChild(row);
+                    var status = document.createElement('div');
+                    status.className = 'hint';
+                    status.style.marginTop = '8px';
+                    status.style.fontSize = '12px';
+                    status.style.color = '#56616b';
+                    panel.appendChild(status);
+                    card.appendChild(panel);
+
+                    sendBtn.addEventListener('click', async function () {
+                        sendBtn.disabled = true;
+                        setText(status, 'Đang gửi OTP xác nhận báo giá...');
+                        try {
+                            var fd = proofData();
+                            fd.append('scheduleChangeId', String(item.scheduleChangeId));
+                            var data = await postForm('/MyBooking/SendRescheduleQuoteOtp', fd);
+                            setText(status, data.message || (data.success ? 'Đã gửi OTP xác nhận báo giá.' : 'Không thể gửi OTP.'));
+                        } catch (e) { setText(status, 'Không thể gửi OTP lúc này.'); }
+                        finally { sendBtn.disabled = false; }
+                    });
+                    verifyBtn.addEventListener('click', async function () {
+                        var code = (otpInput.value || '').trim();
+                        if (!/^\d{6}$/.test(code)) { setText(status, 'Vui lòng nhập mã OTP gồm 6 chữ số.'); return; }
+                        verifyBtn.disabled = true;
+                        setText(status, 'Đang xác minh OTP...');
+                        try {
+                            var fd = proofData();
+                            fd.append('scheduleChangeId', String(item.scheduleChangeId));
+                            fd.append('otpCode', code);
+                            var data = await postForm('/MyBooking/VerifyRescheduleQuoteOtp', fd);
+                            if (data.success && data.verificationToken) {
+                                quoteTokens[item.scheduleChangeId] = data.verificationToken;
+                                setText(status, 'Xác minh OTP thành công. Bạn có thể chấp nhận báo giá.');
+                            } else {
+                                delete quoteTokens[item.scheduleChangeId];
+                                setText(status, data.message || 'Không thể xác minh OTP.');
+                            }
+                        } catch (e) { setText(status, 'Không thể xác minh OTP lúc này.'); }
+                        finally { verifyBtn.disabled = false; }
+                    });
+                    acceptBtn.addEventListener('click', async function () {
+                        var token = quoteTokens[item.scheduleChangeId] || '';
+                        if (!token) { setText(status, 'Vui lòng xác minh OTP xác nhận báo giá trước.'); return; }
+                        if (!confirm('Xác nhận chấp nhận báo giá đổi lịch này?')) return;
+                        acceptBtn.disabled = true;
+                        setText(status, 'Đang chấp nhận báo giá...');
+                        try {
+                            var fd = proofData();
+                            fd.append('scheduleChangeId', String(item.scheduleChangeId));
+                            fd.append('quoteId', String(item.quote.quoteId));
+                            fd.append('verificationToken', token);
+                            var data = await postForm('/MyBooking/AcceptRescheduleQuote', fd);
+                            if (data.success) {
+                                delete quoteTokens[item.scheduleChangeId];
+                                clearNode(resultBox);
+                                renderPaymentResult(resultBox, data.payment, data.scheduleChange);
+                                setText(status, data.message || 'Đã xử lý xác nhận báo giá.');
+                                await loadRescheduleRequests();
+                            } else {
+                                setText(status, data.message || 'Không thể chấp nhận báo giá.');
+                            }
+                        } catch (e) { setText(status, 'Không thể chấp nhận báo giá lúc này.'); }
+                        finally { acceptBtn.disabled = false; }
+                    });
+                }
+                return card;
+            }
+            async function loadRescheduleRequests() {
+                if (!requestsList) return;
+                setText(requestsStatus, 'Đang tải yêu cầu đổi lịch...');
+                clearNode(requestsList);
+                try {
+                    var data = await postForm('/MyBooking/RescheduleRequests', proofData());
+                    if (!data.success) { setText(requestsStatus, data.message || 'Không thể tải yêu cầu đổi lịch.'); return; }
+                    var items = data.requests || [];
+                    if (!items.length) { setText(requestsStatus, 'Chưa có yêu cầu đổi lịch nào.'); return; }
+                    setText(requestsStatus, 'Tìm thấy ' + items.length + ' yêu cầu đổi lịch.');
+                    for (var i = 0; i < items.length; i++) {
+                        requestsList.appendChild(renderScheduleChangeRequest(items[i]));
+                    }
+                } catch (e) { setText(requestsStatus, 'Không thể tải yêu cầu đổi lịch lúc này.'); }
+            }
+            async function loadEligibility() {
+                setText(eligibilityStatus, 'Đang kiểm tra điều kiện đổi lịch...');
+                verifiedState.canRequest = false;
+                try {
+                    var data = await postForm('/MyBooking/RescheduleEligibility', proofData());
+                    if (!data.success) { setText(eligibilityStatus, data.message || 'Không thể kiểm tra điều kiện đổi lịch.'); updateSubmitState(); return; }
+                    verifiedState.canRequest = !!data.canRequestOnline;
+                    if (data.minimumNewDate && rescheduleDate) {
+                        rescheduleDate.min = data.minimumNewDate;
+                        rescheduleDate.max = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+                        if (!rescheduleDate.value || rescheduleDate.value < data.minimumNewDate) rescheduleDate.value = data.minimumNewDate;
+                    }
+                    setText(eligibilityStatus, data.canRequestOnline
+                        ? ('Đủ điều kiện gửi yêu cầu trực tuyến. Phí đổi lịch theo chính sách: ' + (data.scheduleChangeFee || 0).toLocaleString('vi-VN') + ' đ.')
+                        : (data.reason || 'Chưa đủ điều kiện đổi lịch trực tuyến.'));
+                } catch (err) { setText(eligibilityStatus, 'Không thể kiểm tra điều kiện đổi lịch.'); }
+                updateSubmitState();
             }
             async function refreshAvailability() {
-                if (!rescheduleModal || !rescheduleDate || !rescheduleDate.value) { setAvailabilityMessage(''); return; }
-                setAvailabilityMessage('Đang kiểm tra lịch trống...');
-                try {
-                    var res = await fetch('/MyBooking/Availability?date=' + encodeURIComponent(rescheduleDate.value));
-                    var data = await res.json();
-                    if (!data.success) { setAvailabilityMessage(data.message || 'Không thể kiểm tra lịch lúc này.'); return; }
-                    var hallId = parseInt(rescheduleModal.dataset.hallId, 10);
-                    var hall = (data.halls || []).find(function (h) { return h.hallId === hallId; });
-                    if (!hall) { setAvailabilityMessage('Không tìm thấy thông tin sảnh của bạn.'); return; }
-                    var noonOpt = rescheduleShift.querySelector('option[value="Ca trưa"]');
-                    var eveningOpt = rescheduleShift.querySelector('option[value="Ca tối"]');
-                    noonOpt.disabled = !hall.isNoonAvailable;
-                    eveningOpt.disabled = !hall.isEveningAvailable;
-                    var selected = rescheduleShift.selectedOptions[0];
-                    if (selected && selected.disabled) {
-                        if (!noonOpt.disabled) rescheduleShift.value = 'Ca trưa';
-                        else if (!eveningOpt.disabled) rescheduleShift.value = 'Ca tối';
-                    }
-                    var isSame = rescheduleDate.value === rescheduleModal.dataset.currentDate
-                        && rescheduleShift.value === rescheduleModal.dataset.currentShift;
-                    setAvailabilityMessage('Ca trưa: ' + (hall.isNoonAvailable ? 'còn trống' : 'đã kín')
-                        + ' · Ca tối: ' + (hall.isEveningAvailable ? 'còn trống' : 'đã kín')
-                        + (isSame ? ' · Lịch này trùng lịch hiện tại.' : ''));
-                } catch (err) {
-                    setAvailabilityMessage('Không thể kiểm tra lịch lúc này.');
+                verifiedState.hallAvailable = false;
+                resetVerification();
+                var hallSelect = document.getElementById('rescheduleHallId');
+                if (hallSelect) {
+                    hallSelect.innerHTML = '';
                 }
+                if (!rescheduleModal || !rescheduleDate || !rescheduleDate.value) { setText(document.getElementById('rescheduleAvailability'), ''); updateSubmitState(); return; }
+                if (rescheduleDate.value === rescheduleModal.dataset.currentDate && rescheduleShift.value === rescheduleModal.dataset.currentShift) {
+                    setText(document.getElementById('rescheduleAvailability'), 'Lịch mới trùng lịch hiện tại. Vui lòng chọn ngày/ca khác.');
+                    if (hallSelect && rescheduleModal.dataset.hallId) {
+                        var opt = document.createElement('option');
+                        opt.value = rescheduleModal.dataset.hallId;
+                        opt.textContent = '@(detail?.HallName?.Replace("'", "\\'") ?? "Sảnh hiện tại")';
+                        hallSelect.appendChild(opt);
+                    }
+                    updateSubmitState(); return;
+                }
+                setText(document.getElementById('rescheduleAvailability'), 'Đang kiểm tra lịch trống...');
+                try {
+                    var fd = proofData();
+                    fd.append('date', rescheduleDate.value);
+                    fd.append('shift', rescheduleShift.value);
+                    var data = await postForm('/MyBooking/RescheduleAvailability', fd);
+                    if (!data.success) { setText(document.getElementById('rescheduleAvailability'), data.message || 'Không thể kiểm tra lịch trống.'); updateSubmitState(); return; }
+                    var halls = data.halls || [];
+                    var currentHallId = parseInt(rescheduleModal.dataset.hallId, 10);
+                    if (!halls.length) { setText(document.getElementById('rescheduleAvailability'), 'Không có sảnh khả dụng.'); updateSubmitState(); return; }
+                    if (hallSelect) {
+                        halls.forEach(function (h) {
+                            var opt = document.createElement('option');
+                            opt.value = h.hallId;
+                            var text = h.hallName || ('Sảnh ' + h.hallId);
+                            if (h.maximumCapacity) {
+                                text = text + ' (' + h.maximumCapacity + ' khách)';
+                            }
+                            opt.textContent = text;
+                            if (h.hallId === currentHallId && h.available) {
+                                opt.selected = true;
+                            }
+                            hallSelect.appendChild(opt);
+                        });
+                        if (!hallSelect.value) {
+                            var preferred = halls.find(function (h) { return h.hallId === currentHallId && h.available; });
+                            if (preferred) {
+                                hallSelect.value = preferred.hallId;
+                            } else {
+                                var firstAvailable = halls.find(function (h) { return h.available; });
+                                if (firstAvailable) {
+                                    hallSelect.value = firstAvailable.hallId;
+                                } else if (halls[0]) {
+                                    hallSelect.value = halls[0].hallId;
+                                }
+                            }
+                        }
+                    }
+                    var selectedHallId = hallSelect ? parseInt(hallSelect.value, 10) : currentHallId;
+                    var hall = halls.find(function (h) { return h.hallId === selectedHallId; });
+                    if (!hall) { setText(document.getElementById('rescheduleAvailability'), 'Không tìm thấy thông tin sảnh đã chọn.'); updateSubmitState(); return; }
+                    verifiedState.hallAvailable = !!hall.available;
+                    setText(document.getElementById('rescheduleAvailability'), hall.available
+                        ? ('Sảnh ' + (hall.hallName || 'đã chọn') + ' còn trống cho ' + rescheduleDate.value + ' · ' + rescheduleShift.value + '.')
+                        : ('Sảnh không khả dụng: ' + (hall.unavailableReason || 'đã kín hoặc không thể đặt.')));
+                } catch (err) { setText(document.getElementById('rescheduleAvailability'), 'Không thể kiểm tra lịch trống.'); }
+                updateSubmitState();
             }
-            if (openRescheduleBtn && rescheduleModal) openRescheduleBtn.addEventListener('click', function () {
+            if (openRescheduleBtn && rescheduleModal) openRescheduleBtn.addEventListener('click', async function () {
                 rescheduleModal.classList.add('open');
-                refreshAvailability();
+                resetVerification();
+                await loadRescheduleRequests();
+                await loadEligibility();
+                await refreshAvailability();
             });
             if (closeRescheduleBtn && rescheduleModal) closeRescheduleBtn.addEventListener('click', function () { rescheduleModal.classList.remove('open'); });
             if (rescheduleModal) rescheduleModal.addEventListener('click', function (e) { if (e.target === rescheduleModal) rescheduleModal.classList.remove('open'); });
             if (rescheduleDate) rescheduleDate.addEventListener('change', refreshAvailability);
             if (rescheduleShift) rescheduleShift.addEventListener('change', refreshAvailability);
+            var hallSelectEl = document.getElementById('rescheduleHallId');
+            if (hallSelectEl) {
+                hallSelectEl.addEventListener('change', function () {
+                    resetVerification();
+                    var availEl = document.getElementById('rescheduleAvailability');
+                    if (rescheduleModal && rescheduleDate && rescheduleDate.value && rescheduleDate.value === rescheduleModal.dataset.currentDate && rescheduleShift && rescheduleShift.value === rescheduleModal.dataset.currentShift) {
+                        setText(availEl, 'Lịch mới trùng lịch hiện tại. Vui lòng chọn ngày/ca khác.');
+                        verifiedState.hallAvailable = false;
+                    } else {
+                        var sel = hallSelectEl.options[hallSelectEl.selectedIndex];
+                        if (sel) {
+                            setText(availEl, 'Đã chọn ' + sel.textContent + '.');
+                        }
+                        verifiedState.hallAvailable = true;
+                    }
+                    updateSubmitState();
+                });
+            }
+            var reasonInput = document.getElementById('rescheduleReason');
+            if (reasonInput) reasonInput.addEventListener('input', updateSubmitState);
+            if (sendOtpBtn) sendOtpBtn.addEventListener('click', async function () {
+                if (!verifiedState.canRequest) { setText(otpStatus, 'Vui lòng kiểm tra điều kiện đổi lịch trước.'); return; }
+                if (!verifiedState.hallAvailable) { setText(otpStatus, 'Vui lòng chọn ngày/ca còn trống trước khi gửi OTP.'); return; }
+                sendOtpBtn.disabled = true;
+                setText(otpStatus, 'Đang gửi OTP...');
+                try {
+                    var data = await postForm('/MyBooking/SendRescheduleOtp', proofData());
+                    setText(otpStatus, data.message || (data.success ? 'Mã OTP đã được gửi tới email của booking.' : 'Không thể gửi OTP.'));
+                } catch (err) { setText(otpStatus, 'Không thể gửi OTP lúc này.'); }
+                finally { sendOtpBtn.disabled = false; }
+            });
+            if (verifyOtpBtn) verifyOtpBtn.addEventListener('click', async function () {
+                var code = otpCodeInput ? otpCodeInput.value.trim() : '';
+                if (!/^\d{6}$/.test(code)) { setText(otpStatus, 'Vui lòng nhập mã OTP gồm 6 chữ số.'); return; }
+                verifyOtpBtn.disabled = true;
+                setText(otpStatus, 'Đang xác minh OTP...');
+                try {
+                    var fd = proofData();
+                    fd.append('otpCode', code);
+                    var data = await postForm('/MyBooking/VerifyRescheduleOtp', fd);
+                    if (data.success && data.verificationToken) {
+                        verifiedState.token = data.verificationToken;
+                        if (verificationTokenInput) verificationTokenInput.value = data.verificationToken;
+                        setText(otpStatus, 'Xác minh OTP thành công. Bạn có thể gửi yêu cầu đổi lịch.');
+                    } else {
+                        verifiedState.token = '';
+                        if (verificationTokenInput) verificationTokenInput.value = '';
+                        setText(otpStatus, data.message || 'Không thể xác minh OTP.');
+                    }
+                } catch (err) { setText(otpStatus, 'Không thể xác minh OTP lúc này.'); }
+                finally { verifyOtpBtn.disabled = false; updateSubmitState(); }
+            });
             if (rescheduleForm) {
                 rescheduleForm.addEventListener('submit', async function (e) {
                     e.preventDefault();
-                    if (!rescheduleDate.value) { alert('Vui lòng chọn ngày tổ chức mới.'); return; }
-                    if (rescheduleDate.value === rescheduleModal.dataset.currentDate
-                        && rescheduleShift.value === rescheduleModal.dataset.currentShift) {
-                        alert('Ngày và ca mới trùng với lịch hiện tại của đơn tiệc.');
-                        return;
-                    }
-                    if (!confirm('Xác nhận ĐỔI LỊCH tiệc? Sảnh và giá đã chốt được giữ nguyên.')) return;
-                    var btn = document.getElementById('confirmRescheduleBtn');
-                    if (btn) { btn.disabled = true; btn.textContent = 'Đang đổi lịch...'; }
+                    if (!verifiedState.token) { setText(resultStatus, 'Vui lòng xác minh OTP trước khi gửi yêu cầu.'); return; }
+                    if (!confirm('Xác nhận gửi yêu cầu đổi lịch? Yêu cầu sẽ được xử lý theo quy trình hiện tại.')) return;
+                    if (confirmRescheduleBtn) { confirmRescheduleBtn.disabled = true; confirmRescheduleBtn.textContent = 'Đang gửi yêu cầu...'; }
                     try {
-                        var fd = new FormData(rescheduleForm);
-                        var token = rescheduleForm.querySelector('input[name="__RequestVerificationToken"]');
-                        var res = await fetch('/MyBooking/Reschedule', {
-                            method: 'POST',
-                            body: fd,
-                            headers: token ? { 'RequestVerificationToken': token.value } : {}
-                        });
-                        var result = await res.json();
-                        if (result.success) { alert(result.message || 'Đã đổi lịch tiệc thành công.'); window.location.reload(); }
-                        else { alert(result.message || 'Không thể đổi lịch lúc này.'); }
-                    } catch (err) { alert('Lỗi kết nối khi gửi yêu cầu đổi lịch.'); }
-                    finally { if (btn) { btn.disabled = false; btn.textContent = 'Xác nhận đổi lịch'; } }
+                        var fd = proofData();
+                        fd.append('verificationToken', verifiedState.token);
+                        fd.append('newHallId', rescheduleHallId ? rescheduleHallId.value : '');
+                        fd.append('newDate', rescheduleDate.value);
+                        fd.append('newShift', rescheduleShift.value);
+                        fd.append('reason', reasonInput ? reasonInput.value : '');
+                        var data = await postForm('/MyBooking/CreateRescheduleRequest', fd);
+                        if (data.success) {
+                            setText(resultStatus, (data.message || 'Yêu cầu đổi lịch đã được ghi nhận.') + (data.statusName ? (' Trạng thái: ' + data.statusName + '.') : ''));
+                            await loadRescheduleRequests();
+                            alert(data.message || 'Yêu cầu đổi lịch đã được ghi nhận.');
+                        } else {
+                            setText(resultStatus, data.message || 'Không thể tạo yêu cầu đổi lịch.');
+                        }
+                    } catch (err) { setText(resultStatus, 'Lỗi kết nối khi gửi yêu cầu đổi lịch.'); }
+                    finally {
+                        if (confirmRescheduleBtn) { confirmRescheduleBtn.textContent = 'Gửi yêu cầu đổi lịch'; }
+                        updateSubmitState();
+                    }
                 });
             }
         })();
