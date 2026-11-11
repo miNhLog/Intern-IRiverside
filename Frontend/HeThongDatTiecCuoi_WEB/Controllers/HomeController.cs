@@ -1,6 +1,7 @@
 using HeThongDatTiecCuoi_WEB.Constants;
 using HeThongDatTiecCuoi_WEB.Models.Banners;
 using HeThongDatTiecCuoi_WEB.Models.Coordination;
+using HeThongDatTiecCuoi_WEB.Models.AdminBooking;
 using HeThongDatTiecCuoi_WEB.Models.Home;
 using HeThongDatTiecCuoi_WEB.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -193,6 +194,18 @@ public sealed class HomeController : Controller
             CoordinationStatus = coordinationStatus,
             ErrorMessage = result.Succeeded ? null : result.Error ?? "Không thể tải danh sách phân công."
         });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    [Authorize(Roles = RoleNames.HallManager)]
+    public async Task<IActionResult> HandoffBooking(int bookingId, string operation, string reason, Guid requestId, CancellationToken cancellationToken)
+    {
+        if (bookingId <= 0 || requestId == Guid.Empty || operation is not ("RESCHEDULE" or "CANCEL") || string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 500)
+            return BadRequest(new { success = false, message = "Thông tin bàn giao không hợp lệ." });
+        if (!TryGetAccessToken(out var token)) return Unauthorized(new { success = false, message = "Phiên đăng nhập đã hết hạn." });
+        var result = await _apiClient.HandoffManagerBookingAsync(bookingId,
+            new ManagerBookingHandoffRequestViewModel { RequestId = requestId, Operation = operation, Reason = reason.Trim() }, token, cancellationToken);
+        return result.Succeeded ? Json(new { success = true, data = result.Value }) : StatusCode(result.StatusCode ?? 502, new { success = false, message = result.Error });
     }
 
     [HttpGet]

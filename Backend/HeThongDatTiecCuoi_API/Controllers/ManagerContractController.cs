@@ -102,6 +102,17 @@ public sealed class ManagerContractController : ControllerBase
             })
             .ToListAsync(cancellationToken);
 
+        var pageContracts = await _context.Contracts.AsNoTracking()
+            .Where(contract => items.Select(item => item.ContractId).Contains(contract.ContractId))
+            .ToListAsync(cancellationToken);
+        var ledgerReader = new Uc18FinancialLedger(_context);
+        foreach (var item in items)
+        {
+            var snapshot = await ledgerReader.ReadAsync(pageContracts.Single(contract => contract.ContractId == item.ContractId), cancellationToken);
+            item.TotalValue = snapshot.EffectiveTotal;
+            item.PaidAmount = snapshot.Receipts.GrossCollected - snapshot.Receipts.TotalPrincipalReturned;
+        }
+
         var statistics = new ManagerContractStatisticsDto
         {
             TotalContracts = await _context.Contracts.AsNoTracking().CountAsync(cancellationToken),
@@ -146,6 +157,18 @@ public sealed class ManagerContractController : ControllerBase
                 Notes = log.Notes
             })
             .ToListAsync(cancellationToken);
+
+        if (HasUc18OperationMapping())
+        {
+            var contract = await _context.Contracts.AsNoTracking().SingleAsync(item => item.ContractId == id, cancellationToken);
+            var ledger = await new Uc18FinancialLedger(_context).ReadAsync(contract, cancellationToken);
+            detail.EffectiveTotal = ledger.EffectiveTotal;
+            detail.RefundedPrincipal = ledger.Receipts.TotalPrincipalReturned;
+            detail.NetPaidAmount = ledger.Receipts.GrossCollected - ledger.Receipts.TotalPrincipalReturned;
+            detail.EffectiveRemainingBalance = ledger.EffectiveTotal - detail.NetPaidAmount;
+            detail.TotalValue = ledger.EffectiveTotal;
+            detail.PaidAmount = detail.NetPaidAmount.Value;
+        }
         return Ok(detail);
     }
 
@@ -329,16 +352,29 @@ public sealed class ManagerContractController : ControllerBase
         await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         var contract = await _context.Contracts.Include(item => item.Status)
             .Include(item => item.Payments).ThenInclude(item => item.Status)
+            .Include(item => item.Booking).ThenInclude(item => item.Status)
+            .Include(item => item.Booking).ThenInclude(item => item.HallSchedule)
             .SingleOrDefaultAsync(item => item.ContractId == id, cancellationToken);
         if (contract is null) return NotFound(new { message = "Không tìm thấy hợp đồng." });
         var paid = contract.Payments.Where(payment => payment.Status.StatusCode == PaymentStatusCodes.Success)
             .Sum(payment => payment.Amount);
-        var completionError = ContractBusinessRules.ValidateCompletion(contract.Status.StatusCode, contract.TotalValue, paid);
+        var effectiveTotal = contract.TotalValue;
+        var netPaid = paid;
+        if (HasUc18OperationMapping() && await _context.Set<Uc18BookingOperation>().AnyAsync(operation =>
+                operation.ContractId == id &&
+                (operation.Kind == Uc18BookingOperation.Reschedule || operation.Kind == Uc18BookingOperation.MenuChange), cancellationToken))
+        {
+            var ledger = await new Uc18FinancialLedger(_context).ReadAsync(contract, cancellationToken);
+            effectiveTotal = ledger.EffectiveTotal;
+            netPaid = ledger.Receipts.GrossCollected - ledger.Receipts.TotalPrincipalReturned;
+        }
+        var completionError = ContractBusinessRules.ValidateCompletion(contract.Status.StatusCode, effectiveTotal, netPaid,
+            contract.Booking.Status.StatusCode, contract.Booking.HallSchedule.Date, DateTime.Now.Date);
         if (completionError is not null) return Conflict(new { message = completionError });
 
         contract.StatusId = await _statusService.GetStatusIdAsync(StatusGroups.Contract, ContractStatusCodes.Completed, cancellationToken);
         AddAudit(actorId, AuditActions.ContractCompleted, contract,
-            new { Status = ContractStatusCodes.Active }, new { Status = ContractStatusCodes.Completed, PaidAmount = paid },
+            new { Status = ContractStatusCodes.Active }, new { Status = ContractStatusCodes.Completed, PaidAmount = paid, EffectiveTotal = effectiveTotal, NetPaidAmount = netPaid },
             $"Hoàn tất hợp đồng {contract.ContractCode} sau khi đã thanh toán đủ.");
         await _context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -371,9 +407,75 @@ public sealed class ManagerContractController : ControllerBase
     {
         var detail = await BuildDetailQuery(id).SingleOrDefaultAsync(cancellationToken);
         if (detail is null) return NotFound(new { message = "Không tìm thấy hợp đồng." });
+        if (detail.StatusCode != ContractStatusCodes.Draft && HasUc18OperationMapping())
+        {
+            var originalAmendment = await _context.Set<Uc18BookingOperation>().AsNoTracking()
+                .Where(operation => operation.ContractId == id &&
+                    (operation.Kind == Uc18BookingOperation.Reschedule || operation.Kind == Uc18BookingOperation.MenuChange) &&
+                    operation.ManagerAgreementReference != null)
+                .OrderBy(operation => operation.RecordedAtUtc).ThenBy(operation => operation.RequestId)
+                .Select(operation => new { operation.RequestId, operation.SnapshotJson }).FirstOrDefaultAsync(cancellationToken);
+            if (originalAmendment is not null && !ContractPdfGenerator.ApplyOriginalEventSnapshot(detail, originalAmendment.SnapshotJson))
+                return Conflict(new { code = "ERR_CONTRACT_ORIGINAL_SNAPSHOT_INVALID", requestId = originalAmendment.RequestId,
+                    message = "Không thể tạo PDF hợp đồng gốc vì ảnh chụp sự kiện ban đầu của phụ lục đã ký bị thiếu hoặc không hợp lệ." });
+        }
         var bytes = _pdfGenerator.Generate(detail);
         return File(bytes, "application/pdf", $"HopDong_{detail.ContractCode}.pdf");
     }
+
+    [HttpGet("{id:int}/amendments")]
+    public async Task<IActionResult> GetAmendments(int id, CancellationToken cancellationToken)
+    {
+        if (!await _context.Contracts.AsNoTracking().AnyAsync(contract => contract.ContractId == id, cancellationToken))
+            return NotFound(new { message = "Không tìm thấy hợp đồng." });
+        if (!HasUc18OperationMapping())
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { code = "ERR_UC18_OPERATION_STORE_UNAVAILABLE" });
+        var operations = await _context.Set<Uc18BookingOperation>().AsNoTracking()
+            .Where(operation => operation.ContractId == id &&
+                (operation.Kind == Uc18BookingOperation.Reschedule || operation.Kind == Uc18BookingOperation.MenuChange) &&
+                operation.ManagerAgreementReference != null && operation.PolicyVersion != null)
+            .OrderBy(operation => operation.RecordedAtUtc).ThenBy(operation => operation.RequestId)
+            .ToListAsync(cancellationToken);
+        return Ok(operations.Select(ToAmendmentDto).ToList());
+    }
+
+    [HttpGet("{id:int}/amendments/{requestId:guid}/pdf")]
+    public async Task<IActionResult> DownloadAmendmentPdf(int id, Guid requestId, CancellationToken cancellationToken)
+    {
+        if (!HasUc18OperationMapping())
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { code = "ERR_UC18_OPERATION_STORE_UNAVAILABLE" });
+        var operation = await _context.Set<Uc18BookingOperation>().AsNoTracking()
+            .SingleOrDefaultAsync(item => item.ContractId == id && item.RequestId == requestId &&
+                (item.Kind == Uc18BookingOperation.Reschedule || item.Kind == Uc18BookingOperation.MenuChange) &&
+                item.ManagerAgreementReference != null && item.PolicyVersion != null, cancellationToken);
+        if (operation is null) return NotFound(new { message = "Không tìm thấy phụ lục hợp đồng." });
+        var amendment = ToAmendmentDto(operation);
+        if (!amendment.SnapshotAvailable)
+            return Conflict(new { code = "ERR_CONTRACT_AMENDMENT_SNAPSHOT_INVALID", requestId,
+                message = "Không thể tạo PDF phụ lục vì ảnh chụp trước/sau thay đổi bị thiếu hoặc không hợp lệ." });
+        var bytes = _pdfGenerator.GenerateAmendmentAppendix(amendment);
+        return File(bytes, "application/pdf", $"PhuLuc_{id}_{requestId:N}.pdf");
+    }
+
+    private static ManagerContractAmendmentDto ToAmendmentDto(Uc18BookingOperation operation)
+    {
+        Uc18ContractAmendmentSnapshot? snapshot = null;
+        if (!string.IsNullOrWhiteSpace(operation.SnapshotJson))
+        {
+            try { snapshot = JsonSerializer.Deserialize<Uc18ContractAmendmentSnapshot>(operation.SnapshotJson); }
+            catch (JsonException) { }
+        }
+        return new ManagerContractAmendmentDto
+        {
+            RequestId = operation.RequestId, Kind = operation.Kind, RecordedAtUtc = operation.RecordedAtUtc,
+            EffectiveTotal = operation.EffectiveTotal, SignedPriceDelta = operation.SignedPriceDelta,
+            FeeAmount = operation.FeeAmount, PolicyVersion = operation.PolicyVersion,
+            ManagerAgreementReference = operation.ManagerAgreementReference, Snapshot = snapshot,
+            SnapshotAvailable = snapshot?.PreviousEvent is not null && snapshot.CurrentEvent is not null
+        };
+    }
+
+    private bool HasUc18OperationMapping() => _context.Model.FindEntityType(typeof(Uc18BookingOperation)) is not null;
 
     private IQueryable<ManagerContractDetailDto> BuildDetailQuery(int id) =>
         _context.Contracts.AsNoTracking().Where(contract => contract.ContractId == id)

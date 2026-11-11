@@ -77,6 +77,13 @@ public sealed class BookingStatusBusinessRules(
         if (!transition.Allowed || transition.Unchanged)
             return transition;
 
+        if (booking.Status.StatusCode == BookingStatusCodes.Pending &&
+            targetStatusCode == BookingStatusCodes.Confirmed &&
+            booking.BookedAt.AddHours(BookingHoldExpirationService.HoldHours) <= Now)
+            return BookingStatusRuleResult.Condition(
+                "ERR_BOOKING_HOLD_EXPIRED",
+                "Booking đã quá thời gian giữ chỗ; cần xử lý hết hạn trước khi xác nhận.");
+
         if (targetStatusCode == BookingStatusCodes.Cancelled)
             return await ValidateCancellationAsync(booking, cancellationToken);
 

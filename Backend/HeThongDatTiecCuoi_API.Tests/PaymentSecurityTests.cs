@@ -35,12 +35,28 @@ public sealed class PaymentSecurityTests
         var activeContractStatus = new Status { StatusId = 301, StatusGroup = StatusGroups.Contract, StatusCode = ContractStatusCodes.Active, StatusName = "Có hiệu lực" };
         var successPaymentStatus = new Status { StatusId = 401, StatusGroup = StatusGroups.Payment, StatusCode = PaymentStatusCodes.Success, StatusName = "Thành công" };
         var bookingStatus = new Status { StatusId = 101, StatusGroup = StatusGroups.Booking, StatusCode = BookingStatusCodes.Confirmed, StatusName = "Đã xác nhận" };
+        var hallStatus = new Status { StatusId = 201, StatusGroup = StatusGroups.Hall, StatusCode = HallStatusCodes.Active, StatusName = "Hoạt động" };
+        var hallScheduleStatus = new Status { StatusId = 202, StatusGroup = StatusGroups.HallSchedule, StatusCode = HallScheduleStatusCodes.Booked, StatusName = "Đã đặt" };
 
         db.DataStatuses.Add(dataStatus);
-        db.Statuses.AddRange(activeContractStatus, successPaymentStatus, bookingStatus);
+        db.Statuses.AddRange(activeContractStatus, successPaymentStatus, bookingStatus, hallStatus, hallScheduleStatus);
 
         var customer = new Customer { CustomerId = 1, FullName = "Trần Khách", PhoneNumber = "0988776655", DataStatusId = 1 };
-        var booking = new WeddingBooking { BookingId = 10, CustomerId = 1, Customer = customer, PaidAmount = 10000000, StatusId = 101, Status = bookingStatus, BookingCode = "DT-TEST-001" };
+        var hall = new Hall
+        {
+            HallId = 1, HallCode = "H1", HallName = "Sảnh chính", MinimumCapacity = 100, MaximumCapacity = 400,
+            RentalPrice = 5000000, StatusId = 201, DataStatusId = 1
+        };
+        var hallSchedule = new HallSchedule
+        {
+            HallScheduleId = 1, HallId = 1, Hall = hall, Date = DateTime.Today.AddDays(30), Shift = "Ca tối",
+            StatusId = 202, DataStatusId = 1
+        };
+        var booking = new WeddingBooking
+        {
+            BookingId = 10, CustomerId = 1, Customer = customer, PaidAmount = 10000000, StatusId = 101,
+            Status = bookingStatus, BookingCode = "DT-TEST-001", HallScheduleId = 1, HallSchedule = hallSchedule
+        };
 
         var contract = new Contract
         {
@@ -70,6 +86,8 @@ public sealed class PaymentSecurityTests
         };
 
         db.Customers.Add(customer);
+        db.Halls.Add(hall);
+        db.HallSchedules.Add(hallSchedule);
         db.WeddingBookings.Add(booking);
         booking.Contract = contract;
         db.Contracts.Add(contract);

@@ -76,6 +76,8 @@ public static class PaymentReconciliationReasons
     public const string BookingCancelledDuringLinkCreation = "BOOKING_CANCELLED_DURING_LINK_CREATION";
     public const string PayOsLinkCreationFailed = "PAYOS_LINK_CREATION_FAILED";
     public const string PayOsLinkExpired = "PAYOS_LINK_EXPIRED";
+    public const string PayOsLinkTerminalNoReceipt = "PAYOS_LINK_TERMINAL_NO_RECEIPT";
+    public const string AmbiguousContractCreate = "AMBIGUOUS_CONTRACT_CREATE";
 }
 
 public static class PaymentTransactionEventTypes

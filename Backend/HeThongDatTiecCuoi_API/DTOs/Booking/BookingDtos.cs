@@ -39,6 +39,7 @@ public sealed class BookingSummaryDto
     public DateTime EventDate { get; set; }
     public string Shift { get; set; } = string.Empty;
     public int GuestCount { get; set; }
+    public int? TableCount { get; set; }
     public decimal? EstimatedTotal { get; set; }
     public string StatusCode { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
@@ -68,7 +69,10 @@ public sealed class BookingDetailDto
     public int? DecorationPackageId { get; set; }
     public string? DecorationPackageName { get; set; }
     public int GuestCount { get; set; }
+    public int? BilledTableCount { get; set; }
+    public int? SpareTableCount { get; set; }
     public string? SpecialRequests { get; set; }
+    public string? CustomMenuSnapshotJson { get; set; }
     public decimal? FinalMenuPrice { get; set; }
     public decimal? FinalDecorationPrice { get; set; }
     public decimal? FinalHallPrice { get; set; }

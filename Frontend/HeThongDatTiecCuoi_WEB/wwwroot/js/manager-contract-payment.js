@@ -260,13 +260,65 @@
         section.append(history);
     }
 
-    function renderHistory(items) {
+    async function renderHistory(items, contractId) {
         const section = byId('drawerHistory'); const card = createNode('article', 'cp-detail-card'); card.append(createNode('h3', '', 'Lịch sử nghiệp vụ'));
         const timeline = createNode('div', 'cp-timeline');
         if (!items.length) timeline.append(createNode('p', 'cp-pre', 'Chưa có lịch sử.'));
         const names = { CONTRACT_CREATED: 'Tạo hợp đồng', CONTRACT_UPDATED: 'Cập nhật bản nháp', CONTRACT_ACTIVATED: 'Kích hoạt hợp đồng', CONTRACT_COMPLETED: 'Hoàn tất hợp đồng', CONTRACT_CANCELLED: 'Hủy hợp đồng' };
         items.forEach(item => { const event = createNode('div', 'cp-timeline-item'); event.append(createNode('strong', '', names[item.action] || item.action), createNode('span', '', `${new Date(item.timestamp).toLocaleString('vi-VN')} · ${item.notes || ''}`)); timeline.append(event); });
         card.append(timeline); section.append(card);
+        const appendix = createNode('article', 'cp-detail-card');
+        appendix.append(createNode('h3', '', 'Phụ lục / bản sửa đổi hợp đồng'));
+        appendix.append(createNode('p', 'cp-pre', 'Đang tải lịch sử phụ lục...'));
+        section.append(appendix);
+        try {
+            const amendments = await request(`${base}/contracts/${contractId}/amendments`);
+            appendix.replaceChildren(createNode('h3', '', 'Phụ lục / bản sửa đổi hợp đồng'));
+            if (!amendments?.length) {
+                appendix.append(createNode('p', 'cp-pre', 'Hợp đồng chưa có phụ lục đã ký.'));
+                return;
+            }
+            amendments.forEach(amendment => {
+                const item = createNode('div', 'cp-amendment-item');
+                item.append(detailCard(`${amendment.kind || 'Phụ lục'} · ${new Date(amendment.recordedAtUtc).toLocaleString('vi-VN')}`, [
+                    ['Mã yêu cầu', amendment.requestId],
+                    ['Tổng giá trị hiệu lực', amendment.effectiveTotal == null ? '—' : money(amendment.effectiveTotal)],
+                    ['Chênh lệch giá đã ký', money(amendment.signedPriceDelta)],
+                    ['Phí', money(amendment.feeAmount)],
+                    ['Phiên bản chính sách', amendment.policyVersion || '—'],
+                    ['Tham chiếu thỏa thuận quản lý', amendment.managerAgreementReference || '—']
+                ]));
+                const snapshot = amendment.snapshot;
+                if (snapshot) {
+                    if (snapshot.reason) item.append(textCard('Lý do', snapshot.reason));
+                    if (snapshot.originalEvent) item.append(renderAmendmentEvent('Sự kiện ban đầu', snapshot.originalEvent));
+                    if (snapshot.previousEvent) item.append(renderAmendmentEvent('Trước thay đổi', snapshot.previousEvent));
+                    if (snapshot.currentEvent) item.append(renderAmendmentEvent('Sau thay đổi', snapshot.currentEvent));
+                }
+                if (amendment.snapshotAvailable) {
+                    const pdf = createNode('a', 'cp-secondary', 'Tải PDF phụ lục');
+                    pdf.href = `${base}/contracts/${contractId}/amendments/${encodeURIComponent(amendment.requestId)}/pdf`;
+                    item.append(pdf);
+                } else {
+                    item.append(createNode('p', 'cp-pre', 'Bản PDF chưa khả dụng vì ảnh chụp phụ lục thiếu hoặc không hợp lệ.'));
+                }
+                appendix.append(item);
+            });
+        } catch {
+            appendix.replaceChildren(
+                createNode('h3', '', 'Phụ lục / bản sửa đổi hợp đồng'),
+                createNode('p', 'cp-pre', 'Lịch sử phụ lục hiện chưa khả dụng từ API. Hợp đồng và lịch sử thanh toán vẫn được giữ nguyên.')
+            );
+        }
+    }
+
+    function renderAmendmentEvent(title, event) {
+        return detailCard(title, [
+            ['Ngày / ca', `${date(event.date)} · ${event.shift || '—'}`],
+            ['Sảnh', event.hallName || '—'], ['Thực đơn', event.menuName || '—'],
+            ['Số khách', String(event.guests)], ['Trang trí', event.decorationPackageName || '—'],
+            ['Dịch vụ', event.services?.length ? event.services.join(', ') : 'Không có']
+        ]);
     }
 
     function renderDrawerActions(detail) {

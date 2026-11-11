@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
+using HeThongDatTiecCuoi_API.Models;
 
 namespace HeThongDatTiecCuoi_API.DTOs.Contract;
 
@@ -94,12 +96,30 @@ public sealed class ManagerContractDetailDto
     public string StatusCode { get; set; } = string.Empty;
     public string StatusName { get; set; } = string.Empty;
     public decimal PaidAmount { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public decimal? EffectiveTotal { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public decimal? NetPaidAmount { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public decimal? RefundedPrincipal { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public decimal? EffectiveRemainingBalance { get; set; }
     public decimal RemainingBalance => TotalValue - PaidAmount;
     public decimal PaymentPercentage => TotalValue > 0 ? PaidAmount / TotalValue * 100m : 0m;
     public bool HasPaymentInconsistency => PaidAmount > TotalValue;
     public ManagerContractBookingDto Booking { get; set; } = new();
     public List<ManagerPaymentListItemDto> Payments { get; set; } = [];
     public List<ContractAuditEventDto> History { get; set; } = [];
+}
+
+public sealed class ManagerContractAmendmentDto
+{
+    public Guid RequestId { get; set; }
+    public string Kind { get; set; } = string.Empty;
+    public DateTime RecordedAtUtc { get; set; }
+    public decimal? EffectiveTotal { get; set; }
+    public decimal SignedPriceDelta { get; set; }
+    public decimal FeeAmount { get; set; }
+    public string? PolicyVersion { get; set; }
+    public string? ManagerAgreementReference { get; set; }
+    public Uc18ContractAmendmentSnapshot? Snapshot { get; set; }
+    public bool SnapshotAvailable { get; set; }
 }
 
 public sealed class ManagerContractBookingDto
