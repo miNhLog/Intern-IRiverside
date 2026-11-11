@@ -1,11 +1,15 @@
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using HeThongDatTiecCuoi_WEB.Constants;
 using HeThongDatTiecCuoi_WEB.Controllers;
 using HeThongDatTiecCuoi_WEB.Models.Auth;
 using HeThongDatTiecCuoi_WEB.Models.Review;
+using HeThongDatTiecCuoi_WEB.Options;
 using HeThongDatTiecCuoi_WEB.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -13,9 +17,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace HeThongDatTiecCuoi_WEB.Tests;
@@ -168,6 +175,75 @@ public sealed class ReviewQrWebTests
 
         Assert.Equal("image/png", result.ContentType);
         Assert.Equal(proxy.Png, result.FileContents);
+    }
+
+    [Fact]
+    public async Task SubmitGuestReviewAsync_ForwardsSessionHeaderAndBodyConsistently()
+    {
+        var sessionId = new string('a', 32);
+        var handler = new CapturingHandler();
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://localhost/") };
+        var api = new RiversideApiClient(
+            httpClient,
+            new ProjectImageCatalog(new ConfigurationBuilder().Build(), new TestWebHostEnvironment()),
+            Microsoft.Extensions.Options.Options.Create(new RecommendationOptions()));
+
+        var scores = new GuestReviewScoresViewModel
+        {
+            HallScore = 5,
+            FoodScore = 4,
+            ServiceScore = 5,
+            SoundScore = 3,
+            LightingScore = 4,
+            HygieneScore = 5,
+            Comment = "Buổi tiệc chu đáo."
+        };
+
+        var result = await api.SubmitGuestReviewAsync("token-abc", scores, sessionId, CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(handler.Request);
+        Assert.True(handler.Request!.Headers.TryGetValues("X-Review-Session", out var headerValues));
+        Assert.Equal(sessionId, Assert.Single(headerValues));
+
+        using var body = JsonDocument.Parse(handler.RequestBody ?? "{}");
+        var root = body.RootElement;
+        Assert.Equal(sessionId, root.GetProperty("sessionId").GetString());
+        Assert.Equal(5, root.GetProperty("hallScore").GetInt32());
+        Assert.Equal(4, root.GetProperty("foodScore").GetInt32());
+        Assert.Equal(5, root.GetProperty("serviceScore").GetInt32());
+        Assert.Equal(3, root.GetProperty("soundScore").GetInt32());
+        Assert.Equal(4, root.GetProperty("lightingScore").GetInt32());
+        Assert.Equal(5, root.GetProperty("hygieneScore").GetInt32());
+        Assert.Equal("Buổi tiệc chu đáo.", root.GetProperty("comment").GetString());
+    }
+
+    private sealed class CapturingHandler : HttpMessageHandler
+    {
+        public HttpRequestMessage? Request { get; private set; }
+        public string? RequestBody { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Request = request;
+            RequestBody = request.Content is null
+                ? null
+                : await request.Content.ReadAsStringAsync(cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"success\":true,\"duplicate\":false,\"message\":\"ok\"}", Encoding.UTF8, "application/json")
+            };
+        }
+    }
+
+    private sealed class TestWebHostEnvironment : IWebHostEnvironment
+    {
+        public string WebRootPath { get; set; } = Path.GetTempPath();
+        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
+        public string ApplicationName { get; set; } = "Tests";
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+        public string ContentRootPath { get; set; } = Path.GetTempPath();
+        public string EnvironmentName { get; set; } = "Production";
     }
 
     private static void AssertRoles(string methodName, string expected)

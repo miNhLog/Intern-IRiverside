@@ -231,14 +231,20 @@ public sealed class RiversideApiClient : IRiversideApiClient
             $"api/reviews/guest/{Uri.EscapeDataString(token)}", null, null, cancellationToken);
 
     public Task<ApiCallResult<GuestReviewSubmitResult>> SubmitGuestReviewAsync(string token,
-        GuestReviewScoresViewModel scores, string sessionId, CancellationToken cancellationToken) =>
-        SendAsync<GuestReviewSubmitResult>(HttpMethod.Post,
+        GuestReviewScoresViewModel scores, string sessionId, CancellationToken cancellationToken)
+    {
+        const string ReviewSessionHeader = "X-Review-Session";
+        var headers = sessionId.Length is >= 16 and <= 80 && sessionId.All(char.IsAsciiHexDigit)
+            ? new Dictionary<string, string> { [ReviewSessionHeader] = sessionId }
+            : null;
+        return SendAsync<GuestReviewSubmitResult>(HttpMethod.Post,
             $"api/reviews/guest/{Uri.EscapeDataString(token)}", new
             {
                 scores.HallScore, scores.FoodScore, scores.ServiceScore,
                 scores.SoundScore, scores.LightingScore, scores.HygieneScore,
                 scores.Comment, SessionId = sessionId
-            }, null, cancellationToken);
+            }, null, cancellationToken, headers);
+    }
 
     public Task<ApiCallResult<ReviewQrIssueViewModel>> IssueCoordinatorReviewQrAsync(string accessToken,
         int bookingId, CancellationToken cancellationToken) =>
@@ -1137,12 +1143,21 @@ public sealed class RiversideApiClient : IRiversideApiClient
             cancellationToken);
     }
 
+    private Task<ApiCallResult<T>> SendAsync<T>(
+        HttpMethod method,
+        string uri,
+        object? body,
+        string? accessToken,
+        CancellationToken cancellationToken) =>
+        SendAsync<T>(method, uri, body, accessToken, cancellationToken, null);
+
     private async Task<ApiCallResult<T>> SendAsync<T>(
         HttpMethod method,
         string uri,
         object? body,
         string? accessToken,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IDictionary<string, string>? headers)
     {
         try
         {
@@ -1155,6 +1170,11 @@ public sealed class RiversideApiClient : IRiversideApiClient
             if (!string.IsNullOrWhiteSpace(accessToken))
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
+            if (headers is not null)
+            {
+                foreach (var (name, value) in headers)
+                    request.Headers.TryAddWithoutValidation(name, value);
             }
 
             using var response = await _httpClient.SendAsync(request, cancellationToken);
