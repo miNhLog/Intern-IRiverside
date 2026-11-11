@@ -17,6 +17,7 @@ using HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment;
 using HeThongDatTiecCuoi_WEB.Models.ManagerEventCoordination;
 using HeThongDatTiecCuoi_WEB.Models.Incident;
 using HeThongDatTiecCuoi_WEB.Models.Coordination;
+using HeThongDatTiecCuoi_WEB.Models.Review;
 using Microsoft.AspNetCore.Mvc;
 using HeThongDatTiecCuoi_WEB.Models.DecorPackages;
 using HeThongDatTiecCuoi_WEB.Models.ScheduleChange;
@@ -51,6 +52,13 @@ public interface IRiversideApiClient
     Task<ApiCallResult<CoordinationMutationViewModel>> ChangeCoordinatorAsync(string accessToken, int bookingId, int coordinatorEmployeeId, string reason, CancellationToken cancellationToken);
     Task<ApiCallResult<CoordinationMutationViewModel>> CancelCoordinatorAssignmentAsync(string accessToken, int bookingId, string reason, CancellationToken cancellationToken);
     Task<ApiCallResult<List<CoordinatorAssignedPartyViewModel>>> GetCoordinatorAssignedPartiesAsync(string accessToken, CancellationToken cancellationToken);
+
+    // UC21/UC22: phát hành QR đánh giá (điều phối viên) và gửi đánh giá khách mời.
+    Task<ApiCallResult<GuestReviewFormViewModel>> GetGuestReviewAsync(string token, CancellationToken cancellationToken);
+    Task<ApiCallResult<GuestReviewSubmitResult>> SubmitGuestReviewAsync(string token, GuestReviewScoresViewModel scores, string sessionId, CancellationToken cancellationToken);
+    Task<ApiCallResult<ReviewQrIssueViewModel>> IssueCoordinatorReviewQrAsync(string accessToken, int bookingId, CancellationToken cancellationToken);
+    Task<ApiCallResult<byte[]>> GetCoordinatorReviewQrPngAsync(string accessToken, int bookingId, CancellationToken cancellationToken);
+    Task<ApiCallResult<byte[]>> GetManagementReviewQrPngAsync(string accessToken, int bookingId, CancellationToken cancellationToken);
     Task<ApiCallResult<ProfileDto>> GetProfileAsync(string accessToken, CancellationToken cancellationToken);
     Task<ApiCallResult<ProfileUpdateResponse>> UpdateProfileAsync(ProfilePageViewModel model, string accessToken, CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerContractListResponseViewModel>> GetManagerContractsAsync(string accessToken, string? keyword, string? status, DateTime? fromDate, DateTime? toDate, int page, CancellationToken cancellationToken);

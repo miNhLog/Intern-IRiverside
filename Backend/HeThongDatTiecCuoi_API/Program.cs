@@ -154,7 +154,6 @@ builder.Services.AddScoped<ChecklistService>();
 builder.Services.AddScoped<IReviewQrEligibilityPolicy, ReviewQrEligibilityPolicy>();
 builder.Services.AddScoped<IReviewQrService, ReviewQrService>();
 builder.Services.AddScoped<IReviewStatisticsService, ReviewStatisticsService>();
-builder.Services.AddHostedService<ReviewQrBackfillWorker>();
 builder.Services.AddScoped<IHallManagerDashboardService, HallManagerDashboardService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
@@ -213,15 +212,26 @@ builder.Services.AddRateLimiter(options =>
                 AutoReplenishment = true
             }));
     options.AddPolicy("wedding-review", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: $"{httpContext.Connection.RemoteIpAddress}:{httpContext.Request.RouteValues["token"]}",
+    {
+        const string ReviewSessionHeader = "X-Review-Session";
+        var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var token = httpContext.Request.RouteValues["token"]?.ToString();
+        var sessionId = httpContext.Request.Headers[ReviewSessionHeader].ToString();
+        var isValidSession = sessionId.Length is >= 16 and <= 80 &&
+            sessionId.All(c => char.IsAsciiHexDigit(c));
+        var partitionKey = token is not null && isValidSession
+            ? $"{ip}:{token}:{sessionId.ToLowerInvariant()}"
+            : $"{ip}:{token}";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: partitionKey,
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,
                 Window = TimeSpan.FromMinutes(10),
                 QueueLimit = 0,
                 AutoReplenishment = true
-            }));
+            });
+    });
 });
 
 builder.Services.AddEndpointsApiExplorer();

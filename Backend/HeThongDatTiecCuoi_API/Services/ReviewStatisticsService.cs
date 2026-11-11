@@ -110,7 +110,7 @@ public sealed class ReviewStatisticsService(ApplicationDbContext context, IRevie
             Enumerable.Range(1, 5).ToDictionary(score => score, score => reviews.Count(r => r.OverallScore == score)),
             Criteria(reviews), reviews.Select(r => new ReviewFeedbackDto(
                 r.ReviewId, r.ReviewerType, r.OverallScore, r.HallScore, r.FoodScore, r.ServiceScore,
-                r.SoundScore, r.LightingScore, r.Comment, r.ReviewedAt, ClassifyScore(r.OverallScore))).ToList());
+                r.SoundScore, r.LightingScore, r.HygieneScore, r.Comment, r.ReviewedAt, ClassifyScore(r.OverallScore))).ToList());
     }
 
     private IQueryable<WeddingBooking> ScopedBookings(int userId, bool hallManager)
@@ -133,7 +133,7 @@ public sealed class ReviewStatisticsService(ApplicationDbContext context, IRevie
     private static ReviewCriterionAveragesDto Criteria(IReadOnlyCollection<WeddingReview> reviews) => new(
         Average(reviews.Select(r => r.HallScore)), Average(reviews.Select(r => r.FoodScore)),
         Average(reviews.Select(r => r.ServiceScore)), Average(reviews.Select(r => r.SoundScore)),
-        Average(reviews.Select(r => r.LightingScore)));
+        Average(reviews.Select(r => r.LightingScore)), Average(reviews.Select(r => r.HygieneScore)));
 
     private static double? Average(IEnumerable<int?> values)
     {

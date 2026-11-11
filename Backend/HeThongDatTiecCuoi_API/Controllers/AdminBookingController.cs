@@ -375,15 +375,6 @@ public sealed class AdminBookingController : ControllerBase
         });
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
-        try
-        {
-            if (_reviewQrService is not null)
-                await _reviewQrService.EnsureForBookingAsync(booking.BookingId, HttpContext.RequestAborted);
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "Booking {BookingId} đã lưu nhưng tạo QR đánh giá thất bại; worker sẽ tạo bù.", booking.BookingId);
-        }
         return Ok(new { success = true, bookingId = booking.BookingId, bookingCode = booking.BookingCode });
     }
 
