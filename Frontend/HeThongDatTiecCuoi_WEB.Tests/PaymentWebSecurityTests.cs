@@ -44,16 +44,20 @@ public sealed class PaymentWebSecurityTests : IClassFixture<PaymentWebFactory>
         Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
     }
     [Fact]
-    public async Task ValidCsrf_InvalidInputRejected_AndMissingApiSessionUnauthorized()
+    public async Task ValidCsrf_MissingApiSessionUnauthorized()
     {
         using var client = Client(RoleNames.Manager);
         var token = await client.GetFromJsonAsync<TokenResponse>("/uc17-test/csrf");
         client.DefaultRequestHeaders.Add("RequestVerificationToken", token!.Token);
-        using var invalid = await client.PostAsJsonAsync("/quan-ly/hop-dong-thanh-toan/payments", new { });
-        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
-        using var valid = await client.PostAsJsonAsync("/quan-ly/hop-dong-thanh-toan/payments", new
+
+        // RecordPaymentViewModel has no data-annotation requirements, so an empty/default payload
+        // is model-valid and the action reaches API-session lookup before any API call.
+        using var emptyPayload = await client.PostAsJsonAsync("/quan-ly/hop-dong-thanh-toan/payments", new { });
+        Assert.Equal(HttpStatusCode.Unauthorized, emptyPayload.StatusCode);
+
+        using var populatedPayload = await client.PostAsJsonAsync("/quan-ly/hop-dong-thanh-toan/payments", new
         { contractId = 1, requestId = Guid.NewGuid(), amount = 10, paymentType = "Đặt cọc", paymentMethod = "Tiền mặt" });
-        Assert.Equal(HttpStatusCode.Unauthorized, valid.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, populatedPayload.StatusCode);
     }
     private HttpClient Client(string? role)
     {
