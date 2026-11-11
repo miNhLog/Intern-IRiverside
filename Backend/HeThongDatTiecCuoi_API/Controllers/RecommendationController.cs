@@ -1809,16 +1809,6 @@ public sealed class RecommendationController : ControllerBase
             await _context.SaveChangesAsync();
         }
         await transaction.CommitAsync();
-        // Booking is durable. QR failure must not roll it back; the worker retries missing QR rows.
-        try
-        {
-            if (_reviewQrService is not null)
-                await _reviewQrService.EnsureForBookingAsync(booking.BookingId, HttpContext.RequestAborted);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Booking {BookingId} was saved but review QR creation failed; backfill will retry.", booking.BookingId);
-        }
 
         // FR15 / UC13 (6a) fault-tolerant: gửi email xác nhận SAU commit, lỗi SMTP
         // chỉ LogError, KHÔNG rollback, vẫn trả success + mã cho client.

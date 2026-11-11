@@ -154,7 +154,6 @@ builder.Services.AddScoped<ChecklistService>();
 builder.Services.AddScoped<IReviewQrEligibilityPolicy, ReviewQrEligibilityPolicy>();
 builder.Services.AddScoped<IReviewQrService, ReviewQrService>();
 builder.Services.AddScoped<IReviewStatisticsService, ReviewStatisticsService>();
-builder.Services.AddHostedService<ReviewQrBackfillWorker>();
 builder.Services.AddScoped<IHallManagerDashboardService, HallManagerDashboardService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();

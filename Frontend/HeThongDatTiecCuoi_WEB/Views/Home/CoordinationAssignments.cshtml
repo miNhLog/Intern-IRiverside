@@ -6,7 +6,16 @@
     var filterCount = (string.IsNullOrWhiteSpace(Model.Search) ? 0 : 1) + (Model.HallId.HasValue ? 1 : 0) +
         (Model.EventDate.HasValue ? 1 : 0) + (string.IsNullOrWhiteSpace(Model.CoordinationStatus) ? 0 : 1);
 }
-@section Styles { <link rel="stylesheet" href="~/css/coordination.css" asp-append-version="true" /> }
+@section Styles {
+    <link rel="stylesheet" href="~/css/coordination.css" asp-append-version="true" />
+    <style>
+        .review-qr-body { display: grid; justify-items: center; gap: 12px; padding: 20px 22px 24px; text-align: center; }
+        .review-qr-body img { width: min(240px, 70vw); height: auto; border: 1px solid #e8e1d5; border-radius: 12px; background: #fff; }
+        .review-qr-body .review-qr-booking { margin: 0; color: #162839; font-size: 14px; font-weight: 750; }
+        .review-qr-body .review-qr-message { margin: 0; color: #56616b; font-size: 12.5px; line-height: 1.6; }
+        .review-qr-body .review-qr-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    </style>
+}
 
 <main class="coordination-page" data-coordination-page>
     <header class="coord-hero">
@@ -67,19 +76,20 @@
                         <td data-label="Thao tác" class="actions"><div class="coord-row-actions">
                             @if (item.CanAssign) { <button type="button" class="coord-action primary js-open-assignment" data-mode="assign" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" data-customer="@item.CustomerName" data-hall="@item.HallName" data-date="@item.EventDate.ToString("dd/MM/yyyy")" data-shift="@item.Shift" data-tables="@item.TableCount"><i class="fa-solid fa-user-plus"></i><span>Phân công</span></button> }
                             @if (item.CanChangeOrCancel) { <button type="button" class="coord-action icon js-open-assignment" data-mode="change" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" data-customer="@item.CustomerName" data-hall="@item.HallName" data-date="@item.EventDate.ToString("dd/MM/yyyy")" data-shift="@item.Shift" data-tables="@item.TableCount" data-current-coordinator-id="@item.CoordinatorEmployeeId" title="Thay đổi điều phối viên" aria-label="Thay đổi điều phối viên"><i class="fa-solid fa-user-pen"></i></button><button type="button" class="coord-action icon danger js-open-cancel" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" data-coordinator="@item.CoordinatorName" title="Hủy phân công" aria-label="Hủy phân công"><i class="fa-solid fa-user-xmark"></i></button> }
-                             <button type="button" class="coord-action icon js-open-history" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" title="Xem chi tiết và lịch sử" aria-label="Xem chi tiết và lịch sử"><i class="fa-regular fa-eye"></i></button>
-                             @if (item.CoordinationState != "CANCELLED" && item.CoordinationState != "COMPLETED")
-                             {
-                                 <form method="post" asp-action="HandoffBooking" class="coord-handoff-form">
-                                     @Html.AntiForgeryToken()
-                                     <input type="hidden" name="bookingId" value="@item.BookingId" />
-                                     <input type="hidden" name="requestId" value="@Guid.NewGuid()" />
-                                     <select name="operation" aria-label="Yêu cầu bàn giao" required><option value="RESCHEDULE">Đổi lịch</option><option value="CANCEL">Hủy tiệc</option></select>
-                                     <input name="reason" required maxlength="500" placeholder="Lý do bàn giao" aria-label="Lý do bàn giao cho Quản lý" />
-                                     <button type="submit" class="coord-action primary" title="Bàn giao yêu cầu cho Quản lý"><i class="fa-solid fa-share"></i><span>Bàn giao</span></button>
-                                 </form>
-                             }
-                         </div></td>
+                            @if (item.CoordinationState == "ASSIGNED") { <button type="button" class="coord-action icon js-open-review-qr" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" title="Mã QR đánh giá" aria-label="Mã QR đánh giá tiệc @item.BookingCode"><i class="fa-solid fa-qrcode"></i></button> }
+                            <button type="button" class="coord-action icon js-open-history" data-booking-id="@item.BookingId" data-booking-code="@item.BookingCode" title="Xem chi tiết và lịch sử" aria-label="Xem chi tiết và lịch sử"><i class="fa-regular fa-eye"></i></button>
+                            @if (item.CoordinationState != "CANCELLED" && item.CoordinationState != "COMPLETED")
+                            {
+                                <form method="post" asp-action="HandoffBooking" class="coord-handoff-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="bookingId" value="@item.BookingId" />
+                                    <input type="hidden" name="requestId" value="@Guid.NewGuid()" />
+                                    <select name="operation" aria-label="Yêu cầu bàn giao" required><option value="RESCHEDULE">Đổi lịch</option><option value="CANCEL">Hủy tiệc</option></select>
+                                    <input name="reason" required maxlength="500" placeholder="Lý do bàn giao" aria-label="Lý do bàn giao cho Quản lý" />
+                                    <button type="submit" class="coord-action primary" title="Bàn giao yêu cầu cho Quản lý"><i class="fa-solid fa-share"></i><span>Bàn giao</span></button>
+                                </form>
+                            }
+                        </div></td>
                     </tr>
                 }
                 </tbody>
@@ -115,6 +125,18 @@
     </section>
 </div>
 
+<div id="reviewQrModal" class="coord-modal" hidden>
+    <button type="button" class="coord-modal-backdrop" data-close-review-qr aria-label="Đóng hộp thoại"></button>
+    <section class="coord-modal-card" role="dialog" aria-modal="true" aria-labelledby="reviewQrTitle">
+        <header><div class="coord-modal-heading"><span class="coord-modal-icon"><i class="fa-solid fa-qrcode"></i></span><div><h2 id="reviewQrTitle">Mã QR đánh giá</h2><p>Khách mời quét mã để mở phiếu đánh giá.</p></div></div><button type="button" class="coord-modal-close" data-close-review-qr aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="review-qr-body">
+            <p class="review-qr-booking" id="reviewQrBooking"></p>
+            <img id="reviewQrImage" alt="Mã QR đánh giá buổi tiệc" hidden />
+            <p class="review-qr-message" id="reviewQrMessage" role="status"></p>
+        </div>
+    </section>
+</div>
+
 <button type="button" class="coord-drawer-overlay" id="historyDrawerOverlay" hidden aria-label="Đóng chi tiết"></button>
 <aside class="coord-drawer" id="historyDrawer" aria-hidden="true" aria-labelledby="historyTitle">
     <div id="historyContent" class="coord-drawer-loading"><i class="fa-solid fa-spinner fa-spin"></i><span>Đang tải chi tiết phân công...</span></div>
@@ -123,4 +145,43 @@
 @section Scripts {
 <script>window.coordinationUrls = { unassigned: '@Url.Action("CoordinationUnassignedOptions", "Home")', options: '@Url.Action("CoordinationOptions", "Home")', history: '@Url.Action("CoordinationHistory", "Home")', assign: '@Url.Action("AssignCoordinator", "Home")', change: '@Url.Action("ChangeCoordinator", "Home")', cancel: '@Url.Action("CancelCoordinator", "Home")' };</script>
 <script src="~/js/coordination-assignments.js" asp-append-version="true"></script>
+<script>
+(function () {
+    var modal = document.getElementById('reviewQrModal');
+    if (!modal) return;
+    var image = document.getElementById('reviewQrImage');
+    var message = document.getElementById('reviewQrMessage');
+    var booking = document.getElementById('reviewQrBooking');
+
+    function close() {
+        modal.hidden = true;
+        image.hidden = true;
+        image.removeAttribute('src');
+        if (!document.querySelector('.coord-modal:not([hidden])')) document.body.classList.remove('coord-modal-open');
+    }
+
+    document.querySelectorAll('.js-open-review-qr').forEach(function (button) {
+        button.addEventListener('click', function () {
+            booking.textContent = 'Tiệc ' + button.dataset.bookingCode;
+            message.textContent = 'Đang tải mã QR...';
+            image.hidden = true;
+            image.onload = function () {
+                image.hidden = false;
+                message.textContent = 'Khách mời quét mã để mở phiếu đánh giá của buổi tiệc.';
+            };
+            image.onerror = function () {
+                image.hidden = true;
+                message.textContent = 'Tiệc chưa có mã QR đánh giá. Điều phối viên phụ trách phát hành mã trước khi tiệc diễn ra.';
+            };
+            image.src = '/danh-gia/quan-ly/' + button.dataset.bookingId + '/qr.png';
+            modal.hidden = false;
+            document.body.classList.add('coord-modal-open');
+        });
+    });
+
+    modal.querySelectorAll('[data-close-review-qr]').forEach(function (element) {
+        element.addEventListener('click', close);
+    });
+})();
+</script>
 }

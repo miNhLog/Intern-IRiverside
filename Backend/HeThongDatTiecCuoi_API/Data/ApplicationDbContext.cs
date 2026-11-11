@@ -781,6 +781,7 @@ public sealed class ApplicationDbContext : DbContext
                 table.HasCheckConstraint("CK_DanhGia_DiemPhucVu", "[DiemPhucVu] IS NULL OR [DiemPhucVu] BETWEEN 1 AND 5");
                 table.HasCheckConstraint("CK_DanhGia_DiemAmThanh", "[DiemAmThanh] IS NULL OR [DiemAmThanh] BETWEEN 1 AND 5");
                 table.HasCheckConstraint("CK_DanhGia_DiemAnhSang", "[DiemAnhSang] IS NULL OR [DiemAnhSang] BETWEEN 1 AND 5");
+                table.HasCheckConstraint("CK_DanhGia_DiemVeSinh", "[DiemVeSinh] IS NULL OR [DiemVeSinh] BETWEEN 1 AND 5");
                 table.HasCheckConstraint("CK_DanhGia_DiemTongThe", "[DiemTongThe] BETWEEN 1 AND 5");
             });
             entity.HasKey(x => x.ReviewId);
@@ -792,8 +793,10 @@ public sealed class ApplicationDbContext : DbContext
             entity.Property(x => x.ServiceScore).HasColumnName("DiemPhucVu");
             entity.Property(x => x.SoundScore).HasColumnName("DiemAmThanh");
             entity.Property(x => x.LightingScore).HasColumnName("DiemAnhSang");
+            entity.Property(x => x.HygieneScore).HasColumnName("DiemVeSinh");
             entity.Property(x => x.OverallScore).HasColumnName("DiemTongThe");
             entity.Property(x => x.Comment).HasColumnName("BinhLuan").HasColumnType("nvarchar(max)");
+            entity.Property(x => x.SessionHash).HasColumnName("PhienHash").HasColumnType("varchar(64)");
             entity.Property(x => x.ReviewedAt).HasColumnName("NgayDanhGia").HasPrecision(0)
                 .HasDefaultValueSql("SYSDATETIME()");
             entity.HasOne(x => x.ReviewQrCode)
@@ -803,6 +806,9 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasIndex(x => x.ReviewQrCodeId, "UX_DanhGia_ChuTiec_MaQR")
                 .IsUnique()
                 .HasFilter("[LoaiNguoiDanhGia] = N'Chủ tiệc'");
+            entity.HasIndex(x => new { x.ReviewQrCodeId, x.SessionHash }, "UX_DanhGia_KhachMoi_MaQR_Phien")
+                .IsUnique()
+                .HasFilter("[PhienHash] IS NOT NULL AND [LoaiNguoiDanhGia] = N'Khách mời'");
         });
 
         modelBuilder.Entity<AuditLog>(entity =>

@@ -20,6 +20,7 @@ using HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment;
 using HeThongDatTiecCuoi_WEB.Models.ManagerEventCoordination;
 using HeThongDatTiecCuoi_WEB.Models.Incident;
 using HeThongDatTiecCuoi_WEB.Models.Coordination;
+using HeThongDatTiecCuoi_WEB.Models.Review;
 using Microsoft.AspNetCore.Mvc;
 using HeThongDatTiecCuoi_WEB.Models.DecorPackages;
 using HeThongDatTiecCuoi_WEB.Models.ScheduleChange;
@@ -224,6 +225,33 @@ public sealed class RiversideApiClient : IRiversideApiClient
         string accessToken, CancellationToken cancellationToken) =>
         SendAsync<List<CoordinatorAssignedPartyViewModel>>(HttpMethod.Get,
             "api/coordinator/assigned-parties", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GuestReviewFormViewModel>> GetGuestReviewAsync(string token, CancellationToken cancellationToken) =>
+        SendAsync<GuestReviewFormViewModel>(HttpMethod.Get,
+            $"api/reviews/guest/{Uri.EscapeDataString(token)}", null, null, cancellationToken);
+
+    public Task<ApiCallResult<GuestReviewSubmitResult>> SubmitGuestReviewAsync(string token,
+        GuestReviewScoresViewModel scores, string sessionId, CancellationToken cancellationToken) =>
+        SendAsync<GuestReviewSubmitResult>(HttpMethod.Post,
+            $"api/reviews/guest/{Uri.EscapeDataString(token)}", new
+            {
+                scores.HallScore, scores.FoodScore, scores.ServiceScore,
+                scores.SoundScore, scores.LightingScore, scores.HygieneScore,
+                scores.Comment, SessionId = sessionId
+            }, null, cancellationToken);
+
+    public Task<ApiCallResult<ReviewQrIssueViewModel>> IssueCoordinatorReviewQrAsync(string accessToken,
+        int bookingId, CancellationToken cancellationToken) =>
+        SendAsync<ReviewQrIssueViewModel>(HttpMethod.Post,
+            $"api/reviews/coordinator/{bookingId}/issue", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<byte[]>> GetCoordinatorReviewQrPngAsync(string accessToken, int bookingId,
+        CancellationToken cancellationToken) =>
+        SendBytesAsync(HttpMethod.Get, $"api/reviews/coordinator/{bookingId}/qr.png", accessToken, cancellationToken);
+
+    public Task<ApiCallResult<byte[]>> GetManagementReviewQrPngAsync(string accessToken, int bookingId,
+        CancellationToken cancellationToken) =>
+        SendBytesAsync(HttpMethod.Get, $"api/reviews/management/{bookingId}/qr.png", accessToken, cancellationToken);
 
     public Task<ApiCallResult<ManagerContractListResponseViewModel>> GetManagerContractsAsync(
         string accessToken, string? keyword, string? status, DateTime? fromDate, DateTime? toDate,
@@ -1159,6 +1187,39 @@ public sealed class RiversideApiClient : IRiversideApiClient
         catch (JsonException)
         {
             return ApiCallResult<T>.Failure("Phản hồi từ Backend không đúng định dạng mong đợi.");
+        }
+    }
+
+    private async Task<ApiCallResult<byte[]>> SendBytesAsync(
+        HttpMethod method,
+        string uri,
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(method, uri);
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                return ApiCallResult<byte[]>.Success(await response.Content.ReadAsByteArrayAsync(cancellationToken));
+            }
+
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            return ApiCallResult<byte[]>.Failure(ExtractApiMessage(json, response.StatusCode), (int)response.StatusCode);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiCallResult<byte[]>.Failure("Không thể kết nối Backend API. Hãy kiểm tra API đã chạy hay chưa.");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return ApiCallResult<byte[]>.Failure("Backend API phản hồi quá lâu.");
         }
     }
 

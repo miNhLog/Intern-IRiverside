@@ -4,15 +4,21 @@ namespace HeThongDatTiecCuoi_API.DTOs.Review;
 
 public sealed class SubmitWeddingReviewRequest
 {
-    [Range(1, 5)] public int? HallScore { get; set; }
-    [Range(1, 5)] public int? FoodScore { get; set; }
-    [Range(1, 5)] public int? ServiceScore { get; set; }
-    [Range(1, 5)] public int? SoundScore { get; set; }
-    [Range(1, 5)] public int? LightingScore { get; set; }
-    [Range(1, 5)] public int OverallScore { get; set; }
+    // Validated explicitly in the controller so guest requests can enforce the six
+    // required criteria while the host contract keeps its previous shape.
+    public int? HallScore { get; set; }
+    public int? FoodScore { get; set; }
+    public int? ServiceScore { get; set; }
+    public int? SoundScore { get; set; }
+    public int? LightingScore { get; set; }
+    public int? HygieneScore { get; set; }
+    public int OverallScore { get; set; }
     [StringLength(1000)] public string? Comment { get; set; }
-    [StringLength(80)] public string? SubmissionId { get; set; }
+    [StringLength(80)] public string? SessionId { get; set; }
 }
+
+public sealed record ReviewQrIssueDto(
+    int BookingId, string BookingCode, string Token, string ReviewUrl, DateTime ExpiresAt, bool Created);
 
 public sealed record ReviewFormDto(
     int BookingId, string BookingCode, string HallName, DateTime EventDate, string Shift,
@@ -29,15 +35,15 @@ public sealed record ReviewStatisticsDto(
     int BookingId, string BookingCode, string CustomerName, string HallName, DateTime EventDate, string Shift,
     string State, DateTime OpensAt, DateTime ExpiresAt, int TotalReviews, int GuestReviews, int HostReviews,
     double? OverallAverage, double? HallAverage, double? FoodAverage, double? ServiceAverage,
-    double? SoundAverage, double? LightingAverage, IReadOnlyDictionary<int, int> RatingDistribution,
+    double? SoundAverage, double? LightingAverage, double? HygieneAverage, IReadOnlyDictionary<int, int> RatingDistribution,
     IReadOnlyList<ReviewCommentDto> Reviews);
 
 public sealed record ReviewCriterionAveragesDto(
-    double? Hall, double? Food, double? Service, double? Sound, double? Lighting);
+    double? Hall, double? Food, double? Service, double? Sound, double? Lighting, double? Hygiene);
 
 public sealed record ReviewFeedbackDto(
     int ReviewId, string ReviewerType, int OverallScore, int? HallScore, int? FoodScore,
-    int? ServiceScore, int? SoundScore, int? LightingScore, string? Comment,
+    int? ServiceScore, int? SoundScore, int? LightingScore, int? HygieneScore, string? Comment,
     DateTime ReviewedAt, string Classification);
 
 public sealed record ReviewOverviewBookingDto(
