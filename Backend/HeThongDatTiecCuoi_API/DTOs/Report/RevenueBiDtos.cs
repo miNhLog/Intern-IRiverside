@@ -32,8 +32,11 @@ public class KpiSummaryDto
     public decimal AverageMenuPricePerTable { get; set; }
     public int TotalTables { get; set; }
     public double AverageOccupancyRate { get; set; }
-    // UC18 chưa có sổ theo dõi tiền cọc bị mất trong schema hiện tại.
+    // Tiền cọc bị mất và tỷ lệ theo thao tác hủy UC18 thực tế của các tiệc hủy đã lọc.
     public decimal? ForfeitedDepositAmount { get; set; }
+    public double? ForfeitedDepositRate { get; set; }
+    public int? RecordedUc18CancellationCount { get; set; }
+    public string? ForfeitedDepositDenominatorLabel { get; set; }
     public bool ForfeitedDepositAvailable { get; set; }
 }
 
@@ -84,7 +87,7 @@ public class QualitySummaryDto
     public double? AverageServiceScore { get; set; }
     public double? AverageSoundScore { get; set; }
     public double? AverageLightingScore { get; set; }
-    // Schema DanhGia hiện tại chưa có cột điểm vệ sinh nên không thể tổng hợp trung thực.
+    // Trung bình điểm vệ sinh từ các phiếu đánh giá đã lọc (bỏ qua giá trị trống).
     public double? AverageHygieneScore { get; set; }
     public bool HygieneScoreAvailable { get; set; }
 }
