@@ -77,8 +77,10 @@ public sealed class ReportUc23WebTests
         Assert.Contains("onQuarterChange()", view);
         Assert.Contains("id=\"shiftOccupancyContainer\"", view);
         Assert.Contains("id=\"qualityContainer\"", view);
-        Assert.Contains("Điểm vệ sinh: chưa có dữ liệu", view);
-        Assert.Contains("Tiền cọc bị mất (UC18): chưa có sổ theo dõi", view);
+        Assert.Contains("Điểm vệ sinh", view);
+        Assert.Contains("quality.hygieneScoreAvailable ?? quality.HygieneScoreAvailable", view);
+        Assert.Contains("ForfeitedDepositAvailable", view);
+        Assert.Contains("ForfeitedDepositDenominatorLabel", view);
     }
 
     [Fact]
@@ -91,6 +93,20 @@ public sealed class ReportUc23WebTests
         Assert.Contains("hallEstimatedRevs", view);
         Assert.Contains("'Thực thu (Triệu VNĐ)'", view);
         Assert.Contains("'Dự kiến (Triệu VNĐ)'", view);
+    }
+
+    [Fact]
+    public void ReportView_SurfacesHygieneAverageAndForfeitedDepositMetricsInReportAndExcelExport()
+    {
+        var view = File.ReadAllText(Path.Combine(
+            RepositoryRoot(), "Frontend", "HeThongDatTiecCuoi_WEB", "Views", "AdminReport", "Index.cshtml"));
+
+        Assert.Contains("averageHygieneScore ?? quality.AverageHygieneScore", view);
+        Assert.Contains("forfeitedDepositAmount ?? kpi.ForfeitedDepositAmount", view);
+        Assert.Contains("forfeitedDepositRate ?? kpi.ForfeitedDepositRate", view);
+        Assert.Contains("forfeitedDepositDenominatorLabel ?? kpi.ForfeitedDepositDenominatorLabel", view);
+        Assert.Contains("hygieneAvailable ? scoreText(quality.averageHygieneScore ?? quality.AverageHygieneScore)", view);
+        Assert.Contains("Tiền cọc bị mất (UC18)", view);
     }
 
     private static (IRiversideApiClient Api, ReportApiProxy Proxy) CreateApi()

@@ -98,13 +98,96 @@ public sealed class ReportUc23Tests
         Assert.Equal(61, lunch.MaxSlots);
         Assert.Equal(0, lunch.OccupancyRate);
 
-        // Điểm vệ sinh không tồn tại trong schema nên phải báo không khả dụng.
+        // Không có điểm vệ sinh trong phiếu đã lọc nên điểm trung bình và khả dụng phải trung thực.
         Assert.False(report.Quality.HygieneScoreAvailable);
         Assert.Null(report.Quality.AverageHygieneScore);
         Assert.Equal(2, report.Quality.ReviewCount);
         Assert.Equal(4.5, report.Quality.AverageOverallScore!.Value);
         Assert.False(report.Kpi.ForfeitedDepositAvailable);
         Assert.Null(report.Kpi.ForfeitedDepositAmount);
+    }
+
+    [Fact]
+    public async Task Report_ComputesHygieneAverage_AndForfeitedDepositFromFilteredUc18Cancellations()
+    {
+        var options = CreateInMemoryOptions();
+        await using var db = new ApplicationDbContext(options);
+        await SeedReportData(db);
+
+        // Điểm vệ sinh nullable: chỉ tính các giá trị có dữ liệu trong phiếu đã lọc.
+        db.WeddingReviews.Single(r => r.ReviewId == 1).HygieneScore = 4;
+        db.WeddingReviews.Single(r => r.ReviewId == 2).HygieneScore = null;
+        db.WeddingReviews.Add(new WeddingReview
+        {
+            ReviewId = 3,
+            ReviewQrCodeId = 1,
+            ReviewerType = "Khách mời",
+            HallScore = 5,
+            FoodScore = 5,
+            ServiceScore = 5,
+            SoundScore = 5,
+            LightingScore = 5,
+            HygieneScore = 2,
+            OverallScore = 5,
+            Comment = "Cần cải thiện vệ sinh",
+            ReviewedAt = new DateTime(2026, 10, 16)
+        });
+
+        // Hai tiệc hủy trong kỳ đã lọc, nhưng chỉ một tiệc có ghi nhận hủy UC18.
+        db.WeddingBookings.Add(new WeddingBooking
+        {
+            BookingId = 4,
+            BookingCode = "DT-20261018-004",
+            CustomerId = 1,
+            HallScheduleId = 10,
+            BookedAt = new DateTime(2026, 10, 3),
+            GuestCount = 120,
+            EstimatedTotal = 90_000_000m,
+            StatusId = 202
+        });
+        db.Users.Add(new User { UserId = 99, Email = "manager@test.local", PasswordHash = "x", StatusId = 1, DataStatusId = 1 });
+        db.Uc18BookingOperations.AddRange(
+            new Uc18BookingOperation
+            {
+                RequestId = Guid.NewGuid(),
+                BookingId = 2,
+                ActorUserId = 99,
+                Kind = Uc18BookingOperation.Cancel,
+                PayloadHash = "cancel-2-a",
+                RecordedAtUtc = new DateTime(2026, 10, 10, 8, 0, 0, DateTimeKind.Utc),
+                RetainedDeposit = 5_000_000m
+            },
+            new Uc18BookingOperation
+            {
+                RequestId = Guid.NewGuid(),
+                BookingId = 2,
+                ActorUserId = 99,
+                Kind = Uc18BookingOperation.Cancel,
+                PayloadHash = "cancel-2-b",
+                RecordedAtUtc = new DateTime(2026, 10, 10, 9, 0, 0, DateTimeKind.Utc),
+                RetainedDeposit = 7_500_000m
+            });
+        await db.SaveChangesAsync();
+
+        var controller = new AdminReportController(db);
+        var result = await controller.GetRevenueBiReport(year: 2026, quarter: 0, month: 10);
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var report = Assert.IsType<RevenueBiReportDto>(okResult.Value);
+
+        // (4 + 2) / 2 = 3.0 từ các phiếu có điểm vệ sinh.
+        Assert.True(report.Quality.HygieneScoreAvailable);
+        Assert.Equal(3.0, report.Quality.AverageHygieneScore!.Value);
+        Assert.Equal(3, report.Quality.ReviewCount);
+
+        // 2 tiệc hủy trong kỳ, 1 tiệc có ghi nhận UC18 (lấy 1 thao tác/tiệc, bản mới nhất giữ 7.5M), 1 tiệc giữ cọc > 0.
+        Assert.Equal(2, report.Kpi.EventsCancelled);
+        Assert.True(report.Kpi.ForfeitedDepositAvailable);
+        Assert.Equal(7_500_000m, report.Kpi.ForfeitedDepositAmount);
+        Assert.Equal(1, report.Kpi.RecordedUc18CancellationCount);
+        Assert.Equal(100.0, report.Kpi.ForfeitedDepositRate!.Value);
+        Assert.Contains("1 tiệc hủy có ghi nhận UC18", report.Kpi.ForfeitedDepositDenominatorLabel);
+        Assert.Contains("tổng 2 tiệc hủy", report.Kpi.ForfeitedDepositDenominatorLabel);
     }
 
     [Fact]

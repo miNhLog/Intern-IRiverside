@@ -1,6 +1,7 @@
 using System.Data;
 using System.Security.Claims;
-using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
 using HeThongDatTiecCuoi_API.Constants;
 using HeThongDatTiecCuoi_API.Constants.StatusCodes;
 using HeThongDatTiecCuoi_API.Data;
@@ -12,7 +13,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace HeThongDatTiecCuoi_API.Controllers;
@@ -23,10 +23,9 @@ public sealed class WeddingReviewsController(
     ApplicationDbContext context,
     IReviewQrService qrService,
     IReviewStatisticsService statisticsService,
-    IOptions<ReviewQrOptions> options,
-    IMemoryCache cache) : ControllerBase
+    IOptions<ReviewQrOptions> options) : ControllerBase
 {
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> SubmissionLocks = new();
+    private const string DuplicateMessage = "Đánh giá đã được ghi nhận. Cảm ơn bạn!";
     [AllowAnonymous]
     [HttpGet("guest/{token}")]
     public async Task<IActionResult> GuestForm(string token, CancellationToken ct) =>
@@ -39,26 +38,39 @@ public sealed class WeddingReviewsController(
     {
         var qr = await QueryQr().SingleOrDefaultAsync(q => q.QrCode == token, ct);
         if (qr is null) return NotFound(new { message = "Mã đánh giá không tồn tại." });
-        var denied = ValidateWindow(qr);
+        var denied = ValidateWindow(qr, guest: true);
         if (denied is not null) return denied;
+        if (!TryGuestScores(request, out var scores))
+            return BadRequest(new { code = "REVIEW_SCORES_REQUIRED", message = "Vui lòng chấm đủ 6 tiêu chí từ 1 đến 5." });
+        const string ReviewSessionHeader = "X-Review-Session";
+        if (string.IsNullOrWhiteSpace(request.SessionId))
+            return BadRequest(new { code = "REVIEW_SESSION_REQUIRED", message = "Không xác định được phiên đánh giá. Vui lòng tải lại trang." });
+        var sessionHeader = Request.Headers[ReviewSessionHeader].ToString();
+        if (!string.IsNullOrEmpty(sessionHeader))
+        {
+            var isValidSession = sessionHeader.Length is >= 16 and <= 80 &&
+                sessionHeader.All(char.IsAsciiHexDigit);
+            if (!isValidSession || !string.Equals(sessionHeader, request.SessionId, StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { code = "REVIEW_SESSION_INVALID", message = "Phiên đánh giá không hợp lệ. Vui lòng tải lại trang." });
+        }
 
-        var fingerprint = $"guest-review:{token}:{HttpContext.Connection.RemoteIpAddress}:{request.SubmissionId}";
-        var gate = SubmissionLocks.GetOrAdd(fingerprint, _ => new SemaphoreSlim(1, 1));
-        await gate.WaitAsync(ct);
+        var sessionHash = HashSession(token, request.SessionId);
+        if (await IsDuplicateAsync(qr.ReviewQrCodeId, sessionHash, ct))
+            return Ok(new { success = true, duplicate = true, message = DuplicateMessage });
+
+        var review = ToGuestEntity(qr.ReviewQrCodeId, sessionHash, scores, request);
+        context.WeddingReviews.Add(review);
         try
         {
-            if (!string.IsNullOrWhiteSpace(request.SubmissionId) && cache.TryGetValue(fingerprint, out _))
-                return Ok(new { success = true, duplicate = true, message = "Đánh giá đã được ghi nhận. Cảm ơn bạn!" });
-            context.WeddingReviews.Add(ToEntity(qr.ReviewQrCodeId, ReviewTypes.Guest, request));
             await context.SaveChangesAsync(ct);
-            if (!string.IsNullOrWhiteSpace(request.SubmissionId)) cache.Set(fingerprint, true, TimeSpan.FromHours(2));
-            return Ok(new { success = true, message = "Cảm ơn bạn đã đánh giá buổi tiệc!" });
         }
-        finally
+        catch (DbUpdateException)
         {
-            gate.Release();
-            SubmissionLocks.TryRemove(fingerprint, out _);
+            if (await IsDuplicateAsync(qr.ReviewQrCodeId, sessionHash, ct))
+                return Ok(new { success = true, duplicate = true, message = DuplicateMessage });
+            throw;
         }
+        return Ok(new { success = true, message = "Cảm ơn bạn đã đánh giá buổi tiệc!" });
     }
 
     [Authorize(Roles = RoleNames.Customer)]
@@ -79,8 +91,10 @@ public sealed class WeddingReviewsController(
         var qr = await QueryQr().SingleOrDefaultAsync(q =>
             q.Booking.BookingCode == bookingCode && q.Booking.Customer.UserId == userId, ct);
         if (qr is null) return NotFound(new { message = "Không tìm thấy tiệc thuộc tài khoản của bạn." });
-        var denied = ValidateWindow(qr);
+        var denied = ValidateWindow(qr, guest: false);
         if (denied is not null) return denied;
+        if (request.OverallScore is < 1 or > 5)
+            return BadRequest(new { code = "REVIEW_SCORES_REQUIRED", message = "Vui lòng chấm điểm tổng thể từ 1 đến 5." });
 
         await using var tx = await context.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         if (await context.WeddingReviews.AnyAsync(r =>
@@ -100,7 +114,30 @@ public sealed class WeddingReviewsController(
         return Ok(new { success = true, message = "Cảm ơn bạn đã đánh giá buổi tiệc!" });
     }
 
-    [Authorize(Roles = RoleNames.Admin + "," + RoleNames.Manager + "," + RoleNames.HallManager)]
+    [Authorize(Roles = RoleNames.Coordinator)]
+    [HttpPost("coordinator/{bookingId:int}/issue")]
+    public async Task<ActionResult<ReviewQrIssueDto>> IssueQr(int bookingId, CancellationToken ct)
+    {
+        if (!TryUserId(out var userId)) return Unauthorized();
+        var result = await qrService.IssueForCoordinatorAsync(userId, bookingId, ct);
+        if (!result.Succeeded || result.Value is null)
+            return StatusCode(result.StatusCode, new { message = result.Error });
+        var dto = result.Value;
+        return Ok(dto with { ReviewUrl = GuestUrl(dto.Token) });
+    }
+
+    [Authorize(Roles = RoleNames.Coordinator)]
+    [HttpGet("coordinator/{bookingId:int}/qr.png")]
+    public async Task<IActionResult> CoordinatorQrImage(int bookingId, CancellationToken ct)
+    {
+        if (!TryUserId(out var userId)) return Unauthorized();
+        var result = await qrService.GetForCoordinatorAsync(userId, bookingId, ct);
+        if (!result.Succeeded || result.Value is null)
+            return StatusCode(result.StatusCode, new { message = result.Error });
+        return QrPng(result.Value.Token, result.Value.BookingCode);
+    }
+
+    [Authorize(Roles = RoleNames.Manager + "," + RoleNames.HallManager)]
     [HttpGet("management")]
     public async Task<ActionResult<IReadOnlyList<ReviewQrListItemDto>>> Management(CancellationToken ct)
     {
@@ -120,7 +157,7 @@ public sealed class WeddingReviewsController(
         return Ok(rows.Select(ToListItem).ToList());
     }
 
-    [Authorize(Roles = RoleNames.Admin + "," + RoleNames.Manager + "," + RoleNames.HallManager)]
+    [Authorize(Roles = RoleNames.Manager + "," + RoleNames.HallManager)]
     [HttpGet("management/{bookingId:int}/qr.png")]
     public async Task<IActionResult> QrImage(int bookingId, CancellationToken ct)
     {
@@ -132,15 +169,10 @@ public sealed class WeddingReviewsController(
             query = query.Where(q => hallIds.Contains(q.Booking.HallSchedule.HallId));
         }
         var qr = await query.SingleOrDefaultAsync(ct);
-        if (qr is null) return NotFound();
-        var url = GuestUrl(qr.QrCode);
-        using var generator = new QRCoder.QRCodeGenerator();
-        using var data = generator.CreateQrCode(url, QRCoder.QRCodeGenerator.ECCLevel.Q);
-        var png = new QRCoder.PngByteQRCode(data).GetGraphic(12);
-        return File(png, "image/png", $"QR-danh-gia-{qr.Booking.BookingCode}.png");
+        return qr is null ? NotFound() : QrPng(qr.QrCode, qr.Booking.BookingCode);
     }
 
-    [Authorize(Roles = RoleNames.Admin + "," + RoleNames.Manager + "," + RoleNames.HallManager)]
+    [Authorize(Roles = RoleNames.Manager + "," + RoleNames.HallManager)]
     [HttpGet("management/{bookingId:int}")]
     public async Task<ActionResult<ReviewStatisticsDto>> Statistics(int bookingId, CancellationToken ct)
     {
@@ -163,8 +195,8 @@ public sealed class WeddingReviewsController(
         var reviews = booking.ReviewQrCode?.Reviews.OrderByDescending(r => r.ReviewedAt).ToList() ?? [];
         double? Average(IEnumerable<int?> values)
         {
-            var scores = values.Where(v => v.HasValue).Select(v => v!.Value).ToList();
-            return scores.Count == 0 ? null : scores.Average();
+            var scores = values.Where(v => v.HasValue).Select(v => (double)v!.Value).ToList();
+            return scores.Count == 0 ? null : Math.Round(scores.Average(), 2);
         }
         var distribution = Enumerable.Range(1, 5).ToDictionary(
             score => score, score => reviews.Count(r => r.OverallScore == score));
@@ -174,10 +206,10 @@ public sealed class WeddingReviewsController(
             window.State.ToString(), window.OpensAt, window.ExpiresAt, reviews.Count,
             reviews.Count(r => r.ReviewerType == ReviewTypes.Guest),
             reviews.Count(r => r.ReviewerType == ReviewTypes.Host),
-            reviews.Count == 0 ? null : reviews.Average(r => r.OverallScore),
+            reviews.Count == 0 ? null : Math.Round(reviews.Average(r => r.OverallScore), 2),
             Average(reviews.Select(r => r.HallScore)), Average(reviews.Select(r => r.FoodScore)),
             Average(reviews.Select(r => r.ServiceScore)), Average(reviews.Select(r => r.SoundScore)),
-            Average(reviews.Select(r => r.LightingScore)), distribution,
+            Average(reviews.Select(r => r.LightingScore)), Average(reviews.Select(r => r.HygieneScore)), distribution,
             reviews.Select(r => new ReviewCommentDto(r.ReviewerType, r.OverallScore, r.Comment, r.ReviewedAt)).ToList()));
     }
 
@@ -187,10 +219,12 @@ public sealed class WeddingReviewsController(
         .Include(q => q.Booking).ThenInclude(b => b.Customer)
         .Include(q => q.Booking).ThenInclude(b => b.HallSchedule).ThenInclude(s => s.Hall);
 
-    private IActionResult? ValidateWindow(ReviewQrCode qr)
+    private IActionResult? ValidateWindow(ReviewQrCode qr, bool guest)
     {
         var locked = qr.Status.StatusCode == "LOCKED" || qr.Booking.Status.StatusCode == BookingStatusCodes.Cancelled;
-        var window = qrService.GetWindow(qr.Booking.HallSchedule, locked);
+        var window = guest
+            ? qrService.GetGuestWindow(qr.Booking.HallSchedule, qr.CreatedAt, locked)
+            : qrService.GetWindow(qr.Booking.HallSchedule, locked);
         return window.State switch
         {
             ReviewQrState.Active => null,
@@ -208,7 +242,9 @@ public sealed class WeddingReviewsController(
             : await query.SingleOrDefaultAsync(q => q.QrCode == token, ct);
         if (qr is null) return null;
         var locked = qr.Status.StatusCode == "LOCKED" || qr.Booking.Status.StatusCode == BookingStatusCodes.Cancelled;
-        var window = qrService.GetWindow(qr.Booking.HallSchedule, locked);
+        var window = host
+            ? qrService.GetWindow(qr.Booking.HallSchedule, locked)
+            : qrService.GetGuestWindow(qr.Booking.HallSchedule, qr.CreatedAt, locked);
         var reviewed = host && qr.Reviews.Any(r => r.ReviewerType == ReviewTypes.Host);
         var message = window.State switch
         {
@@ -227,8 +263,45 @@ public sealed class WeddingReviewsController(
     {
         ReviewQrCodeId = qrId, ReviewerType = reviewerType, HallScore = r.HallScore, FoodScore = r.FoodScore,
         ServiceScore = r.ServiceScore, SoundScore = r.SoundScore, LightingScore = r.LightingScore,
-        OverallScore = r.OverallScore, Comment = CleanComment(r.Comment), ReviewedAt = RiversideBusinessClock.Now
+        HygieneScore = r.HygieneScore, OverallScore = r.OverallScore, Comment = CleanComment(r.Comment),
+        ReviewedAt = RiversideBusinessClock.Now
     };
+
+    private WeddingReview ToGuestEntity(int qrId, string sessionHash, int[] scores, SubmitWeddingReviewRequest r) => new()
+    {
+        ReviewQrCodeId = qrId, ReviewerType = ReviewTypes.Guest,
+        HallScore = scores[0], FoodScore = scores[1], ServiceScore = scores[2], SoundScore = scores[3],
+        LightingScore = scores[4], HygieneScore = scores[5],
+        OverallScore = (int)Math.Round(scores.Average(score => (double)score), MidpointRounding.AwayFromZero),
+        Comment = CleanComment(r.Comment), SessionHash = sessionHash, ReviewedAt = RiversideBusinessClock.Now
+    };
+
+    private static bool TryGuestScores(SubmitWeddingReviewRequest r, out int[] scores)
+    {
+        scores =
+        [
+            r.HallScore ?? 0, r.FoodScore ?? 0, r.ServiceScore ?? 0,
+            r.SoundScore ?? 0, r.LightingScore ?? 0, r.HygieneScore ?? 0
+        ];
+        return r.HallScore is >= 1 and <= 5 && r.FoodScore is >= 1 and <= 5 &&
+            r.ServiceScore is >= 1 and <= 5 && r.SoundScore is >= 1 and <= 5 &&
+            r.LightingScore is >= 1 and <= 5 && r.HygieneScore is >= 1 and <= 5;
+    }
+
+    private Task<bool> IsDuplicateAsync(int qrId, string sessionHash, CancellationToken ct) =>
+        context.WeddingReviews.AsNoTracking().AnyAsync(r => r.ReviewQrCodeId == qrId &&
+            r.ReviewerType == ReviewTypes.Guest && r.SessionHash == sessionHash, ct);
+
+    private static string HashSession(string token, string sessionId) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token + "|" + sessionId))).ToLowerInvariant();
+
+    private IActionResult QrPng(string token, string bookingCode)
+    {
+        using var generator = new QRCoder.QRCodeGenerator();
+        using var data = generator.CreateQrCode(GuestUrl(token), QRCoder.QRCodeGenerator.ECCLevel.Q);
+        var png = new QRCoder.PngByteQRCode(data).GetGraphic(12);
+        return File(png, "image/png", $"QR-danh-gia-{bookingCode}.png");
+    }
 
     private string? CleanComment(string? value)
     {
@@ -246,14 +319,14 @@ public sealed class WeddingReviewsController(
         return new(booking.BookingId, booking.BookingCode, booking.HallSchedule.Hall.HallName,
             booking.HallSchedule.Date, booking.HallSchedule.Shift, qr?.QrCode, qr is null ? null : GuestUrl(qr.QrCode),
             w.State.ToString(), w.OpensAt, w.ExpiresAt, reviews.Count,
-            reviews.Count == 0 ? null : reviews.Average(r => r.OverallScore),
+            reviews.Count == 0 ? null : Math.Round(reviews.Average(r => r.OverallScore), 2),
             reviews.OrderByDescending(r => r.ReviewedAt)
                 .Select(r => new ReviewCommentDto(r.ReviewerType, r.OverallScore, r.Comment, r.ReviewedAt)).ToList());
     }
 
     private string GuestUrl(string token) => $"{options.Value.PublicBaseUrl.TrimEnd('/')}/danh-gia/khach-moi/{token}";
     private bool TryUserId(out int userId) => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
-    [Authorize(Roles = RoleNames.Admin + "," + RoleNames.Manager + "," + RoleNames.HallManager)]
+    [Authorize(Roles = RoleNames.Manager + "," + RoleNames.HallManager)]
     [HttpGet("statistics/overview")]
     public async Task<ActionResult<ReviewOverviewDto>> Overview(
         [FromQuery] string? search, [FromQuery] int? hallId, [FromQuery] DateTime? fromDate,
@@ -265,7 +338,7 @@ public sealed class WeddingReviewsController(
             search, hallId, fromDate, toDate, qrState, reviewerType, page, pageSize, ct));
     }
 
-    [Authorize(Roles = RoleNames.Admin + "," + RoleNames.Manager + "," + RoleNames.HallManager)]
+    [Authorize(Roles = RoleNames.Manager + "," + RoleNames.HallManager)]
     [HttpGet("statistics/bookings/{bookingId:int}")]
     public async Task<ActionResult<ReviewBookingDetailStatisticsDto>> BookingStatistics(int bookingId, CancellationToken ct)
     {

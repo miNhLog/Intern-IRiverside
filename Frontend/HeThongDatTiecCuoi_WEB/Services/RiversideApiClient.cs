@@ -20,6 +20,7 @@ using HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment;
 using HeThongDatTiecCuoi_WEB.Models.ManagerEventCoordination;
 using HeThongDatTiecCuoi_WEB.Models.Incident;
 using HeThongDatTiecCuoi_WEB.Models.Coordination;
+using HeThongDatTiecCuoi_WEB.Models.Review;
 using Microsoft.AspNetCore.Mvc;
 using HeThongDatTiecCuoi_WEB.Models.DecorPackages;
 using HeThongDatTiecCuoi_WEB.Models.ScheduleChange;
@@ -225,6 +226,39 @@ public sealed class RiversideApiClient : IRiversideApiClient
         SendAsync<List<CoordinatorAssignedPartyViewModel>>(HttpMethod.Get,
             "api/coordinator/assigned-parties", null, accessToken, cancellationToken);
 
+    public Task<ApiCallResult<GuestReviewFormViewModel>> GetGuestReviewAsync(string token, CancellationToken cancellationToken) =>
+        SendAsync<GuestReviewFormViewModel>(HttpMethod.Get,
+            $"api/reviews/guest/{Uri.EscapeDataString(token)}", null, null, cancellationToken);
+
+    public Task<ApiCallResult<GuestReviewSubmitResult>> SubmitGuestReviewAsync(string token,
+        GuestReviewScoresViewModel scores, string sessionId, CancellationToken cancellationToken)
+    {
+        const string ReviewSessionHeader = "X-Review-Session";
+        var headers = sessionId.Length is >= 16 and <= 80 && sessionId.All(char.IsAsciiHexDigit)
+            ? new Dictionary<string, string> { [ReviewSessionHeader] = sessionId }
+            : null;
+        return SendAsync<GuestReviewSubmitResult>(HttpMethod.Post,
+            $"api/reviews/guest/{Uri.EscapeDataString(token)}", new
+            {
+                scores.HallScore, scores.FoodScore, scores.ServiceScore,
+                scores.SoundScore, scores.LightingScore, scores.HygieneScore,
+                scores.Comment, SessionId = sessionId
+            }, null, cancellationToken, headers);
+    }
+
+    public Task<ApiCallResult<ReviewQrIssueViewModel>> IssueCoordinatorReviewQrAsync(string accessToken,
+        int bookingId, CancellationToken cancellationToken) =>
+        SendAsync<ReviewQrIssueViewModel>(HttpMethod.Post,
+            $"api/reviews/coordinator/{bookingId}/issue", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<byte[]>> GetCoordinatorReviewQrPngAsync(string accessToken, int bookingId,
+        CancellationToken cancellationToken) =>
+        SendBytesAsync(HttpMethod.Get, $"api/reviews/coordinator/{bookingId}/qr.png", accessToken, cancellationToken);
+
+    public Task<ApiCallResult<byte[]>> GetManagementReviewQrPngAsync(string accessToken, int bookingId,
+        CancellationToken cancellationToken) =>
+        SendBytesAsync(HttpMethod.Get, $"api/reviews/management/{bookingId}/qr.png", accessToken, cancellationToken);
+
     public Task<ApiCallResult<ManagerContractListResponseViewModel>> GetManagerContractsAsync(
         string accessToken, string? keyword, string? status, DateTime? fromDate, DateTime? toDate,
         int page, CancellationToken cancellationToken)
@@ -241,6 +275,11 @@ public sealed class RiversideApiClient : IRiversideApiClient
     public Task<ApiCallResult<ManagerContractDetailViewModel>> GetManagerContractAsync(
         string accessToken, int id, CancellationToken cancellationToken) =>
         SendAsync<ManagerContractDetailViewModel>(HttpMethod.Get, $"api/manager/contracts/{id}", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<List<ManagerContractAmendmentViewModel>>> GetManagerContractAmendmentsAsync(
+        string accessToken, int id, CancellationToken cancellationToken) =>
+        SendAsync<List<ManagerContractAmendmentViewModel>>(HttpMethod.Get,
+            $"api/manager/contracts/{id}/amendments", null, accessToken, cancellationToken);
 
     public Task<ApiCallResult<List<EligibleBookingViewModel>>> GetEligibleContractBookingsAsync(
         string accessToken, string? keyword, CancellationToken cancellationToken)
@@ -1109,12 +1148,21 @@ public sealed class RiversideApiClient : IRiversideApiClient
             cancellationToken);
     }
 
+    private Task<ApiCallResult<T>> SendAsync<T>(
+        HttpMethod method,
+        string uri,
+        object? body,
+        string? accessToken,
+        CancellationToken cancellationToken) =>
+        SendAsync<T>(method, uri, body, accessToken, cancellationToken, null);
+
     private async Task<ApiCallResult<T>> SendAsync<T>(
         HttpMethod method,
         string uri,
         object? body,
         string? accessToken,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IDictionary<string, string>? headers)
     {
         try
         {
@@ -1127,6 +1175,11 @@ public sealed class RiversideApiClient : IRiversideApiClient
             if (!string.IsNullOrWhiteSpace(accessToken))
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
+            if (headers is not null)
+            {
+                foreach (var (name, value) in headers)
+                    request.Headers.TryAddWithoutValidation(name, value);
             }
 
             using var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -1154,6 +1207,39 @@ public sealed class RiversideApiClient : IRiversideApiClient
         catch (JsonException)
         {
             return ApiCallResult<T>.Failure("Phản hồi từ Backend không đúng định dạng mong đợi.");
+        }
+    }
+
+    private async Task<ApiCallResult<byte[]>> SendBytesAsync(
+        HttpMethod method,
+        string uri,
+        string? accessToken,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(method, uri);
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                return ApiCallResult<byte[]>.Success(await response.Content.ReadAsByteArrayAsync(cancellationToken));
+            }
+
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            return ApiCallResult<byte[]>.Failure(ExtractApiMessage(json, response.StatusCode), (int)response.StatusCode);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiCallResult<byte[]>.Failure("Không thể kết nối Backend API. Hãy kiểm tra API đã chạy hay chưa.");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return ApiCallResult<byte[]>.Failure("Backend API phản hồi quá lâu.");
         }
     }
 
@@ -1886,6 +1972,89 @@ public sealed class RiversideApiClient : IRiversideApiClient
             accessToken,
             cancellationToken);
     }
+
+    public async Task<ApiCallResult<PdfDownloadViewModel>> DownloadManagerContractAmendmentPdfAsync(
+        string accessToken, int id, Guid requestId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get,
+                $"api/manager/contracts/{id}/amendments/{requestId:D}/pdf");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return ApiCallResult<PdfDownloadViewModel>.Failure(await ReadErrorAsync(response, cancellationToken), (int)response.StatusCode);
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+                ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+                ?? $"PhuLuc_{id}_{requestId:N}.pdf";
+            return ApiCallResult<PdfDownloadViewModel>.Success(new PdfDownloadViewModel(
+                bytes, fileName, response.Content.Headers.ContentType?.MediaType ?? "application/pdf"));
+        }
+        catch (HttpRequestException)
+        {
+            return ApiCallResult<PdfDownloadViewModel>.Failure("Không thể kết nối Backend API. Hãy kiểm tra API đã chạy hay chưa.");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return ApiCallResult<PdfDownloadViewModel>.Failure("Backend API phản hồi quá lâu.");
+        }
+    }
+
+    public Task<ApiCallResult<dynamic>> GetManagerBookingCancelQuoteAsync(int id, ManagerBookingCancelQuoteRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default) =>
+        SendJsonAsync<dynamic>(HttpMethod.Post, $"api/manager/bookings/{id}/cancel-quote", request, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<dynamic>> CancelManagerBookingAsync(int id, ManagerBookingCancelRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default) =>
+        SendJsonAsync<dynamic>(HttpMethod.Post, $"api/manager/bookings/{id}/cancel", request, accessToken, cancellationToken);
+
+    public async Task<ApiCallResult<dynamic>> GetManagerBookingRescheduleQuoteAsync(int id, ManagerBookingRescheduleRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>
+        {
+            $"NewDate={request.NewDate:yyyy-MM-dd}",
+            $"NewShift={Uri.EscapeDataString(request.NewShift)}",
+            $"NewHallId={request.NewHallId}",
+            $"ChangeMenu={request.ChangeMenu}"
+        };
+        if (request.MenuId.HasValue) query.Add($"menuId={request.MenuId.Value}");
+        if (request.CustomDishIds is not null) query.AddRange(request.CustomDishIds.Select(value => $"customDishIds={value}"));
+        return await SendJsonAsync<dynamic>(HttpMethod.Get, $"api/manager/bookings/{id}/reschedule-quote?{string.Join("&", query)}", null, accessToken, cancellationToken);
+    }
+
+    public async Task<ApiCallResult<dynamic>> RescheduleManagerBookingAsync(int id, ManagerBookingRescheduleRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default) =>
+        await SendJsonAsync<dynamic>(HttpMethod.Put, $"api/manager/bookings/{id}/reschedule", request, accessToken, cancellationToken);
+
+    public async Task<ApiCallResult<List<ManagerBookingRefundObligationViewModel>>> GetManagerBookingRefundObligationsAsync(int id, string? accessToken, CancellationToken cancellationToken = default) =>
+        await SendJsonAsync<List<ManagerBookingRefundObligationViewModel>>(HttpMethod.Get, $"api/manager/bookings/{id}/refund-obligations", null, accessToken, cancellationToken);
+
+    public async Task<ApiCallResult<dynamic>> RecordManagerBookingRefundConfirmationAsync(int id, ManagerBookingRefundConfirmationRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default) =>
+        await SendJsonAsync<dynamic>(HttpMethod.Post, $"api/manager/bookings/{id}/refund-confirmations", request, accessToken, cancellationToken);
+
+    public async Task<ApiCallResult<dynamic>> HandoffManagerBookingAsync(int id, ManagerBookingHandoffRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default) =>
+        await SendJsonAsync<dynamic>(HttpMethod.Post, $"api/manager/bookings/{id}/handoff", request, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<BookingListResponseViewModel>> GetHallManagerOperationalBookingsAsync(BookingFilterRequestViewModel filter, string? accessToken, CancellationToken cancellationToken = default)
+    {
+        var query = new List<string> { $"PageIndex={Math.Max(1, filter.PageIndex)}", $"PageSize={Math.Clamp(filter.PageSize, 1, 50)}" };
+        AddQueryParameter(query, "Keyword", filter.Keyword);
+        AddQueryParameter(query, "StatusCode", filter.Status);
+        if (filter.HallId.HasValue) query.Add($"HallId={filter.HallId.Value}");
+        if (filter.FromDate.HasValue) query.Add($"FromDate={filter.FromDate:yyyy-MM-dd}");
+        if (filter.ToDate.HasValue) query.Add($"ToDate={filter.ToDate:yyyy-MM-dd}");
+        return SendJsonAsync<BookingListResponseViewModel>(HttpMethod.Get, $"api/manager/bookings?{string.Join("&", query)}", null, accessToken, cancellationToken);
+    }
+
+    public Task<ApiCallResult<BookingDetailViewModel>> GetHallManagerOperationalBookingAsync(int id, string? accessToken, CancellationToken cancellationToken = default) =>
+        SendJsonAsync<BookingDetailViewModel>(HttpMethod.Get, $"api/manager/bookings/{id}", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<List<BookingHallOptionViewModel>>> GetHallManagerRescheduleOptionsAsync(int id, string? accessToken, CancellationToken cancellationToken = default) =>
+        SendJsonAsync<List<BookingHallOptionViewModel>>(HttpMethod.Get, $"api/manager/bookings/{id}/reschedule-options", null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<dynamic>> RescheduleHallManagerBookingAsync(int id, ManagerBookingRescheduleRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default) =>
+        SendJsonAsync<dynamic>(HttpMethod.Put, $"api/manager/bookings/{id}/reschedule", request, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<dynamic>> CancelHallManagerBookingAsync(int id, string reason, string? accessToken, CancellationToken cancellationToken = default) =>
+        SendJsonAsync<dynamic>(HttpMethod.Post, $"api/manager/bookings/{id}/cancel", new { reason }, accessToken, cancellationToken);
 
     // VĐ2: mặc định gọi suggest-top3-hybrid (AI hybrid s_final=alpha*s_cf+beta*s_cbf+gamma*S_wsm),
     // giữ fallback về suggest-top3 (heuristic C#) khi AI timeout (HybridTimeoutSeconds, mặc định 5s).

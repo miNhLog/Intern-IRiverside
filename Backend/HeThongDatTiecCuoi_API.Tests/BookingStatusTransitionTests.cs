@@ -90,17 +90,18 @@ public sealed class BookingStatusTransitionTests
     }
 
     [Fact]
-    public async Task TC11_UnpaidBooking_CanBeCancelledAndReleasesUnusedSchedule()
+    public async Task TC11_LegacyCancellation_RequiresUc18AndDoesNotMutateBookingOrSchedule()
     {
         await using var fixture = await Fixture.CreateAsync(BookingStatusCodes.Confirmed, FutureEvent);
 
         var result = await fixture.UpdateAsync(BookingStatusCodes.Cancelled, "Khách thay đổi kế hoạch");
 
-        Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(BookingStatusCodes.Cancelled, await fixture.BookingStatusAsync());
-        Assert.Equal(HallScheduleStatusCodes.Available, await fixture.ScheduleStatusAsync());
-        Assert.Equal("Khách thay đổi kế hoạch", (await fixture.BookingAsync()).CancellationReason);
-        Assert.Equal(1, fixture.Coordination.Synchronizations);
+        Assert.IsType<ConflictObjectResult>(result);
+        Assert.Equal(BookingStatusCodes.Confirmed, await fixture.BookingStatusAsync());
+        Assert.Equal(HallScheduleStatusCodes.Booked, await fixture.ScheduleStatusAsync());
+        Assert.Null((await fixture.BookingAsync()).CancellationReason);
+        Assert.Empty(fixture.Db.AuditLogs);
+        Assert.Equal(0, fixture.Coordination.Synchronizations);
     }
 
     [Fact]
@@ -200,16 +201,18 @@ public sealed class BookingStatusTransitionTests
     }
 
     [Fact]
-    public async Task TC19_Cancellation_DoesNotUnlockAdministrativelyLockedSchedule()
+    public async Task TC19_LegacyCancellation_DoesNotUnlockAdministrativelyLockedSchedule()
     {
         await using var fixture = await Fixture.CreateAsync(
             BookingStatusCodes.Pending, FutureEvent, scheduleStatusCode: HallScheduleStatusCodes.Locked);
 
         var result = await fixture.UpdateAsync(BookingStatusCodes.Cancelled);
 
-        Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(BookingStatusCodes.Cancelled, await fixture.BookingStatusAsync());
+        Assert.IsType<ConflictObjectResult>(result);
+        Assert.Equal(BookingStatusCodes.Pending, await fixture.BookingStatusAsync());
         Assert.Equal(HallScheduleStatusCodes.Locked, await fixture.ScheduleStatusAsync());
+        Assert.Empty(fixture.Db.AuditLogs);
+        Assert.Equal(0, fixture.Coordination.Synchronizations);
     }
 
     [Fact]

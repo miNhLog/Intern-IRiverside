@@ -362,6 +362,7 @@
 
 <!-- CONTAINER CHÍNH: Căn chỉnh padding và căn giữa đồng bộ với các trang khác -->
 <div class="booking-page-wrapper p-6 lg:p-8 space-y-6 w-full max-w-[1600px] mx-auto" data-can-manage-contracts="@isManager.ToString().ToLowerInvariant()">
+    <form hidden>@Html.AntiForgeryToken()</form>
 
     <!-- ================= 1. HEADER TRANG ================= -->
     <div class="manager-section-header flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -589,11 +590,11 @@
                                         {
                                             <a href="/quan-ly/hop-dong-thanh-toan?bookingId=@b.BookingId&amp;openCreate=true" class="booking-action-item" role="menuitem"><i class="fa-solid fa-file-circle-plus"></i><span>Tạo hợp đồng</span></a>
                                         }
-                                        @if (b.StatusCode == "PENDING")
+                                        @if (isManager && b.StatusCode == "PENDING")
                                         {
                                             <button type="button" class="booking-action-item" onclick="closeBookingActions(); quickUpdateStatus(@b.BookingId, 'CONFIRMED')" role="menuitem"><i class="fa-solid fa-check"></i><span>Xác nhận đơn tiệc</span></button>
                                         }
-                                        @if (b.StatusCode != "CANCELLED" && b.StatusCode != "COMPLETED")
+                                        @if (isManager && b.StatusCode != "CANCELLED" && b.StatusCode != "COMPLETED")
                                         {
                                             <button type="button" class="booking-action-item danger" onclick="closeBookingActions(); cancelBookingPrompt(@b.BookingId)" role="menuitem"><i class="fa-solid fa-ban"></i><span>Hủy đơn tiệc</span></button>
                                         }
@@ -1149,12 +1150,12 @@
                 } else if (canManageContracts && statusCode === 'CONFIRMED') {
                     actionBtns += `<a href="/quan-ly/hop-dong-thanh-toan?bookingId=${id}&openCreate=true" class="booking-action-item" role="menuitem"><i class="fa-solid fa-file-circle-plus"></i><span>Tạo hợp đồng</span></a>`;
                 }
-                if (statusCode === 'PENDING') {
+                if (canManageContracts && statusCode === 'PENDING') {
                     actionBtns += `
                         <button type="button" class="booking-action-item" onclick="closeBookingActions(); quickUpdateStatus(${id}, 'CONFIRMED')" role="menuitem"><i class="fa-solid fa-check"></i><span>Xác nhận đơn tiệc</span></button>
                     `;
                 }
-                if (statusCode !== 'CANCELLED' && statusCode !== 'COMPLETED') {
+                if (canManageContracts && statusCode !== 'CANCELLED' && statusCode !== 'COMPLETED') {
                     actionBtns += `
                         <button type="button" class="booking-action-item danger" onclick="closeBookingActions(); cancelBookingPrompt(${id})" role="menuitem"><i class="fa-solid fa-ban"></i><span>Hủy đơn tiệc</span></button>
                     `;
@@ -1359,8 +1360,26 @@
                         link.className = 'px-4 py-2.5 bg-gradient-to-r from-[#B89758] to-[#9E7E3F] text-white rounded-lg font-bold shadow-sm transition-all flex items-center gap-2';
                         link.textContent = 'Tạo hợp đồng';
                         btnGroup.appendChild(link);
-                    } else if (statusCode === 'PENDING') {
+                    } else if (canManageContracts && statusCode === 'PENDING') {
                         btnGroup.innerHTML = `<button type="button" onclick="quickUpdateStatus(${id}, 'CONFIRMED')" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-sm transition-colors flex items-center gap-2"><i class="fa-solid fa-check text-xs"></i>Xác nhận Booking</button>`;
+                    }
+
+                    if (canManageContracts && ['PENDING', 'CONFIRMED', 'PREPARING'].includes(statusCode)) {
+                        const rescheduleButton = document.createElement('button');
+                        rescheduleButton.type = 'button';
+                        rescheduleButton.className = 'px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold';
+                        rescheduleButton.textContent = 'Báo giá & đổi lịch';
+                        rescheduleButton.addEventListener('click', () => managerReschedule(id, b));
+                        btnGroup.appendChild(rescheduleButton);
+                    }
+
+                    if (canManageContracts && hasContract) {
+                        const refundButton = document.createElement('button');
+                        refundButton.type = 'button';
+                        refundButton.className = 'ml-2 px-3 py-2 border border-amber-600 text-amber-800 rounded-lg font-bold';
+                        refundButton.textContent = 'Nghĩa vụ hoàn tiền';
+                        refundButton.addEventListener('click', () => showRefundObligations(id));
+                        btnGroup.appendChild(refundButton);
                     }
 
                     const modal = document.getElementById('bookingDetailModal');
@@ -1374,6 +1393,126 @@
                     false
                 );
             }
+        }
+
+        function pendingOperationId(key, payload) {
+            try {
+                const previous = JSON.parse(localStorage.getItem(key) || 'null');
+                if (previous?.payload === payload && previous.requestId) return previous.requestId;
+                const requestId = crypto.randomUUID();
+                localStorage.setItem(key, JSON.stringify({ payload, requestId }));
+                return requestId;
+            } catch { return crypto.randomUUID(); }
+        }
+
+        function clearPendingOperation(key) {
+            try { localStorage.removeItem(key); } catch { }
+        }
+
+        let rescheduleQuoteSequence = 0;
+        function closeRescheduleModal() {
+            ++rescheduleQuoteSequence;
+        }
+
+        async function managerReschedule(id, booking) {
+            const quoteSequence = ++rescheduleQuoteSequence;
+            const date = prompt('Ngày mới (YYYY-MM-DD):');
+            if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+            const shift = prompt('Ca mới (Ca trưa hoặc Ca tối):', booking.shift || booking.Shift);
+            if (!shift) return;
+            const hallId = Number(prompt('Mã sảnh mới:', booking.hallId || booking.HallId));
+            if (!Number.isInteger(hallId) || hallId <= 0) return;
+            const reason = prompt('Lý do đổi lịch:');
+            if (!reason?.trim()) return;
+            const changeMenu = confirm('Bạn có muốn thay đổi thực đơn trong cùng thao tác không?');
+            let menuId = null;
+            let customDishIds = [];
+            if (changeMenu) {
+                const menuChoice = prompt('Nhập mã thực đơn catalogue, hoặc để trống để dùng món tuỳ chọn:', '');
+                if (menuChoice?.trim()) {
+                    menuId = Number(menuChoice);
+                    if (!Number.isInteger(menuId) || menuId <= 0) return;
+                } else {
+                    const dishChoice = prompt('Nhập mã các món tuỳ chọn, cách nhau bởi dấu phẩy:');
+                    if (!dishChoice?.trim()) return;
+                    customDishIds = dishChoice.split(',').map(value => Number(value.trim()));
+                    if (!customDishIds.every(value => Number.isInteger(value) && value > 0)) return;
+                }
+            }
+            const payload = { newDate: date, newShift: shift, newHallId: hallId, changeMenu, menuId, customDishIds, reason: reason.trim() };
+            const storageKey = `uc18-reschedule:${id}`;
+            const query = new URLSearchParams({ NewDate: date, NewShift: shift, NewHallId: String(hallId), ChangeMenu: String(changeMenu) });
+            if (menuId !== null) query.set('MenuId', String(menuId));
+            customDishIds.forEach(dishId => query.append('CustomDishIds', String(dishId)));
+            try {
+                const quoteResponse = await fetch(`/AdminBooking/GetRescheduleQuote/${id}?${query}`);
+                if (quoteSequence !== rescheduleQuoteSequence) return;
+                const quoteResult = await quoteResponse.json();
+                if (!quoteResponse.ok || !quoteResult.success) throw new Error(quoteResult.message || 'Không thể báo giá đổi lịch.');
+                const quote = quoteResult.data;
+                const hallDelta = quote.priceDifference ?? quote.PriceDifference ?? 0;
+                const menuDelta = quote.menuPriceDifference ?? quote.MenuPriceDifference ?? 0;
+                const delta = quote.signedPriceDelta ?? quote.SignedPriceDelta ?? hallDelta + menuDelta * (booking.billedTableCount ?? booking.BilledTableCount ?? booking.tableCount ?? booking.TableCount ?? 0);
+                const amount = quote.effectiveTotalAfterChange ?? quote.EffectiveTotalAfterChange ?? quote.estimatedTotalAfterChange ?? quote.EstimatedTotalAfterChange;
+                if ((quote.capacityCheck ?? quote.CapacityCheck) === 'FAIL') throw new Error(quote.capacityMessage ?? quote.CapacityMessage ?? 'Sảnh không đủ sức chứa.');
+                const summary = `Giá sảnh hiện lưu / giá sảnh mới: ${quote.savedHallPrice ?? quote.SavedHallPrice ?? '—'} / ${quote.currentHallPrice ?? quote.CurrentHallPrice ?? '—'}\nChênh lệch sảnh: ${Number(hallDelta).toLocaleString('vi-VN')} đ\nGiá thực đơn hiện lưu / giá mới mỗi bàn: ${quote.savedMenuPrice ?? quote.SavedMenuPrice ?? '—'} / ${quote.currentMenuPrice ?? quote.CurrentMenuPrice ?? '—'}\nChênh lệch thực đơn/bàn: ${Number(menuDelta).toLocaleString('vi-VN')} đ\nChênh lệch ròng: ${Number(delta).toLocaleString('vi-VN')} đ\nKiểm tra sức chứa: ${quote.capacityCheck ?? quote.CapacityCheck ?? 'UNKNOWN'} — ${quote.capacityMessage ?? quote.CapacityMessage ?? ''} (bàn dự phòng: ${quote.spareTableCount ?? quote.SpareTableCount ?? '—'})\nTổng dự kiến sau đổi: ${amount ?? '—'}\nPhí: ${quote.feeAmount ?? quote.FeeAmount ?? 0}\nHoàn dự kiến: ${quote.refundDue ?? quote.RefundDue ?? 0}\nChính sách: ${quote.policyVersion ?? quote.PolicyVersion ?? '—'}`;
+                if (!confirm(`Xác nhận nội dung báo giá?\n${summary}`)) return;
+                const financial = quote.isFinancialAmendment ?? quote.IsFinancialAmendment;
+                const customerAgreementReference = financial ? prompt('Mã/tham chiếu khách hàng đồng ý:') : null;
+                const managerAgreementReference = financial ? prompt('Mã/tham chiếu xác nhận của Quản lý:') : null;
+                if (financial && (!customerAgreementReference?.trim() || !managerAgreementReference?.trim())) return;
+                const request = {
+                    ...payload,
+                    priceDifferenceConfirmed: quote.requiresPriceConfirmation ?? quote.RequiresPriceConfirmation ?? false,
+                    confirmedPriceDifference: quote.priceDifference ?? quote.PriceDifference,
+                    menuPriceDifferenceConfirmed: quote.requiresMenuPriceConfirmation ?? quote.RequiresMenuPriceConfirmation ?? false,
+                    confirmedMenuPriceDifference: quote.menuPriceDifference ?? quote.MenuPriceDifference,
+                    quoteToken: quote.quoteToken ?? quote.QuoteToken,
+                    policyVersion: quote.policyVersion ?? quote.PolicyVersion,
+                    customerAgreementReference, managerAgreementReference
+                };
+                const commitPayload = JSON.stringify(request);
+                request.requestId = pendingOperationId(storageKey, commitPayload);
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                const response = await fetch(`/AdminBooking/Reschedule/${id}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token }, body: JSON.stringify(request)
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'Không thể đổi lịch.');
+                clearPendingOperation(storageKey);
+                showToast('Thành công', 'Đã ghi nhận thay đổi lịch.');
+                await executeFilter(currentFilter.pageIndex);
+                await viewBookingDetail(id);
+            } catch (error) { showToast('Không thể đổi lịch', error.message, false); }
+        }
+
+        async function showRefundObligations(id) {
+            try {
+                const response = await fetch(`/AdminBooking/GetRefundObligations/${id}`);
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'Không thể tải nghĩa vụ hoàn tiền.');
+                const obligations = result.data || [];
+                if (!obligations.length) { showToast('Nghĩa vụ hoàn tiền', 'Không có nghĩa vụ hoàn tiền đang ghi nhận.'); return; }
+                const lines = obligations.map((row, index) => `${index + 1}. ${row.kind}: còn gốc ${row.remainingPrincipal}, cọc ${row.remainingDeposit}, bồi thường ${row.remainingCompensation}`).join('\n');
+                alert(lines);
+                const selected = obligations.find(row => Number(row.remainingPrincipal) + Number(row.remainingDeposit) + Number(row.remainingCompensation) > 0);
+                if (!selected || !confirm('Ghi nhận xác nhận đã chuyển khoản cho nghĩa vụ đầu tiên còn dư?')) return;
+                const evidence = prompt('Mã chứng từ chuyển khoản:');
+                if (!evidence?.trim()) return;
+                const principalPaid = Number(prompt('Tiền gốc đã hoàn (VND nguyên):', '0'));
+                const depositPrincipalPaid = Number(prompt('Trong đó tiền cọc (VND nguyên):', '0'));
+                const compensationPaid = Number(prompt('Tiền bồi thường đã hoàn (VND nguyên):', '0'));
+                if (![principalPaid, depositPrincipalPaid, compensationPaid].every(value => Number.isSafeInteger(value) && value >= 0)) throw new Error('Số tiền phải là VND nguyên không âm.');
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                const confirmation = { operationRequestId: selected.requestId, externalEvidenceReference: evidence.trim(), principalPaid, depositPrincipalPaid, compensationPaid };
+                const confirmationKey = `uc18-refund:${id}:${selected.requestId}`;
+                const confirmationPayload = JSON.stringify(confirmation);
+                const saved = await fetch(`/AdminBooking/RecordRefundConfirmation/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token }, body: JSON.stringify({ ...confirmation, requestId: pendingOperationId(confirmationKey, confirmationPayload) }) });
+                const savedResult = await saved.json();
+                if (!saved.ok || !savedResult.success) throw new Error(savedResult.message || 'Không thể ghi nhận xác nhận hoàn tiền.');
+                clearPendingOperation(confirmationKey);
+                showToast('Thành công', 'Đã ghi nhận xác nhận hoàn tiền.');
+            } catch (error) { showToast('Không thể ghi nhận', error.message, false); }
         }
 
         async function copyReviewLink() {
@@ -1416,13 +1555,14 @@
 
         // ================= 3. CẬP NHẬT TRẠNG THÁI BOOKING / HỦY =================
         async function quickUpdateStatus(id, newStatus) {
+            if (!canManageContracts || newStatus === 'CANCELLED') return;
             const friendlyStatus = { CONFIRMED: 'Đã xác nhận', CANCELLED: 'Đã hủy', COMPLETED: 'Hoàn tất', PREPARING: 'Đang chuẩn bị' }[newStatus] || newStatus;
             if (!confirm(`Bạn có chắc muốn chuyển trạng thái đơn tiệc sang "${friendlyStatus}"?`)) return;
 
             try {
                 const res = await fetch(`/AdminBooking/UpdateStatus/${id}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value },
                     body: JSON.stringify({ statusCode: newStatus })
                 });
                 const result = await res.json();
@@ -1438,25 +1578,83 @@
             }
         }
 
-        function cancelBookingPrompt(id) {
-            const reason = prompt("Nhập lý do hủy tiệc cưới (lịch sảnh sẽ tự động giải phóng):", "Khách hàng đổi kế hoạch");
+        async function cancelBookingPrompt(id) {
+            if (!canManageContracts) return;
+            const reason = prompt('Nhập lý do hủy tiệc cưới (tối đa 500 ký tự):', 'Khách hàng đổi kế hoạch');
             if (reason === null) return;
+            if (!reason.trim() || reason.trim().length > 500) {
+                showToast('Không thể hủy', 'Lý do phải có từ 1 đến 500 ký tự.', false);
+                return;
+            }
 
-            fetch(`/AdminBooking/UpdateStatus/${id}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ statusCode: 'CANCELLED', cancellationReason: reason })
-            })
-            .then(res => res.json())
-            .then(result => {
-                if (result.success) {
-                    showToast('Đã hủy', 'Đã hủy tiệc và giải phóng lịch sảnh thành công.');
-                    closeDetailModal();
-                    executeFilter(currentFilter.pageIndex);
-                } else {
-                    showToast('Lỗi', result.message, false);
+            const booking = currentBookings.find(item => Number(item.bookingId ?? item.BookingId) === Number(id));
+            if (!booking) {
+                showToast('Không thể hủy', 'Không xác định được trạng thái booking hiện tại. Tải lại danh sách rồi thử lại.', false);
+                return;
+            }
+            const hasContract = booking?.hasContract ?? booking?.HasContract ?? false;
+            const cancellation = { reason: reason.trim() };
+            if (hasContract) {
+                const originChoice = prompt('Nguồn hủy: nhập CUSTOMER (khách hàng) hoặc RIVERSIDE (nhà hàng).', 'CUSTOMER');
+                const origin = originChoice?.trim().toUpperCase();
+                if (!origin || !['CUSTOMER', 'RIVERSIDE'].includes(origin)) {
+                    showToast('Không thể báo giá', 'Nguồn hủy phải là CUSTOMER hoặc RIVERSIDE.', false);
+                    return;
                 }
-            });
+                cancellation.origin = origin;
+                cancellation.policyVersion = 'UC18-CANCEL-V1';
+                cancellation.agreementReference = prompt('Mã/tham chiếu xác nhận thỏa thuận hủy:')?.trim();
+                if (!cancellation.agreementReference) {
+                    showToast('Cần xác nhận', 'Nhập mã/tham chiếu thỏa thuận trước khi báo giá hủy.', false);
+                    return;
+                }
+                if (origin === 'CUSTOMER') {
+                    const retention = prompt('Mức giữ cọc thấp hơn chính sách đã được đồng ý (VND, để trống nếu không áp dụng):', '');
+                    if (retention === null) return;
+                    if (retention.trim()) {
+                        cancellation.agreedLowerRetention = Number(retention);
+                        if (!Number.isFinite(cancellation.agreedLowerRetention) || cancellation.agreedLowerRetention < 0) {
+                            showToast('Không thể báo giá', 'Mức giữ cọc phải là số tiền không âm.', false);
+                            return;
+                        }
+                    }
+                } else {
+                    const sanctions = confirm('Áp dụng chế tài tiền cọc theo thỏa thuận hủy của nhà hàng?');
+                    cancellation.depositSanctionsApply = sanctions;
+                }
+            }
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            const headers = { 'Content-Type': 'application/json', 'RequestVerificationToken': token };
+            try {
+                if (hasContract) {
+                    const quoteResponse = await fetch(`/AdminBooking/GetCancelQuote/${id}`, {
+                        method: 'POST', headers, body: JSON.stringify(cancellation)
+                    });
+                    const quoteResult = await quoteResponse.json();
+                    if (!quoteResponse.ok || !quoteResult.success) throw new Error(quoteResult.message || 'Không thể tạo báo giá hủy. Kiểm tra nghĩa vụ thanh toán hoặc giao dịch đang chờ xử lý.');
+                    const quote = quoteResult.data;
+                    const money = value => Number(value ?? 0).toLocaleString('vi-VN') + ' đ';
+                    const summary = `Giữ cọc: ${money(quote.retainedDeposit ?? quote.RetainedDeposit)}\nHoàn tiền gốc: ${money(quote.principalRefundDue ?? quote.PrincipalRefundDue)}\nTrong đó tiền cọc: ${money(quote.depositPrincipalPortion ?? quote.DepositPrincipalPortion)}\nBồi thường: ${money(quote.compensationDue ?? quote.CompensationDue)}`;
+                    if (!confirm(`Xác nhận báo giá hủy UC18?\n${summary}`)) return;
+                    cancellation.quoteToken = quote.quoteToken ?? quote.QuoteToken;
+                }
+
+                const storageKey = `uc18-cancel:${id}`;
+                const payload = JSON.stringify(cancellation);
+                const request = { ...cancellation, requestId: pendingOperationId(storageKey, payload) };
+                const response = await fetch(`/AdminBooking/Cancel/${id}`, {
+                    method: 'POST', headers, body: JSON.stringify(request)
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'Không thể hủy booking. Trạng thái chưa được làm mới; xử lý xung đột hoặc thử lại.');
+                clearPendingOperation(storageKey);
+                showToast('Đã hủy', 'UC18 đã ghi nhận hủy booking thành công.');
+                closeDetailModal();
+                await executeFilter(currentFilter.pageIndex);
+            } catch (error) {
+                showToast('Không thể xác nhận hủy', `${error.message} Nếu phản hồi không chắc chắn, thử lại cùng lý do và thỏa thuận để dùng lại mã yêu cầu.`, false);
+            }
         }
 
         // ================= 4. TẠO MỚI ĐẶT TIỆC =================

@@ -1775,11 +1775,16 @@ public sealed class RecommendationController : ControllerBase
             MenuId = menuPricing?.MenuId,
             DecorationPackageId = decor?.GoiTrangTriID,
             GuestCount = request.GuestCount,
+            BilledTableCount = estimatedTableCount,
+            SpareTableCount = spareTableCount,
             FinalHallPrice = effectiveHallRentalPrice,
             FinalMenuPrice = menuPricing is null ? (decimal?)null : effectiveMenuPricePerTable,
             FinalDecorationPrice = decor?.Gia,
             EstimatedTotal = officialEstimatedTotal,
             SpecialRequests = NormalizeOptional(enrichedRequests),
+            CustomMenuSnapshotJson = hasCustomMenu
+                ? JsonSerializer.Serialize(menuPricing!.SelectedDishes.Select(item => new { item.DishId, item.DishName, item.Price }))
+                : null,
             StatusId = await _statusService.GetStatusIdAsync(StatusGroups.Booking, BookingStatusCodes.Pending),
             BookedAt = DateTime.Now
         };
@@ -1804,16 +1809,6 @@ public sealed class RecommendationController : ControllerBase
             await _context.SaveChangesAsync();
         }
         await transaction.CommitAsync();
-        // Booking is durable. QR failure must not roll it back; the worker retries missing QR rows.
-        try
-        {
-            if (_reviewQrService is not null)
-                await _reviewQrService.EnsureForBookingAsync(booking.BookingId, HttpContext.RequestAborted);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Booking {BookingId} was saved but review QR creation failed; backfill will retry.", booking.BookingId);
-        }
 
         // FR15 / UC13 (6a) fault-tolerant: gửi email xác nhận SAU commit, lỗi SMTP
         // chỉ LogError, KHÔNG rollback, vẫn trả success + mã cho client.

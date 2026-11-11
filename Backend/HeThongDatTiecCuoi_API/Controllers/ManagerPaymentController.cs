@@ -124,10 +124,16 @@ public sealed class ManagerPaymentController : ControllerBase
         if (normalizedType is null)
             return BadRequest(new { success = false, message = "Loại thanh toán phải là 'Thanh toán đợt' hoặc 'Quyết toán'." });
 
+        var bookingId = await _context.Contracts.AsNoTracking().Where(c => c.ContractId == request.ContractId)
+            .Select(c => (int?)c.BookingId).SingleOrDefaultAsync(cancellationToken);
+        if (bookingId is null)
+            return NotFound(new { success = false, message = "Không tìm thấy hợp đồng." });
+
+        using var bookingLock = await BookingPaymentConcurrency.AcquireAsync(bookingId.Value, cancellationToken);
+        await using var transaction = await BookingPaymentConcurrency.BeginSerializableTransactionAsync(_context, cancellationToken);
+        await BookingPaymentConcurrency.AcquireDatabaseLockAsync(_context, bookingId.Value, cancellationToken);
         var contract = await _context.Contracts
-            .Include(c => c.Status)
-            .Include(c => c.Booking)
-            .Include(c => c.Payments).ThenInclude(p => p.Status)
+            .Include(c => c.Status).Include(c => c.Booking)
             .SingleOrDefaultAsync(c => c.ContractId == request.ContractId, cancellationToken);
 
         if (contract == null)
@@ -137,10 +143,15 @@ public sealed class ManagerPaymentController : ControllerBase
             return Conflict(new { success = false, message = $"Chỉ hợp đồng đang có hiệu lực mới được ghi nhận thanh toán (Trạng thái hiện tại: {contract.Status.StatusName})." });
 
         // SEC-05: Kiểm tra trần số tiền thanh toán tiền mặt không vượt quá công nợ còn lại
-        var oldPaid = contract.Payments
-            .Where(p => p.Status != null && p.Status.StatusCode == PaymentStatusCodes.Success)
-            .Sum(p => p.Amount);
-        var remainingBalance = Math.Max(0, contract.TotalValue - oldPaid);
+        var ledger = await new Uc18FinancialLedger(_context).ReadAsync(contract, cancellationToken);
+        var oldPaid = ledger.Receipts.GrossCollected - ledger.Receipts.TotalPrincipalReturned;
+        var remainingBalance = Math.Max(0, ledger.EffectiveTotal - oldPaid);
+        if (await _context.PaymentTransactions.AnyAsync(item => item.DatTiecId == bookingId.Value &&
+                (item.TransactionType == PaymentTransactionTypes.Installment || item.TransactionType == PaymentTransactionTypes.Settlement) &&
+                (item.TrangThai == PaymentTransactionStatusCodes.Creating || item.TrangThai == PaymentTransactionStatusCodes.Pending ||
+                 item.TrangThai == PaymentTransactionStatusCodes.ReconciliationRequired),
+                cancellationToken))
+            return Conflict(new { success = false, message = "Hợp đồng đang có một giao dịch PayOS chưa được xác nhận." });
 
         if (remainingBalance <= 0)
             return BadRequest(new { success = false, message = "Hợp đồng này đã được thanh toán đầy đủ 100%, không còn số dư cần thanh toán." });
@@ -170,9 +181,8 @@ public sealed class ManagerPaymentController : ControllerBase
         };
         _context.Payments.Add(payment);
 
-        contract.Booking.PaidAmount = (contract.Booking.PaidAmount) + request.Amount;
-
         var newPaid = oldPaid + request.Amount;
+        contract.Booking.PaidAmount = newPaid;
 
         _context.AuditLogs.Add(new AuditLog
         {
@@ -188,6 +198,7 @@ public sealed class ManagerPaymentController : ControllerBase
         });
 
         await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return Ok(new
         {
@@ -202,7 +213,7 @@ public sealed class ManagerPaymentController : ControllerBase
                 paymentMethod = payment.PaymentMethod,
                 paymentDate = payment.PaymentDate,
                 totalPaid = newPaid,
-                remainingBalance = Math.Max(0, contract.TotalValue - newPaid)
+                remainingBalance = Math.Max(0, ledger.EffectiveTotal - newPaid)
             }
         });
     }

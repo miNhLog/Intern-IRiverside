@@ -337,6 +337,8 @@ public sealed class AdminBookingController : ControllerBase
             MenuId = menu?.MenuId,
             DecorationPackageId = decor?.GoiTrangTriID,
             GuestCount = guestCount,
+            BilledTableCount = tableCount,
+            SpareTableCount = request.SpareTableCount,
             FinalMenuPrice = menuPrice,
             FinalDecorationPrice = decorPrice,
             FinalHallPrice = hallPrice,
@@ -373,19 +375,11 @@ public sealed class AdminBookingController : ControllerBase
         });
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
-        try
-        {
-            if (_reviewQrService is not null)
-                await _reviewQrService.EnsureForBookingAsync(booking.BookingId, HttpContext.RequestAborted);
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "Booking {BookingId} đã lưu nhưng tạo QR đánh giá thất bại; worker sẽ tạo bù.", booking.BookingId);
-        }
         return Ok(new { success = true, bookingId = booking.BookingId, bookingCode = booking.BookingCode });
     }
 
     [HttpPut("{id:int}/status")]
+    [Authorize(Roles = RoleNames.Manager)]
     public async Task<IActionResult> UpdateBookingStatus(int id, [FromBody] UpdateBookingStatusRequestDto request)
     {
         if (string.IsNullOrWhiteSpace(request.StatusCode))
@@ -394,6 +388,14 @@ public sealed class AdminBookingController : ControllerBase
         var code = request.StatusCode.Trim().ToUpperInvariant();
         if (!BookingStatusCodes.All.Contains(code))
             return BadRequest(new { message = "Mã trạng thái booking không hợp lệ." });
+
+        if (code == BookingStatusCodes.Cancelled)
+            return Conflict(new
+            {
+                success = false,
+                code = "UC18_REQUIRED",
+                message = "Hủy booking phải được thực hiện qua quy trình UC18 (quote/commit)."
+            });
 
         using var bookingLock = await BookingPaymentConcurrency.AcquireAsync(id, HttpContext.RequestAborted);
         await using var transaction = await BookingPaymentConcurrency.BeginSerializableTransactionAsync(

@@ -107,13 +107,46 @@
         const list=tasks(party), n=percent(party);
         $('cwChecklist').innerHTML=`<div class="cw-checklist-head"><span class="cw-eyebrow">${esc(party.bookingCode)} · ${demo?'CHECKLIST MINH HỌA':'TIỆC ĐƯỢC PHÂN CÔNG'}</span><h2>${esc(party.customerName)}</h2><p>${fmt(party.eventDate)} · ${esc(shiftDisplay(party.shift))} · ${esc(party.hallName)} · ${party.tableCount} bàn</p>${n===null?'':`<div class="cw-progress-total"><span>Tiến độ chuẩn bị &amp; vận hành</span><strong>${n}% hoàn thành</strong></div><div class="cw-bar"><span style="width:${n}%"></span></div>`}</div>` + (n===null ? empty('Tiệc này chưa có checklist công việc','Bật dữ liệu minh họa để trải nghiệm đánh dấu tiến độ trước khi triển khai chức năng lưu.') : `<div class="cw-checklist-body">${['Trước tiệc','Trong tiệc','Sau tiệc'].map((group,i)=>{ const rows=list.filter(t=>t.group===group); return `<section class="cw-task-group"><h3>${i+1}. ${group}<span>${rows.filter(t=>t.done).length}/${rows.length} hoàn thành</span></h3>${rows.map(t=>`<label class="cw-task ${t.done?'done':''}"><input type="checkbox" data-task="${t.id}" ${t.done?'checked':''}/><span class="cw-task-copy"><span class="cw-task-name">${esc(t.name)}</span><small>${esc(t.due)}</small></span><span class="cw-pill ${t.done?'done':'pending'}">${t.done?'Hoàn thành':'Chưa làm'}</span></label>`).join('')}</section>`; }).join('')}</div><footer class="cw-checklist-footer"><i class="fa-solid fa-circle-info"></i> Bản xem trước · Đánh dấu để thử thay đổi tiến độ. Dữ liệu không được lưu vào hệ thống.</footer>`);
     }
+    function canIssueReviewQr(party) { return !demo && party && party.bookingId > 0 && String(party.bookingStatusCode||'').toUpperCase()==='PREPARING'; }
+    function reviewQrSection(party) {
+        if (!canIssueReviewQr(party)) return '';
+        return `<section class="cw-review-qr" data-review-qr="${party.bookingId}"><h3><i class="fa-solid fa-qrcode"></i> Mã QR đánh giá</h3><p id="cwReviewQrNote-${party.bookingId}" class="cw-review-qr-note">Phát hành hoặc lấy lại mã QR đánh giá cho tiệc đang chuẩn bị.</p><div class="cw-dialog-actions"><button type="button" class="cw-button cw-primary" data-review-qr-issue="${party.bookingId}"><i class="fa-solid fa-qrcode"></i> Phát hành / Lấy mã QR</button></div><div id="cwReviewQrResult-${party.bookingId}" class="cw-review-qr-result" aria-live="polite"></div></section>`;
+    }
     function detail(id) {
         const p=items().find(p=>p.bookingId===id); if(!p) return;
-        $('cwDetailBody').innerHTML=`<h2>${esc(p.bookingCode)}</h2><p>${esc(p.customerName)}</p><dl><dt>Ngày / Ca</dt><dd>${fmt(p.eventDate)} · ${esc(shiftDisplay(p.shift))}</dd><dt>Sảnh / Quy mô</dt><dd>${esc(p.hallName)} · ${p.tableCount} bàn</dd><dt>Thực đơn</dt><dd>${esc(p.menuName||'Chưa chọn')}</dd><dt>Trang trí</dt><dd>${esc(p.decorationName||'Chưa chọn')}</dd><dt>Dịch vụ</dt><dd>${esc(p.services?.join(', ')||'Chưa có')}</dd><dt>Yêu cầu đặc biệt</dt><dd>${esc(p.specialRequests||'Không có yêu cầu đặc biệt')}</dd><dt>Trạng thái</dt><dd>${esc(p.bookingStatusName)}</dd></dl>${demo?'<p>Dữ liệu minh họa · Không phải thông tin tiệc thực tế.</p>':`<div class="cw-dialog-actions"><a class="cw-button" href="/dieu-phoi/checklist?bookingId=${p.bookingId}"><i class="fa-solid fa-list-check"></i> Theo dõi tiến độ</a><a class="cw-button cw-primary" href="/dieu-phoi/su-co?bookingId=${p.bookingId}"><i class="fa-solid fa-triangle-exclamation"></i> Báo cáo sự cố</a></div>`}`;
+        $('cwDetailBody').innerHTML=`<h2>${esc(p.bookingCode)}</h2><p>${esc(p.customerName)}</p><dl><dt>Ngày / Ca</dt><dd>${fmt(p.eventDate)} · ${esc(shiftDisplay(p.shift))}</dd><dt>Sảnh / Quy mô</dt><dd>${esc(p.hallName)} · ${p.tableCount} bàn</dd><dt>Thực đơn</dt><dd>${esc(p.menuName||'Chưa chọn')}</dd><dt>Trang trí</dt><dd>${esc(p.decorationName||'Chưa chọn')}</dd><dt>Dịch vụ</dt><dd>${esc(p.services?.join(', ')||'Chưa có')}</dd><dt>Yêu cầu đặc biệt</dt><dd>${esc(p.specialRequests||'Không có yêu cầu đặc biệt')}</dd><dt>Trạng thái</dt><dd>${esc(p.bookingStatusName)}</dd></dl>${demo?'<p>Dữ liệu minh họa · Không phải thông tin tiệc thực tế.</p>':`<div class="cw-dialog-actions"><a class="cw-button" href="/dieu-phoi/checklist?bookingId=${p.bookingId}"><i class="fa-solid fa-list-check"></i> Theo dõi tiến độ</a><a class="cw-button cw-primary" href="/dieu-phoi/su-co?bookingId=${p.bookingId}"><i class="fa-solid fa-triangle-exclamation"></i> Báo cáo sự cố</a></div>${reviewQrSection(p)}`}`;
         $('cwDetail').showModal();
     }
     $('cwClose').onclick=()=>$('cwDetail').close();
-    $('coordinatorWorkspace').addEventListener('click',event=>{ const btn=event.target.closest('[data-detail],[data-party]'); if(!btn) return; if(btn.dataset.detail) detail(Number(btn.dataset.detail)); else { selected=Number(btn.dataset.party); renderProgress(); } });
+    async function issueReviewQr(bookingId, button) {
+        const note=$(`cwReviewQrNote-${bookingId}`), result=$(`cwReviewQrResult-${bookingId}`);
+        const token=document.querySelector('#coordinatorWorkspace input[name="__RequestVerificationToken"]')?.value;
+        if (!token) { if(note) note.textContent='Không tìm thấy mã xác thực. Vui lòng tải lại trang.'; return; }
+        if (button) { button.disabled=true; button.setAttribute('aria-busy','true'); }
+        if (note) note.textContent='Đang xử lý mã QR đánh giá...';
+        if (result) result.innerHTML='';
+        try {
+            const response = await fetch(`/danh-gia/dieu-phoi/${bookingId}`, { method:'POST', headers:{ 'RequestVerificationToken': token, 'X-Requested-With': 'XMLHttpRequest' } });
+            const payload = await response.json().catch(()=>({}));
+            if (!response.ok || !payload.success) {
+                if (note) note.textContent=payload.message || 'Không thể phát hành hoặc lấy mã QR đánh giá.';
+                return;
+            }
+            if (note) note.textContent=payload.created ? 'Đã phát hành mã QR đánh giá.' : 'Đã lấy mã QR đánh giá hiện có.';
+            const qrSrc=`/danh-gia/dieu-phoi/${bookingId}/qr.png?v=${Date.now()}`;
+            const reviewUrl=payload.reviewUrl ? `<p><a href="${esc(payload.reviewUrl)}" target="_blank" rel="noopener">Mở liên kết đánh giá khách mời</a></p>` : '';
+            if (result) result.innerHTML=`${reviewUrl}<img src="${qrSrc}" alt="Mã QR đánh giá cho tiệc ${esc(payload.bookingCode||bookingId)}" class="cw-review-qr-image" />`;
+        } catch {
+            if (note) note.textContent='Không thể kết nối máy chủ. Vui lòng thử lại.';
+        } finally {
+            if (button) { button.disabled=false; button.removeAttribute('aria-busy'); }
+        }
+    }
+    $('coordinatorWorkspace').addEventListener('click',event=>{
+        const issue=event.target.closest('[data-review-qr-issue]');
+        if (issue) { issueReviewQr(Number(issue.dataset.reviewQrIssue), issue); return; }
+        const btn=event.target.closest('[data-detail],[data-party]'); if(!btn) return; if(btn.dataset.detail) detail(Number(btn.dataset.detail)); else { selected=Number(btn.dataset.party); renderProgress(); }
+    });
     $('cwChecklist').addEventListener('change',event=>{if(!event.target.matches('[data-task]')||!demo)return;const party=items().find(p=>p.bookingId===selected);const t=tasks(party).find(t=>t.id===Number(event.target.dataset.task));t.done=event.target.checked;renderProgress(); const input=$('cwChecklist').querySelector(`[data-task="${t.id}"]`); input?.focus();});
     if (config.standalone && $('cwDemo')) $('cwDemo').onclick=()=>{selected=null;week=monday(today);$('cwDate').value='';work.clear();filters();render();};
     $('cwPrev').onclick=()=>{week=add(week,-7);$('cwDate').value='';renderSchedule();};$('cwNext').onclick=()=>{week=add(week,7);$('cwDate').value='';renderSchedule();};$('cwToday').onclick=()=>{week=monday(today);$('cwDate').value='';renderSchedule();};

@@ -1,6 +1,7 @@
 using System.Globalization;
 using HeThongDatTiecCuoi_API.Constants.StatusCodes;
 using HeThongDatTiecCuoi_API.DTOs.Contract;
+using HeThongDatTiecCuoi_API.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -10,11 +11,51 @@ namespace HeThongDatTiecCuoi_API.Services;
 public interface IContractPdfGenerator
 {
     byte[] Generate(ManagerContractDetailDto contract);
+    byte[] GenerateAmendmentAppendix(ManagerContractAmendmentDto amendment);
 }
 
 public sealed class ContractPdfGenerator : IContractPdfGenerator
 {
     private static readonly CultureInfo VietnameseCulture = CultureInfo.GetCultureInfo("vi-VN");
+
+    public static bool ApplyOriginalEventSnapshot(ManagerContractDetailDto contract, string? snapshotJson)
+    {
+        if (contract.StatusCode == ContractStatusCodes.Draft) return false;
+        if (string.IsNullOrWhiteSpace(snapshotJson)) return false;
+        Uc18ContractAmendmentSnapshot? snapshot;
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(snapshotJson);
+            if (document.RootElement.ValueKind != System.Text.Json.JsonValueKind.Object ||
+                !document.RootElement.TryGetProperty(nameof(Uc18ContractAmendmentSnapshot.OriginalEvent), out var originalElement) ||
+                originalElement.ValueKind != System.Text.Json.JsonValueKind.Object ||
+                !originalElement.TryGetProperty(nameof(Uc18ContractEventSnapshot.Date), out var dateElement) || dateElement.ValueKind != System.Text.Json.JsonValueKind.String ||
+                !originalElement.TryGetProperty(nameof(Uc18ContractEventSnapshot.Shift), out var shiftElement) || shiftElement.ValueKind != System.Text.Json.JsonValueKind.String ||
+                !originalElement.TryGetProperty(nameof(Uc18ContractEventSnapshot.HallName), out var hallElement) || hallElement.ValueKind != System.Text.Json.JsonValueKind.String ||
+                !originalElement.TryGetProperty(nameof(Uc18ContractEventSnapshot.MenuName), out var menuElement) ||
+                    menuElement.ValueKind is not (System.Text.Json.JsonValueKind.String or System.Text.Json.JsonValueKind.Null) ||
+                !originalElement.TryGetProperty(nameof(Uc18ContractEventSnapshot.Guests), out var guestsElement) || guestsElement.ValueKind != System.Text.Json.JsonValueKind.Number ||
+                !originalElement.TryGetProperty(nameof(Uc18ContractEventSnapshot.DecorationPackageName), out var decorationElement) ||
+                    decorationElement.ValueKind is not (System.Text.Json.JsonValueKind.String or System.Text.Json.JsonValueKind.Null) ||
+                !originalElement.TryGetProperty(nameof(Uc18ContractEventSnapshot.Services), out var servicesElement) || servicesElement.ValueKind != System.Text.Json.JsonValueKind.Array)
+                return false;
+            snapshot = System.Text.Json.JsonSerializer.Deserialize<Uc18ContractAmendmentSnapshot>(snapshotJson);
+        }
+        catch (System.Text.Json.JsonException) { return false; }
+        if (snapshot?.OriginalEvent is not { } originalEvent) return false;
+        if (originalEvent.Date == default || string.IsNullOrWhiteSpace(originalEvent.Shift) ||
+            string.IsNullOrWhiteSpace(originalEvent.HallName) || originalEvent.Guests <= 0 || originalEvent.Services is null)
+            return false;
+
+        contract.Booking.EventDate = originalEvent.Date;
+        contract.Booking.Shift = originalEvent.Shift;
+        contract.Booking.HallName = originalEvent.HallName;
+        contract.Booking.MenuName = originalEvent.MenuName;
+        contract.Booking.GuestCount = originalEvent.Guests;
+        contract.Booking.DecorationPackageName = originalEvent.DecorationPackageName;
+        contract.Booking.Services = originalEvent.Services;
+        return true;
+    }
 
     public byte[] Generate(ManagerContractDetailDto contract) => Document.Create(document =>
     {
@@ -22,9 +63,6 @@ public sealed class ContractPdfGenerator : IContractPdfGenerator
         {
             page.Size(PageSizes.A4);
             page.Margin(36);
-            // TODO-3: QuestPDF font tieng Viet — giu FontFamily("Lato") vi QuestPDF 2026.9
-            // chi dang ky san Lato (QuestPDF.Fonts.Lato.br) va nem ngoai le neu them
-            // fallback chua deploy (DejaVu Sans/Arial). Lato ho tro day du glyph Viet.
             page.DefaultTextStyle(style => style.FontFamily("Lato").FontSize(10).FontColor("#17233A"));
 
             page.Header().Column(header =>
@@ -101,6 +139,68 @@ public sealed class ContractPdfGenerator : IContractPdfGenerator
             });
         });
     }).GeneratePdf();
+
+    public byte[] GenerateAmendmentAppendix(ManagerContractAmendmentDto amendment) => Document.Create(document =>
+    {
+        document.Page(page =>
+        {
+            page.Size(PageSizes.A4);
+            page.Margin(36);
+            page.DefaultTextStyle(style => style.FontFamily("Lato").FontSize(10).FontColor("#17233A"));
+            page.Header().Column(header =>
+            {
+                header.Item().AlignCenter().Text("RIVERSIDE PALACE").FontSize(20).Bold().FontColor("#A77B2D");
+                header.Item().AlignCenter().Text("PHỤ LỤC ĐIỀU CHỈNH HỢP ĐỒNG").FontSize(14).Bold();
+            });
+            page.Content().PaddingVertical(18).Column(column =>
+            {
+                column.Spacing(12);
+                AddSection(column, "THÔNG TIN THAY ĐỔI", section =>
+                {
+                    AddLabelValue(section, "Loại thay đổi", amendment.Kind);
+                    AddLabelValue(section, "Thời điểm ghi nhận", amendment.RecordedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm", VietnameseCulture));
+                    AddLabelValue(section, "Lý do", amendment.Snapshot?.Reason ?? "Không có thông tin");
+                });
+                AddSection(column, "NỘI DUNG TRƯỚC / SAU", section =>
+                {
+                    AddEventSnapshot(section, "Trước thay đổi", amendment.Snapshot?.PreviousEvent);
+                    AddEventSnapshot(section, "Sau thay đổi", amendment.Snapshot?.CurrentEvent);
+                });
+                AddSection(column, "THỎA THUẬN TÀI CHÍNH VÀ BẰNG CHỨNG", section =>
+                {
+                    AddLabelValue(section, "Chênh lệch giá đã ký", FormatMoney(amendment.SignedPriceDelta));
+                    AddLabelValue(section, "Phí", FormatMoney(amendment.FeeAmount));
+                    AddLabelValue(section, "Tổng hiệu lực", amendment.EffectiveTotal.HasValue
+                        ? FormatMoney(amendment.EffectiveTotal.Value) : "Không có thông tin");
+                    AddLabelValue(section, "Phiên bản chính sách", amendment.PolicyVersion ?? "Không có thông tin");
+                    AddLabelValue(section, "Tham chiếu đồng ý", amendment.ManagerAgreementReference ?? "Không có thông tin");
+                });
+            });
+            page.Footer().AlignCenter().Text(text =>
+            {
+                text.Span("Trang ");
+                text.CurrentPageNumber();
+                text.Span(" / ");
+                text.TotalPages();
+            });
+        });
+    }).GeneratePdf();
+
+    private static void AddEventSnapshot(ColumnDescriptor section, string title, Uc18ContractEventSnapshot? snapshot)
+    {
+        section.Item().Text(title).Bold();
+        if (snapshot is null)
+        {
+            section.Item().Text("Ảnh chụp thay đổi không khả dụng.").Italic();
+            return;
+        }
+        AddLabelValue(section, "Ngày / ca", $"{snapshot.Date:dd/MM/yyyy} - {snapshot.Shift}");
+        AddLabelValue(section, "Sảnh", snapshot.HallName);
+        AddLabelValue(section, "Thực đơn", snapshot.MenuName ?? "Chưa chọn");
+        AddLabelValue(section, "Số khách", snapshot.Guests.ToString(VietnameseCulture));
+        AddLabelValue(section, "Trang trí", snapshot.DecorationPackageName ?? "Chưa chọn");
+        AddLabelValue(section, "Dịch vụ", snapshot.Services.Count == 0 ? "Không có" : string.Join(", ", snapshot.Services));
+    }
 
     private static void AddSection(ColumnDescriptor column, string title, Action<ColumnDescriptor> content)
     {

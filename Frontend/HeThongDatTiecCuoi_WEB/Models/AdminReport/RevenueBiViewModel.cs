@@ -36,6 +36,9 @@ public class KpiSummaryViewModel
     public int TotalTables { get; set; }
     public double AverageOccupancyRate { get; set; }
     public decimal? ForfeitedDepositAmount { get; set; }
+    public double? ForfeitedDepositRate { get; set; }
+    public int? RecordedUc18CancellationCount { get; set; }
+    public string? ForfeitedDepositDenominatorLabel { get; set; }
     public bool ForfeitedDepositAvailable { get; set; }
 }
 

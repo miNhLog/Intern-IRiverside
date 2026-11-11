@@ -262,6 +262,39 @@ public class AdminReportController : ControllerBase
         int maxCapacityShifts = Math.Max(1, totalSlots - lockedSchedules.Count);
         double occupancy = Math.Round((double)occupiedScheduleIds.Count / maxCapacityShifts * 100.0, 1);
 
+        // Tiền cọc bị mất UC18: tính từ thao tác hủy thực tế của các tiệc hủy đã lọc (mỗi tiệc 1 thao tác).
+        var cancelledBookingIds = eventBookings
+            .Where(b => b.Status.StatusCode == BookingStatusCodes.Cancelled)
+            .Select(b => b.BookingId)
+            .Distinct()
+            .ToList();
+        decimal? forfeitedDepositAmount = null;
+        double? forfeitedDepositRate = null;
+        int? recordedUc18CancellationCount = null;
+        string? forfeitedDepositDenominatorLabel = null;
+        var forfeitedDepositAvailable = false;
+        if (cancelledBookingIds.Count > 0)
+        {
+            var cancelOperations = await _context.Uc18BookingOperations
+                .AsNoTracking()
+                .Where(o => cancelledBookingIds.Contains(o.BookingId) && o.Kind == Uc18BookingOperation.Cancel)
+                .ToListAsync();
+            var operationsPerBooking = cancelOperations
+                .GroupBy(o => o.BookingId)
+                .Select(g => g.OrderByDescending(o => o.RecordedAtUtc).First())
+                .ToList();
+            if (operationsPerBooking.Count > 0)
+            {
+                forfeitedDepositAmount = operationsPerBooking.Sum(o => o.RetainedDeposit);
+                var forfeitedCount = operationsPerBooking.Count(o => o.RetainedDeposit > 0m);
+                recordedUc18CancellationCount = operationsPerBooking.Count;
+                forfeitedDepositRate = Math.Round((double)forfeitedCount / recordedUc18CancellationCount.Value * 100.0, 1);
+                forfeitedDepositDenominatorLabel =
+                    $"Tỷ lệ trên {recordedUc18CancellationCount.Value} tiệc hủy có ghi nhận UC18 (tổng {cancelledBookingIds.Count} tiệc hủy trong kỳ)";
+                forfeitedDepositAvailable = true;
+            }
+        }
+
         var kpi = new KpiSummaryDto
         {
             TotalRevenue = totalActualPaid,
@@ -277,9 +310,11 @@ public class AdminReportController : ControllerBase
             AverageRevenuePerTable = avgRevPerTable,
             AverageMenuPricePerTable = avgMenuPrice,
             AverageOccupancyRate = Math.Min(occupancy, 100.0),
-            // UC18 chưa có sổ theo dõi tiền cọc bị mất trong schema hiện tại.
-            ForfeitedDepositAmount = null,
-            ForfeitedDepositAvailable = false
+            ForfeitedDepositAmount = forfeitedDepositAmount,
+            ForfeitedDepositRate = forfeitedDepositRate,
+            RecordedUc18CancellationCount = recordedUc18CancellationCount,
+            ForfeitedDepositDenominatorLabel = forfeitedDepositDenominatorLabel,
+            ForfeitedDepositAvailable = forfeitedDepositAvailable
         };
 
         // 9. Doanh thu theo tháng (tách biệt thực thu từ ThanhToan và dự kiến từ DatTiec)
@@ -392,12 +427,15 @@ public class AdminReportController : ControllerBase
             };
         }).ToList();
 
-        // 13. Chất lượng đánh giá QR (chỉ các điểm có trong schema hiện tại)
+        // 13. Chất lượng đánh giá QR (trung bình các điểm có dữ liệu trong phiếu đã lọc)
         double? AverageOrNull(IEnumerable<int?> values)
         {
             var present = values.Where(v => v.HasValue).Select(v => (double)v!.Value).ToList();
             return present.Count > 0 ? Math.Round(present.Average(), 2) : null;
         }
+
+        var hygieneScores = reviews.Where(r => r.HygieneScore.HasValue).Select(r => r.HygieneScore!.Value).ToList();
+        var averageHygieneScore = hygieneScores.Count > 0 ? Math.Round(hygieneScores.Average(), 2) : (double?)null;
 
         var quality = new QualitySummaryDto
         {
@@ -410,8 +448,8 @@ public class AdminReportController : ControllerBase
             AverageServiceScore = AverageOrNull(reviews.Select(r => r.ServiceScore)),
             AverageSoundScore = AverageOrNull(reviews.Select(r => r.SoundScore)),
             AverageLightingScore = AverageOrNull(reviews.Select(r => r.LightingScore)),
-            AverageHygieneScore = null,
-            HygieneScoreAvailable = false
+            AverageHygieneScore = averageHygieneScore,
+            HygieneScoreAvailable = hygieneScores.Count > 0
         };
 
         // 14. Danh sách đơn đặt tiệc cưới tiếp nhận gần nhất

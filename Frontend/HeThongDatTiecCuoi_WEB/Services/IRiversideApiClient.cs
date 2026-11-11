@@ -17,6 +17,7 @@ using HeThongDatTiecCuoi_WEB.Models.ManagerContractPayment;
 using HeThongDatTiecCuoi_WEB.Models.ManagerEventCoordination;
 using HeThongDatTiecCuoi_WEB.Models.Incident;
 using HeThongDatTiecCuoi_WEB.Models.Coordination;
+using HeThongDatTiecCuoi_WEB.Models.Review;
 using Microsoft.AspNetCore.Mvc;
 using HeThongDatTiecCuoi_WEB.Models.DecorPackages;
 using HeThongDatTiecCuoi_WEB.Models.ScheduleChange;
@@ -51,10 +52,18 @@ public interface IRiversideApiClient
     Task<ApiCallResult<CoordinationMutationViewModel>> ChangeCoordinatorAsync(string accessToken, int bookingId, int coordinatorEmployeeId, string reason, CancellationToken cancellationToken);
     Task<ApiCallResult<CoordinationMutationViewModel>> CancelCoordinatorAssignmentAsync(string accessToken, int bookingId, string reason, CancellationToken cancellationToken);
     Task<ApiCallResult<List<CoordinatorAssignedPartyViewModel>>> GetCoordinatorAssignedPartiesAsync(string accessToken, CancellationToken cancellationToken);
+
+    // UC21/UC22: phát hành QR đánh giá (điều phối viên) và gửi đánh giá khách mời.
+    Task<ApiCallResult<GuestReviewFormViewModel>> GetGuestReviewAsync(string token, CancellationToken cancellationToken);
+    Task<ApiCallResult<GuestReviewSubmitResult>> SubmitGuestReviewAsync(string token, GuestReviewScoresViewModel scores, string sessionId, CancellationToken cancellationToken);
+    Task<ApiCallResult<ReviewQrIssueViewModel>> IssueCoordinatorReviewQrAsync(string accessToken, int bookingId, CancellationToken cancellationToken);
+    Task<ApiCallResult<byte[]>> GetCoordinatorReviewQrPngAsync(string accessToken, int bookingId, CancellationToken cancellationToken);
+    Task<ApiCallResult<byte[]>> GetManagementReviewQrPngAsync(string accessToken, int bookingId, CancellationToken cancellationToken);
     Task<ApiCallResult<ProfileDto>> GetProfileAsync(string accessToken, CancellationToken cancellationToken);
     Task<ApiCallResult<ProfileUpdateResponse>> UpdateProfileAsync(ProfilePageViewModel model, string accessToken, CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerContractListResponseViewModel>> GetManagerContractsAsync(string accessToken, string? keyword, string? status, DateTime? fromDate, DateTime? toDate, int page, CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerContractDetailViewModel>> GetManagerContractAsync(string accessToken, int id, CancellationToken cancellationToken);
+    Task<ApiCallResult<List<ManagerContractAmendmentViewModel>>> GetManagerContractAmendmentsAsync(string accessToken, int id, CancellationToken cancellationToken);
     Task<ApiCallResult<List<EligibleBookingViewModel>>> GetEligibleContractBookingsAsync(string accessToken, string? keyword, CancellationToken cancellationToken);
     Task<ApiCallResult<ContractActionResponseViewModel>> CreateManagerContractAsync(string accessToken, CreateContractViewModel model, CancellationToken cancellationToken);
     Task<ApiCallResult<ContractActionResponseViewModel>> UpdateManagerContractAsync(string accessToken, int id, UpdateDraftContractViewModel model, CancellationToken cancellationToken);
@@ -63,6 +72,7 @@ public interface IRiversideApiClient
     Task<ApiCallResult<ContractActionResponseViewModel>> CancelManagerContractAsync(string accessToken, int id, CancellationToken cancellationToken);
     Task<ApiCallResult<ManagerPaymentListResponseViewModel>> GetManagerPaymentsAsync(string accessToken, string? keyword, string? type, string? status, DateTime? fromDate, DateTime? toDate, int page, CancellationToken cancellationToken);
     Task<ApiCallResult<PdfDownloadViewModel>> DownloadManagerContractPdfAsync(string accessToken, int id, CancellationToken cancellationToken);
+    Task<ApiCallResult<PdfDownloadViewModel>> DownloadManagerContractAmendmentPdfAsync(string accessToken, int id, Guid requestId, CancellationToken cancellationToken);
     Task<ApiCallResult<object>> RecordManagerPaymentAsync(string accessToken, RecordPaymentViewModel model, CancellationToken cancellationToken);
     Task<ApiCallResult<ContractPayOsLinkResultViewModel>> CreateManagerPayOsPaymentLinkAsync(string accessToken, CreateContractPayOsLinkViewModel model, CancellationToken cancellationToken);
     Task<ApiCallResult<HeThongDatTiecCuoi_WEB.Models.Payment.PaymentStatusResponseViewModel>> CheckManagerPayOsPaymentStatusAsync(string accessToken, long orderCode, CancellationToken cancellationToken);
@@ -422,6 +432,19 @@ public interface IRiversideApiClient
         UpdateBookingStatusRequestViewModel request,
         string? accessToken,
         CancellationToken cancellationToken = default);
+
+    Task<ApiCallResult<dynamic>> GetManagerBookingRescheduleQuoteAsync(int id, ManagerBookingRescheduleRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<dynamic>> RescheduleManagerBookingAsync(int id, ManagerBookingRescheduleRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<dynamic>> GetManagerBookingCancelQuoteAsync(int id, ManagerBookingCancelQuoteRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<dynamic>> CancelManagerBookingAsync(int id, ManagerBookingCancelRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<List<ManagerBookingRefundObligationViewModel>>> GetManagerBookingRefundObligationsAsync(int id, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<dynamic>> RecordManagerBookingRefundConfirmationAsync(int id, ManagerBookingRefundConfirmationRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<dynamic>> HandoffManagerBookingAsync(int id, ManagerBookingHandoffRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<BookingListResponseViewModel>> GetHallManagerOperationalBookingsAsync(BookingFilterRequestViewModel filter, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<BookingDetailViewModel>> GetHallManagerOperationalBookingAsync(int id, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<List<BookingHallOptionViewModel>>> GetHallManagerRescheduleOptionsAsync(int id, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<dynamic>> RescheduleHallManagerBookingAsync(int id, ManagerBookingRescheduleRequestViewModel request, string? accessToken, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<dynamic>> CancelHallManagerBookingAsync(int id, string reason, string? accessToken, CancellationToken cancellationToken = default);
 
     // Thay thế đoạn cuối bằng:
     Task<ApiCallResult<RecommendationResponseViewModel>> GetTop3RecommendationsAsync(
