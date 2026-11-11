@@ -4,11 +4,17 @@ public class RevenueBiReportDto
 {
     public int Year { get; set; }
     public int Quarter { get; set; }
+    public int Month { get; set; }
+    public int? HallId { get; set; }
+    public string? Shift { get; set; }
     public KpiSummaryDto Kpi { get; set; } = new();
     public List<MonthlyRevenueDto> MonthlyRevenues { get; set; } = new();
     public List<RevenueStructureDto> RevenueStructures { get; set; } = new();
     public List<HallPerformanceDto> HallPerformances { get; set; } = new();
     public List<RecentBookingDto> RecentBookings { get; set; } = new();
+    public List<ShiftOccupancyDto> OccupancyByShift { get; set; } = new();
+    public QualitySummaryDto Quality { get; set; } = new();
+    public List<ReportHallOptionDto> HallOptions { get; set; } = new();
 }
 
 public class KpiSummaryDto
@@ -17,6 +23,8 @@ public class KpiSummaryDto
     public decimal EstimatedTotalRevenue { get; set; }
     public int TotalBookings { get; set; }
     public int ConfirmedBookings { get; set; }
+    public int EventsHeld { get; set; }
+    public int EventsCancelled { get; set; }
     public int TotalContracts { get; set; }
     public decimal TotalContractValue { get; set; }
     public decimal OutstandingReceivables { get; set; }
@@ -24,6 +32,12 @@ public class KpiSummaryDto
     public decimal AverageMenuPricePerTable { get; set; }
     public int TotalTables { get; set; }
     public double AverageOccupancyRate { get; set; }
+    // Tiền cọc bị mất và tỷ lệ theo thao tác hủy UC18 thực tế của các tiệc hủy đã lọc.
+    public decimal? ForfeitedDepositAmount { get; set; }
+    public double? ForfeitedDepositRate { get; set; }
+    public int? RecordedUc18CancellationCount { get; set; }
+    public string? ForfeitedDepositDenominatorLabel { get; set; }
+    public bool ForfeitedDepositAvailable { get; set; }
 }
 
 public class MonthlyRevenueDto
@@ -51,7 +65,38 @@ public class HallPerformanceDto
     public string HallName { get; set; } = string.Empty;
     public int BookingCount { get; set; }
     public decimal TotalRevenue { get; set; }
+    public decimal EstimatedRevenue { get; set; }
     public double OccupancyRate { get; set; }
+}
+
+public class ShiftOccupancyDto
+{
+    public string Shift { get; set; } = string.Empty;
+    public string ShiftName { get; set; } = string.Empty;
+    public int OccupiedSlots { get; set; }
+    public int MaxSlots { get; set; }
+    public double OccupancyRate { get; set; }
+}
+
+public class QualitySummaryDto
+{
+    public int ReviewCount { get; set; }
+    public double? AverageOverallScore { get; set; }
+    public double? AverageHallScore { get; set; }
+    public double? AverageFoodScore { get; set; }
+    public double? AverageServiceScore { get; set; }
+    public double? AverageSoundScore { get; set; }
+    public double? AverageLightingScore { get; set; }
+    // Trung bình điểm vệ sinh từ các phiếu đánh giá đã lọc (bỏ qua giá trị trống).
+    public double? AverageHygieneScore { get; set; }
+    public bool HygieneScoreAvailable { get; set; }
+}
+
+public class ReportHallOptionDto
+{
+    public int HallId { get; set; }
+    public string HallCode { get; set; } = string.Empty;
+    public string HallName { get; set; } = string.Empty;
 }
 
 public class RecentBookingDto

@@ -2,6 +2,8 @@
 @{
     ViewData["Title"] = "Thống kê và báo cáo";
     Layout = "_AdminLayout";
+    // Razor chỉ bỏ thuộc tính "selected" khi giá trị là null, nên trả về null thay vì "False".
+    System.Func<bool, string?> selectedIf = condition => condition ? "selected" : null;
 }
 
 <!-- Font và Bootstrap Icons dùng chung được nạp bởi _AdminLayout; Chart.js & SheetJS vẫn giữ nguyên. -->
@@ -261,20 +263,54 @@
                 <i class="bi bi-calendar3 mr-2 text-xs" aria-hidden="true"></i>
                 <label for="selectYear" class="text-xs text-slate-500 mr-1.5 font-medium">Niên độ:</label>
                 <select id="selectYear" onchange="onFilterChange()" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
-                    <option value="2026" selected>Năm 2026</option>
-                    <option value="2025">Năm 2025</option>
+                    <option value="2026" selected="@selectedIf(Model.Year == 2026)">Năm 2026</option>
+                    <option value="2025" selected="@selectedIf(Model.Year == 2025)">Năm 2025</option>
                 </select>
             </div>
 
             <div class="backoffice-filter-control bi-filter-control flex items-center border rounded-lg px-3 py-1.5 min-h-[40px]">
                 <i class="bi bi-pie-chart mr-2 text-xs" aria-hidden="true"></i>
                 <label for="selectQuarter" class="text-xs text-slate-500 mr-1.5 font-medium">Kỳ thống kê:</label>
-                <select id="selectQuarter" onchange="onFilterChange()" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
-                    <option value="0" selected>Toàn bộ 4 Quý (12 Tháng)</option>
-                    <option value="1">Quý 1 (Tháng 1 – 3)</option>
-                    <option value="2">Quý 2 (Tháng 4 – 6)</option>
-                    <option value="3">Quý 3 (Tháng 7 – 9)</option>
-                    <option value="4">Quý 4 (Tháng 10 – 12)</option>
+                <select id="selectQuarter" onchange="onQuarterChange()" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
+                    <option value="0" selected="@selectedIf(Model.Quarter == 0)">Toàn bộ 4 Quý (12 Tháng)</option>
+                    <option value="1" selected="@selectedIf(Model.Quarter == 1)">Quý 1 (Tháng 1 – 3)</option>
+                    <option value="2" selected="@selectedIf(Model.Quarter == 2)">Quý 2 (Tháng 4 – 6)</option>
+                    <option value="3" selected="@selectedIf(Model.Quarter == 3)">Quý 3 (Tháng 7 – 9)</option>
+                    <option value="4" selected="@selectedIf(Model.Quarter == 4)">Quý 4 (Tháng 10 – 12)</option>
+                </select>
+            </div>
+
+            <div class="backoffice-filter-control bi-filter-control flex items-center border rounded-lg px-3 py-1.5 min-h-[40px]">
+                <i class="bi bi-calendar2-week mr-2 text-xs" aria-hidden="true"></i>
+                <label for="selectMonth" class="text-xs text-slate-500 mr-1.5 font-medium">Tháng:</label>
+                <select id="selectMonth" onchange="onMonthChange()" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
+                    <option value="0" selected="@selectedIf(Model.Month == 0)">Tất cả tháng trong kỳ</option>
+                    @for (var m = 1; m <= 12; m++)
+                    {
+                        <option value="@m" selected="@selectedIf(Model.Month == m)">Tháng @m</option>
+                    }
+                </select>
+            </div>
+
+            <div class="backoffice-filter-control bi-filter-control flex items-center border rounded-lg px-3 py-1.5 min-h-[40px]">
+                <i class="bi bi-building mr-2 text-xs" aria-hidden="true"></i>
+                <label for="selectHall" class="text-xs text-slate-500 mr-1.5 font-medium">Sảnh:</label>
+                <select id="selectHall" onchange="onFilterChange()" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
+                    <option value="" selected="@selectedIf(Model.HallId == null)">Tất cả đại sảnh</option>
+                    @foreach (var hall in Model.HallOptions)
+                    {
+                        <option value="@hall.HallId" selected="@selectedIf(Model.HallId == hall.HallId)">@hall.HallName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="backoffice-filter-control bi-filter-control flex items-center border rounded-lg px-3 py-1.5 min-h-[40px]">
+                <i class="bi bi-clock mr-2 text-xs" aria-hidden="true"></i>
+                <label for="selectShift" class="text-xs text-slate-500 mr-1.5 font-medium">Ca:</label>
+                <select id="selectShift" onchange="onFilterChange()" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
+                    <option value="" selected="@selectedIf(string.IsNullOrEmpty(Model.Shift))">Tất cả ca</option>
+                    <option value="Ca trưa" selected="@selectedIf(Model.Shift == "Ca trưa")">Ca trưa</option>
+                    <option value="Ca tối" selected="@selectedIf(Model.Shift == "Ca tối")">Ca tối</option>
                 </select>
             </div>
 
@@ -307,6 +343,24 @@
         </article>
 
         <article class="manager-kpi-card">
+            <span class="manager-kpi-icon"><i class="bi bi-calendar2-event" aria-hidden="true"></i></span>
+            <div>
+                <small>Sự kiện đã tổ chức</small>
+                <strong id="kpiEventsHeld">@Model.Kpi.EventsHeld <span class="bi-kpi-unit">sự kiện</span></strong>
+                <em>Theo ngày tổ chức, chỉ tính tiệc hoàn tất</em>
+            </div>
+        </article>
+
+        <article class="manager-kpi-card">
+            <span class="manager-kpi-icon"><i class="bi bi-calendar2-x" aria-hidden="true"></i></span>
+            <div>
+                <small>Sự kiện đã hủy</small>
+                <strong id="kpiEventsCancelled">@Model.Kpi.EventsCancelled <span class="bi-kpi-unit">sự kiện</span></strong>
+                <em>Theo ngày tổ chức trong kỳ</em>
+            </div>
+        </article>
+
+        <article class="manager-kpi-card">
             <span class="manager-kpi-icon"><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i></span>
             <div>
                 <small>Giá trị hợp đồng mới</small>
@@ -333,9 +387,14 @@
                     <h3><i class="bi bi-graph-up-arrow" aria-hidden="true"></i>Xu hướng doanh thu theo tháng</h3>
                     <p>So sánh biến động doanh thu thực thu giữa các tháng trong kỳ.</p>
                 </div>
-                <span class="bi-chart-unit flex items-center gap-1.5 text-xs text-slate-600">
-                    <span class="w-3 h-3 rounded-xs bg-[#B89758]"></span> Doanh thu (Triệu VNĐ)
-                </span>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="bi-chart-unit flex items-center gap-1.5 text-xs text-slate-600">
+                        <span class="w-3 h-3 rounded-xs bg-[#B89758]"></span> Thực thu (Triệu VNĐ)
+                    </span>
+                    <span class="bi-chart-unit flex items-center gap-1.5 text-xs text-slate-600">
+                        <span class="w-3 h-3 rounded-xs bg-slate-400"></span> Dự kiến (Triệu VNĐ)
+                    </span>
+                </div>
             </header>
             <div class="bi-chart-body">
                 <div class="bi-chart-canvas h-64 sm:h-80 w-full relative">
@@ -373,9 +432,19 @@
     <!-- ================= 5. HIỆU SUẤT SẢNH & BẢNG TIỆC GẦN NHẤT ================= -->
     <div class="bi-secondary-grid grid grid-cols-1 lg:grid-cols-12 gap-6">
         <section class="bi-panel lg:col-span-12 bg-white rounded-xl border border-slate-200">
-            <header class="bi-panel-head">
-                <h3><i class="bi bi-bar-chart" aria-hidden="true"></i>Hiệu suất khai thác sảnh</h3>
-                <p>Xếp hạng doanh thu thực thu theo từng sảnh trong kỳ.</p>
+            <header class="bi-panel-head flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                    <h3><i class="bi bi-bar-chart" aria-hidden="true"></i>Hiệu suất khai thác sảnh</h3>
+                    <p>So sánh doanh thu thực thu và doanh thu dự kiến theo từng sảnh trong kỳ.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="bi-chart-unit flex items-center gap-1.5 text-xs text-slate-600">
+                        <span class="w-3 h-3 rounded-xs bg-[#B89758]"></span> Thực thu
+                    </span>
+                    <span class="bi-chart-unit flex items-center gap-1.5 text-xs text-slate-600">
+                        <span class="w-3 h-3 rounded-xs bg-slate-400"></span> Dự kiến
+                    </span>
+                </div>
             </header>
             <div class="bi-chart-body">
                 <div class="bi-chart-canvas h-80 sm:h-96 relative">
@@ -445,6 +514,76 @@
                     <i class="bi bi-grid-3x3-gap text-[#B89758]"></i>
                     <span>Xem ma trận lịch sảnh toàn hệ thống &rarr;</span>
                 </button>
+            </div>
+        </section>
+    </div>
+
+    <!-- ================= 6. CÔNG SUẤT THEO CA & CHẤT LƯỢNG QR ================= -->
+    <div class="bi-secondary-grid grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <section class="bi-panel lg:col-span-6 bg-white rounded-xl border border-slate-200">
+            <header class="bi-panel-head">
+                <h3><i class="bi bi-clock-history" aria-hidden="true"></i>Công suất khai thác theo ca</h3>
+                <p>Số ca đã chiếm trên tổng số ca tối đa của sảnh trong kỳ, không dùng hệ số quy đổi.</p>
+            </header>
+            <div class="bi-chart-body">
+                <div id="shiftOccupancyContainer" class="space-y-3">
+                    @if (Model.OccupancyByShift.Count == 0)
+                    {
+                        <p class="bi-chart-empty"><i class="bi bi-calendar2-x" aria-hidden="true"></i><span>Chưa có dữ liệu công suất theo ca trong kỳ này.</span></p>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.OccupancyByShift)
+                        {
+                            <div class="rounded-lg border border-slate-200 p-3">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-semibold text-slate-700">@item.ShiftName</span>
+                                    <strong class="text-[#8C6D32]">@item.OccupancyRate%</strong>
+                                </div>
+                                <div class="mt-1 text-[11px] text-slate-500">@item.OccupiedSlots / @item.MaxSlots ca đã chiếm</div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="bi-panel lg:col-span-6 bg-white rounded-xl border border-slate-200">
+            <header class="bi-panel-head">
+                <h3><i class="bi bi-star-half" aria-hidden="true"></i>Chất lượng đánh giá QR</h3>
+                <p>Điểm trung bình từ các phiếu đánh giá thực tế theo ngày tổ chức trong kỳ.</p>
+            </header>
+            <div class="bi-chart-body">
+                @{
+                    var quality = Model.Quality;
+                    System.Func<double?, string> formatScore = value => value.HasValue ? value.Value.ToString("0.0") : "—";
+                }
+                <div id="qualityContainer" class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="rounded-lg border border-slate-200 p-2.5"><span class="block text-slate-500">Sảnh</span><strong class="text-slate-800">@formatScore(quality.AverageHallScore)</strong></div>
+                    <div class="rounded-lg border border-slate-200 p-2.5"><span class="block text-slate-500">Ẩm thực</span><strong class="text-slate-800">@formatScore(quality.AverageFoodScore)</strong></div>
+                    <div class="rounded-lg border border-slate-200 p-2.5"><span class="block text-slate-500">Phục vụ</span><strong class="text-slate-800">@formatScore(quality.AverageServiceScore)</strong></div>
+                    <div class="rounded-lg border border-slate-200 p-2.5"><span class="block text-slate-500">Âm thanh</span><strong class="text-slate-800">@formatScore(quality.AverageSoundScore)</strong></div>
+                    <div class="rounded-lg border border-slate-200 p-2.5"><span class="block text-slate-500">Ánh sáng</span><strong class="text-slate-800">@formatScore(quality.AverageLightingScore)</strong></div>
+                    <div class="rounded-lg border border-slate-200 p-2.5"><span class="block text-slate-500">Vệ sinh</span><strong class="text-slate-800">@formatScore(quality.AverageHygieneScore)</strong></div>
+                    <div class="rounded-lg border border-slate-200 p-2.5"><span class="block text-slate-500">Tổng thể</span><strong class="text-slate-800">@formatScore(quality.AverageOverallScore)</strong></div>
+                </div>
+                <p id="qualityReviewCount" class="mt-3 text-[11px] text-slate-500">@quality.ReviewCount phiếu đánh giá trong kỳ.</p>
+                <p id="hygieneUnavailableNote" class="mt-1 text-[11px] @(quality.HygieneScoreAvailable ? "text-slate-500" : "text-rose-600")">
+                    <i class="bi @(quality.HygieneScoreAvailable ? "bi-check-circle" : "bi-exclamation-circle")" aria-hidden="true"></i>
+                    @(quality.HygieneScoreAvailable ? "Điểm vệ sinh: trung bình từ các phiếu đánh giá có điểm vệ sinh trong kỳ." : "Điểm vệ sinh: chưa có dữ liệu trong các phiếu đánh giá đã lọc.")
+                </p>
+                @{
+                    var kpi = Model.Kpi;
+                    var forfeitedAmount = kpi.ForfeitedDepositAmount ?? 0m;
+                    var forfeitedRate = kpi.ForfeitedDepositRate;
+                    var forfeitedLabel = kpi.ForfeitedDepositDenominatorLabel;
+                }
+                <p id="forfeitedDepositNote" class="mt-2 text-[11px] @(kpi.ForfeitedDepositAvailable ? "text-slate-500" : "text-rose-600")">
+                    <i class="bi @(kpi.ForfeitedDepositAvailable ? "bi-info-circle" : "bi-exclamation-circle")" aria-hidden="true"></i>
+                    @(kpi.ForfeitedDepositAvailable
+                        ? $"Tiền cọc bị mất (UC18): {forfeitedAmount.ToString("N0")} VNĐ • Tỷ lệ: {(forfeitedRate?.ToString("0.0") ?? "0")}%. {forfeitedLabel}."
+                        : "Tiền cọc bị mất (UC18): chưa có ghi nhận hủy UC18 trong các tiệc hủy đã lọc.")
+                </p>
             </div>
         </section>
     </div>
@@ -675,6 +814,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initCharts(reportData);
+            updateOperationsPanels(reportData);
         });
 
         window.addEventListener('admin-theme-change', () => initCharts(reportData));
@@ -702,6 +842,7 @@
             const monthlyRevenues = data.monthlyRevenues || data.MonthlyRevenues || [];
             const months = monthlyRevenues.map(m => m.monthName || m.MonthName || `Tháng ${m.month || m.Month}`);
             const revenues = monthlyRevenues.map(m => (m.totalRevenue ?? m.TotalRevenue ?? 0) / 1000000);
+            const estimatedRevenues = monthlyRevenues.map(m => (m.estimatedRevenue ?? m.EstimatedRevenue ?? 0) / 1000000);
 
             const ctxMonthly = document.getElementById('monthlyRevenueChart').getContext('2d');
             const monthlyGradient = ctxMonthly.createLinearGradient(0, 0, 0, 320);
@@ -713,7 +854,7 @@
                 data: {
                     labels: months,
                     datasets: [{
-                        label: 'Doanh thu (Triệu VNĐ)',
+                        label: 'Thực thu (Triệu VNĐ)',
                         data: revenues,
                         borderColor: theme.accent,
                         backgroundColor: monthlyGradient,
@@ -724,6 +865,21 @@
                         pointHoverRadius: 6,
                         pointBackgroundColor: theme.panel,
                         pointBorderColor: theme.accent,
+                        pointBorderWidth: 2,
+                        pointHitRadius: 12
+                    }, {
+                        label: 'Dự kiến (Triệu VNĐ)',
+                        data: estimatedRevenues,
+                        borderColor: theme.muted,
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [6, 4],
+                        fill: false,
+                        tension: .38,
+                        pointRadius: 2,
+                        pointHoverRadius: 5,
+                        pointBackgroundColor: theme.panel,
+                        pointBorderColor: theme.muted,
                         pointBorderWidth: 2,
                         pointHitRadius: 12
                     }]
@@ -747,7 +903,7 @@
                             padding: 11,
                             cornerRadius: 9,
                             callbacks: {
-                                label: (ctx) => `Doanh thu: ${ctx.parsed.y.toLocaleString('vi-VN')} triệu VNĐ`
+                                label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('vi-VN')} triệu VNĐ`
                             }
                         }
                     },
@@ -827,6 +983,7 @@
                 Number(b.totalRevenue ?? b.TotalRevenue ?? 0) - Number(a.totalRevenue ?? a.TotalRevenue ?? 0));
             const hallNames = hallPerformances.map(h => h.hallName || h.HallName);
             const hallRevs = hallPerformances.map(h => (h.totalRevenue ?? h.TotalRevenue ?? 0) / 1000000);
+            const hallEstimatedRevs = hallPerformances.map(h => (h.estimatedRevenue ?? h.EstimatedRevenue ?? 0) / 1000000);
 
             const ctxHall = document.getElementById('hallPerformanceChart').getContext('2d');
             const hallColors = hallRevs.map(() => theme.accent);
@@ -836,10 +993,18 @@
                 data: {
                     labels: hallNames,
                     datasets: [{
-                        label: 'Doanh thu (Triệu VNĐ)',
+                        label: 'Thực thu (Triệu VNĐ)',
                         data: hallRevs,
                         backgroundColor: hallColors,
                         hoverBackgroundColor: hallColors,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        maxBarThickness: 56
+                    }, {
+                        label: 'Dự kiến (Triệu VNĐ)',
+                        data: hallEstimatedRevs,
+                        backgroundColor: theme.muted,
+                        hoverBackgroundColor: theme.muted,
                         borderRadius: 6,
                         borderSkipped: false,
                         maxBarThickness: 56
@@ -851,7 +1016,8 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            displayColors: false,
+                            displayColors: true,
+                            usePointStyle: true,
                             backgroundColor: theme.tooltip,
                             titleColor: theme.tooltipText,
                             bodyColor: theme.tooltipText,
@@ -860,7 +1026,7 @@
                             padding: 11,
                             cornerRadius: 9,
                             callbacks: {
-                                label: (ctx) => `Doanh thu: ${ctx.parsed.y.toLocaleString('vi-VN')} triệu VNĐ`
+                                label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('vi-VN')} triệu VNĐ`
                             }
                         }
                     },
@@ -881,14 +1047,35 @@
                 : 'Chưa có dữ liệu doanh thu sảnh trong kỳ báo cáo này.';
         }
 
+        function onQuarterChange() {
+            // Quý và Tháng là hai bộ lọc loại trừ nhau; chọn Quý sẽ bỏ lọc Tháng.
+            const monthSelect = document.getElementById('selectMonth');
+            if (monthSelect) monthSelect.value = '0';
+            onFilterChange();
+        }
+
+        function onMonthChange() {
+            // Chọn Tháng cụ thể sẽ bỏ lọc Quý để tránh xung đột kỳ báo cáo.
+            const quarterSelect = document.getElementById('selectQuarter');
+            if (quarterSelect) quarterSelect.value = '0';
+            onFilterChange();
+        }
+
         async function onFilterChange() {
             const year = document.getElementById('selectYear').value;
             const quarter = document.getElementById('selectQuarter').value;
+            const month = document.getElementById('selectMonth').value;
+            const hallId = document.getElementById('selectHall').value;
+            const shift = document.getElementById('selectShift').value;
             const filterPanel = document.getElementById('biFilterPanel');
             filterPanel?.setAttribute('aria-busy', 'true');
 
             try {
-                const res = await fetch(`/AdminReport/GetReportData?year=${year}&quarter=${quarter}`);
+                const params = new URLSearchParams({ year, quarter, month });
+                if (hallId) params.set('hallId', hallId);
+                if (shift) params.set('shift', shift);
+
+                const res = await fetch(`/AdminReport/GetReportData?${params.toString()}`);
                 if (!res.ok) {
                     showBiToast('Lỗi máy chủ', `Lỗi HTTP ${res.status}`);
                     return;
@@ -904,9 +1091,12 @@
                     initCharts(data);
                     renderRecentTable(data.recentBookings || data.RecentBookings);
                     updateStructureLegend(data.revenueStructures || data.RevenueStructures);
+                    updateOperationsPanels(data);
 
-                    const quarterText = quarter == 0 ? 'Toàn bộ 4 Quý' : `Quý ${quarter}`;
-                    showBiToast('Thành công', `Đã cập nhật báo cáo: Năm ${year} – ${quarterText}`);
+                    const periodText = month != 0
+                        ? `Tháng ${month}/${year}`
+                        : (quarter == 0 ? `Năm ${year} – Toàn bộ 4 Quý` : `Năm ${year} – Quý ${quarter}`);
+                    showBiToast('Thành công', `Đã cập nhật báo cáo: ${periodText}`);
                 } else {
                     showBiToast('Thông báo', result.message || 'Không có dữ liệu cho kỳ này.');
                 }
@@ -921,6 +1111,9 @@
         function resetBiFilter() {
             document.getElementById('selectYear').value = '2026';
             document.getElementById('selectQuarter').value = '0';
+            document.getElementById('selectMonth').value = '0';
+            document.getElementById('selectHall').value = '';
+            document.getElementById('selectShift').value = '';
             onFilterChange();
         }
 
@@ -928,13 +1121,92 @@
             if (!kpi) return;
             const totalRevenue = kpi.totalRevenue ?? kpi.TotalRevenue ?? 0;
             const confirmedBookings = kpi.confirmedBookings ?? kpi.ConfirmedBookings ?? 0;
+            const eventsHeld = kpi.eventsHeld ?? kpi.EventsHeld ?? 0;
+            const eventsCancelled = kpi.eventsCancelled ?? kpi.EventsCancelled ?? 0;
             const newContractValue = kpi.totalContractValue ?? kpi.TotalContractValue ?? 0;
             const outstandingReceivables = kpi.outstandingReceivables ?? kpi.OutstandingReceivables ?? 0;
 
             document.getElementById('kpiTotalRevenue').innerHTML = `${Number(totalRevenue).toLocaleString('vi-VN')} <span class="bi-kpi-unit">VNĐ</span>`;
             document.getElementById('kpiConfirmedBookings').innerHTML = `${confirmedBookings} <span class="bi-kpi-unit">tiệc</span>`;
+            document.getElementById('kpiEventsHeld').innerHTML = `${eventsHeld} <span class="bi-kpi-unit">sự kiện</span>`;
+            document.getElementById('kpiEventsCancelled').innerHTML = `${eventsCancelled} <span class="bi-kpi-unit">sự kiện</span>`;
             document.getElementById('kpiNewContractValue').innerHTML = `${Number(newContractValue).toLocaleString('vi-VN')} <span class="bi-kpi-unit">VNĐ</span>`;
             document.getElementById('kpiOutstandingReceivables').innerHTML = `${Number(outstandingReceivables).toLocaleString('vi-VN')} <span class="bi-kpi-unit">VNĐ</span>`;
+        }
+
+        function updateOperationsPanels(data) {
+            if (!data) return;
+            const scoreText = value => (value === null || value === undefined) ? '—' : Number(value).toFixed(1);
+
+            const shiftContainer = document.getElementById('shiftOccupancyContainer');
+            if (shiftContainer) {
+                const shifts = data.occupancyByShift || data.OccupancyByShift || [];
+                if (!shifts.length) {
+                    shiftContainer.innerHTML = '<p class="bi-chart-empty"><i class="bi bi-calendar2-x" aria-hidden="true"></i><span>Chưa có dữ liệu công suất theo ca trong kỳ này.</span></p>';
+                } else {
+                    shiftContainer.innerHTML = shifts.map(item => {
+                        const name = item.shiftName || item.ShiftName || '';
+                        const occupied = item.occupiedSlots ?? item.OccupiedSlots ?? 0;
+                        const maxSlots = item.maxSlots ?? item.MaxSlots ?? 0;
+                        const rate = item.occupancyRate ?? item.OccupancyRate ?? 0;
+                        return `
+                            <div class="rounded-lg border border-slate-200 p-3">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-semibold text-slate-700">${name}</span>
+                                    <strong class="text-[#8C6D32]">${rate}%</strong>
+                                </div>
+                                <div class="mt-1 text-[11px] text-slate-500">${occupied} / ${maxSlots} ca đã chiếm</div>
+                            </div>`;
+                    }).join('');
+                }
+            }
+
+            const quality = data.quality || data.Quality;
+            const qualityContainer = document.getElementById('qualityContainer');
+            if (qualityContainer && quality) {
+                const items = [
+                    ['Sảnh', quality.averageHallScore ?? quality.AverageHallScore],
+                    ['Ẩm thực', quality.averageFoodScore ?? quality.AverageFoodScore],
+                    ['Phục vụ', quality.averageServiceScore ?? quality.AverageServiceScore],
+                    ['Âm thanh', quality.averageSoundScore ?? quality.AverageSoundScore],
+                    ['Ánh sáng', quality.averageLightingScore ?? quality.AverageLightingScore],
+                    ['Vệ sinh', quality.averageHygieneScore ?? quality.AverageHygieneScore],
+                    ['Tổng thể', quality.averageOverallScore ?? quality.AverageOverallScore]
+                ];
+                qualityContainer.innerHTML = items.map(([label, value]) => `
+                    <div class="rounded-lg border border-slate-200 p-2.5">
+                        <span class="block text-slate-500">${label}</span>
+                        <strong class="text-slate-800">${scoreText(value)}</strong>
+                    </div>`).join('');
+            }
+
+            const reviewCount = document.getElementById('qualityReviewCount');
+            if (reviewCount && quality) {
+                reviewCount.textContent = `${quality.reviewCount ?? quality.ReviewCount ?? 0} phiếu đánh giá trong kỳ.`;
+            }
+
+            const hygieneNote = document.getElementById('hygieneUnavailableNote');
+            if (hygieneNote && quality) {
+                const available = !!(quality.hygieneScoreAvailable ?? quality.HygieneScoreAvailable);
+                hygieneNote.className = `mt-1 text-[11px] ${available ? 'text-slate-500' : 'text-rose-600'}`;
+                hygieneNote.innerHTML = `<i class="bi ${available ? 'bi-check-circle' : 'bi-exclamation-circle'}" aria-hidden="true"></i> ${available ? 'Điểm vệ sinh: trung bình từ các phiếu đánh giá có điểm vệ sinh trong kỳ.' : 'Điểm vệ sinh: chưa có dữ liệu trong các phiếu đánh giá đã lọc.'}`;
+            }
+
+            const forfeitedNote = document.getElementById('forfeitedDepositNote');
+            const kpi = data.kpi || data.Kpi;
+            if (forfeitedNote && kpi) {
+                const available = !!(kpi.forfeitedDepositAvailable ?? kpi.ForfeitedDepositAvailable);
+                const amount = Number(kpi.forfeitedDepositAmount ?? kpi.ForfeitedDepositAmount ?? 0);
+                const rate = kpi.forfeitedDepositRate ?? kpi.ForfeitedDepositRate;
+                const label = kpi.forfeitedDepositDenominatorLabel ?? kpi.ForfeitedDepositDenominatorLabel ?? '';
+                forfeitedNote.className = `mt-2 text-[11px] ${available ? 'text-slate-500' : 'text-rose-600'}`;
+                if (available) {
+                    const rateText = rate === null || rate === undefined ? '0' : Number(rate).toFixed(1);
+                    forfeitedNote.innerHTML = `<i class="bi bi-info-circle" aria-hidden="true"></i> Tiền cọc bị mất (UC18): ${amount.toLocaleString('vi-VN')} VNĐ • Tỷ lệ: ${rateText}%. ${label}.`;
+                } else {
+                    forfeitedNote.innerHTML = '<i class="bi bi-exclamation-circle" aria-hidden="true"></i> Tiền cọc bị mất (UC18): chưa có ghi nhận hủy UC18 trong các tiệc hủy đã lọc.';
+                }
+            }
         }
 
         function renderRecentTable(bookings) {
@@ -1106,7 +1378,10 @@
                 const kpi = reportData.kpi || reportData.Kpi;
                 const kpiRows = [
                     ['Doanh thu thực thu', (kpi.totalRevenue || kpi.TotalRevenue || 0), 'VNĐ'],
+                    ['Doanh thu dự kiến', (kpi.estimatedTotalRevenue || kpi.EstimatedTotalRevenue || 0), 'VNĐ'],
                     ['Tiệc đã xác nhận', (kpi.confirmedBookings || kpi.ConfirmedBookings || 0), 'tiệc'],
+                    ['Sự kiện đã tổ chức', (kpi.eventsHeld || kpi.EventsHeld || 0), 'sự kiện'],
+                    ['Sự kiện đã hủy', (kpi.eventsCancelled || kpi.EventsCancelled || 0), 'sự kiện'],
                     ['Giá trị hợp đồng mới', (kpi.totalContractValue || kpi.TotalContractValue || 0), 'VNĐ'],
                     ['Công nợ phải thu', (kpi.outstandingReceivables || kpi.OutstandingReceivables || 0), 'VNĐ']
                 ];
@@ -1182,25 +1457,31 @@
                 });
                 wsMonthly.columns = [
                     { header: 'Tháng', key: 'month', width: 20 },
-                    { header: 'Doanh thu (VNĐ)', key: 'revenue', width: 25 },
-                    { header: 'Tỷ trọng (%)', key: 'percent', width: 15 }
+                    { header: 'Doanh thu thực thu (VNĐ)', key: 'revenue', width: 25 },
+                    { header: 'Doanh thu dự kiến (VNĐ)', key: 'estimated', width: 25 },
+                    { header: 'Tỷ trọng thực thu (%)', key: 'percent', width: 18 }
                 ];
                 applyHeaderStyle(wsMonthly.getRow(1));
 
                 const monthlyList = reportData.monthlyRevenues || reportData.MonthlyRevenues || [];
                 const totalMonthly = monthlyList.reduce((s, m) => s + (m.totalRevenue || m.TotalRevenue || 0), 0);
+                const totalEstimatedMonthly = monthlyList.reduce((s, m) => s + (m.estimatedRevenue || m.EstimatedRevenue || 0), 0);
 
                 monthlyList.forEach(m => {
                     const rev = m.totalRevenue || m.TotalRevenue || 0;
+                    const estimated = m.estimatedRevenue || m.EstimatedRevenue || 0;
                     const pct = totalMonthly > 0 ? (rev / totalMonthly * 100) : 0;
                     const row = wsMonthly.addRow({
                         month: m.monthName || m.MonthName,
                         revenue: rev,
+                        estimated: estimated,
                         percent: pct
                     });
                     row.getCell('month').alignment = { horizontal: 'center', vertical: 'middle' };
                     row.getCell('revenue').numFmt = '#,##0 "VNĐ"';
                     row.getCell('revenue').alignment = { horizontal: 'right', vertical: 'middle' };
+                    row.getCell('estimated').numFmt = '#,##0 "VNĐ"';
+                    row.getCell('estimated').alignment = { horizontal: 'right', vertical: 'middle' };
                     row.getCell('percent').numFmt = '0.00"%"';
                     row.getCell('percent').alignment = { horizontal: 'center', vertical: 'middle' };
                     row.eachCell(c => c.border = borderAll);
@@ -1211,15 +1492,19 @@
                 const totalRow = wsMonthly.addRow({
                     month: 'TỔNG CỘNG',
                     revenue: totalMonthly,
+                    estimated: totalEstimatedMonthly,
                     percent: 100
                 });
                 totalRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
                 totalRow.getCell('month').fill = goldFill;
                 totalRow.getCell('revenue').fill = goldFill;
+                totalRow.getCell('estimated').fill = goldFill;
                 totalRow.getCell('percent').fill = goldFill;
                 totalRow.getCell('month').alignment = { horizontal: 'center', vertical: 'middle' };
                 totalRow.getCell('revenue').numFmt = '#,##0 "VNĐ"';
                 totalRow.getCell('revenue').alignment = { horizontal: 'right', vertical: 'middle' };
+                totalRow.getCell('estimated').numFmt = '#,##0 "VNĐ"';
+                totalRow.getCell('estimated').alignment = { horizontal: 'right', vertical: 'middle' };
                 totalRow.getCell('percent').alignment = { horizontal: 'center', vertical: 'middle' };
                 totalRow.eachCell(c => c.border = borderAll);
                 totalRow.height = 24;
@@ -1262,7 +1547,9 @@
                 wsHall.columns = [
                     { header: 'STT', key: 'stt', width: 8 },
                     { header: 'Đại sảnh', key: 'name', width: 28 },
-                    { header: 'Doanh thu (VNĐ)', key: 'revenue', width: 25 },
+                    { header: 'Doanh thu thực thu (VNĐ)', key: 'revenue', width: 25 },
+                    { header: 'Doanh thu dự kiến (VNĐ)', key: 'estimated', width: 25 },
+                    { header: 'Công suất (%)', key: 'occupancy', width: 15 },
                     { header: 'Xếp hạng', key: 'rank', width: 14 }
                 ];
                 applyHeaderStyle(wsHall.getRow(1));
@@ -1276,6 +1563,8 @@
                         stt: i + 1,
                         name: h.hallName || h.HallName,
                         revenue: h.totalRevenue || h.TotalRevenue || 0,
+                        estimated: h.estimatedRevenue || h.EstimatedRevenue || 0,
+                        occupancy: h.occupancyRate ?? h.OccupancyRate ?? 0,
                         rank: i === 0 ? '🥇 Top 1' : (i === 1 ? '🥈 Top 2' : (i === 2 ? '🥉 Top 3' : ''))
                     });
                     row.getCell('stt').alignment = { horizontal: 'center', vertical: 'middle' };
@@ -1283,6 +1572,10 @@
                     row.getCell('name').font = { bold: true, color: { argb: COLOR_GOLD_DARK } };
                     row.getCell('revenue').numFmt = '#,##0 "VNĐ"';
                     row.getCell('revenue').alignment = { horizontal: 'right', vertical: 'middle' };
+                    row.getCell('estimated').numFmt = '#,##0 "VNĐ"';
+                    row.getCell('estimated').alignment = { horizontal: 'right', vertical: 'middle' };
+                    row.getCell('occupancy').numFmt = '0.0"%"';
+                    row.getCell('occupancy').alignment = { horizontal: 'center', vertical: 'middle' };
                     row.getCell('rank').alignment = { horizontal: 'center', vertical: 'middle' };
                     if (i === 0) row.getCell('rank').fill = goldFill;
                     row.eachCell(c => c.border = borderAll);
@@ -1343,6 +1636,59 @@
                     }
                     row.eachCell(c => c.border = borderAll);
                     row.height = 24;
+                });
+
+                // =====================================================
+                // SHEET 6: VẬN HÀNH & CHẤT LƯỢNG
+                // =====================================================
+                const wsOps = wb.addWorksheet('🕒 VanHanh_ChatLuong', {
+                    properties: { tabColor: { argb: 'FF0EA5E9' } }
+                });
+                wsOps.columns = [
+                    { header: 'Hạng mục', key: 'item', width: 32 },
+                    { header: 'Giá trị', key: 'value', width: 26 },
+                    { header: 'Ghi chú', key: 'note', width: 48 }
+                ];
+                applyHeaderStyle(wsOps.getRow(1));
+
+                const quality = reportData.quality || reportData.Quality || {};
+                const kpiExport = reportData.kpi || reportData.Kpi || {};
+                const scoreText = value => (value === null || value === undefined) ? '—' : Number(value).toFixed(1);
+                const hygieneAvailable = !!(quality.hygieneScoreAvailable ?? quality.HygieneScoreAvailable);
+                const forfeitedAvailable = !!(kpiExport.forfeitedDepositAvailable ?? kpiExport.ForfeitedDepositAvailable);
+                const forfeitedAmount = Number(kpiExport.forfeitedDepositAmount ?? kpiExport.ForfeitedDepositAmount ?? 0);
+                const forfeitedRate = kpiExport.forfeitedDepositRate ?? kpiExport.ForfeitedDepositRate;
+                const forfeitedLabel = kpiExport.forfeitedDepositDenominatorLabel ?? kpiExport.ForfeitedDepositDenominatorLabel ?? '';
+                const shiftList = reportData.occupancyByShift || reportData.OccupancyByShift || [];
+                const opsRows = [
+                    ...shiftList.map(s => ({
+                        item: `Công suất ${s.shiftName || s.ShiftName || ''}`,
+                        value: `${s.occupiedSlots ?? s.OccupiedSlots ?? 0} / ${s.maxSlots ?? s.MaxSlots ?? 0} ca (${s.occupancyRate ?? s.OccupancyRate ?? 0}%)`,
+                        note: ''
+                    })),
+                    { item: 'Số phiếu đánh giá QR', value: quality.reviewCount ?? quality.ReviewCount ?? 0, note: '' },
+                    { item: 'Điểm sảnh', value: scoreText(quality.averageHallScore ?? quality.AverageHallScore), note: '' },
+                    { item: 'Điểm ẩm thực', value: scoreText(quality.averageFoodScore ?? quality.AverageFoodScore), note: '' },
+                    { item: 'Điểm phục vụ', value: scoreText(quality.averageServiceScore ?? quality.AverageServiceScore), note: '' },
+                    { item: 'Điểm âm thanh', value: scoreText(quality.averageSoundScore ?? quality.AverageSoundScore), note: '' },
+                    { item: 'Điểm ánh sáng', value: scoreText(quality.averageLightingScore ?? quality.AverageLightingScore), note: '' },
+                    { item: 'Điểm vệ sinh', value: hygieneAvailable ? scoreText(quality.averageHygieneScore ?? quality.AverageHygieneScore) : 'Chưa có dữ liệu', note: hygieneAvailable ? 'Trung bình từ phiếu đánh giá có điểm vệ sinh trong kỳ' : 'Không có điểm vệ sinh trong các phiếu đánh giá đã lọc' },
+                    { item: 'Điểm tổng thể', value: scoreText(quality.averageOverallScore ?? quality.AverageOverallScore), note: '' },
+                    {
+                        item: 'Tiền cọc bị mất (UC18)',
+                        value: forfeitedAvailable ? `${forfeitedAmount.toLocaleString('vi-VN')} VNĐ` : 'Chưa có dữ liệu',
+                        note: forfeitedAvailable ? `Tỷ lệ ${(forfeitedRate === null || forfeitedRate === undefined) ? '0' : Number(forfeitedRate).toFixed(1)}%. ${forfeitedLabel}` : 'Chưa có ghi nhận hủy UC18 trong các tiệc hủy đã lọc'
+                    }
+                ];
+
+                opsRows.forEach(rowData => {
+                    const row = wsOps.addRow(rowData);
+                    row.getCell('item').font = { bold: true, color: { argb: 'FF475569' } };
+                    row.getCell('item').alignment = { vertical: 'middle', indent: 1 };
+                    row.getCell('value').alignment = { horizontal: 'center', vertical: 'middle' };
+                    row.getCell('note').alignment = { vertical: 'middle', indent: 1 };
+                    row.eachCell(c => c.border = borderAll);
+                    row.height = 22;
                 });
 
                 // =====================================================

@@ -1845,12 +1845,25 @@ public sealed class RiversideApiClient : IRiversideApiClient
     int year,
     int quarter,
     string? accessToken,
-    CancellationToken cancellationToken = default)
+    CancellationToken cancellationToken = default,
+    int month = 0,
+    int? hallId = null,
+    string? shift = null)
     {
-        var uri = $"api/admin/reports/revenue-bi?year={year}&quarter={quarter}";
+        var query = $"api/admin/reports/revenue-bi?year={year}&quarter={quarter}&month={month}";
+        if (hallId.HasValue)
+        {
+            query += $"&hallId={hallId.Value}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(shift))
+        {
+            query += $"&shift={Uri.EscapeDataString(shift)}";
+        }
+
         return await SendJsonAsync<RevenueBiViewModel>(
             HttpMethod.Get,
-            uri,
+            query,
             null,
             accessToken,
             cancellationToken);

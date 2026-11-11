@@ -399,7 +399,10 @@ public interface IRiversideApiClient
         int year,
         int quarter,
         string? accessToken,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        int month = 0,
+        int? hallId = null,
+        string? shift = null);
 
     Task<ApiCallResult<HallScheduleMatrixDto>> GetHallScheduleMatrixAsync(
         DateTime? startDate,

@@ -7,11 +7,17 @@ public class RevenueBiViewModel
 {
     public int Year { get; set; }
     public int Quarter { get; set; }
+    public int Month { get; set; }
+    public int? HallId { get; set; }
+    public string? Shift { get; set; }
     public KpiSummaryViewModel Kpi { get; set; } = new();
     public List<MonthlyRevenueViewModel> MonthlyRevenues { get; set; } = new();
     public List<RevenueStructureViewModel> RevenueStructures { get; set; } = new();
     public List<HallPerformanceViewModel> HallPerformances { get; set; } = new();
     public List<RecentBookingViewModel> RecentBookings { get; set; } = new();
+    public List<ShiftOccupancyViewModel> OccupancyByShift { get; set; } = new();
+    public QualitySummaryViewModel Quality { get; set; } = new();
+    public List<ReportHallOptionViewModel> HallOptions { get; set; } = new();
 }
 
 public class KpiSummaryViewModel
@@ -20,6 +26,8 @@ public class KpiSummaryViewModel
     public decimal EstimatedTotalRevenue { get; set; }
     public int TotalBookings { get; set; }
     public int ConfirmedBookings { get; set; }
+    public int EventsHeld { get; set; }
+    public int EventsCancelled { get; set; }
     public int TotalContracts { get; set; }
     public decimal TotalContractValue { get; set; }
     public decimal OutstandingReceivables { get; set; }
@@ -27,6 +35,11 @@ public class KpiSummaryViewModel
     public decimal AverageMenuPricePerTable { get; set; }
     public int TotalTables { get; set; }
     public double AverageOccupancyRate { get; set; }
+    public decimal? ForfeitedDepositAmount { get; set; }
+    public double? ForfeitedDepositRate { get; set; }
+    public int? RecordedUc18CancellationCount { get; set; }
+    public string? ForfeitedDepositDenominatorLabel { get; set; }
+    public bool ForfeitedDepositAvailable { get; set; }
 }
 
 public class MonthlyRevenueViewModel
@@ -54,7 +67,37 @@ public class HallPerformanceViewModel
     public string HallName { get; set; } = string.Empty;
     public int BookingCount { get; set; }
     public decimal TotalRevenue { get; set; }
+    public decimal EstimatedRevenue { get; set; }
     public double OccupancyRate { get; set; }
+}
+
+public class ShiftOccupancyViewModel
+{
+    public string Shift { get; set; } = string.Empty;
+    public string ShiftName { get; set; } = string.Empty;
+    public int OccupiedSlots { get; set; }
+    public int MaxSlots { get; set; }
+    public double OccupancyRate { get; set; }
+}
+
+public class QualitySummaryViewModel
+{
+    public int ReviewCount { get; set; }
+    public double? AverageOverallScore { get; set; }
+    public double? AverageHallScore { get; set; }
+    public double? AverageFoodScore { get; set; }
+    public double? AverageServiceScore { get; set; }
+    public double? AverageSoundScore { get; set; }
+    public double? AverageLightingScore { get; set; }
+    public double? AverageHygieneScore { get; set; }
+    public bool HygieneScoreAvailable { get; set; }
+}
+
+public class ReportHallOptionViewModel
+{
+    public int HallId { get; set; }
+    public string HallCode { get; set; } = string.Empty;
+    public string HallName { get; set; } = string.Empty;
 }
 
 public class RecentBookingViewModel

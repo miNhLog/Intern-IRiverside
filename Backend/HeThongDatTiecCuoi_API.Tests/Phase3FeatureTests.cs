@@ -29,12 +29,12 @@ public sealed class Phase3FeatureTests
         // Statuses
         var bookingActiveStatus = new Status { StatusId = 201, StatusGroup = StatusGroups.Booking, StatusCode = BookingStatusCodes.Confirmed, StatusName = "Đã xác nhận" };
         var bookingCancelledStatus = new Status { StatusId = 202, StatusGroup = StatusGroups.Booking, StatusCode = BookingStatusCodes.Cancelled, StatusName = "Đã hủy" };
-        var contractActiveStatus = new Status { StatusId = 902, StatusGroup = StatusGroups.Contract, StatusCode = ContractStatusCodes.Active, StatusName = "Hiệu lực" };
+        var contractCompletedStatus = new Status { StatusId = 902, StatusGroup = StatusGroups.Contract, StatusCode = ContractStatusCodes.Completed, StatusName = "Hoàn tất" };
         var paymentSuccessStatus = new Status { StatusId = 1002, StatusGroup = StatusGroups.Payment, StatusCode = PaymentStatusCodes.Success, StatusName = "Thành công" };
         var hallSchedAvailableStatus = new Status { StatusId = 301, StatusGroup = StatusGroups.HallSchedule, StatusCode = HallScheduleStatusCodes.Available, StatusName = "Trống" };
         var hallSchedBookedStatus = new Status { StatusId = 302, StatusGroup = StatusGroups.HallSchedule, StatusCode = HallScheduleStatusCodes.Booked, StatusName = "Đã đặt" };
 
-        db.Statuses.AddRange(bookingActiveStatus, bookingCancelledStatus, contractActiveStatus, paymentSuccessStatus, hallSchedAvailableStatus, hallSchedBookedStatus);
+        db.Statuses.AddRange(bookingActiveStatus, bookingCancelledStatus, contractCompletedStatus, paymentSuccessStatus, hallSchedAvailableStatus, hallSchedBookedStatus);
 
         // Hall
         var hall = new Hall
