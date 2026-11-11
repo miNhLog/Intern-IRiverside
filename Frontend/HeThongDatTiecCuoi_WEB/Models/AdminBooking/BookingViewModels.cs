@@ -196,3 +196,72 @@ public class UpdateBookingStatusRequestViewModel
     public decimal? DepositAmount { get; set; }
     public string? Notes { get; set; }
 }
+
+public sealed class ManagerBookingRescheduleRequestViewModel
+{
+    public DateTime NewDate { get; set; }
+    public string NewShift { get; set; } = string.Empty;
+    public int NewHallId { get; set; }
+    public bool ChangeMenu { get; set; }
+    public int? MenuId { get; set; }
+    public List<int>? CustomDishIds { get; set; }
+    public string? Reason { get; set; }
+    public bool PriceDifferenceConfirmed { get; set; }
+    public decimal? ConfirmedPriceDifference { get; set; }
+    public bool MenuPriceDifferenceConfirmed { get; set; }
+    public decimal? ConfirmedMenuPriceDifference { get; set; }
+    public Guid? RequestId { get; set; }
+    public string? QuoteToken { get; set; }
+    public string? PolicyVersion { get; set; }
+    public string? CustomerAgreementReference { get; set; }
+    public string? ManagerAgreementReference { get; set; }
+}
+
+public class ManagerBookingCancelQuoteRequestViewModel
+{
+    public string Origin { get; set; } = string.Empty;
+    public string? PolicyVersion { get; set; }
+    public string? AgreementReference { get; set; }
+    public decimal? AgreedLowerRetention { get; set; }
+    public bool? DepositSanctionsApply { get; set; }
+}
+
+public sealed class ManagerBookingCancelRequestViewModel : ManagerBookingCancelQuoteRequestViewModel
+{
+    [Required, MaxLength(500)] public string Reason { get; set; } = string.Empty;
+    public Guid? RequestId { get; set; }
+    public string? QuoteToken { get; set; }
+}
+
+public sealed class ManagerBookingRefundObligationViewModel
+{
+    public Guid RequestId { get; set; }
+    public string Kind { get; set; } = string.Empty;
+    public DateTime RecordedAtUtc { get; set; }
+    public decimal DuePrincipal { get; set; }
+    public decimal DueDeposit { get; set; }
+    public decimal DueCompensation { get; set; }
+    public decimal ConfirmedPrincipal { get; set; }
+    public decimal ConfirmedDeposit { get; set; }
+    public decimal ConfirmedCompensation { get; set; }
+    public decimal RemainingPrincipal { get; set; }
+    public decimal RemainingDeposit { get; set; }
+    public decimal RemainingCompensation { get; set; }
+}
+
+public sealed class ManagerBookingRefundConfirmationRequestViewModel
+{
+    public Guid RequestId { get; set; }
+    public Guid OperationRequestId { get; set; }
+    public string ExternalEvidenceReference { get; set; } = string.Empty;
+    public decimal PrincipalPaid { get; set; }
+    public decimal DepositPrincipalPaid { get; set; }
+    public decimal CompensationPaid { get; set; }
+}
+
+public sealed class ManagerBookingHandoffRequestViewModel
+{
+    public Guid RequestId { get; set; }
+    public string Operation { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
+}

@@ -140,7 +140,7 @@ public sealed class ManagerEventCoordinationController : ControllerBase
                     .OrderByDescending(a => a.AssignedAt).Select(a => new { a.Coordinator.FullName, a.AssignedAt }).FirstOrDefault(),
                 HasConflict = conflictIds.Contains(b.BookingId),
                 OpenIncidentCount = b.Incidents.Count(i => i.Status.StatusCode == BusinessStatusCodes.Pending || i.Status.StatusCode == BusinessStatusCodes.Processing),
-                ScheduleChangeCount = b.ScheduleChanges.Count(), MenuName = b.Menu != null ? b.Menu.MenuName : null,
+                MenuName = b.Menu != null ? b.Menu.MenuName : null,
                 b.FinalMenuPrice, DecorationName = b.DecorationPackage != null ? b.DecorationPackage.TenGoi : null,
                 b.FinalDecorationPrice, b.FinalHallPrice, b.EstimatedTotal, b.SpecialRequests
             }).SingleOrDefaultAsync(cancellationToken);
@@ -154,7 +154,7 @@ public sealed class ManagerEventCoordinationController : ControllerBase
             GuestCount = data.GuestCount, HallManagerName = data.HallManagerName,
             CoordinatorName = data.ActiveAssignment?.FullName, AssignedAt = data.ActiveAssignment?.AssignedAt,
             HasConflict = data.HasConflict, CoordinationState = ResolveState(data.BookingStatusCode, data.ActiveAssignment is not null, data.HasConflict),
-            OpenIncidentCount = data.OpenIncidentCount, ScheduleChangeCount = data.ScheduleChangeCount,
+            OpenIncidentCount = data.OpenIncidentCount,
             MenuName = data.MenuName, FinalMenuPrice = data.FinalMenuPrice, DecorationName = data.DecorationName,
             FinalDecorationPrice = data.FinalDecorationPrice, FinalHallPrice = data.FinalHallPrice,
             EstimatedTotal = data.EstimatedTotal, SpecialRequests = data.SpecialRequests
@@ -168,11 +168,34 @@ public sealed class ManagerEventCoordinationController : ControllerBase
             { CoordinatorName = a.Coordinator.FullName, CoordinatorCode = a.Coordinator.EmployeeCode,
                 AssignedByName = a.AssignedByHallManager.FullName, StatusCode = a.Status.StatusCode,
                 StatusName = a.Status.StatusName, AssignedAt = a.AssignedAt }).ToListAsync(cancellationToken);
-        result.ScheduleChanges = await _context.WeddingScheduleChanges.AsNoTracking().Where(c => c.BookingId == bookingId)
+        var legacyChanges = await _context.WeddingScheduleChanges.AsNoTracking().Where(c => c.BookingId == bookingId)
             .OrderByDescending(c => c.RequestedAt).Select(c => new EventScheduleChangeDto
             { OldHallName = c.OldHallSchedule.Hall.HallName, OldDate = c.OldHallSchedule.Date, OldShift = c.OldHallSchedule.Shift,
                 NewHallName = c.NewHallSchedule.Hall.HallName, NewDate = c.NewHallSchedule.Date, NewShift = c.NewHallSchedule.Shift,
                 Reason = c.Reason, StatusName = c.Status.StatusName, RequestedAt = c.RequestedAt, ProcessedAt = c.ProcessedAt }).ToListAsync(cancellationToken);
+        var uc18Changes = (await _context.Set<Uc18BookingOperation>().AsNoTracking()
+            .Where(operation => operation.BookingId == bookingId && operation.Kind == Uc18BookingOperation.Reschedule)
+            .OrderByDescending(operation => operation.RecordedAtUtc)
+            .Select(operation => new { operation.RecordedAtUtc, operation.SnapshotJson })
+            .ToListAsync(cancellationToken))
+            .Select(operation => new { operation.RecordedAtUtc, Snapshot = DeserializeScheduleSnapshot(operation.SnapshotJson) })
+            .Where(operation => operation.Snapshot?.PreviousEvent is not null && operation.Snapshot.CurrentEvent is not null)
+            .Select(operation => new EventScheduleChangeDto
+            {
+                OldHallName = operation.Snapshot!.PreviousEvent!.HallName,
+                OldDate = operation.Snapshot.PreviousEvent.Date,
+                OldShift = operation.Snapshot.PreviousEvent.Shift,
+                NewHallName = operation.Snapshot.CurrentEvent!.HallName,
+                NewDate = operation.Snapshot.CurrentEvent.Date,
+                NewShift = operation.Snapshot.CurrentEvent.Shift,
+                Reason = operation.Snapshot.Reason,
+                StatusName = "Đã duyệt UC18",
+                RequestedAt = operation.RecordedAtUtc,
+                ProcessedAt = operation.RecordedAtUtc
+            });
+        result.ScheduleChanges = legacyChanges.Concat(uc18Changes)
+            .OrderByDescending(change => change.RequestedAt).ToList();
+        result.ScheduleChangeCount = result.ScheduleChanges.Count;
         result.Incidents = await _context.Incidents.AsNoTracking().Where(i => i.BookingId == bookingId)
             .OrderByDescending(i => i.OccurredAt).Select(i => new EventIncidentDto
             { IncidentId = i.IncidentId, IncidentType = i.IncidentType, Description = i.Description, Severity = i.Severity,
@@ -180,6 +203,13 @@ public sealed class ManagerEventCoordinationController : ControllerBase
                 ReportedByName = i.ReportedByEmployee != null ? i.ReportedByEmployee.FullName : null,
                 Resolution = i.Resolution, OccurredAt = i.OccurredAt, ResolvedAt = i.ResolvedAt }).ToListAsync(cancellationToken);
         return Ok(result);
+    }
+
+    private static Uc18ContractAmendmentSnapshot? DeserializeScheduleSnapshot(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try { return JsonSerializer.Deserialize<Uc18ContractAmendmentSnapshot>(json); }
+        catch (JsonException) { return null; }
     }
 
     [HttpGet("calendar")]

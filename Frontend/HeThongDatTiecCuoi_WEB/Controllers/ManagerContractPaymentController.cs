@@ -59,6 +59,25 @@ public sealed class ManagerContractPaymentController : Controller
         return ApiJson(await _api.GetManagerContractAsync(token, id, cancellationToken));
     }
 
+    [HttpGet("contracts/{id:int}/amendments")]
+    public async Task<IActionResult> Amendments(int id, CancellationToken cancellationToken)
+    {
+        var token = Token();
+        if (token is null) return UnauthorizedJson();
+        return ApiJson(await _api.GetManagerContractAmendmentsAsync(token, id, cancellationToken));
+    }
+
+    [HttpGet("contracts/{id:int}/amendments/{requestId:guid}/pdf")]
+    public async Task<IActionResult> AmendmentPdf(int id, Guid requestId, CancellationToken cancellationToken)
+    {
+        var token = Token();
+        if (token is null) return RedirectToAction("Login", "Auth");
+        var result = await _api.DownloadManagerContractAmendmentPdfAsync(token, id, requestId, cancellationToken);
+        if (!result.Succeeded || result.Value is null)
+            return StatusCode(result.StatusCode ?? StatusCodes.Status502BadGateway, result.Error);
+        return File(result.Value.Content, result.Value.ContentType, result.Value.FileName);
+    }
+
     [HttpGet("eligible-bookings")]
     public async Task<IActionResult> EligibleBookings(string? keyword, CancellationToken cancellationToken)
     {

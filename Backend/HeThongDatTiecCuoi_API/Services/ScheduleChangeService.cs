@@ -276,6 +276,9 @@ public sealed class ScheduleChangeService : IScheduleChangeService
     {
         var booking = await FindBookingAsync(request.BookingCode, request.PhoneNumber, cancellationToken);
         await using var transaction = await BeginSerializableAsync(cancellationToken);
+        await LockBookingAsync(booking.BookingId, cancellationToken);
+        await EnsureNoUc18FinancialHistoryAsync(booking.BookingId, cancellationToken);
+        await EnsureNoOutstandingPayOsContractIntentAsync(booking.BookingId, cancellationToken);
         await ConsumeOtpTokenAsync(booking.BookingId, null, ScheduleChangeOtpPurposes.CreateRequest,
             request.VerificationToken, cancellationToken);
         var result = await CreateRequestCoreAsync(booking.BookingId, request.NewHallId, request.NewDate,
@@ -290,6 +293,9 @@ public sealed class ScheduleChangeService : IScheduleChangeService
         if (!await HallManagerOwnsBookingAsync(userId, request.BookingId, cancellationToken))
             throw new ScheduleChangeException("Bạn không phụ trách sảnh hiện tại của booking này.", StatusCodes.Status403Forbidden);
         await using var transaction = await BeginSerializableAsync(cancellationToken);
+        await LockBookingAsync(request.BookingId, cancellationToken);
+        await EnsureNoUc18FinancialHistoryAsync(request.BookingId, cancellationToken);
+        await EnsureNoOutstandingPayOsContractIntentAsync(request.BookingId, cancellationToken);
         var result = await CreateRequestCoreAsync(request.BookingId, request.NewHallId, request.NewDate,
             request.NewShift, request.Reason, ScheduleChangeSources.HallManager, userId,
             request.ExceptionReason, request.CustomerConsentEvidence, cancellationToken);
@@ -352,6 +358,12 @@ public sealed class ScheduleChangeService : IScheduleChangeService
         QuoteScheduleChangeRequest request, CancellationToken cancellationToken)
     {
         await using var transaction = await BeginSerializableAsync(cancellationToken);
+        var bookingId = await _context.WeddingScheduleChanges.Where(x => x.ScheduleChangeId == id)
+            .Select(x => x.BookingId).SingleOrDefaultAsync(cancellationToken);
+        if (bookingId == 0) throw new ScheduleChangeException("Không tìm thấy yêu cầu đổi lịch.", StatusCodes.Status404NotFound);
+        await LockBookingAsync(bookingId, cancellationToken);
+        await EnsureNoUc18FinancialHistoryAsync(bookingId, cancellationToken);
+        await EnsureNoOutstandingPayOsContractIntentAsync(bookingId, cancellationToken);
         var change = await LoadChangeAsync(id, true, cancellationToken);
         RequireState(change, ScheduleChangeStatusCodes.UnderReview);
         await EnsureTargetAvailableAsync(change, false, cancellationToken);
@@ -408,6 +420,9 @@ public sealed class ScheduleChangeService : IScheduleChangeService
     {
         var booking = await FindBookingAsync(request.BookingCode, request.PhoneNumber, cancellationToken);
         await using var transaction = await BeginSerializableAsync(cancellationToken);
+        await LockBookingAsync(booking.BookingId, cancellationToken);
+        await EnsureNoUc18FinancialHistoryAsync(booking.BookingId, cancellationToken);
+        await EnsureNoOutstandingPayOsContractIntentAsync(booking.BookingId, cancellationToken);
         var change = await LoadChangeAsync(id, true, cancellationToken);
         if (change.BookingId != booking.BookingId) throw new ScheduleChangeException("Yêu cầu không thuộc booking này.", StatusCodes.Status403Forbidden);
         RequireState(change, ScheduleChangeStatusCodes.AwaitingQuoteAcceptance);
@@ -415,6 +430,7 @@ public sealed class ScheduleChangeService : IScheduleChangeService
             ?? throw new ScheduleChangeException("Báo giá không còn hiệu lực.", StatusCodes.Status409Conflict);
         await ConsumeOtpTokenAsync(booking.BookingId, change.ScheduleChangeId, ScheduleChangeOtpPurposes.AcceptQuote,
             request.VerificationToken, cancellationToken);
+        await LockHallScheduleAsync(change.NewHallScheduleId, cancellationToken);
         await EnsureTargetAvailableAsync(change, false, cancellationToken);
         var policy = await _context.ScheduleChangePolicies.Include(x => x.Tiers).SingleAsync(x => x.PolicyId == change.PolicyId, cancellationToken);
         if (change.NewHallSchedule.Date < RiversideBusinessClock.Today.AddDays(policy.NewDateMinimumDays))
@@ -496,6 +512,11 @@ public sealed class ScheduleChangeService : IScheduleChangeService
         string payload, CancellationToken cancellationToken)
     {
         await using var transaction = await BeginSerializableAsync(cancellationToken);
+        var bookingId = await _context.PaymentTransactions.Where(x => x.OrderCode == orderCode &&
+                x.TransactionType == PaymentTransactionTypes.ScheduleChange)
+            .Select(x => (int?)x.DatTiecId).SingleOrDefaultAsync(cancellationToken);
+        if (!bookingId.HasValue) return false;
+        await LockBookingAsync(bookingId.Value, cancellationToken);
         var tx = await _context.PaymentTransactions.SingleOrDefaultAsync(x => x.OrderCode == orderCode, cancellationToken);
         if (tx is null || tx.TransactionType != PaymentTransactionTypes.ScheduleChange) return false;
         if (tx.TrangThai == "PAID") { await CommitAsync(transaction, cancellationToken); return true; }
@@ -548,6 +569,13 @@ public sealed class ScheduleChangeService : IScheduleChangeService
     public async Task<ScheduleChangeDto> ReconcileAsync(int userId, int id, ReconciliationScheduleChangeRequest request,
         CancellationToken cancellationToken)
     {
+        await using var transaction = await BeginSerializableAsync(cancellationToken);
+        var bookingId = await _context.WeddingScheduleChanges.Where(x => x.ScheduleChangeId == id)
+            .Select(x => x.BookingId).SingleOrDefaultAsync(cancellationToken);
+        if (bookingId == 0) throw new ScheduleChangeException("Không tìm thấy yêu cầu đổi lịch.", StatusCodes.Status404NotFound);
+        await LockBookingAsync(bookingId, cancellationToken);
+        await EnsureNoUc18FinancialHistoryAsync(bookingId, cancellationToken);
+        await EnsureNoOutstandingPayOsContractIntentAsync(bookingId, cancellationToken);
         var change = await LoadChangeAsync(id, true, cancellationToken);
         RequireState(change, ScheduleChangeStatusCodes.ReconciliationRequired);
         var action = request.Action.Trim().ToUpperInvariant();
@@ -571,6 +599,7 @@ public sealed class ScheduleChangeService : IScheduleChangeService
         else throw new ScheduleChangeException("Action đối soát không hợp lệ.");
         AddAudit(userId, change, "SCHEDULE_CHANGE_RECONCILED", request.Evidence.Trim());
         await _context.SaveChangesAsync(cancellationToken);
+        await CommitAsync(transaction, cancellationToken);
         return ToDto(change);
     }
 
@@ -668,6 +697,7 @@ public sealed class ScheduleChangeService : IScheduleChangeService
     {
         var booking = await BookingQuery(true).SingleOrDefaultAsync(x => x.BookingId == bookingId, cancellationToken)
             ?? throw new ScheduleChangeException("Không tìm thấy booking.", StatusCodes.Status404NotFound);
+        await EnsureNoUc18FinancialHistoryAsync(bookingId, cancellationToken);
         if (!ScheduleChangeBusinessRules.IsBookingEligible(booking.Status.StatusCode))
             throw new ScheduleChangeException("Chỉ booking CONFIRMED hoặc PREPARING mới được đổi lịch.", StatusCodes.Status409Conflict);
         if (booking.HallSchedule.Date.Date <= RiversideBusinessClock.Today)
@@ -776,6 +806,9 @@ public sealed class ScheduleChangeService : IScheduleChangeService
             throw new ScheduleChangeException("Ngày mới không còn đủ 14 ngày tại thời điểm áp dụng.", StatusCodes.Status409Conflict);
         if (!ScheduleChangeBusinessRules.IsBookingEligible(change.Booking.Status.StatusCode))
             throw new ScheduleChangeException("Trạng thái booking đã thay đổi và không còn hợp lệ.", StatusCodes.Status409Conflict);
+        await EnsureNoUc18FinancialHistoryAsync(change.BookingId, cancellationToken);
+        await EnsureNoOutstandingPayOsContractIntentAsync(change.BookingId, cancellationToken);
+        await LockHallScheduleAsync(change.NewHallScheduleId, cancellationToken);
         await EnsureTargetAvailableAsync(change, true, cancellationToken);
         if (await HasCoordinatorConflictAsync(change, cancellationToken))
             throw new ScheduleChangeException("Điều phối viên hiện tại bị trùng lịch mới; cần phân công lại trước khi hoàn tất.", StatusCodes.Status409Conflict);
@@ -873,6 +906,60 @@ public sealed class ScheduleChangeService : IScheduleChangeService
             x.Status == ScheduleChangeHoldStatusCodes.Active && x.ExpiresAt > RiversideBusinessClock.Now, cancellationToken);
         if (held) throw new ScheduleChangeException("Lịch sảnh mới đang được yêu cầu khác giữ tạm.", StatusCodes.Status409Conflict);
         return schedule;
+    }
+
+    private async Task EnsureNoUc18FinancialHistoryAsync(int bookingId, CancellationToken cancellationToken)
+    {
+        if (_context.Model.FindEntityType(typeof(Uc18BookingOperation)) is null)
+            throw new ScheduleChangeException("Không thể xác minh lịch sử thay đổi tài chính UC18. Hãy chuyển yêu cầu cho Manager đối soát trước khi tiếp tục.", StatusCodes.Status409Conflict);
+
+        var hasFinancialOperation = await _context.Set<Uc18BookingOperation>().AnyAsync(operation =>
+            operation.BookingId == bookingId &&
+            (operation.Kind == Uc18BookingOperation.Reschedule || operation.Kind == Uc18BookingOperation.MenuChange ||
+              operation.Kind == Uc18BookingOperation.Cancel || operation.Kind == Uc18BookingOperation.PriorRefund) &&
+            (operation.SignedPriceDelta != 0m || operation.FeeAmount != 0m ||
+             (operation.EffectiveTotal.HasValue && operation.EffectiveTotal.Value != 0m) ||
+             operation.RetainedDeposit != 0m || operation.PrincipalRefundDue != 0m ||
+             operation.DepositPrincipalPortion != 0m || operation.CompensationDue != 0m), cancellationToken);
+        var hasConfirmedRefund = await _context.Set<Uc18RefundConfirmation>().AnyAsync(refund =>
+            _context.Set<Uc18BookingOperation>().Any(operation => operation.RequestId == refund.OperationRequestId &&
+                operation.BookingId == bookingId) &&
+            (refund.PrincipalPaid > 0m || refund.CompensationPaid > 0m), cancellationToken);
+        if (hasFinancialOperation || hasConfirmedRefund)
+            throw new ScheduleChangeException("Booking có lịch sử thao tác tài chính hoặc hoàn tiền UC18. Hãy chuyển yêu cầu cho Manager xử lý trước khi tiếp tục đổi lịch.", StatusCodes.Status409Conflict);
+    }
+
+    // UC15 không được mở, sửa báo giá, chấp nhận hoặc hoàn tất đổi lịch khi hợp đồng còn
+    // giao dịch PayOS chưa xác nhận. Trạng thái CREATING/PENDING/RECONCILIATION_REQUIRED
+    // đều có thể phát sinh receipt muộn, nên phải fail closed cho tới khi được đối soát.
+    private async Task EnsureNoOutstandingPayOsContractIntentAsync(int bookingId, CancellationToken cancellationToken)
+    {
+        var hasOutstanding = await _context.PaymentTransactions.AnyAsync(transaction =>
+            transaction.DatTiecId == bookingId &&
+            (transaction.TransactionType == PaymentTransactionTypes.Installment ||
+             transaction.TransactionType == PaymentTransactionTypes.Settlement) &&
+            (transaction.TrangThai == PaymentTransactionStatusCodes.Creating ||
+             transaction.TrangThai == PaymentTransactionStatusCodes.Pending ||
+             transaction.TrangThai == PaymentTransactionStatusCodes.ReconciliationRequired),
+            cancellationToken);
+        if (hasOutstanding)
+            throw new ScheduleChangeException("Hợp đồng đang có giao dịch PayOS chưa được xác nhận. Hãy hoàn tất hoặc đối soát giao dịch trước khi đổi lịch.", StatusCodes.Status409Conflict);
+    }
+
+    private async Task LockBookingAsync(int bookingId, CancellationToken cancellationToken)
+    {
+        if (_context.Database.IsSqlServer())
+            await _context.WeddingBookings.FromSqlInterpolated(
+                    $"SELECT * FROM [dbo].[DatTiec] WITH (UPDLOCK, HOLDLOCK, ROWLOCK) WHERE [DatTiecID] = {bookingId}")
+                .Select(booking => booking.BookingId).SingleOrDefaultAsync(cancellationToken);
+    }
+
+    private async Task LockHallScheduleAsync(int scheduleId, CancellationToken cancellationToken)
+    {
+        if (_context.Database.IsSqlServer())
+            await _context.HallSchedules.FromSqlInterpolated(
+                    $"SELECT * FROM [dbo].[LichSanh] WITH (UPDLOCK, HOLDLOCK, ROWLOCK) WHERE [LichSanhID] = {scheduleId}")
+                .Select(schedule => schedule.HallScheduleId).SingleOrDefaultAsync(cancellationToken);
     }
 
     private static string? CapacityUnavailableReason(WeddingBooking booking, Hall hall)

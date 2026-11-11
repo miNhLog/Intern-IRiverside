@@ -5,6 +5,8 @@ using HeThongDatTiecCuoi_API.DTOs.Common;
 using HeThongDatTiecCuoi_API.Models;
 using HeThongDatTiecCuoi_API.Services;
 using Microsoft.AspNetCore.Authorization;
+using System.Data;
+using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -145,75 +147,80 @@ public sealed class HallScheduleController : ControllerBase
         CancellationToken cancellationToken)
     {
         var statusCode = request.Status?.Trim().ToUpperInvariant();
+        await using var transaction = _context.Database.IsRelational()
+            ? await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken)
+            : null;
 
-        var hallSchedule = await _context.HallSchedules.Include(schedule => schedule.Status).Include(schedule => schedule.Hall).SingleOrDefaultAsync(
-            schedule => schedule.HallScheduleId == hallScheduleId &&
-                schedule.DataStatus.DataStatusCode == DataStatusCodes.Existing &&
-                schedule.Hall.DataStatus.DataStatusCode == DataStatusCodes.Existing,
-            cancellationToken);
-
-        if (hallSchedule is null)
+        try
         {
-            return NotFound(new
+            if (_context.Database.IsSqlServer())
             {
-                message = "Không tìm thấy lịch sảnh."
-            });
-        }
+                await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $"SELECT [LichSanhID] FROM [dbo].[LichSanh] WITH (UPDLOCK, HOLDLOCK, ROWLOCK) WHERE [LichSanhID] = {hallScheduleId}",
+                    cancellationToken);
+                await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $"SELECT [DatTiecID] FROM [dbo].[DatTiec] WITH (UPDLOCK, HOLDLOCK) WHERE [LichSanhID] = {hallScheduleId} AND [TrangThaiID] IN (SELECT [TrangThaiID] FROM [dbo].[TrangThai] WHERE [NhomTrangThai] = {StatusGroups.Booking} AND [MaTrangThai] IN ({BookingStatusCodes.Pending}, {BookingStatusCodes.Confirmed}, {BookingStatusCodes.Preparing}))",
+                    cancellationToken);
+            }
 
-        var hasBooking = await _context.WeddingBookings
-            .AnyAsync(booking =>
-                booking.HallScheduleId == hallScheduleId &&
-                BookingStatusCodes.OccupyingSchedule.Contains(booking.Status.StatusCode),
+            var hallSchedule = await _context.HallSchedules.Include(schedule => schedule.Status).Include(schedule => schedule.Hall).SingleOrDefaultAsync(
+                schedule => schedule.HallScheduleId == hallScheduleId &&
+                    schedule.DataStatus.DataStatusCode == DataStatusCodes.Existing &&
+                    schedule.Hall.DataStatus.DataStatusCode == DataStatusCodes.Existing,
                 cancellationToken);
 
-        if (hasBooking)
-        {
-            return BadRequest(new
+            if (hallSchedule is null)
+                return NotFound(new { message = "Không tìm thấy lịch sảnh." });
+
+            var hasBooking = await _context.WeddingBookings
+                .AnyAsync(booking => booking.HallScheduleId == hallScheduleId &&
+                    BookingStatusCodes.OccupyingSchedule.Contains(booking.Status.StatusCode), cancellationToken);
+
+            if (hasBooking)
+                return BadRequest(new { message = "Không thể chỉnh trạng thái vì ca này đã có booking." });
+
+            if (await _context.ScheduleChangeHolds.AnyAsync(hold =>
+                    hold.HallScheduleId == hallScheduleId &&
+                    hold.Status == ScheduleChangeHoldStatusCodes.Active &&
+                    hold.ExpiresAt > RiversideBusinessClock.Now, cancellationToken))
+                return Conflict(new { code = "ERR_UC15_SCHEDULE_HOLD_ACTIVE", message = "Ca này đang được một yêu cầu đổi lịch UC15 giữ tạm. Hãy xử lý yêu cầu hoặc chờ thời hạn giữ lịch kết thúc rồi thử lại." });
+
+            if (statusCode != HallScheduleStatusCodes.Available && statusCode != HallScheduleStatusCodes.Locked)
+                return BadRequest(new { message = "Trạng thái lịch sảnh chỉ có thể là AVAILABLE hoặc LOCKED." });
+
+            var status = await _statusService.GetStatusAsync(StatusGroups.HallSchedule, statusCode, cancellationToken)
+                ?? throw new InvalidOperationException($"Thiếu trạng thái lịch sảnh {statusCode}.");
+
+            var oldStatus = hallSchedule.Status.StatusCode;
+            if (oldStatus == status.StatusCode)
             {
-                message = "Không thể chỉnh trạng thái vì ca này đã có booking."
-            });
-        }
+                if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+                return Ok(new { message = "Trạng thái lịch sảnh không thay đổi.", hallScheduleId, status = status.StatusCode, statusName = status.StatusName });
+            }
 
-        if (statusCode != HallScheduleStatusCodes.Available &&
-            statusCode != HallScheduleStatusCodes.Locked)
-        {
-            return BadRequest(new
+            hallSchedule.StatusId = status.StatusId;
+            var actorId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedActorId) ? parsedActorId : (int?)null;
+            _context.AuditLogs.Add(new AuditLog
             {
-                message = "Trạng thái lịch sảnh chỉ có thể là AVAILABLE hoặc LOCKED."
+                UserId = actorId, Action = AuditActions.HallScheduleStatusChanged,
+                EntityName = AuditEntityNames.HallSchedule, EntityId = hallSchedule.HallScheduleId,
+                OldData = JsonSerializer.Serialize(new { hallSchedule.HallId, hallSchedule.Date, hallSchedule.Shift, Status = oldStatus }),
+                NewData = JsonSerializer.Serialize(new { hallSchedule.HallId, hallSchedule.Date, hallSchedule.Shift, Status = status.StatusCode }),
+                Timestamp = DateTime.Now, Outcome = AuditOutcomes.Success,
+                Notes = $"Cập nhật lịch sảnh {hallSchedule.Hall.HallCode} ngày {hallSchedule.Date:dd/MM/yyyy} {hallSchedule.Shift}: {oldStatus} → {status.StatusCode}."
             });
+
+            await _context.SaveChangesAsync(cancellationToken);
+            if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+            return Ok(new { message = "Cập nhật lịch sảnh thành công.", hallScheduleId = hallSchedule.HallScheduleId,
+                status = status.StatusCode, statusName = status.StatusName });
         }
-
-        var status = await _statusService.GetStatusAsync(
-            StatusGroups.HallSchedule,
-            statusCode,
-            cancellationToken) ?? throw new InvalidOperationException(
-                $"Thiếu trạng thái lịch sảnh {statusCode}.");
-
-        var oldStatus = hallSchedule.Status.StatusCode;
-        if (oldStatus == status.StatusCode)
-            return Ok(new { message = "Trạng thái lịch sảnh không thay đổi.", hallScheduleId, status = status.StatusCode, statusName = status.StatusName });
-
-        hallSchedule.StatusId = status.StatusId;
-        var actorId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedActorId) ? parsedActorId : (int?)null;
-        _context.AuditLogs.Add(new AuditLog
+        catch (Exception ex) when (ex is SqlException { Number: 1205 or 1222 } ||
+                                   ex is DbUpdateException { InnerException: SqlException { Number: 1205 or 1222 } })
         {
-            UserId = actorId, Action = AuditActions.HallScheduleStatusChanged,
-            EntityName = AuditEntityNames.HallSchedule, EntityId = hallSchedule.HallScheduleId,
-            OldData = JsonSerializer.Serialize(new { hallSchedule.HallId, hallSchedule.Date, hallSchedule.Shift, Status = oldStatus }),
-            NewData = JsonSerializer.Serialize(new { hallSchedule.HallId, hallSchedule.Date, hallSchedule.Shift, Status = status.StatusCode }),
-            Timestamp = DateTime.Now, Outcome = AuditOutcomes.Success,
-            Notes = $"Cập nhật lịch sảnh {hallSchedule.Hall.HallCode} ngày {hallSchedule.Date:dd/MM/yyyy} {hallSchedule.Shift}: {oldStatus} → {status.StatusCode}."
-        });
-
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return Ok(new
-        {
-            message = "Cập nhật trạng thái lịch sảnh thành công.",
-            hallScheduleId = hallSchedule.HallScheduleId,
-            status = status.StatusCode,
-            statusName = status.StatusName
-        });
+            if (transaction is not null) await transaction.RollbackAsync(cancellationToken);
+            return Conflict(new { message = "Trạng thái lịch sảnh vừa được thay đổi. Vui lòng tải lại và thử lại." });
+        }
     }
 
     private async Task EnsureWeeklySchedulesAsync(

@@ -64,7 +64,19 @@ public sealed class ContractBusinessRulesTests
     [InlineData(100, 80, "Hợp đồng chưa được thanh toán đủ.")]
     [InlineData(100, 120, "Tổng thanh toán vượt giá trị hợp đồng. Vui lòng kiểm tra dữ liệu.")]
     public void Complete_RequiresExactSuccessfulPayment(decimal total, decimal paid, string? expected) =>
-        Assert.Equal(expected, ContractBusinessRules.ValidateCompletion(ContractStatusCodes.Active, total, paid));
+        Assert.Equal(expected, ContractBusinessRules.ValidateCompletion(ContractStatusCodes.Active, total, paid,
+            BookingStatusCodes.Confirmed, DateTime.Today.AddDays(-1), DateTime.Today));
+
+    [Fact]
+    public void Complete_RequiresEventOccurredAndNonCancelledBooking()
+    {
+        Assert.Contains("chưa diễn ra", ContractBusinessRules.ValidateCompletion(ContractStatusCodes.Active, 100m, 100m,
+            BookingStatusCodes.Confirmed, DateTime.Today, DateTime.Today));
+        Assert.Contains("đã hủy", ContractBusinessRules.ValidateCompletion(ContractStatusCodes.Active, 100m, 100m,
+            BookingStatusCodes.Cancelled, DateTime.Today.AddDays(-1), DateTime.Today));
+        Assert.Null(ContractBusinessRules.ValidateCompletion(ContractStatusCodes.Active, 100m, 100m,
+            BookingStatusCodes.Completed, DateTime.Today.AddDays(1), DateTime.Today));
+    }
 
     [Theory]
     [InlineData(ContractStatusCodes.Draft, true)]

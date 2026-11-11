@@ -1775,11 +1775,16 @@ public sealed class RecommendationController : ControllerBase
             MenuId = menuPricing?.MenuId,
             DecorationPackageId = decor?.GoiTrangTriID,
             GuestCount = request.GuestCount,
+            BilledTableCount = estimatedTableCount,
+            SpareTableCount = spareTableCount,
             FinalHallPrice = effectiveHallRentalPrice,
             FinalMenuPrice = menuPricing is null ? (decimal?)null : effectiveMenuPricePerTable,
             FinalDecorationPrice = decor?.Gia,
             EstimatedTotal = officialEstimatedTotal,
             SpecialRequests = NormalizeOptional(enrichedRequests),
+            CustomMenuSnapshotJson = hasCustomMenu
+                ? JsonSerializer.Serialize(menuPricing!.SelectedDishes.Select(item => new { item.DishId, item.DishName, item.Price }))
+                : null,
             StatusId = await _statusService.GetStatusIdAsync(StatusGroups.Booking, BookingStatusCodes.Pending),
             BookedAt = DateTime.Now
         };

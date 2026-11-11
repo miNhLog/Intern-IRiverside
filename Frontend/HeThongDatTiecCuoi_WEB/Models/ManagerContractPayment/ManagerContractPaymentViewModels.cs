@@ -62,6 +62,39 @@ public sealed class ManagerContractDetailViewModel
     public List<ContractAuditEventViewModel> History { get; set; } = [];
 }
 
+public sealed class ManagerContractAmendmentViewModel
+{
+    public Guid RequestId { get; set; }
+    public string Kind { get; set; } = string.Empty;
+    public DateTime RecordedAtUtc { get; set; }
+    public decimal? EffectiveTotal { get; set; }
+    public decimal SignedPriceDelta { get; set; }
+    public decimal FeeAmount { get; set; }
+    public string? PolicyVersion { get; set; }
+    public string? ManagerAgreementReference { get; set; }
+    public ManagerContractAmendmentSnapshotViewModel? Snapshot { get; set; }
+    public bool SnapshotAvailable { get; set; }
+}
+
+public sealed class ManagerContractAmendmentSnapshotViewModel
+{
+    public ManagerContractEventSnapshotViewModel? OriginalEvent { get; set; }
+    public ManagerContractEventSnapshotViewModel? PreviousEvent { get; set; }
+    public ManagerContractEventSnapshotViewModel? CurrentEvent { get; set; }
+    public string? Reason { get; set; }
+}
+
+public sealed class ManagerContractEventSnapshotViewModel
+{
+    public DateTime Date { get; set; }
+    public string Shift { get; set; } = string.Empty;
+    public string HallName { get; set; } = string.Empty;
+    public string? MenuName { get; set; }
+    public int Guests { get; set; }
+    public string? DecorationPackageName { get; set; }
+    public List<string> Services { get; set; } = [];
+}
+
 public sealed class ManagerContractBookingViewModel
 {
     public int BookingId { get; set; }

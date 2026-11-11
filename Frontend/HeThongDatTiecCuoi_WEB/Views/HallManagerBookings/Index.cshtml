@@ -1,0 +1,72 @@
+@model HeThongDatTiecCuoi_WEB.Models.AdminBooking.BookingListResponseViewModel
+@using HeThongDatTiecCuoi_WEB.Models.AdminBooking
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Booking trong phạm vi sảnh";
+    var filter = ViewBag.Filter as BookingFilterRequestViewModel ?? new();
+}
+<section class="backoffice-page">
+    <header class="page-header"><div><p class="eyebrow">VẬN HÀNH SẢNH</p><h1>Booking được phân công</h1><p>Thay đổi vận hành chỉ áp dụng trong phạm vi sảnh được giao. Thao tác cần quyết định tài chính được bàn giao cho Quản lý.</p></div></header>
+    @if (ViewBag.Error is string error) { <div class="alert alert-warning" role="status">@error</div> }
+    <form method="get" class="card p-3 mb-3 d-flex flex-wrap gap-2">
+        <input name="Keyword" value="@filter.Keyword" placeholder="Mã tiệc, khách hàng, điện thoại" class="form-control" />
+        <select name="Status" class="form-select"><option value="ALL">Tất cả trạng thái</option>@foreach (var status in new[] { "PENDING", "CONFIRMED", "PREPARING", "COMPLETED", "CANCELLED" }) { <option value="@status" selected="@(filter.Status == status)">@status</option> }</select>
+        <input type="date" name="FromDate" value="@filter.FromDate?.ToString("yyyy-MM-dd")" class="form-control" />
+        <input type="date" name="ToDate" value="@filter.ToDate?.ToString("yyyy-MM-dd")" class="form-control" />
+        <button class="btn btn-primary">Lọc</button>
+    </form>
+    <div class="card table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Mã tiệc</th><th>Khách hàng</th><th>Sảnh / lịch</th><th>Bàn</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+    @foreach (var item in Model.Items) { <tr><td>@item.BookingCode</td><td>@item.CustomerName<br /><small>@item.CustomerPhone</small></td><td>@item.HallName<br />@item.EventDate.ToString("dd/MM/yyyy") · @item.Shift</td><td>@item.TableCount</td><td>@item.Status</td><td><button class="btn btn-sm btn-outline-primary" type="button" onclick="showBooking(@item.BookingId)">Chi tiết / thao tác</button></td></tr> }
+    @if (Model.Items.Count == 0) { <tr><td colspan="6" class="text-center py-4">Không có booking trong phạm vi được giao.</td></tr> }
+    </tbody></table></div>
+    <p class="mt-2">@Model.TotalCount booking · Trang @Model.PageIndex / @Model.TotalPages</p>
+</section>
+<dialog id="bookingActions" aria-labelledby="bookingActionsTitle"><h2 id="bookingActionsTitle">Thao tác booking</h2><p id="bookingInfo"></p><button id="rescheduleBtn" type="button">Đổi lịch</button><button id="cancelBtn" type="button">Hủy booking</button><button id="handoffBtn" type="button">Bàn giao Quản lý</button><button id="closeBookingActions" type="button">Đóng</button></dialog>
+<form hidden id="csrfForm">@Html.AntiForgeryToken()</form>
+@section Scripts {
+<script>
+const csrf = document.querySelector('#csrfForm input').value;
+let activeBooking = null;
+const modal = document.getElementById('bookingActions');
+async function postJson(url, body) {
+  const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': csrf }, body: JSON.stringify(body) });
+  const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Thao tác không thành công.'); return data;
+}
+async function showBooking(id) {
+  const response = await fetch(`/HallManagerBookings/Detail/${id}`); const result = await response.json();
+  if (!response.ok || !result.success) { alert(result.message || 'Không thể tải booking.'); return; }
+  activeBooking = result.data;
+  const b = activeBooking;
+  document.getElementById('bookingInfo').textContent = `${b.bookingCode} · ${b.customerName} · ${b.hallName} · ${new Date(b.eventDate).toLocaleDateString('vi-VN')} ${b.shift} · ${b.statusName || b.statusCode}`;
+  modal.showModal();
+}
+document.getElementById('closeBookingActions').onclick = () => modal.close();
+document.getElementById('rescheduleBtn').onclick = async () => {
+  const b = activeBooking; if (!b) return;
+  const date = prompt('Ngày mới (YYYY-MM-DD):'); if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+  const shift = prompt('Ca mới (Ca trưa hoặc Ca tối):', b.shift); if (!shift) return;
+  const query = new URLSearchParams({ NewDate: date, NewShift: shift, NewHallId: String(b.hallId), ChangeMenu: 'false' });
+  try {
+    const response = await fetch(`/HallManagerBookings/Quote/${b.bookingId}?${query}`); const quoted = await response.json();
+    if (!response.ok || !quoted.success) throw new Error(quoted.message || 'Không thể báo giá. Nếu cần quyết định tài chính, hãy bàn giao cho Quản lý.');
+    const q = quoted.data; if (q.capacityCheck === 'FAIL') throw new Error(q.capacityMessage || 'Không đủ sức chứa.');
+    if (q.isFinancialAmendment) throw new Error('Thay đổi này cần phê duyệt tài chính. Hãy chọn Bàn giao Quản lý.');
+    if (!confirm(`Xác nhận đổi lịch? Chênh lệch ${Number(q.priceDifference || 0).toLocaleString('vi-VN')} đ; tổng dự kiến ${q.estimatedTotalAfterChange ?? '—'}`)) return;
+    const reason = prompt('Lý do đổi lịch:'); if (!reason?.trim()) return;
+    await postJson(`/HallManagerBookings/Reschedule/${b.bookingId}`, { newDate: date, newShift: shift, newHallId: b.hallId, changeMenu: false, reason: reason.trim(), priceDifferenceConfirmed: !!q.requiresPriceConfirmation, confirmedPriceDifference: q.priceDifference, menuPriceDifferenceConfirmed: false });
+    location.reload();
+  } catch (error) { alert(error.message); }
+};
+document.getElementById('cancelBtn').onclick = async () => {
+  const b = activeBooking; if (!b || !confirm('Hủy booking trong phạm vi sảnh? Hủy có ảnh hưởng tài chính sẽ bị từ chối và cần bàn giao.')) return;
+  const reason = prompt('Lý do hủy:'); if (!reason?.trim()) return;
+  try { await postJson(`/HallManagerBookings/Cancel/${b.bookingId}`, { reason }); location.reload(); } catch (error) { alert(`${error.message}\nNếu cần quyết định tài chính, hãy bàn giao cho Quản lý.`); }
+};
+document.getElementById('handoffBtn').onclick = async () => {
+  const b = activeBooking; if (!b) return;
+  const reason = prompt('Lý do bàn giao cho Quản lý:'); if (!reason?.trim()) return;
+  const operation = prompt('Thao tác cần bàn giao: RESCHEDULE hoặc CANCEL', 'RESCHEDULE'); if (!['RESCHEDULE', 'CANCEL'].includes(operation)) return;
+  try { await postJson(`/HallManagerBookings/Handoff/${b.bookingId}`, { requestId: crypto.randomUUID(), operation, reason: reason.trim() }); alert('Đã bàn giao cho Quản lý.'); } catch (error) { alert(error.message); }
+};
+</script>
+}
