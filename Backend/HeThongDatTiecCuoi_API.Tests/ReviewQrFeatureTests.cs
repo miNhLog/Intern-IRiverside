@@ -167,6 +167,41 @@ public sealed class ReviewQrFlowIntegrationTests
     }
 
     [Fact]
+    public async Task Guest_RateLimit_PartitionsByValidatedSession_ForSamePeerAndToken()
+    {
+        using var factory = new ReviewQrApiFactory();
+        factory.Seed();
+        var token = await IssueTokenAsync(factory);
+        using var guest = factory.CreateClientFor(null);
+
+        for (var i = 0; i < 6; i++)
+        {
+            var sessionId = i.ToString("x32");
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/reviews/guest/{token}")
+            {
+                Content = JsonContent.Create(new
+                {
+                    hallScore = 5, foodScore = 4, serviceScore = 5,
+                    soundScore = 3, lightingScore = 4, hygieneScore = 5,
+                    comment = "Buổi tiệc chu đáo.", sessionId
+                })
+            };
+            request.Headers.Add("X-Review-Session", sessionId);
+            using var response = await guest.SendAsync(request);
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var result = await response.Content.ReadFromJsonAsync<GuestSubmitResponse>();
+            Assert.NotNull(result);
+            Assert.True(result!.Success);
+            Assert.False(result.Duplicate);
+        }
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.Equal(6, await db.WeddingReviews.CountAsync());
+    }
+
+    [Fact]
     public async Task Guest_SubmitsSixScores_DerivesOverall_AndSuppressesDuplicatesPerSession()
     {
         using var factory = new ReviewQrApiFactory();

@@ -42,8 +42,17 @@ public sealed class WeddingReviewsController(
         if (denied is not null) return denied;
         if (!TryGuestScores(request, out var scores))
             return BadRequest(new { code = "REVIEW_SCORES_REQUIRED", message = "Vui lòng chấm đủ 6 tiêu chí từ 1 đến 5." });
+        const string ReviewSessionHeader = "X-Review-Session";
         if (string.IsNullOrWhiteSpace(request.SessionId))
             return BadRequest(new { code = "REVIEW_SESSION_REQUIRED", message = "Không xác định được phiên đánh giá. Vui lòng tải lại trang." });
+        var sessionHeader = Request.Headers[ReviewSessionHeader].ToString();
+        if (!string.IsNullOrEmpty(sessionHeader))
+        {
+            var isValidSession = sessionHeader.Length is >= 16 and <= 80 &&
+                sessionHeader.All(char.IsAsciiHexDigit);
+            if (!isValidSession || !string.Equals(sessionHeader, request.SessionId, StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { code = "REVIEW_SESSION_INVALID", message = "Phiên đánh giá không hợp lệ. Vui lòng tải lại trang." });
+        }
 
         var sessionHash = HashSession(token, request.SessionId);
         if (await IsDuplicateAsync(qr.ReviewQrCodeId, sessionHash, ct))
