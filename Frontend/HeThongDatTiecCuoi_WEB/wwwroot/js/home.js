@@ -6,6 +6,9 @@
     document.body.classList.add('home-public');
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (!reducedMotion.matches) {
+        document.body.classList.add('motion-enabled');
+    }
     const $ = (selector, root = page) => root.querySelector(selector);
     const $$ = (selector, root = page) => [...root.querySelectorAll(selector)];
     const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
@@ -67,31 +70,94 @@
         return close;
     }
 
-    function initHeroPortal() {
-        const hero = $('[data-portal]');
-        if (!hero || reducedMotion.matches) return;
+    function initCinemaHero() {
+        const hero = $('.cinema-hero');
+        if (!hero) return;
 
-        page.classList.add('motion-enabled');
-        let ticking = false;
-        const update = () => {
-            const maxTravel = Math.max(1, hero.offsetHeight - window.innerHeight);
-            const progress = clamp((window.scrollY - hero.offsetTop) / maxTravel);
-            page.style.setProperty('--portal-progress', progress.toFixed(4));
-            ticking = false;
+        const scenes = $$('.cinema-scene', hero);
+        const stories = $$('.cinema-story', hero);
+        const tabs = $$('.cinema-nav-tab', hero);
+        const count = Math.min(scenes.length, stories.length);
+        if (count === 0) return;
+
+        let currentIndex = 0;
+        let isHovered = false;
+        let animFrameId = null;
+        let startTime = null;
+        const duration = 4000; // 4s per scene (reduced per user request)
+
+        const goToScene = (index) => {
+            currentIndex = (index + count) % count;
+
+            scenes.forEach((scene, i) => {
+                scene.classList.toggle('is-active', i === currentIndex);
+            });
+
+            stories.forEach((story, i) => {
+                story.classList.toggle('is-active', i === currentIndex);
+            });
+
+            tabs.forEach((tab, i) => {
+                const isActive = (i === currentIndex);
+                tab.classList.toggle('is-active', isActive);
+                tab.setAttribute('aria-selected', String(isActive));
+                const fill = $('.cinema-progress-fill', tab);
+                if (fill) {
+                    fill.style.width = isActive ? '0%' : (i < currentIndex ? '100%' : '0%');
+                }
+            });
+
+            startTime = performance.now();
         };
-        const requestUpdate = () => {
-            if (ticking) return;
-            ticking = true;
-            requestAnimationFrame(update);
+
+        const tick = (now) => {
+            if (!isHovered) {
+                if (!startTime) startTime = now;
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                const activeTab = tabs[currentIndex];
+                const activeFill = activeTab ? $('.cinema-progress-fill', activeTab) : null;
+                if (activeFill) {
+                    activeFill.style.width = `${progress * 100}%`;
+                }
+
+                if (elapsed >= duration) {
+                    goToScene(currentIndex + 1);
+                }
+            } else if (isHovered && startTime) {
+                startTime = now;
+            }
+            animFrameId = requestAnimationFrame(tick);
         };
-        window.addEventListener('scroll', requestUpdate, { passive: true });
-        window.addEventListener('resize', requestUpdate, { passive: true });
-        update();
+
+        tabs.forEach((tab, i) => {
+            tab.addEventListener('click', () => {
+                goToScene(i);
+            });
+        });
+
+        const interactiveAreas = $$('.cinema-nav, .cinema-actions', hero);
+        interactiveAreas.forEach(area => {
+            area.addEventListener('mouseenter', () => { isHovered = true; });
+            area.addEventListener('mouseleave', () => {
+                isHovered = false;
+                startTime = performance.now();
+            });
+        });
+
+        goToScene(0);
+        if (count === 1) return;
+        animFrameId = requestAnimationFrame(tick);
     }
 
     function initReveals() {
         const elements = $$('[data-reveal]');
-        if (!elements.length || reducedMotion.matches || !('IntersectionObserver' in window)) return;
+        if (!elements.length) return;
+        if (reducedMotion.matches || !('IntersectionObserver' in window)) {
+            elements.forEach(el => el.classList.add('is-revealed'));
+            return;
+        }
 
         const observer = new IntersectionObserver(entries => {
             entries.forEach(entry => {
@@ -99,10 +165,15 @@
                 entry.target.classList.add('is-revealed');
                 observer.unobserve(entry.target);
             });
-        }, { threshold: .14, rootMargin: '0px 0px -7% 0px' });
-        elements.forEach((element, index) => {
-            element.style.transitionDelay = `${Math.min(index % 3, 2) * 80}ms`;
-            observer.observe(element);
+        }, { threshold: 0.08, rootMargin: '0px 0px -50px 0px' });
+
+        elements.forEach(element => {
+            const rect = element.getBoundingClientRect();
+            if (rect.top < window.innerHeight - 80 && rect.bottom > 0) {
+                element.classList.add('is-revealed');
+            } else {
+                observer.observe(element);
+            }
         });
     }
 
@@ -143,8 +214,9 @@
                 card.style.opacity = position > 3 ? '0' : '1';
                 card.classList.toggle('is-top', position === 0);
                 card.setAttribute('aria-hidden', String(position !== 0));
-                const link = $('a', card);
-                if (link) link.tabIndex = position === 0 ? 0 : -1;
+                $$('a', card).forEach(link => {
+                    link.tabIndex = position === 0 ? 0 : -1;
+                });
             });
             if (current) current.textContent = String(Number(order[0].dataset.hallIndex) + 1).padStart(2, '0');
             const disabled = order.length < 2;
@@ -191,7 +263,9 @@
             } else {
                 resetDrag(top);
             }
-            if (deck.hasPointerCapture?.(pointerId)) deck.releasePointerCapture(pointerId);
+            if (deck.hasPointerCapture?.(pointerId)) {
+                try { deck.releasePointerCapture(pointerId); } catch (_) {}
+            }
             pointerId = null;
             horizontalDrag = false;
             window.setTimeout(() => { suppressClick = false; }, 80);
@@ -205,26 +279,33 @@
             deltaX = 0;
             deltaY = 0;
             horizontalDrag = false;
-            deck.setPointerCapture(pointerId);
-            order[0].classList.add('is-dragging');
-            deck.classList.add('is-dragging');
+            suppressClick = false;
         });
         deck.addEventListener('pointermove', event => {
             if (pointerId === null || event.pointerId !== pointerId || busy) return;
             deltaX = event.clientX - startX;
             deltaY = event.clientY - startY;
             if (!horizontalDrag && Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 7) return;
-            if (Math.abs(deltaX) > 6) horizontalDrag = true;
+            if (Math.abs(deltaX) > 6) {
+                if (!horizontalDrag) {
+                    horizontalDrag = true;
+                    suppressClick = true;
+                    try { deck.setPointerCapture(pointerId); } catch (_) {}
+                    order[0]?.classList.add('is-dragging');
+                    deck.classList.add('is-dragging');
+                }
+            }
             if (!horizontalDrag) return;
             if (event.cancelable) event.preventDefault();
-            suppressClick = true;
             const rotation = clamp(deltaX / 24, -13, 13);
             order[0].style.transform = `translate(${deltaX}px, ${Math.min(Math.abs(deltaX) * -.035, -1)}px) rotate(${rotation}deg) scale(1.018)`;
         });
         deck.addEventListener('pointerup', releasePointer);
         deck.addEventListener('pointercancel', event => {
             resetDrag(order[0]);
-            if (pointerId !== null && deck.hasPointerCapture?.(pointerId)) deck.releasePointerCapture(pointerId);
+            if (pointerId !== null && deck.hasPointerCapture?.(pointerId)) {
+                try { deck.releasePointerCapture(pointerId); } catch (_) {}
+            }
             pointerId = null;
             horizontalDrag = false;
         });
@@ -247,12 +328,36 @@
         render();
     }
 
+    function initFaq() {
+        const section = $('[data-home-faq]');
+        if (!section) return;
+        const extra = $('#home-faq-extra', section);
+        const button = $('[data-faq-toggle]', section);
+        const label = $('[data-faq-toggle-label]', section);
+        const symbol = $('.home-faq-toggle-symbol', section);
+        if (!extra || !button || !label || !symbol) return;
+
+        extra.hidden = true;
+        button.hidden = false;
+        button.addEventListener('click', () => {
+            const expanded = extra.hidden;
+            if (!expanded) {
+                $$('details', extra).forEach(item => { item.open = false; });
+            }
+            extra.hidden = !expanded;
+            button.setAttribute('aria-expanded', String(expanded));
+            label.textContent = expanded ? 'Thu gọn' : 'Xem thêm';
+            symbol.textContent = expanded ? '−' : '+';
+        });
+    }
+
     const showToast = initToast();
     const closeMobileMenu = initMobileNav();
-    initHeroPortal();
+    initCinemaHero();
     initReveals();
     initImageFallback();
     initHallDeck();
+    initFaq();
 
     $$('[data-coming-soon]').forEach(element => {
         element.addEventListener('click', event => {
@@ -261,15 +366,6 @@
             closeMobileMenu();
         });
     });
-    $('[data-scroll-inquiry]')?.addEventListener('click', event => {
-        const hero = $('[data-portal]');
-        const inquiry = $('#booking-inquiry');
-        if (!hero || !inquiry || reducedMotion.matches) return;
-        event.preventDefault();
-        const maxTravel = Math.max(0, hero.offsetHeight - window.innerHeight);
-        window.scrollTo({ top: hero.offsetTop + maxTravel * .92, behavior: 'auto' });
-    });
-    $('[data-search]')?.addEventListener('click', () => showToast('Chức năng tìm kiếm sảnh đang được phát triển.'));
     $$('[data-open-ai-new]').forEach(button => button.addEventListener('click', () => {
         if (window.AiChatWidget && typeof window.AiChatWidget.open === 'function') window.AiChatWidget.open();
         closeMobileMenu();

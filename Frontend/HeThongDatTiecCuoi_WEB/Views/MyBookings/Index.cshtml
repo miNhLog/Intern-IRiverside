@@ -13,6 +13,13 @@
     <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
 
     <style>
+        .myb-hero { position: relative; min-height: 380px; display: flex; align-items: center; overflow: hidden; padding: 120px 24px 68px; background: #0b1320; color: #fff; }
+        .myb-hero-bg { position: absolute; inset: 0; background: url('/site-banner/MY_BOOKING') center 36%/cover no-repeat; filter: brightness(.85) contrast(1.05); transform: scale(1.02); }
+        .myb-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, rgba(11,19,32,.92), rgba(15,23,42,.66) 58%, rgba(22,40,57,.76)); }
+        .myb-hero-copy { position: relative; z-index: 1; width: min(100%, 1140px); margin: 0 auto; }
+        .myb-hero h1 { margin: 0 0 12px; color: #fff; font: 500 clamp(36px,5vw,58px)/1.1 'Playfair Display',serif; }
+        .myb-hero h1 em { color: #d4af37; font-weight: inherit; }
+        .myb-hero p { max-width: 720px; margin: 0; color: rgba(255,255,255,.88); line-height: 1.7; }
         .myb-page-wrap {
             background-color: #FAF8F5;
             padding: 50px 20px 80px 20px;
@@ -138,6 +145,14 @@
 <div class="home-page">
     <!-- Header kế thừa đồng bộ -->
     <partial name="_PublicHeader" />
+
+    <section class="myb-hero" aria-labelledby="myb-list-title">
+        <div class="myb-hero-bg" aria-hidden="true"></div>
+        <div class="myb-hero-copy">
+            <h1 id="myb-list-title">Tiệc Cưới <em>Của Tôi</em></h1>
+            <p>Theo dõi danh sách đặt tiệc và toàn bộ tiến độ chuẩn bị trong một không gian thống nhất.</p>
+        </div>
+    </section>
 
     <main class="myb-page-wrap">
         <div class="myb-container">

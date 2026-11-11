@@ -1,0 +1,70 @@
+@{
+    var questions = new (string Question, string Answer)[]
+    {
+        ("Tôi nên bắt đầu đặt tiệc cưới như thế nào?",
+            "Bạn có thể bắt đầu bằng việc chọn ngày dự kiến và số lượng khách, sau đó tham khảo sảnh tiệc phù hợp. Tiếp theo, lựa chọn thực đơn, trang trí và trao đổi với đội ngũ tư vấn để xác nhận các hạng mục trước khi đặt tiệc."),
+        ("Làm sao để chọn sảnh phù hợp với số lượng khách?",
+            "Hãy tham khảo sức chứa và hình ảnh của từng sảnh, đồng thời tính đến số bàn, khu vực sân khấu và lối đi. Khi đã có danh sách khách sơ bộ, bạn có thể trao đổi thêm để chọn cách bố trí phù hợp."),
+        ("Chi phí tổ chức tiệc cưới gồm những khoản nào?",
+            "Chi phí phụ thuộc vào sảnh, thực đơn, gói trang trí và các dịch vụ bạn lựa chọn. Bạn nên kiểm tra rõ từng hạng mục, số lượng và các khoản đã bao gồm trong báo giá trước khi xác nhận hợp đồng."),
+        ("Tôi có thể lựa chọn thực đơn và gói trang trí không?",
+            "Bạn có thể tham khảo các thực đơn và gói trang trí được giới thiệu trên website. Hãy ghi lại những lựa chọn yêu thích và mong muốn riêng để trao đổi với đội ngũ tư vấn trước khi chốt dịch vụ."),
+        ("Tôi cần đặt cọc và thanh toán như thế nào?",
+            "Số tiền đặt cọc, thời hạn và các đợt thanh toán được xác nhận theo hợp đồng của bạn. Trước khi thanh toán, hãy kiểm tra mã đặt tiệc, số tiền và thông tin giao dịch, đồng thời lưu lại xác nhận thanh toán."),
+        ("Nếu cần thay đổi ngày tổ chức thì tôi phải làm gì?",
+            "Bạn nên gửi yêu cầu đổi lịch hoặc liên hệ đội ngũ phụ trách sớm để kiểm tra lịch trống. Việc thay đổi được xem xét theo điều kiện hợp đồng và chính sách áp dụng. Hãy xác nhận lịch mới cùng các chi phí phát sinh, nếu có, trước khi đồng ý."),
+        ("Tôi cần chuẩn bị thông tin gì trước khi nhận tư vấn?",
+            "Bạn nên chuẩn bị ngày tổ chức dự kiến, số lượng khách, khoảng ngân sách và phong cách mong muốn. Nếu đã có mã đặt tiệc, hãy cung cấp mã này khi trao đổi để đội ngũ phụ trách dễ dàng tra cứu."),
+        ("Làm sao để biết sảnh còn trống vào ngày tôi muốn?",
+            "Bạn có thể tham khảo các lựa chọn sảnh và cung cấp ngày, ca tổ chức mong muốn khi đặt tiệc hoặc nhận tư vấn. Lịch trống cần được kiểm tra tại thời điểm xác nhận; việc xem thông tin sảnh chưa đồng nghĩa với việc đã giữ chỗ."),
+        ("Nếu số lượng khách thay đổi thì tôi cần làm gì?",
+            "Hãy thông báo sớm cho đội ngũ phụ trách để kiểm tra sức chứa sảnh, số bàn và thực đơn. Những thay đổi về số lượng, thời hạn chốt và chi phí cần được hai bên xác nhận theo thỏa thuận của tiệc."),
+        ("Tôi có thể yêu cầu món chay hoặc lưu ý về dị ứng không?",
+            "Bạn nên thông báo rõ số khách cần món chay, thực phẩm cần tránh và các lưu ý về dị ứng ngay khi trao đổi thực đơn. Đội ngũ phụ trách cần kiểm tra khả năng đáp ứng và xác nhận phương án trước khi bạn chốt dịch vụ."),
+        ("Tôi muốn thêm dịch vụ hoặc yêu cầu riêng cho buổi tiệc thì sao?",
+            "Hãy ghi rõ yêu cầu khi đặt tiệc hoặc trao đổi trực tiếp với đội ngũ phụ trách, chẳng hạn bố trí không gian, trang trí hay các dịch vụ đi kèm. Khả năng đáp ứng và chi phí bổ sung cần được xác nhận trước khi thực hiện."),
+        ("Tôi có thể theo dõi thông tin tiệc đã đặt ở đâu?",
+            "Bạn có thể truy cập mục Tiệc của tôi và thực hiện xác thực theo hướng dẫn trên website để xem thông tin tiệc. Khi cần hỗ trợ tra cứu hoặc điều chỉnh, hãy chuẩn bị mã đặt tiệc và thông tin đã dùng khi đăng ký.")
+    };
+    const int initialCount = 6;
+}
+
+<section class="home-faq" id="cau-hoi-thuong-gap" aria-labelledby="home-faq-title" data-home-faq>
+    <div class="home-container home-faq-layout">
+        <div class="home-faq-intro">
+            <span class="eyebrow">Thông tin hữu ích</span>
+            <h2 id="home-faq-title">Câu hỏi<br />thường gặp.</h2>
+            <div class="home-faq-divider" aria-hidden="true"></div>
+            <p>Những giải đáp giúp bạn dễ dàng lựa chọn dịch vụ và chuẩn bị cho ngày cưới.</p>
+        </div>
+        <div class="home-faq-content">
+            <div class="home-faq-list">
+                @for (var group = 0; group < 2; group++)
+                {
+                    <div id="@(group == 0 ? "home-faq-primary" : "home-faq-extra")">
+                        @for (var index = group * initialCount; index < Math.Min((group + 1) * initialCount, questions.Length); index++)
+                        {
+                            var item = questions[index];
+                            <details class="home-faq-item" name="home-faq-question" open="@(index == 0)">
+                                <summary id="home-faq-question-@index" aria-controls="home-faq-answer-@index">
+                                    <span class="home-faq-number" aria-hidden="true">@((index + 1).ToString("00"))</span>
+                                    <span class="home-faq-question">@item.Question</span>
+                                    <span class="home-faq-symbol" aria-hidden="true"></span>
+                                </summary>
+                                <div class="home-faq-answer" id="home-faq-answer-@index" role="region" aria-labelledby="home-faq-question-@index">
+                                    <p>@item.Answer</p>
+                                </div>
+                            </details>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="home-faq-actions">
+                <button class="home-faq-toggle" type="button" aria-expanded="false" aria-controls="home-faq-extra" data-faq-toggle hidden>
+                    <span data-faq-toggle-label>Xem thêm</span>
+                    <span class="home-faq-toggle-symbol" aria-hidden="true">+</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</section>

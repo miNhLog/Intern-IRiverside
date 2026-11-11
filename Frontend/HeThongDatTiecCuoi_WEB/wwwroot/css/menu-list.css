@@ -15,7 +15,7 @@
     inset: 0;
     background:
         linear-gradient(90deg, rgba(12, 25, 36, .92) 0%, rgba(12, 25, 36, .72) 39%, rgba(12, 25, 36, .15) 72%),
-        url('/images/menus/menu-banquet.png') 68% center / cover no-repeat;
+        url('/site-banner/MENUS') 68% center / cover no-repeat;
     transform: scale(1.01);
 }
 

@@ -330,8 +330,9 @@
 .home-page .recom-hero .hero-image {
     position: absolute;
     inset: 0;
+    background-image: url('/site-banner/RECOMMENDATION');
     background-size: cover;
-    background-position: center;
+    background-position: center 35%;
     background-repeat: no-repeat;
 }
 

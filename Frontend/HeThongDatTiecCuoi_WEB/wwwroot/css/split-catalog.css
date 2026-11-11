@@ -1,0 +1,350 @@
+/* Carats & Cake Editorial Catalogue Styling (Halls & Decor Packages) */
+.split-catalog-page {
+    --sc-bg: #FAF9F8;
+    --sc-surface: #FFFFFF;
+    --sc-warm: #F6F5F3;
+    --sc-charcoal: #111111;
+    --sc-body: #4A4A4A;
+    --sc-muted: #868686;
+    --sc-hairline: #E4E1DC;
+    --sc-gold: #C5A880;
+    --sc-gold-dark: #A98A5F;
+}
+
+.split-catalog-page main {
+    padding-top: 0;
+    background: var(--sc-bg);
+    color: var(--sc-body);
+}
+
+.split-catalog-page .home-header.is-scrolled {
+    background: rgba(255, 255, 255, 0.96);
+    border-bottom: 1px solid var(--sc-hairline);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Editorial Category Header */
+.split-catalog-page .sc-intro {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 320px;
+    overflow: hidden;
+    padding: 60px 6%;
+    background: #111111;
+    text-align: center;
+}
+
+.split-catalog-page .sc-banner-photo {
+    position: absolute;
+    z-index: -2;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 45%;
+    filter: brightness(0.85);
+}
+
+.split-catalog-page .sc-intro::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(17, 17, 17, 0.52) 0%, rgba(17, 17, 17, 0.68) 100%);
+}
+
+.split-catalog-page .sc-kicker {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.24em;
+    color: #e2c28f;
+    font-weight: 500;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.38);
+}
+
+.split-catalog-page .sc-intro h1 {
+    margin-top: 16px;
+    color: #fffdf9;
+    font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    font-size: clamp(38px, 5vw, 68px);
+    font-weight: 400;
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    text-shadow: 0 3px 18px rgba(0, 0, 0, 0.55);
+}
+
+.split-catalog-page .sc-intro h1 em {
+    color: #ecd6b5;
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: 0;
+}
+
+/* Editorial Catalog Grid List */
+.split-catalog-page .sc-list {
+    padding-block: 70px 95px;
+}
+
+.split-catalog-page .sc-row {
+    position: relative;
+    isolation: isolate;
+    margin-bottom: 75px;
+}
+
+.split-catalog-page .sc-row:last-child {
+    margin-bottom: 0;
+}
+
+.split-catalog-page .sc-row::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 30px 0 -30px;
+    background: var(--sc-warm);
+    border-radius: 4px;
+}
+
+.split-catalog-page .sc-row:nth-child(even)::before {
+    background: var(--sc-surface);
+    border: 1px solid var(--sc-hairline);
+}
+
+.split-catalog-page .sc-row-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: clamp(36px, 5vw, 80px);
+    align-items: center;
+    padding-block: 20px;
+}
+
+.split-catalog-page .sc-copy {
+    min-width: 0;
+    padding: 24px 10px;
+    text-align: left;
+}
+
+.split-catalog-page .sc-star {
+    display: inline-block;
+    margin-bottom: 16px;
+    color: var(--sc-gold);
+    font-size: 20px;
+    line-height: 1;
+}
+
+.split-catalog-page .sc-copy h2 {
+    color: var(--sc-charcoal);
+    font-family: var(--font-serif-display, "Cormorant Garamond", serif);
+    font-size: clamp(26px, 2.6vw, 38px);
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    overflow-wrap: anywhere;
+}
+
+.split-catalog-page .sc-copy h2 strong {
+    font-weight: 600;
+    color: var(--sc-charcoal);
+    font-style: italic;
+}
+
+.split-catalog-page .sc-rule {
+    width: 60px;
+    height: 1px;
+    margin: 18px 0;
+    background: var(--sc-gold);
+}
+
+.split-catalog-page .sc-copy > p {
+    max-width: 48ch;
+    margin-inline: 0;
+    color: var(--sc-body);
+    font-size: 14.5px;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+.split-catalog-page .sc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px 16px;
+    margin-top: 22px;
+    color: var(--sc-muted);
+    font-size: 11.5px;
+    line-height: 1.6;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.split-catalog-page .sc-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: var(--sc-surface);
+    border: 1px solid var(--sc-hairline);
+    border-radius: 9999px;
+}
+
+.split-catalog-page .sc-detail {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 44px;
+    margin-top: 28px;
+    border: 1px solid var(--sc-charcoal);
+    border-radius: 9999px;
+    padding: 10px 26px;
+    background: var(--sc-charcoal);
+    color: #FFFFFF;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.split-catalog-page .sc-detail:is(:hover, :focus-visible) {
+    background: var(--sc-gold-dark);
+    border-color: var(--sc-gold-dark);
+    color: #FFFFFF;
+    transform: translateY(-2px);
+}
+
+.split-catalog-page .sc-detail .material-symbols-outlined {
+    font-size: 15px;
+    transition: transform 0.2s ease;
+}
+
+.split-catalog-page .sc-detail:hover .material-symbols-outlined {
+    transform: translate(2px, -2px);
+}
+
+/* Image Framing */
+.split-catalog-page .sc-image {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 4px;
+    box-shadow: 0 10px 30px rgba(17, 17, 17, 0.06);
+    border: 1px solid var(--sc-hairline);
+}
+
+.split-catalog-page .sc-image img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1.35;
+    object-fit: cover;
+    background: var(--sc-warm);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.split-catalog-page .sc-image:hover img {
+    transform: scale(1.045);
+}
+
+.split-catalog-page .sc-row:nth-child(even) .sc-image {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.split-catalog-page .sc-row:nth-child(even) .sc-copy {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+/* Empty State */
+.split-catalog-page .sc-empty {
+    padding-block: 85px 110px;
+    text-align: center;
+}
+
+.split-catalog-page .sc-empty h2 {
+    font-family: var(--font-serif-display, "Cormorant Garamond", serif);
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--sc-charcoal);
+}
+
+.split-catalog-page .sc-empty p {
+    margin-top: 14px;
+    color: var(--sc-muted);
+    font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+    .split-catalog-page .sc-row-inner {
+        grid-template-columns: 1fr;
+        gap: 28px;
+    }
+
+    .split-catalog-page .sc-row .sc-image,
+    .split-catalog-page .sc-row:nth-child(even) .sc-image {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .split-catalog-page .sc-row .sc-copy,
+    .split-catalog-page .sc-row:nth-child(even) .sc-copy {
+        grid-column: 1;
+        grid-row: 2;
+        padding: 0 8px 24px;
+    }
+}
+
+@media (max-width: 767px) {
+    .split-catalog-page main {
+        padding-top: 0;
+    }
+
+    .split-catalog-page .sc-list {
+        padding-block: 40px 60px;
+    }
+
+    .split-catalog-page .sc-row {
+        margin-bottom: 45px;
+    }
+
+    .split-catalog-page .sc-row::before {
+        inset: 15px 0 0;
+    }
+
+    .split-catalog-page .sc-copy h2 {
+        font-size: 26px;
+    }
+
+    .split-catalog-page .sc-copy > p {
+        font-size: 13.5px;
+    }
+
+    .split-catalog-page .sc-intro {
+        min-height: 250px;
+        padding: 45px 6%;
+    }
+
+    .split-catalog-page .sc-intro h1 {
+        font-size: 28px;
+    }
+
+    .split-catalog-page .sc-kicker {
+        font-size: 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .split-catalog-page .sc-detail,
+    .split-catalog-page .sc-image img {
+        transition: none;
+    }
+}
