@@ -7,7 +7,7 @@ namespace HeThongDatTiecCuoi_WEB.Models.MyBookings;
 public class PublicBookingLookupInputViewModel
 {
     [Required(ErrorMessage = "Vui lòng nhập mã đặt tiệc.")]
-    [RegularExpression(@"^DT-\d{8}-[A-Z0-9]{4,}$",
+    [RegularExpression(@"^[Dd][Tt]-[0-9]{8}-[A-Za-z0-9]{4,}$",
         ErrorMessage = "Mã đặt tiệc phải có dạng DT-yyyyMMdd-XXXX (ví dụ DT-20261012-0001).")]
     [Display(Name = "Mã đặt tiệc")]
     public string BookingCode { get; set; } = string.Empty;
