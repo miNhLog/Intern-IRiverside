@@ -19,6 +19,19 @@ namespace HeThongDatTiecCuoi_WEB.Tests;
 public sealed class PublicScheduleChangeWebTests
 {
     [Fact]
+    public async Task ScheduleChangeScript_ChecksSelectedHallAvailabilityAndExactOriginalSlot()
+    {
+        using var factory = new PublicScheduleChangeWebFactory();
+        using var client = factory.CreateClient();
+        var html = await client.GetStringAsync("/MyBooking");
+
+        Assert.Contains("hall.hallId === currentHallId && sameDateAndShift", html);
+        Assert.Contains("verifiedState.hallAvailable = !!hall && !!hall.available && !isOriginalSlot", html);
+        Assert.Contains("updateSelectedHallAvailability();", html);
+        Assert.DoesNotContain("verifiedState.hallAvailable = true;", html);
+    }
+
+    [Fact]
     public async Task RescheduleEligibility_Post_ForwardsNormalizedProofAndReturnsEligibility()
     {
         var api = DispatchProxy.Create<IRiversideApiClient, ScheduleChangeApiProxy>();
