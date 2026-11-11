@@ -3088,7 +3088,7 @@ public sealed class RiversideApiClient : IRiversideApiClient
         var result = await SendEnvelopeAsync<JsonElement>(HttpMethod.Post, "api/v1/public/schedule-changes/otp/send",
             new { bookingCode, phoneNumber, purpose, scheduleChangeId }, null, cancellationToken);
         return result.Succeeded
-            ? ApiCallResult<string>.Success("Mã OTP đã được gửi qua SMS.")
+            ? ApiCallResult<string>.Success("Mã OTP đã được gửi qua email.")
             : ApiCallResult<string>.Failure(result.Error ?? "Không thể gửi OTP.", result.StatusCode);
     }
 
