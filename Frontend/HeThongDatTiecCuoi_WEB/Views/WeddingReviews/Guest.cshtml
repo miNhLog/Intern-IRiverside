@@ -1,0 +1,123 @@
+@model HeThongDatTiecCuoi_WEB.Models.Review.GuestReviewFormViewModel
+@{
+    ViewData["Title"] = "Đánh giá buổi tiệc";
+    var canSubmit = Model.CanSubmit;
+    var criteria = new (string Field, string Label, string Hint, int? Value)[]
+    {
+        ("HallScore", "Không gian sảnh", "Bố trí, không gian và cảm giác tổng thể", Model.Scores.HallScore),
+        ("FoodScore", "Món ăn", "Chất lượng và cách trình bày thực đơn", Model.Scores.FoodScore),
+        ("ServiceScore", "Phục vụ", "Thái độ và sự chủ động của nhân viên", Model.Scores.ServiceScore),
+        ("SoundScore", "Âm thanh", "Chất lượng âm thanh, nhạc và lời chúc", Model.Scores.SoundScore),
+        ("LightingScore", "Ánh sáng", "Ánh sáng sân khấu và khu vực bàn tiệc", Model.Scores.LightingScore),
+        ("HygieneScore", "Vệ sinh", "Vệ sinh khu vực tiệc và bàn tiệc", Model.Scores.HygieneScore)
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+    <style>
+        .gr-page { background: #fdfbf7; color: #162839; font-family: 'Plus Jakarta Sans', Arial, sans-serif; min-height: 70vh; }
+        .gr-wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 56px; }
+        .gr-card { background: #fff; border: 1px solid #e8e1d5; border-radius: 14px; box-shadow: 0 10px 30px rgba(22,40,57,.05); padding: 28px 22px; }
+        .gr-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #806518; }
+        .gr-title { margin: 10px 0 8px; font: 600 clamp(26px, 6vw, 36px)/1.2 'Playfair Display', Georgia, serif; color: #162839; }
+        .gr-sub { margin: 0; font-size: 14px; line-height: 1.7; color: #56616b; }
+        .gr-summary { display: grid; gap: 6px; margin: 20px 0 0; padding: 16px; border: 1px dashed #e2d6bd; border-radius: 10px; background: #fffdf8; font-size: 13px; }
+        .gr-summary div { display: flex; justify-content: space-between; gap: 12px; }
+        .gr-summary dt { color: #56616b; }
+        .gr-summary dd { margin: 0; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+        .gr-notice { margin: 20px 0 0; padding: 14px 16px; border-radius: 10px; background: #f6f1e8; border: 1px solid #e8e1d5; color: #56616b; font-size: 14px; line-height: 1.6; }
+        .gr-alert { margin: 18px 0 0; padding: 14px 16px; border-radius: 10px; background: #fff4f2; border: 1px solid #d9aaa3; color: #872d25; font-size: 14px; }
+        .gr-form { margin-top: 24px; display: grid; gap: 22px; }
+        .gr-criterion { border: 0; border-top: 1px solid #efe8da; margin: 0; padding: 18px 0 0; min-width: 0; }
+        .gr-criterion legend { font-size: 15px; font-weight: 700; color: #162839; padding: 0; }
+        .gr-criterion .gr-hint { margin: 6px 0 12px; font-size: 12.5px; color: #56616b; }
+        .gr-required { color: #991b1b; }
+        .gr-scale { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+        .gr-scale input { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+        .gr-scale label { display: flex; align-items: center; justify-content: center; min-height: 46px; border: 1px solid #d8cfbd; border-radius: 8px; background: #fff; font-weight: 700; color: #162839; cursor: pointer; }
+        .gr-scale label:hover { border-color: #b89758; }
+        .gr-scale input:checked + label { background: #b89758; border-color: #b89758; color: #162839; }
+        .gr-scale input:focus-visible + label { outline: 2px solid #806518; outline-offset: 2px; }
+        .gr-scale-ends { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11.5px; color: #8a8f95; }
+        .gr-error { margin: 8px 0 0; font-size: 12.5px; color: #991b1b; }
+        .gr-comment { display: grid; gap: 6px; }
+        .gr-comment span { font-size: 15px; font-weight: 700; }
+        .gr-comment textarea { min-height: 96px; padding: 12px 14px; border: 1px solid #d8cfbd; border-radius: 8px; font: inherit; font-size: 15px; color: #162839; resize: vertical; }
+        .gr-comment textarea:focus { outline: 2px solid #806518; outline-offset: 2px; border-color: #b89758; }
+        .gr-comment small { font-size: 12px; color: #56616b; }
+        .gr-actions { display: grid; gap: 10px; }
+        .gr-submit { min-height: 52px; border: 0; border-radius: 10px; background: #b89758; color: #162839; font-size: 15px; font-weight: 800; cursor: pointer; }
+        .gr-submit:hover { background: #c9a968; }
+        .gr-submit:focus-visible { outline: 2px solid #806518; outline-offset: 3px; }
+        .gr-note { margin: 0; text-align: center; font-size: 12px; color: #56616b; }
+        @@media (min-width: 640px) { .gr-card { padding: 36px 34px; } }
+    </style>
+}
+
+<div class="home-page gr-page">
+    <partial name="_PublicHeader" />
+    <div class="gr-wrap">
+        <section class="gr-card">
+            <span class="gr-eyebrow">RIVERSIDE PALACE · PHIẾU ĐÁNH GIÁ</span>
+            <h1 class="gr-title">Chia sẻ trải nghiệm buổi tiệc</h1>
+            <p class="gr-sub">Cảm ơn bạn đã dành thời gian chấm điểm. Ý kiến của bạn giúp chúng tôi chuẩn bị tốt hơn cho những buổi tiệc tiếp theo.</p>
+
+            <dl class="gr-summary">
+                <div><dt>Mã tiệc</dt><dd>@Model.BookingCode</dd></div>
+                <div><dt>Sảnh</dt><dd>@Model.HallName</dd></div>
+                <div><dt>Ngày tổ chức</dt><dd>@Model.EventDate.ToString("dd/MM/yyyy")</dd></div>
+                <div><dt>Ca</dt><dd>@Model.Shift</dd></div>
+            </dl>
+
+            @if (canSubmit && Model.Submitted && !string.IsNullOrWhiteSpace(Model.Message))
+            {
+                <div class="gr-alert" role="alert">@Model.Message</div>
+            }
+            else if (!canSubmit && !string.IsNullOrWhiteSpace(Model.Message))
+            {
+                <div class="gr-notice" role="status">@Model.Message</div>
+            }
+
+            @if (canSubmit)
+            {
+                <form method="post" class="gr-form" novalidate>
+                    @Html.AntiForgeryToken()
+                    @foreach (var criterion in criteria)
+                    {
+                        var fieldError = ViewData.ModelState[criterion.Field]?.Errors.FirstOrDefault()?.ErrorMessage;
+                        <fieldset class="gr-criterion">
+                            <legend>@criterion.Label <span class="gr-required" aria-hidden="true">*</span></legend>
+                            <p class="gr-hint">@criterion.Hint</p>
+                            <div class="gr-scale">
+                                @for (var score = 1; score <= 5; score++)
+                                {
+                                    var inputId = $"{criterion.Field}-{score}";
+                                    <input type="radio" id="@inputId" name="@criterion.Field" value="@score" checked="@(criterion.Value == score)" required />
+                                    <label for="@inputId" aria-label="@(criterion.Label): @score trên 5">@score</label>
+                                }
+                            </div>
+                            <div class="gr-scale-ends"><span>Chưa hài lòng</span><span>Rất hài lòng</span></div>
+                            @if (!string.IsNullOrEmpty(fieldError))
+                            {
+                                <p class="gr-error">@fieldError</p>
+                            }
+                        </fieldset>
+                    }
+
+                    <label class="gr-comment">
+                        <span>Cảm nhận thêm (không bắt buộc)</span>
+                        <textarea name="Comment" maxlength="1000" placeholder="Điều bạn hài lòng nhất hoặc góp ý cho buổi tiệc...">@Model.Scores.Comment</textarea>
+                        <small>Tối đa 1000 ký tự.</small>
+                    </label>
+
+                    <div class="gr-actions">
+                        <button type="submit" class="gr-submit">Gửi đánh giá</button>
+                        <p class="gr-note">Mỗi thiết bị gửi một lần cho buổi tiệc này. Không cần tạo tài khoản.</p>
+                    </div>
+                </form>
+            }
+        </section>
+    </div>
+    <partial name="_PublicFooter" />
+</div>

@@ -1,0 +1,28 @@
+@model HeThongDatTiecCuoi_WEB.Models.Review.ReviewStatusViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+    <style>
+        .gr-status-page { background: #fdfbf7; color: #162839; font-family: 'Plus Jakarta Sans', Arial, sans-serif; min-height: 70vh; }
+        .gr-status-wrap { max-width: 620px; margin: 0 auto; padding: 48px 20px 64px; }
+        .gr-status-card { background: #fff; border: 1px solid #e8e1d5; border-radius: 14px; box-shadow: 0 10px 30px rgba(22,40,57,.05); padding: 32px 24px; text-align: center; }
+        .gr-status-mark { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: #f6f1e8; color: #806518; font-size: 24px; font-weight: 700; }
+        .gr-status-card h1 { margin: 18px 0 10px; font: 600 clamp(24px, 5vw, 32px)/1.25 'Playfair Display', Georgia, serif; }
+        .gr-status-card p { margin: 0; font-size: 14.5px; line-height: 1.7; color: #56616b; }
+    </style>
+}
+
+<div class="home-page gr-status-page">
+    <partial name="_PublicHeader" />
+    <div class="gr-status-wrap">
+        <section class="gr-status-card">
+            <span class="gr-status-mark" aria-hidden="true">✓</span>
+            <h1>@Model.Title</h1>
+            <p>@Model.Message</p>
+        </section>
+    </div>
+    <partial name="_PublicFooter" />
+</div>

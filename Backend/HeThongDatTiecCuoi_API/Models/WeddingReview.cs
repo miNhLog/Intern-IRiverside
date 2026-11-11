@@ -10,8 +10,10 @@ public sealed class WeddingReview
     public int? ServiceScore { get; set; }
     public int? SoundScore { get; set; }
     public int? LightingScore { get; set; }
+    public int? HygieneScore { get; set; }
     public int OverallScore { get; set; }
     public string? Comment { get; set; }
+    public string? SessionHash { get; set; }
     public DateTime ReviewedAt { get; set; }
 
     public ReviewQrCode ReviewQrCode { get; set; } = null!;
