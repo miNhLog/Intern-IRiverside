@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 170" fill="none" stroke="#D7B46C" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <path id="leaf" d="M0 0C3-4.5 8-4.5 12 0C8 4.5 3 4.5 0 0Z"/>
+    <g id="branch" stroke-width="2.6">
+      <path d="M45 156C29 140 24 110 36 84"/>
+      <g fill="#D7B46C" fill-opacity=".35">
+        <use href="#leaf" transform="translate(36.8 144.9) rotate(-156)"/><use href="#leaf" transform="translate(36.8 144.9) rotate(-66)"/>
+        <use href="#leaf" transform="translate(31.5 131.2) rotate(-143)"/><use href="#leaf" transform="translate(31.5 131.2) rotate(-53)"/>
+        <use href="#leaf" transform="translate(29.4 116) rotate(-130)"/><use href="#leaf" transform="translate(29.4 116) rotate(-40)"/>
+        <use href="#leaf" transform="translate(30.8 99.9) rotate(-117)"/><use href="#leaf" transform="translate(30.8 99.9) rotate(-27)"/>
+        <use href="#leaf" transform="translate(36 84) rotate(-80)"/>
+      </g>
+    </g>
+  </defs>
+  <path d="M100 8C101 17 103 20 114 22C103 24 101 27 100 36C99 27 97 24 86 22C97 20 99 17 100 8Z" fill="#D7B46C" fill-opacity=".45"/>
+  <circle cx="100" cy="41" r="2.6" fill="#D7B46C" stroke="none"/>
+  <path d="M50 158V96C50 68 72 46 100 46C128 46 150 68 150 96V158M62 158V98C62 76 79 58 100 58C121 58 138 76 138 98V158M42 158H158"/>
+  <g stroke-width="2.8">
+    <path d="M88 112C88 100 94 94 100 88C106 94 112 100 112 112M100 88V79"/>
+    <circle cx="100" cy="76.5" r="2.5" fill="#D7B46C" stroke="none"/>
+    <path d="M70 112H130V134H70ZM70 112V104L75 94L80 104V112M120 112V104L125 94L130 104V112M95 134V125C95 121.5 97 119.5 100 119.5C103 119.5 105 121.5 105 125V134M78 134V127C78 125 79 124 80 124C81 124 82 125 82 127V134M118 134V127C118 125 119 124 120 124C121 124 122 125 122 127V134M62 142q9.5-5 19 0t19 0t19 0t19 0M62 149q9.5-5 19 0t19 0t19 0t19 0M62 156q9.5-5 19 0t19 0t19 0t19 0"/>
+  </g>
+  <use href="#branch"/><use href="#branch" transform="translate(200 0) scale(-1 1)"/>
+</svg>

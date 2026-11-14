@@ -3,7 +3,7 @@
 <!-- Bong bóng lời chào mời gọi tương tác (Speech Bubble) -->
 <div id="aiChatBubble" class="ai-chat-bubble" role="status" aria-live="polite">
     <div class="ai-bubble-content">
-        <span class="ai-bubble-sparkle" aria-hidden="true">✨</span>
+        <span class="material-symbols-outlined ai-bubble-sparkle" aria-hidden="true">chat_bubble</span>
         <span class="ai-bubble-text">Cần dự toán chi phí hay tìm sảnh trống? <strong>Chat cùng AI nhé!</strong></span>
     </div>
     <button type="button" class="ai-bubble-close" id="aiBubbleCloseBtn" aria-label="Đóng lời chào">×</button>
@@ -35,20 +35,20 @@
             </span>
         </div>
         <div class="ai-head-info">
-            <div class="ai-title">Trợ Lý Ảo Riverside Concierge</div>
-            <div class="ai-sub"><span class="on"></span> Đang trực tuyến • Tư vấn tiệc cưới tức thì</div>
+            <div class="ai-title">Trợ lý ảo Riverside</div>
+            <div class="ai-sub"><span class="on"></span> Đang trực tuyến • Tư vấn tiệc cưới</div>
         </div>
-        <button class="ai-close" id="aiChatCloseBtn" type="button" aria-label="Đóng trợ lý ảo">×</button>
+        <button class="ai-close" id="aiChatCloseBtn" type="button" aria-label="Đóng trợ lý ảo"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
     </div>
     <div id="aiChatMsgs" aria-live="polite"></div>
     <div class="ai-typing" id="aiChatTyping" aria-hidden="true"><span></span><span></span><span></span></div>
     <div id="aiExtractBox" aria-live="polite">
         <div class="ai-extract-title"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:-2px;">auto_awesome</span> Đã nhận diện tiêu chí tiệc cưới</div>
         <div id="aiExtractSummary"></div>
-        <button id="aiApplySurveyBtn" type="button">✦ Áp Dụng Thông Tin Vào Khảo Sát &amp; Xem Top 3 Combo (1-Click)</button>
+        <button id="aiApplySurveyBtn" type="button">Áp dụng vào khảo sát</button>
     </div>
     <div class="ai-chat-input">
-        <textarea id="aiChatText" rows="1" placeholder="Hỏi về sảnh, menu, decor, chính sách..." aria-label="Nhập câu hỏi"></textarea>
-        <button id="aiChatSendBtn" type="button" aria-label="Gửi câu hỏi">➤</button>
+        <textarea id="aiChatText" rows="1" placeholder="Nhập câu hỏi..." aria-label="Nhập câu hỏi"></textarea>
+        <button id="aiChatSendBtn" type="button" aria-label="Gửi câu hỏi"><span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span></button>
     </div>
 </div>
